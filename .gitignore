@@ -1,0 +1,25 @@
+# Node dependencies
+node_modules/
+dist/
+build/
+.env
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Flutter/Dart (Already removed but for safety)
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
