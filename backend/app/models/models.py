@@ -10,6 +10,7 @@ class Usuaria(Base):
     nombre         = Column(String(100), nullable=False)
     email          = Column(String(150), nullable=False, unique=True)
     password_hash  = Column(String(255), nullable=False)
+    rol            = Column(String(20), nullable=False, server_default="usuaria")
     fecha_registro = Column(DateTime, server_default=func.now())
 
     # Relaciones

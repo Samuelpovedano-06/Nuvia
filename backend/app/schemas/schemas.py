@@ -9,6 +9,7 @@ class UsuariaCreate(BaseModel):
     nombre: str
     email: EmailStr
     password: str
+    rol: Optional[str] = "usuaria"
 
 class UsuariaLogin(BaseModel):
     email: EmailStr
@@ -18,6 +19,7 @@ class UsuariaOut(BaseModel):
     id_usuaria: int
     nombre: str
     email: str
+    rol: str
     fecha_registro: Optional[datetime]
 
     class Config:
