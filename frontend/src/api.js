@@ -1,5 +1,5 @@
 // API base logic migrated from api_service.dart
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Fallback to local for development
+const baseUrl = 'https://nuvia-production.up.railway.app'; // Railway backend URL
 
 // Helper para obtener token
 const getHeaders = () => {
