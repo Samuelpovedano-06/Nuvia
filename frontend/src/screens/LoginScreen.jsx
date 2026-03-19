@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { Sparkles, Mail, Lock } from 'lucide-react';
 
 export default function LoginScreen() {
   const { login } = useContext(AuthContext);
@@ -23,49 +24,85 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="screen-container">
-      <div style={{ textAlign: 'center', margin: '40px 0' }}>
-        <h1 style={{ fontSize: '32px' }}>Bienvenida a Nuvia</h1>
-        <p className="subtitle">Tu bienestar en un solo lugar</p>
+    <div className="screen-container" style={{ padding: '40px 32px' }}>
+      {/* Logo & Decoration */}
+      <div className="decoration-container">
+        <div className="sparkle-icon">
+          <Sparkles size={42} strokeWidth={1.5} />
+        </div>
+        <div className="bubbles-bg">
+          <div className="bubble bubble-1"></div>
+          <div className="bubble bubble-2"></div>
+          <div className="bubble bubble-3"></div>
+        </div>
+        <div className="smile-path"></div>
       </div>
 
-      <div className="card">
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h1 style={{ fontSize: '38px', marginBottom: '4px' }}>Nuvia</h1>
+        <p className="subtitle" style={{ fontSize: '18px' }}>Tu compañera de bienestar</p>
+      </div>
+
+      <div style={{ flex: 1 }}>
         <form onSubmit={handleSubmit}>
-          {error && <div style={{ color: 'red', marginBottom: '16px', fontSize: '14px', background: '#ffebee', padding: '10px', borderRadius: '8px' }}>{error}</div>}
+          {error && (
+            <div style={{ 
+              color: '#d32f2f', 
+              marginBottom: '20px', 
+              fontSize: '14px', 
+              background: '#ffebee', 
+              padding: '12px', 
+              borderRadius: '12px',
+              textAlign: 'center',
+              border: '1px solid #ffcdd2'
+            }}>
+              {error}
+            </div>
+          )}
           
           <div className="input-group">
-            <label className="input-label">Correo Electrónico</label>
-            <input 
-              type="email" 
-              className="styled-input" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              required 
-              placeholder="tu@email.com"
-            />
+            <div className="input-with-icon">
+              <Mail className="input-icon" size={20} />
+              <input 
+                type="email" 
+                className="styled-input with-icon" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                required 
+                placeholder="Email"
+              />
+            </div>
           </div>
 
           <div className="input-group">
-            <label className="input-label">Contraseña</label>
-            <input 
-              type="password" 
-              className="styled-input" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              required 
-              placeholder="••••••••"
-            />
+            <div className="input-with-icon">
+              <Lock className="input-icon" size={20} />
+              <input 
+                type="password" 
+                className="styled-input with-icon" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                required 
+                placeholder="Contraseña"
+              />
+            </div>
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? <div className="loader"></div> : 'Iniciar Sesión'}
+          <div style={{ textAlign: 'center' }}>
+            <Link to="#" className="login-link" style={{ fontSize: '14px', marginBottom: '24px' }}>
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
+          <button type="submit" className="btn-primary" disabled={loading} style={{ padding: '18px' }}>
+            {loading ? <div className="loader" style={{ width: '20px', height: '20px' }}></div> : 'Iniciar Sesión'}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>
-            ¿No tienes cuenta? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none' }}>Regístrate aquí</Link>
-          </p>
+        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+          <Link to="/register" className="login-link" style={{ fontWeight: '600' }}>
+            Crear Cuenta
+          </Link>
         </div>
       </div>
     </div>

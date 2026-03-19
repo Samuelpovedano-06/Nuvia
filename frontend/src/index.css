@@ -1,15 +1,100 @@
 /* Modern Premium CSS Reset and Variables */
 :root {
-  --primary: #9b6c98;
-  --primary-light: #dac1d9;
-  --bg-gradient: linear-gradient(135deg, #fce4ec 0%, #e0f7fa 100%);
-  --text-dark: #333333;
-  --text-light: #777777;
+  --primary: #b05bb5;
+  --primary-light: #e891c8;
+  --bg-gradient: linear-gradient(180deg, #ffffff 0%, #fcf0fa 100%);
   --white: #ffffff;
-  --shadow-sm: 0 4px 6px rgba(0,0,0,0.05);
-  --shadow-md: 0 10px 20px rgba(0,0,0,0.08);
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --bubble-1: rgba(232, 145, 200, 0.15);
+  --bubble-2: rgba(176, 91, 181, 0.12);
+  --bubble-3: rgba(218, 193, 217, 0.2);
+  --text-dark: #3d2b3f;
+  --text-light: #8a6a8d;
+  --shadow-sm: 0 4px 12px rgba(176, 91, 181, 0.08);
+  --shadow-md: 0 12px 24px rgba(176, 91, 181, 0.12);
+  --radius-md: 20px;
+  --radius-lg: 32px;
+}
+
+.decoration-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.sparkle-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  box-shadow: 0 8px 16px rgba(176, 91, 181, 0.3);
+  z-index: 10;
+}
+
+.bubbles-bg {
+  position: absolute;
+  top: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bubble {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  position: absolute;
+}
+
+.bubble-1 { background: var(--bubble-1); left: -40px; }
+.bubble-2 { background: var(--bubble-2); top: -20px; }
+.bubble-3 { background: var(--bubble-3); right: -40px; }
+
+.smile-path {
+  position: absolute;
+  top: 160px;
+  width: 120px;
+  height: 40px;
+  border-bottom: 4px solid var(--primary);
+  border-radius: 0 0 100px 100px;
+  opacity: 0.6;
+}
+
+.login-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+  display: block;
+  margin: 12px 0;
+  transition: opacity 0.2s;
+}
+
+.login-link:hover {
+  opacity: 0.7;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 20px;
+  color: var(--primary);
+  opacity: 0.6;
+}
+
+.styled-input.with-icon {
+  padding-left: 55px;
 }
 
 * {
