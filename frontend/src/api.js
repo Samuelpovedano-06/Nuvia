@@ -1,5 +1,5 @@
 // API base logic migrated from api_service.dart
-const baseUrl = 'http://localhost:8000'; // FastAPI backend
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Fallback to local for development
 
 // Helper para obtener token
 const getHeaders = () => {
