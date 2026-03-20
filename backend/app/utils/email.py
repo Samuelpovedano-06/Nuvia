@@ -10,11 +10,14 @@ BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 def enviar_otp_email(destinatario: str, nombre: str, otp: str):
     """Envía un correo con el código OTP usando la API de Brevo."""
     key = (os.getenv("BREVO_API_KEY") or "").strip()
+    sender_email = (os.getenv("BREVO_SENDER_EMAIL") or "info@nuvia.com").strip()
+    sender_name = (os.getenv("BREVO_SENDER_NAME") or "Nuvia Bienestar").strip()
+
     if not key:
         return False, "BREVO_API_KEY no configurada en las variables de entorno."
 
     payload = {
-        "sender": {"name": "Nuvia Bienestar", "email": "info@nuvia.com"},
+        "sender": {"name": sender_name, "email": sender_email},
         "to": [{"email": destinatario, "name": nombre}],
         "subject": f"{otp} es tu código de recuperación Nuvia",
         "htmlContent": f"""
