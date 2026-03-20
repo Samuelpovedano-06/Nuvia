@@ -7,7 +7,7 @@ import os
 load_dotenv()
 
 from app.database.connection import engine, Base
-from app.routers import auth, ciclos, sintomas, historial, predicciones, configuracion
+from app.routers import auth, admin, ciclos, sintomas, historial, predicciones, configuracion
 
 # Crear tablas automáticamente si no existen
 Base.metadata.create_all(bind=engine)
@@ -29,6 +29,7 @@ app.add_middleware(
 
 # Registrar todos los routers modulares
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(ciclos.router)
 app.include_router(sintomas.router)
 app.include_router(historial.router)

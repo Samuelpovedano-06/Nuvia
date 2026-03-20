@@ -79,6 +79,48 @@ export const ApiService = {
     return data;
   },
 
+  // Admin
+  getUsers: async () => {
+    const res = await fetch(`${baseUrl}/admin/users`, { headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al obtener usuarios');
+    return data;
+  },
+
+  createUserAdmin: async (userData) => {
+    const res = await fetch(`${baseUrl}/admin/users`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(userData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al crear usuario');
+    return data;
+  },
+
+  updateUserAdmin: async (id, userData) => {
+    const res = await fetch(`${baseUrl}/admin/users/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(userData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al actualizar usuario');
+    return data;
+  },
+
+  deleteUserAdmin: async (id) => {
+    const res = await fetch(`${baseUrl}/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || 'Error al eliminar usuario');
+    }
+    return true;
+  },
+
   // Ciclos
   getCiclos: async () => {
     const res = await fetch(`${baseUrl}/ciclos/`, { headers: getHeaders() });

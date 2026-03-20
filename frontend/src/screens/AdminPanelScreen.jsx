@@ -2,20 +2,82 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ApiService } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Users, Shield, Trash2, Edit } from 'lucide-react';
+import { ChevronLeft, Users, Shield, Trash2, Edit, UserPlus, X, Save } from 'lucide-react';
 
 export default function AdminPanelScreen() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Security check: If not admin, go back
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null); // null means "Create New"
+  const [formData, setFormData] = useState({ nombre: '', email: '', password: '', rol: 'usuaria' });
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     if (user && user.rol !== 'admin') {
       navigate('/');
+    } else {
+      fetchUsers();
     }
   }, [user, navigate]);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const data = await ApiService.getUsers();
+      setUsers(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenModal = (u = null) => {
+    if (u) {
+      setEditingUser(u);
+      setFormData({ nombre: u.nombre, email: u.email, password: '', rol: u.rol });
+    } else {
+      setEditingUser(null);
+      setFormData({ nombre: '', email: '', password: '', rol: 'usuaria' });
+    }
+    setShowModal(true);
+    setError('');
+  };
+
+  const handleSaveUser = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      if (editingUser) {
+        await ApiService.updateUserAdmin(editingUser.id_usuaria, formData);
+      } else {
+        await ApiService.createUserAdmin(formData);
+      }
+      setShowModal(false);
+      fetchUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (window.confirm('¿Estás segura de eliminar esta usuaria y todos sus datos? Esta acción es irreversible.')) {
+      try {
+        await ApiService.deleteUserAdmin(id);
+        fetchUsers();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  };
 
   return (
     <div className="screen-container">
@@ -25,55 +87,102 @@ export default function AdminPanelScreen() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '30px' }}>
-        <div style={{ background: 'var(--primary)', padding: '12px', borderRadius: '16px', color: 'white', marginRight: '16px' }}>
-          <Shield size={32} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ background: 'var(--primary)', padding: '12px', borderRadius: '16px', color: 'white', marginRight: '16px' }}>
+            <Shield size={28} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '24px', margin: 0 }}>Panel Admin</h2>
+            <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '14px' }}>Gestión de usuarias</p>
+          </div>
         </div>
-        <div>
-          <h2 style={{ fontSize: '28px', margin: 0 }}>Panel Admin</h2>
-          <p style={{ color: 'var(--text-light)', margin: 0 }}>Gestión de usuarias y sistema</p>
-        </div>
+        <button onClick={() => handleOpenModal()} style={{ background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(176,91,181,0.3)' }}>
+          <UserPlus size={22} />
+        </button>
       </div>
 
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px' }}>Usuarias Registradas</h3>
-          <div style={{ background: 'var(--primary-light)', padding: '4px 12px', borderRadius: '12px', color: 'white', fontSize: '12px', fontWeight: '600' }}>
-            {users.length} TOTAL
-          </div>
+          <h3 style={{ margin: 0, fontSize: '18px' }}>Usuarias ({users.length})</h3>
         </div>
 
-        {/* Dummy list for now while we update backend */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: '40px', height: '40px', background: 'var(--primary-light)', borderRadius: '50%', marginRight: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>U</div>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: '500' }}>Usuario de Prueba</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>test@nuvia.com</div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}><div className="loader"></div></div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {users.map(u => (
+              <div key={u.id_usuaria} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    background: u.rol === 'admin' ? 'var(--primary)' : 'var(--primary-light)', 
+                    borderRadius: '50%', 
+                    marginRight: '12px', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    color: 'white',
+                    fontWeight: '600'
+                  }}>
+                    {u.nombre.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '600' }}>{u.nombre} {u.rol === 'admin' && '👑'}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>{u.email}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button onClick={() => handleOpenModal(u)} style={{ padding: '8px', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Edit size={18} /></button>
+                  <button onClick={() => handleDeleteUser(u.id_usuaria)} style={{ padding: '8px', background: 'none', border: 'none', color: '#ff5252', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Edit size={18} /></button>
-              <button style={{ background: 'none', border: 'none', color: '#ff5252', cursor: 'pointer' }}><Trash2 size={18} /></button>
-            </div>
+            ))}
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="card" style={{ marginTop: '20px', background: 'var(--primary)', color: 'white' }}>
-        <h4 style={{ color: 'white', marginBottom: '8px' }}>Estadísticas</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', textAlign: 'center' }}>
-          <div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>1</div>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>Activas Hoy</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>100%</div>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>Uptime</div>
+      {/* Modal for Create/Edit */}
+      {showModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div className="card" style={{ maxWidth: '400px', width: '100%', padding: '30px', position: 'relative', animation: 'fadeIn 0.3s ease' }}>
+            <button onClick={() => setShowModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)' }}>
+              <X size={24} />
+            </button>
+
+            <h3 style={{ marginBottom: '20px' }}>{editingUser ? 'Editar Usuaria' : 'Nueva Usuaria'}</h3>
+            
+            {error && <div style={{ color: 'red', fontSize: '13px', marginBottom: '15px', background: '#ffebee', padding: '10px', borderRadius: '8px' }}>{error}</div>}
+
+            <form onSubmit={handleSaveUser}>
+              <div className="input-group">
+                <label className="input-label">Nombre</label>
+                <input type="text" className="styled-input" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} required />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Email</label>
+                <input type="email" className="styled-input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+              </div>
+              <div className="input-group">
+                <label className="input-label">{editingUser ? 'Password (dejar vacío para no cambiar)' : 'Password'}</label>
+                <input type="password" className="styled-input" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!editingUser} />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Rol</label>
+                <select className="styled-input" value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})} style={{ appearance: 'none' }}>
+                  <option value="usuaria">Usuaria</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+
+              <button type="submit" className="btn-primary" disabled={submitting}>
+                {submitting ? 'Guardando...' : (editingUser ? 'Actualizar' : 'Crear Usuario')}
+              </button>
+            </form>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
