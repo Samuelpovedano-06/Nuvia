@@ -120,7 +120,14 @@ export default function ProfileScreen() {
         {user?.rol === 'admin' && (
           <div 
             onClick={() => navigate('/admin')}
-            style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: 'rgba(176, 91, 181, 0.05)' }}
+            style={{ 
+              padding: '12px 20px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              cursor: 'pointer',
+              borderTop: '1px solid rgba(0,0,0,0.05)'
+            }}
           >
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ background: '#F3E5F5', padding: '10px', borderRadius: '50%', color: 'var(--primary)', marginRight: '16px' }}>
@@ -131,7 +138,7 @@ export default function ProfileScreen() {
                 <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Solo para administradores</div>
               </div>
             </div>
-            <ChevronRight size={20} color="var(--primary)" />
+            <ChevronRight size={20} color="var(--text-light)" />
           </div>
         )}
       </div>
