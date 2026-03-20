@@ -56,23 +56,33 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
 @router.post("/forgot-password")
 def forgot_password(datos: ForgotPasswordRequest, db: Session = Depends(get_db)):
     """Genera un OTP y lo envía por email."""
-    usuaria = db.query(Usuaria).filter(Usuaria.email == datos.email).first()
-    if not usuaria:
-        # Por seguridad no revelamos si existe o no, pero aquí para desarrollo lanzamos 404
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    try:
+        usuaria = db.query(Usuaria).filter(Usuaria.email == datos.email).first()
+        if not usuaria:
+            raise HTTPException(status_code=404, detail="El email no corresponde a ninguna cuenta registrada")
 
-    # Generar OTP de 6 dígitos
-    otp = ''.join(random.choices(string.digits, k=6))
-    usuaria.otp = otp
-    usuaria.otp_expiry = datetime.now() + timedelta(minutes=10)
-    db.commit()
+        # Generar OTP de 6 dígitos
+        otp = ''.join(random.choices(string.digits, k=6))
+        usuaria.otp = otp
+        usuaria.otp_expiry = datetime.now() + timedelta(minutes=10)
+        db.commit()
 
-    # Enviar email
-    exito = enviar_otp_email(usuaria.email, usuaria.nombre, otp)
-    if not exito:
-        raise HTTPException(status_code=500, detail="Error al enviar el correo con el código")
+        # Enviar email
+        exito = enviar_otp_email(usuaria.email, usuaria.nombre, otp)
+        if not exito:
+            # Si enviar_otp_email falla, devolvemos un error descriptivo
+            raise HTTPException(
+                status_code=500, 
+                detail="No se pudo enviar el correo. Comprueba que BREVO_API_KEY esté correctamente configurada en las variables de entorno."
+            )
 
-    return {"message": "Código enviado correctamente a tu email"}
+        return {"message": "Código enviado correctamente a tu email"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        # Aquí capturamos errores de base de datos u otros
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 
 @router.post("/verify-otp")

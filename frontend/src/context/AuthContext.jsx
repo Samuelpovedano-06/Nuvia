@@ -13,6 +13,10 @@ export const AuthProvider = ({ children }) => {
       setUser(data);
     } catch (e) {
       setUser(null);
+      // No logueamos el error si es un simple 401
+      if (e.message !== 'Sesión expirada') {
+         console.error("Auth check failed:", e.message);
+      }
       ApiService.logout();
     } finally {
       setLoading(false);
