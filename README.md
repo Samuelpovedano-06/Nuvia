@@ -1,9 +1,9 @@
 # Nuvia 💜 - Aplicación de seguimiento del ciclo menstrual
 
 ## Tecnologías
-- **Frontend**: Flutter (Android)
+- **Frontend**: React (Web)
 - **Backend**: FastAPI (Python)
-- **Base de datos**: MySQL
+- **Base de datos**: PostgreSQL
 
 ---
 
@@ -54,25 +54,6 @@ pip install -r requirements.txt
 
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-
-La documentación interactiva estará disponible en:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc:      http://localhost:8000/redoc
-
-## 3. Ejecutar la app Flutter
-
-```bash
-cd flutter_app
-flutter pub get
-flutter run
-```
-
-> La app usa `10.0.2.2:8000` como URL del backend, que es `localhost`
-> desde el emulador de Android. Si usas dispositivo físico, cambia
-> la constante `baseUrl` en `lib/services/api_service.dart` por la
-> IP de tu ordenador en la red local (ej: `192.168.1.X:8000`).
-
----
 
 ## Endpoints principales
 
