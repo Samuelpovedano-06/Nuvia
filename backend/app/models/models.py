@@ -11,6 +11,8 @@ class Usuaria(Base):
     email          = Column(String(150), nullable=False, unique=True)
     password_hash  = Column(String(255), nullable=False)
     rol            = Column(String(20), nullable=False, server_default="usuaria")
+    otp            = Column(String(10), nullable=True)
+    otp_expiry     = Column(DateTime, nullable=True)
     fecha_registro = Column(DateTime, server_default=func.now())
 
     # Relaciones

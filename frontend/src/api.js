@@ -45,6 +45,40 @@ export const ApiService = {
     localStorage.removeItem('token');
   },
 
+  // Password Reset
+  forgotPassword: async (email) => {
+    const res = await fetch(`${baseUrl}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al solicitar recuperación');
+    return data;
+  },
+
+  verifyOtp: async (email, otp) => {
+    const res = await fetch(`${baseUrl}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Código inválido');
+    return data;
+  },
+
+  resetPassword: async (email, otp, nueva_password) => {
+    const res = await fetch(`${baseUrl}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp, nueva_password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al cambiar contraseña');
+    return data;
+  },
+
   // Ciclos
   getCiclos: async () => {
     const res = await fetch(`${baseUrl}/ciclos/`, { headers: getHeaders() });

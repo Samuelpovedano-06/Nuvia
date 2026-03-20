@@ -29,6 +29,18 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    nueva_password: str
+
 
 # ─────────────────────── CICLOS ───────────────────────
 

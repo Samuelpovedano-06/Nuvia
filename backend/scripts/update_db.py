@@ -11,10 +11,12 @@ def update_db():
     print("Updating database schema...")
     with engine.connect() as conn:
         try:
-            # PostgreSQL command
+            # PostgreSQL commands
             conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS rol VARCHAR(20) NOT NULL DEFAULT 'usuaria'"))
+            conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS otp VARCHAR(10)"))
+            conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS otp_expiry TIMESTAMP"))
             conn.commit()
-            print("Successfully added 'rol' column to 'usuarias' table!")
+            print("Successfully updated 'usuarias' table with role and OTP columns!")
         except Exception as e:
             print(f"Error updating table: {e}")
             conn.rollback()

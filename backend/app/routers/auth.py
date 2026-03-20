@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
+import random
+import string
 from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria
-from app.schemas.schemas import UsuariaCreate, UsuariaLogin, UsuariaOut, Token
+from app.schemas.schemas import UsuariaCreate, UsuariaLogin, UsuariaOut, Token, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest
 from app.routers.auth_utils import hash_password, verify_password, create_access_token
+from app.utils.email import enviar_otp_email
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -21,6 +25,7 @@ def registrar_usuaria(datos: UsuariaCreate, db: Session = Depends(get_db)):
         nombre        = datos.nombre,
         email         = datos.email,
         password_hash = hash_password(datos.password),
+        rol           = datos.rol or "usuaria"
     )
     db.add(nueva)
     db.flush()  # obtener id_usuaria antes del commit
@@ -46,6 +51,63 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
 
     token = create_access_token(data={"sub": str(usuaria.id_usuaria)})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/forgot-password")
+def forgot_password(datos: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Genera un OTP y lo envía por email."""
+    usuaria = db.query(Usuaria).filter(Usuaria.email == datos.email).first()
+    if not usuaria:
+        # Por seguridad no revelamos si existe o no, pero aquí para desarrollo lanzamos 404
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Generar OTP de 6 dígitos
+    otp = ''.join(random.choices(string.digits, k=6))
+    usuaria.otp = otp
+    usuaria.otp_expiry = datetime.now() + timedelta(minutes=10)
+    db.commit()
+
+    # Enviar email
+    exito = enviar_otp_email(usuaria.email, usuaria.nombre, otp)
+    if not exito:
+        raise HTTPException(status_code=500, detail="Error al enviar el correo con el código")
+
+    return {"message": "Código enviado correctamente a tu email"}
+
+
+@router.post("/verify-otp")
+def verify_otp_endpoint(datos: VerifyOTPRequest, db: Session = Depends(get_db)):
+    """Verifica si el OTP es válido y no ha caducado."""
+    usuaria = db.query(Usuaria).filter(Usuaria.email == datos.email, Usuaria.otp == datos.otp).first()
+    
+    if not usuaria:
+        raise HTTPException(status_code=400, detail="Código inválido")
+    
+    if usuaria.otp_expiry < datetime.now():
+        raise HTTPException(status_code=400, detail="El código ha caducado")
+
+    return {"message": "Código verificado correctamente"}
+
+
+@router.post("/reset-password")
+def reset_password(datos: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Cambia la contraseña usando el OTP verificado."""
+    usuaria = db.query(Usuaria).filter(
+        Usuaria.email == datos.email, 
+        Usuaria.otp == datos.otp
+    ).first()
+
+    if not usuaria or usuaria.otp_expiry < datetime.now():
+        raise HTTPException(status_code=400, detail="Solicitud inválida o caducada")
+
+    # Actualizar password
+    usuaria.password_hash = hash_password(datos.nueva_password)
+    # Limpiar OTP tras uso
+    usuaria.otp = None
+    usuaria.otp_expiry = None
+    db.commit()
+
+    return {"message": "Contraseña actualizada con éxito"}
 
 
 @router.get("/me", response_model=UsuariaOut)
