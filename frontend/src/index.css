@@ -20,7 +20,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 240px; /* Slightly taller to accommodate movement */
+  height: 240px;
   position: relative;
   margin-bottom: 20px;
   overflow: visible;
@@ -35,14 +35,14 @@
   align-items: center;
   z-index: 10;
   position: relative;
-  top: 30px; /* Move Down */
+  top: -10px; /* Centered with respect to bubbles */
 }
 
 .bubbles-bg {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) translateY(30px); /* Lowered group */
+  transform: translate(-50%, -50%) translateY(30px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -52,15 +52,15 @@
 }
 
 .bubble {
-  width: 140px; /* Bigger bubbles to frame the logo */
-  height: 140px;
+  width: 150px; 
+  height: 150px;
   border-radius: 50%;
   position: absolute;
 }
 
-.bubble-1 { background: var(--bubble-1); transform: translate(-50px, -20px); }
+.bubble-1 { background: var(--bubble-1); transform: translate(-50px, 0px); }
 .bubble-2 { background: var(--bubble-2); transform: translate(0, -40px); }
-.bubble-3 { background: var(--bubble-3); transform: translate(50px, -20px); }
+.bubble-3 { background: var(--bubble-3); transform: translate(50px, 0px); }
 
 .smile-path {
   position: absolute;
