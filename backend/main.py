@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+# Cargar variables de entorno al inicio
+load_dotenv()
+
 from app.database.connection import engine, Base
 from app.routers import auth, ciclos, sintomas, historial, predicciones, configuracion
 
