@@ -67,14 +67,10 @@ def forgot_password(datos: ForgotPasswordRequest, db: Session = Depends(get_db))
         usuaria.otp_expiry = datetime.now() + timedelta(minutes=10)
         db.commit()
 
-        # Enviar email
-        exito = enviar_otp_email(usuaria.email, usuaria.nombre, otp)
+        # Enviar email (ahora devuelve tupla exito, detalle)
+        exito, detalle = enviar_otp_email(usuaria.email, usuaria.nombre, otp)
         if not exito:
-            # Si enviar_otp_email falla, devolvemos un error descriptivo
-            raise HTTPException(
-                status_code=500, 
-                detail="No se pudo enviar el correo. Comprueba que BREVO_API_KEY esté correctamente configurada en las variables de entorno."
-            )
+            raise HTTPException(status_code=500, detail=detalle)
 
         return {"message": "Código enviado correctamente a tu email"}
     except HTTPException as he:
