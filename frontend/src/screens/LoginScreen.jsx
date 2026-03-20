@@ -27,8 +27,8 @@ export default function LoginScreen() {
     <div className="screen-container" style={{ padding: '40px 32px' }}>
       {/* Logo & Decoration */}
       <div className="decoration-container">
-        <div className="sparkle-icon">
-          <Sparkles size={42} strokeWidth={1.5} />
+        <div className="sparkle-icon" style={{ background: 'transparent', boxShadow: 'none' }}>
+          <img src="/logo.png" alt="Nuvia Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div className="bubbles-bg">
           <div className="bubble bubble-1"></div>
