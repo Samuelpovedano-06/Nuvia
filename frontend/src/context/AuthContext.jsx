@@ -8,15 +8,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const checkAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await ApiService.getMe();
       setUser(data);
     } catch (e) {
       setUser(null);
-      // No logueamos el error si es un simple 401
-      if (e.message !== 'Sesión expirada') {
-         console.error("Auth check failed:", e.message);
-      }
       ApiService.logout();
     } finally {
       setLoading(false);
