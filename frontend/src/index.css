@@ -113,25 +113,29 @@
 }
 
 body {
-  background: var(--bg-gradient);
+  background: radial-gradient(circle at top left, #fdf4fc 0%, #ffffff 50%, #fdf4fc 100%);
   color: var(--text-dark);
   min-height: 100vh;
   margin: 0;
+  display: flex;
+  justify-content: center;
   overflow-x: hidden;
 }
 
 /* Reusable UI Components */
 .app-container {
   max-width: 480px;
-  /* Mobile first logic */
+  width: 100%;
   margin: 0 auto;
   min-height: 100vh;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 100px rgba(176, 91, 181, 0.08);
   position: relative;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid rgba(176, 91, 181, 0.05);
+  border-right: 1px solid rgba(176, 91, 181, 0.05);
 }
 
 .screen-container {
