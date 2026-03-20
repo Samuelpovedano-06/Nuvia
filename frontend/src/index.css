@@ -17,53 +17,60 @@
 
 .decoration-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 200px;
+  height: 220px;
   position: relative;
   margin-bottom: 20px;
+  overflow: visible;
 }
 
 .sparkle-icon {
-  width: 80px;
-  height: 80px;
-  background: var(--primary);
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: white;
-  box-shadow: 0 8px 16px rgba(176, 91, 181, 0.3);
   z-index: 10;
+  position: relative;
 }
 
 .bubbles-bg {
   position: absolute;
-  top: 100px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .bubble {
-  width: 100px;
-  height: 100px;
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
   position: absolute;
 }
 
-.bubble-1 { background: var(--bubble-1); left: -40px; }
-.bubble-2 { background: var(--bubble-2); top: -20px; }
-.bubble-3 { background: var(--bubble-3); right: -40px; }
+.bubble-1 { background: var(--bubble-1); transform: translate(-40px, -20px); }
+.bubble-2 { background: var(--bubble-2); transform: translate(0, -40px); }
+.bubble-3 { background: var(--bubble-3); transform: translate(40px, -20px); }
 
 .smile-path {
   position: absolute;
-  top: 160px;
-  width: 120px;
-  height: 40px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 50px;
   border-bottom: 4px solid var(--primary);
   border-radius: 0 0 100px 100px;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 .login-link {
