@@ -27,7 +27,7 @@ nuvia/
 │           ├── predicciones.py
 │           └── configuracion.py
 │
-└── flutter_app/          ← App Android con Flutter
+└── frontend/          ← App Android con Flutter
     └── lib/
         ├── main.dart
         ├── services/     ← ApiService + AuthProvider
