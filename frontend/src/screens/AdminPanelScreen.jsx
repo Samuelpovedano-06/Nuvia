@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ApiService } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Users, Shield, Trash2, Edit, UserPlus, X, Save } from 'lucide-react';
+import { ChevronLeft, Users, Shield, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminPanelScreen() {
   const { user } = useContext(AuthContext);
@@ -15,6 +15,7 @@ export default function AdminPanelScreen() {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null); // null means "Create New"
   const [formData, setFormData] = useState({ nombre: '', email: '', password: '', rol: 'usuaria' });
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function AdminPanelScreen() {
       setFormData({ nombre: '', email: '', password: '', rol: 'usuaria' });
     }
     setShowModal(true);
+    setShowPassword(false);
     setError('');
   };
 
@@ -165,9 +167,12 @@ export default function AdminPanelScreen() {
                 <label className="input-label">Email</label>
                 <input type="email" className="styled-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
               </div>
-              <div className="input-group">
+              <div className="input-group" style={{ position: 'relative' }}>
                 <label className="input-label">{editingUser ? 'Password (dejar vacío para no cambiar)' : 'Password'}</label>
-                <input type="password" className="styled-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} required={!editingUser} />
+                <input type={showPassword ? "text" : "password"} className="styled-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} required={!editingUser} style={{ paddingRight: '45px' }} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="password-toggle" style={{ top: '38px' }}>
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
               <div className="input-group">
                 <label className="input-label">Rol</label>

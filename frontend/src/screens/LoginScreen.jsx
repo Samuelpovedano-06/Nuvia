@@ -2,12 +2,13 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ApiService } from '../api';
 import { Link } from 'react-router-dom';
-import { Sparkles, Mail, Lock, X, KeyRound, Check } from 'lucide-react';
+import { Sparkles, Mail, Lock, X, KeyRound, Check, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginScreen() {
   const { login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,6 +17,7 @@ export default function LoginScreen() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [forgotStep, setForgotStep] = useState(1); // 1: email, 2: otp, 3: success
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState('');
@@ -99,7 +101,10 @@ export default function LoginScreen() {
           <div className="input-group">
             <div className="input-with-icon">
               <Lock className="input-icon" size={20} />
-              <input type="password" className="styled-input with-icon" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Contraseña" />
+              <input type={showPassword ? "text" : "password"} className="styled-input with-icon" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Contraseña" style={{ paddingRight: '45px' }} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="password-toggle">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </div>
 
@@ -151,8 +156,11 @@ export default function LoginScreen() {
                 <div className="input-group">
                   <input type="text" className="styled-input" placeholder="Código de 6 dígitos" value={otp} onChange={e => setOtp(e.target.value)} required maxLength={6} style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '20px' }} />
                 </div>
-                <div className="input-group">
-                  <input type="password" className="styled-input" placeholder="Nueva Contraseña" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={6} />
+                <div className="input-group" style={{ position: 'relative' }}>
+                  <input type={showNewPassword ? "text" : "password"} className="styled-input" placeholder="Nueva Contraseña" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={6} style={{ paddingRight: '45px' }} />
+                  <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="password-toggle" style={{ top: '50%', transform: 'translateY(-50%)' }}>
+                    {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
                 <button type="submit" className="btn-primary" disabled={forgotLoading}>
                   {forgotLoading ? 'Cambiando...' : 'Restablecer'}

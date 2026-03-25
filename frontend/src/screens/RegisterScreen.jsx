@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterScreen() {
   const { register, login } = useContext(AuthContext);
@@ -8,6 +9,7 @@ export default function RegisterScreen() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -61,16 +63,20 @@ export default function RegisterScreen() {
             />
           </div>
 
-          <div className="input-group">
+          <div className="input-group" style={{ position: 'relative' }}>
             <label className="input-label">Contraseña</label>
             <input 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               className="styled-input" 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
               required 
               placeholder="••••••••"
+              style={{ paddingRight: '45px' }}
             />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="password-toggle" style={{ top: '38px' }}>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>
