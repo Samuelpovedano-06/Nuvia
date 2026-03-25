@@ -144,25 +144,20 @@
 body {
   background: var(--bg-gradient);
   color: var(--text-dark);
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
   margin: 0;
-  overflow: hidden;
 }
 
 /* Reusable UI Components */
 .app-container {
-  max-width: 480px;
   margin: 0 auto;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-md);
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
 }
 
 .screen-container {
@@ -171,23 +166,6 @@ body {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.4s ease-out;
-}
-
-@media (min-width: 768px) {
-  body {
-    height: auto;
-    overflow: hidden;
-  }
-
-  .app-container {
-    max-width: 900px;
-    height: auto;
-    min-height: calc(100vh - 80px);
-    border-radius: 20px;
-    margin-top: 40px;
-    margin-bottom: 40px;
-    overflow-y: visible;
-  }
 }
 
 /* Typography */
