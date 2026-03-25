@@ -141,12 +141,15 @@
   font-family: 'Outfit', sans-serif;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--bg-gradient);
   color: var(--text-dark);
-  min-height: 100vh;
-  margin: 0;
-  display: block;
 }
 
 /* Reusable UI Components */
