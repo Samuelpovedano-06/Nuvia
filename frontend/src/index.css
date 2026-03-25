@@ -129,12 +129,23 @@
   font-family: 'Outfit', sans-serif;
 }
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: var(--bg-gradient);
   color: var(--text-dark);
   min-height: 100vh;
-  margin: 0;
+}
+
+#root {
   overflow-x: hidden;
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* Reusable UI Components */
