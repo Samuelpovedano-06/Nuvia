@@ -141,32 +141,31 @@
   font-family: 'Outfit', sans-serif;
 }
 
-html,
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
+  height: 100%;
   overflow-x: hidden;
-  width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-gradient);
+  color: var(--text-dark);
   margin: 0;
   padding: 0;
 }
 
-body {
-  background: var(--bg-gradient);
-  color: var(--text-dark);
-  min-height: 100dvh;
-}
-
 #root {
-  overflow-x: hidden;
-  width: 100%;
-  min-height: 100dvh;
+  min-height: 100%;
 }
 
 /* Reusable UI Components */
 .app-container {
   max-width: 480px;
-  /* Mobile first logic */
   margin: 0 auto;
-  min-height: 100dvh;
+  min-height: 100%;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-md);
@@ -192,7 +191,6 @@ body {
     min-height: calc(100vh - 80px);
   }
 }
-
 
 
 /* Typography */
