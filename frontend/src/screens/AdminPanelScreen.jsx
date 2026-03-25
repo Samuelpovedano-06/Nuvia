@@ -114,15 +114,15 @@ export default function AdminPanelScreen() {
             {users.map(u => (
               <div key={u.id_usuaria} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, marginRight: '8px' }}>
-                  <div style={{ 
-                    width: '40px', 
-                    height: '40px', 
-                    background: u.rol === 'admin' ? 'var(--primary)' : 'var(--primary-light)', 
-                    borderRadius: '50%', 
-                    marginRight: '12px', 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    background: u.rol === 'admin' ? 'var(--primary)' : 'var(--primary-light)',
+                    borderRadius: '50%',
+                    marginRight: '12px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                     color: 'white',
                     fontWeight: '600',
                     flexShrink: 0
@@ -153,25 +153,25 @@ export default function AdminPanelScreen() {
             </button>
 
             <h3 style={{ marginBottom: '20px' }}>{editingUser ? 'Editar Usuaria' : 'Nueva Usuaria'}</h3>
-            
+
             {error && <div style={{ color: 'red', fontSize: '13px', marginBottom: '15px', background: '#ffebee', padding: '10px', borderRadius: '8px' }}>{error}</div>}
 
             <form onSubmit={handleSaveUser}>
               <div className="input-group">
                 <label className="input-label">Nombre</label>
-                <input type="text" className="styled-input" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} required />
+                <input type="text" className="styled-input" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} required />
               </div>
               <div className="input-group">
                 <label className="input-label">Email</label>
-                <input type="email" className="styled-input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+                <input type="email" className="styled-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
               </div>
               <div className="input-group">
                 <label className="input-label">{editingUser ? 'Password (dejar vacío para no cambiar)' : 'Password'}</label>
-                <input type="password" className="styled-input" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!editingUser} />
+                <input type="password" className="styled-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} required={!editingUser} />
               </div>
               <div className="input-group">
                 <label className="input-label">Rol</label>
-                <select className="styled-input" value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})} style={{ appearance: 'none' }}>
+                <select className="styled-input" value={formData.rol} onChange={e => setFormData({ ...formData, rol: e.target.value })} style={{ appearance: 'none' }}>
                   <option value="usuaria">Usuaria</option>
                   <option value="admin">Administrador</option>
                 </select>
@@ -187,3 +187,4 @@ export default function AdminPanelScreen() {
     </div>
   );
 }
+
