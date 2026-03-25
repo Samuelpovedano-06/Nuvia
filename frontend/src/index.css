@@ -175,14 +175,18 @@ body {
 
 @media (min-width: 768px) {
   body {
-    padding: 40px 0;
-    display: flex;
-    justify-content: center;
+    height: auto;
+    overflow: auto;
   }
+
   .app-container {
     max-width: 900px;
-    height: calc(100vh - 80px);
+    height: auto;
+    min-height: calc(100vh - 80px);
     border-radius: 20px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    overflow-y: visible;
   }
 }
 
