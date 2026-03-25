@@ -35,7 +35,7 @@ export default function RegisterScreen() {
         <p className="subtitle">Únete a Nuvia hoy</p>
       </div>
 
-      <div className="card">
+      <div className="card" style={{ maxWidth: '400px', width: '100%', margin: '0 auto' }}>
         <form onSubmit={handleSubmit}>
           {error && <div style={{ color: 'red', marginBottom: '16px', fontSize: '14px', background: '#ffebee', padding: '10px', borderRadius: '8px' }}>{error}</div>}
           

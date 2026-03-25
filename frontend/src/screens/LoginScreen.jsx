@@ -83,7 +83,7 @@ export default function LoginScreen() {
         <p className="subtitle" style={{ fontSize: '18px' }}>Tu compañera de bienestar</p>
       </div>
 
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, maxWidth: '400px', width: '100%', margin: '0 auto' }}>
         <form onSubmit={handleSubmit}>
           {error && (
             <div style={{ color: '#d32f2f', marginBottom: '20px', fontSize: '14px', background: '#ffebee', padding: '12px', borderRadius: '12px', textAlign: 'center', border: '1px solid #ffcdd2' }}>

@@ -28,7 +28,7 @@ export default function HomeScreen() {
       </div>
 
       {/* Grid Menu */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '20px' }}>
+      <div className="home-grid">
         <div className="card" style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌸</div>
           <h4 style={{ margin: 0 }}>Registrar Síntoma</h4>
