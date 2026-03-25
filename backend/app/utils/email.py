@@ -10,7 +10,7 @@ BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 def enviar_otp_email(destinatario: str, nombre: str, otp: str):
     """Envía un correo con el código OTP usando la API de Brevo."""
     key = (os.getenv("BREVO_API_KEY") or "").strip()
-    sender_email = (os.getenv("BREVO_SENDER_EMAIL") or "samuelpovedano06@gmail.com").strip()
+    sender_email = "samuelpovedano06@gmail.com"
     sender_name = (os.getenv("BREVO_SENDER_NAME") or "Nuvia Bienestar").strip()
 
     if not key:
