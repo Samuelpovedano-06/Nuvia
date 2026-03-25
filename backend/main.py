@@ -6,11 +6,31 @@ import os
 # Cargar variables de entorno al inicio
 load_dotenv()
 
+from sqlalchemy import text
 from app.database.connection import engine, Base
 from app.routers import auth, admin, ciclos, sintomas, historial, predicciones, configuracion
 
 # Crear tablas automáticamente si no existen
 Base.metadata.create_all(bind=engine)
+
+# Ejecutar alter table por si las columnas nuevas no existen en la BD de producción
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE usuarias ADD COLUMN otp VARCHAR(10) NULL"))
+    except:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE usuarias ADD COLUMN otp_expiry DATETIME NULL"))
+    except:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE usuarias ADD COLUMN otp_expiry TIMESTAMP NULL"))
+    except:
+        pass
+    try:
+        conn.commit()
+    except:
+        pass
 
 app = FastAPI(
     title="Nuvia API",
