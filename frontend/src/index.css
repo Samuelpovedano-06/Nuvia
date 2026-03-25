@@ -147,7 +147,6 @@ body {
   height: 100vh;
   height: 100dvh;
   margin: 0;
-  overflow: hidden;
 }
 
 /* Reusable UI Components */
@@ -162,7 +161,7 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .screen-container {
@@ -171,6 +170,7 @@ body {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.4s ease-out;
+  overflow-y: auto;
 }
 
 @media (min-width: 768px) {
