@@ -144,20 +144,25 @@
 body {
   background: var(--bg-gradient);
   color: var(--text-dark);
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   margin: 0;
+  overflow: hidden;
 }
 
 /* Reusable UI Components */
 .app-container {
+  max-width: 480px;
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-md);
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .screen-container {
@@ -168,29 +173,19 @@ body {
   animation: fadeIn 0.4s ease-out;
 }
 
-/* Elegant Desktop Styling */
 @media (min-width: 768px) {
   body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    background: var(--bg-gradient);
-    overflow: hidden; /* Prevent body scroll entirely on Desktop */
+    height: auto;
+    overflow-y: auto;
   }
 
   .app-container {
-    max-width: 1000px;
-    height: calc(100vh - 80px); /* Fit perfectly in viewport */
-    border-radius: 32px;
-    margin: 0;
-    overflow: hidden; /* Keep container clean */
-    box-shadow: 0 30px 60px rgba(176, 91, 181, 0.15);
-  }
-
-  .screen-container {
-    padding: 60px 80px;
-    overflow-y: auto; /* Internal scroll only if needed */
+    max-width: 900px;
+    height: auto;
+    min-height: calc(100vh - 80px);
+    border-radius: 20px;
+    margin: 40px auto;
+    overflow-y: visible;
   }
 }
 
