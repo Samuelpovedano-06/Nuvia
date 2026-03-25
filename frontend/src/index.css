@@ -168,6 +168,32 @@ body {
   animation: fadeIn 0.4s ease-out;
 }
 
+/* Elegant Desktop Styling */
+@media (min-width: 768px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background: var(--bg-gradient);
+    overflow: hidden; /* Prevent body scroll entirely on Desktop */
+  }
+
+  .app-container {
+    max-width: 1000px;
+    height: calc(100vh - 80px); /* Fit perfectly in viewport */
+    border-radius: 32px;
+    margin: 0;
+    overflow: hidden; /* Keep container clean */
+    box-shadow: 0 30px 60px rgba(176, 91, 181, 0.15);
+  }
+
+  .screen-container {
+    padding: 60px 80px;
+    overflow-y: auto; /* Internal scroll only if needed */
+  }
+}
+
 /* Typography */
 h1,
 h2,
