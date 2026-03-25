@@ -139,14 +139,15 @@ body {
 
 /* Reusable UI Components */
 .app-container {
-  width: 100%;
-  max-width: 100%;
+  max-width: 480px; /* Mobile first logic */
+  margin: 0 auto;
   min-height: 100vh;
-  background: var(--bg-gradient);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-md);
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
 }
 
 .screen-container {
@@ -155,25 +156,15 @@ body {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.4s ease-out;
-  max-width: 1000px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.home-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 20px;
 }
 
 @media (min-width: 768px) {
-  .home-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  
-  .screen-container {
-    padding: 60px 40px;
+  .app-container {
+    max-width: 900px;
+    border-radius: 20px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    min-height: calc(100vh - 80px);
   }
 }
 
