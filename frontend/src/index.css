@@ -176,7 +176,7 @@ body {
 @media (min-width: 768px) {
   body {
     height: auto;
-    overflow: auto;
+    overflow: hidden;
   }
 
   .app-container {
