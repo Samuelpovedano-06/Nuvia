@@ -141,25 +141,28 @@
   font-family: 'Outfit', sans-serif;
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--bg-gradient);
   color: var(--text-dark);
-  min-height: 100dvh;
-  margin: 0;
-  overflow: hidden; /* Prevent body scroll entirely */
 }
 
 /* Reusable UI Components */
 .app-container {
-  max-width: 480px; /* Mobile first default */
-  margin: 0 auto;
-  height: 100dvh;
+  min-height: 100vh;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-md);
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  width: 100%;
 }
 
 .screen-container {
@@ -168,21 +171,11 @@ body {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.4s ease-out;
-  overflow-y: auto; /* Internal scrolling only */
 }
 
 @media (min-width: 768px) {
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .app-container {
-    max-width: 1000px;
-    height: calc(100vh - 40px);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(176, 91, 181, 0.1);
+  .screen-container {
+    padding: 60px 40px;
   }
 }
 
