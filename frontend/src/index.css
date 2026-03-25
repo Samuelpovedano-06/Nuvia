@@ -147,6 +147,7 @@ body {
   height: 100vh;
   height: 100dvh;
   margin: 0;
+  overflow: hidden;
 }
 
 /* Reusable UI Components */
@@ -161,7 +162,7 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .screen-container {
@@ -170,21 +171,22 @@ body {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.4s ease-out;
-  overflow-y: auto;
 }
 
 @media (min-width: 768px) {
   body {
-    height: 100vh;
-    overflow: hidden;
-    padding: 40px 0;
+    height: auto;
+    overflow: auto;
   }
 
   .app-container {
     max-width: 900px;
-    height: 100%;
+    height: auto;
+    min-height: calc(100vh - 80px);
     border-radius: 20px;
-    overflow-y: auto;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    overflow-y: visible;
   }
 }
 
