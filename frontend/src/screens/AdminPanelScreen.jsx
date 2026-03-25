@@ -113,7 +113,7 @@ export default function AdminPanelScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {users.map(u => (
               <div key={u.id_usuaria} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, marginRight: '8px' }}>
                   <div style={{ 
                     width: '40px', 
                     height: '40px', 
@@ -124,16 +124,17 @@ export default function AdminPanelScreen() {
                     justifyContent: 'center', 
                     alignItems: 'center', 
                     color: 'white',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    flexShrink: 0
                   }}>
                     {u.nombre.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600' }}>{u.nombre} {u.rol === 'admin' && '👑'}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>{u.email}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.nombre} {u.rol === 'admin' && '👑'}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email}</div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
+                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                   <button onClick={() => handleOpenModal(u)} style={{ padding: '8px', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Edit size={18} /></button>
                   <button onClick={() => handleDeleteUser(u.id_usuaria)} style={{ padding: '8px', background: 'none', border: 'none', color: '#ff5252', cursor: 'pointer' }}><Trash2 size={18} /></button>
                 </div>
