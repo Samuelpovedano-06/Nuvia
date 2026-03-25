@@ -35,7 +35,8 @@
   align-items: center;
   z-index: 10;
   position: relative;
-  top: -10px; /* Centered with respect to bubbles */
+  top: -10px;
+  /* Centered with respect to bubbles */
 }
 
 .bubbles-bg {
@@ -52,15 +53,26 @@
 }
 
 .bubble {
-  width: 150px; 
+  width: 150px;
   height: 150px;
   border-radius: 50%;
   position: absolute;
 }
 
-.bubble-1 { background: var(--bubble-1); transform: translate(-50px, 0px); }
-.bubble-2 { background: var(--bubble-2); transform: translate(0, -40px); }
-.bubble-3 { background: var(--bubble-3); transform: translate(50px, 0px); }
+.bubble-1 {
+  background: var(--bubble-1);
+  transform: translate(-50px, 0px);
+}
+
+.bubble-2 {
+  background: var(--bubble-2);
+  transform: translate(0, -40px);
+}
+
+.bubble-3 {
+  background: var(--bubble-3);
+  transform: translate(50px, 0px);
+}
 
 .smile-path {
   position: absolute;
@@ -129,7 +141,8 @@
   font-family: 'Outfit', sans-serif;
 }
 
-html, body {
+html,
+body {
   overflow-x: hidden;
   width: 100%;
   margin: 0;
@@ -139,20 +152,21 @@ html, body {
 body {
   background: var(--bg-gradient);
   color: var(--text-dark);
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 #root {
   overflow-x: hidden;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Reusable UI Components */
 .app-container {
-  max-width: 480px; /* Mobile first logic */
+  max-width: 480px;
+  /* Mobile first logic */
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-md);
