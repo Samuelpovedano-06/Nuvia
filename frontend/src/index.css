@@ -169,7 +169,8 @@ body {
 
 @media (min-width: 768px) {
   .screen-container {
-    padding: 60px 80px;
+    padding: 60px 10%;
+    align-items: flex-start;
   }
 }
 
@@ -275,7 +276,7 @@ h4 {
 @media (min-width: 768px) {
   .card {
     max-width: 800px;
-    margin-left: 0;
+    width: 100%;
   }
 }
 
