@@ -142,7 +142,7 @@
 }
 
 html {
-  background: var(--bg-gradient) fixed;
+  background: #fdf5fc; /* Solid base that blends with the app */
 }
 
 body {
