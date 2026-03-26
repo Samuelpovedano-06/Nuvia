@@ -64,7 +64,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="screen-container" style={{ padding: '40px 32px' }}>
+    <div className="screen-container">
       {/* Logo & Decoration */}
       <div className="decoration-container">
         <div className="sparkle-icon" style={{ background: 'transparent', boxShadow: 'none' }}>
@@ -78,12 +78,12 @@ export default function LoginScreen() {
         <div className="smile-path"></div>
       </div>
 
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '38px', marginBottom: '4px' }}>Nuvia</h1>
         <p className="subtitle" style={{ fontSize: '18px' }}>Tu compañera de bienestar</p>
       </div>
 
-      <div style={{ flex: 1, maxWidth: '400px', width: '100%', margin: '0 auto' }}>
+      <div style={{ maxWidth: '400px', width: '100%', margin: '0 auto' }}>
         <form onSubmit={handleSubmit}>
           {error && (
             <div style={{ color: '#d32f2f', marginBottom: '20px', fontSize: '14px', background: '#ffebee', padding: '12px', borderRadius: '12px', textAlign: 'center', border: '1px solid #ffcdd2' }}>
