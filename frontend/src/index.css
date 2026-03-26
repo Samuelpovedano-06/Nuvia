@@ -170,7 +170,7 @@ body {
 @media (min-width: 768px) {
   .screen-container {
     padding: 60px 10%;
-    align-items: flex-start;
+    align-items: center; /* Center everything on PC */
   }
 }
 
@@ -214,7 +214,7 @@ h4 {
 @media (min-width: 768px) {
   .btn-primary {
     max-width: 600px;
-    margin-left: 0;
+    margin: 0 auto;
   }
 }
 
@@ -259,6 +259,7 @@ h4 {
 @media (min-width: 768px) {
   .styled-input {
     max-width: 600px;
+    margin: 0 auto;
   }
 }
 
@@ -277,6 +278,8 @@ h4 {
   .card {
     max-width: 800px;
     width: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
