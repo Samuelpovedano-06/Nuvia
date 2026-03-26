@@ -272,6 +272,13 @@ h4 {
   overflow: hidden;
 }
 
+@media (min-width: 768px) {
+  .card {
+    max-width: 800px;
+    margin-left: 0;
+  }
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
