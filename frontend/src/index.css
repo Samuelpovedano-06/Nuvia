@@ -145,7 +145,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: #fcf0fa; /* Solid base color across everything */
+  background: #ffffff; /* Uniform solid color to prevent clashing */
   color: var(--text-dark);
 }
 
