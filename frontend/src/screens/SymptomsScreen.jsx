@@ -30,13 +30,19 @@ export default function SymptomsScreen() {
     if (selected.length === 0) return;
     setLoading(true);
     try {
-      // Nota: Aquí se envían los IDs seleccionados. 
-      // El backend actual espera un modelo de síntoma, lo ajustamos a la lógica real
-      await ApiService.crearCiclo({ sintomas: selected, fecha: new Date().toISOString() });
+      const today = new Date().toISOString().split('T')[0];
+      // Registramos cada síntoma seleccionado individualmente
+      await Promise.all(selected.map(id => 
+        ApiService.registrarSintoma({
+          id_sintoma: parseInt(id),
+          fecha: today,
+          intensidad: 3
+        })
+      ));
       setMessage('✅ Síntomas guardados correctamente');
       setTimeout(() => navigate('/'), 1500);
     } catch (err) {
-      setMessage('❌ Error al guardar síntomas');
+      setMessage('❌ ' + err.message);
     } finally {
       setLoading(false);
     }

@@ -146,6 +146,17 @@ export const ApiService = {
     return await res.json();
   },
 
+  registrarSintoma: async (datos) => {
+    const res = await fetch(`${baseUrl}/registros-sintomas`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(datos)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al registrar síntoma');
+    return data;
+  },
+
   // Predicciones
   getPrediccion: async () => {
     const res = await fetch(`${baseUrl}/predicciones/`, { headers: getHeaders() });
