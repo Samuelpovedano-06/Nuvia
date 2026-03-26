@@ -148,7 +148,7 @@ body {
 }
 
 body {
-  background: var(--bg-gradient);
+  background: var(--bg-gradient) fixed;
   color: var(--text-dark);
 }
 
