@@ -141,14 +141,13 @@
   font-family: 'Outfit', sans-serif;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
+html {
+  background: var(--bg-gradient) fixed;
 }
 
 body {
-  background: var(--bg-gradient) fixed;
+  margin: 0;
+  padding: 0;
   color: var(--text-dark);
 }
 
