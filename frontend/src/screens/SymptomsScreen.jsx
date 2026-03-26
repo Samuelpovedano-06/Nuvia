@@ -4,14 +4,14 @@ import { ChevronLeft, Save, Heart, Cloud, Zap, Moon, Sun, Thermometer } from 'lu
 import { ApiService } from '../api';
 
 const SINTOMAS_LIST = [
-  { id: 'dolor_abdominal', nombre: 'Dolor Abdominal', icon: <Zap size={24} />, color: '#FF8A80' },
-  { id: 'sensibilidad_senos', nombre: 'Pecho Sensible', icon: <Heart size={24} />, color: '#F48FB1' },
-  { id: 'cansancio', nombre: 'Cansancio', icon: <Moon size={24} />, color: '#90CAF9' },
-  { id: 'cambios_humor', nombre: 'Humor Variable', icon: <Cloud size={24} />, color: '#B39DDB' },
-  { id: 'acne', nombre: 'Acné', icon: <Sun size={24} />, color: '#FFF59D' },
-  { id: 'dolor_cabeza', nombre: 'Dolor de Cabeza', icon: <Zap size={24} />, color: '#CFD8DC' },
-  { id: 'hinchazon', nombre: 'Hinchazón', icon: <Cloud size={24} />, color: '#A5D6A7' },
-  { id: 'temperatura', nombre: 'Tº Alta', icon: <Thermometer size={24} />, color: '#FFCC80' },
+  { id: 1, nombre: 'Dolor Abdominal', icon: <Zap size={24} />, color: '#FF8A80' },
+  { id: 2, nombre: 'Pecho Sensible', icon: <Heart size={24} />, color: '#F48FB1' },
+  { id: 3, nombre: 'Cansancio', icon: <Moon size={24} />, color: '#90CAF9' },
+  { id: 4, nombre: 'Humor Variable', icon: <Cloud size={24} />, color: '#B39DDB' },
+  { id: 5, nombre: 'Acné', icon: <Sun size={24} />, color: '#FFF59D' },
+  { id: 6, nombre: 'Dolor de Cabeza', icon: <Zap size={24} />, color: '#CFD8DC' },
+  { id: 7, nombre: 'Hinchazón', icon: <Cloud size={24} />, color: '#A5D6A7' },
+  { id: 8, nombre: 'Tº Alta', icon: <Thermometer size={24} />, color: '#FFCC80' },
 ];
 
 export default function SymptomsScreen() {
