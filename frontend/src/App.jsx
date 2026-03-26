@@ -6,6 +6,7 @@ import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AdminPanelScreen from './screens/AdminPanelScreen';
+import SymptomsScreen from './screens/SymptomsScreen';
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -27,6 +28,7 @@ function App() {
         {/* Rutas protegidas */}
         <Route path="/" element={user ? <HomeScreen /> : <Navigate to="/login" />} />
         <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
+        <Route path="/sintomas" element={user ? <SymptomsScreen /> : <Navigate to="/login" />} />
         <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
         
         <Route path="*" element={<Navigate to="/" />} />
