@@ -13,7 +13,8 @@ export default function HomeScreen() {
           <h2 style={{ margin: 0 }}>Hola, {user?.nombre || 'Usuaria'}</h2>
           <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '14px' }}>¿Cómo te sientes hoy?</p>
         </div>
-        <button onClick={logout} style={{ background: 'transparent', border: '1px solid var(--primary-light)', padding: '8px 12px', borderRadius: '20px', color: 'var(--primary)', cursor: 'pointer' }}>
+        {/* Botón Salir con más separación */}
+        <button onClick={logout} style={{ background: 'transparent', border: '1px solid var(--primary-light)', padding: '8px 16px', borderRadius: '20px', color: 'var(--primary)', cursor: 'pointer', marginLeft: '20px' }}>
           Salir
         </button>
       </div>

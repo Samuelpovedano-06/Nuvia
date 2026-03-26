@@ -15,7 +15,7 @@ export default function ProfileScreen() {
   return (
     <div className="screen-container">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '30px', width: '100%', maxWidth: '800px', margin: '0 auto 10px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
           <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Volver</span>
         </button>
