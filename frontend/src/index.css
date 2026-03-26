@@ -139,6 +139,7 @@
   margin: 0;
   padding: 0;
   font-family: 'Outfit', sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -207,6 +208,7 @@ h4 {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 4px 15px rgba(155, 108, 152, 0.3);
 }
@@ -272,6 +274,7 @@ h4 {
   margin-bottom: 20px;
   position: relative;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @media (min-width: 768px) {
