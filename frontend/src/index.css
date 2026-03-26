@@ -145,13 +145,13 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: #ffffff; /* Uniform solid color to prevent clashing */
+  background: #fcf0fa; /* Restored pastel base */
   color: var(--text-dark);
 }
 
 /* Reusable UI Components */
 .app-container {
-  background: #ffffff;
+  background: #fcf0fa; /* Match base exactly to stop clashing */
   position: relative;
   display: flex;
   flex-direction: column;
