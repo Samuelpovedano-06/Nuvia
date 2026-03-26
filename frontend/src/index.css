@@ -145,18 +145,19 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100vh;
-  overflow: hidden; /* Fix ghost scroll at root */
+  min-height: 100vh;
 }
 
 body {
   background: var(--bg-gradient);
   color: var(--text-dark);
+  overflow-x: hidden;
 }
 
 /* Reusable UI Components */
 .app-container {
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-md);
@@ -172,7 +173,6 @@ body {
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.4s ease-out;
-  overflow-y: auto; /* Scroll strictly inside screens */
 }
 
 @media (min-width: 768px) {
