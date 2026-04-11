@@ -1,6 +1,5 @@
 // API base logic migrated from api_service.dart
-const baseUrl = 'https://nuvia-production.up.railway.app'; // Railway backend URL
-
+const baseUrl = 'https://confident-calcium-washington-rna.trycloudflare.com';
 // Helper para obtener token
 const getHeaders = () => {
   const token = localStorage.getItem('token');
