@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from uuid import UUID
 from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria
 from app.schemas.schemas import UsuariaOut, UsuariaCreate
@@ -45,7 +46,7 @@ def create_user_admin(datos: UsuariaCreate, db: Session = Depends(get_db), _=Dep
     return nueva
 
 @router.put("/users/{id_usuaria}", response_model=UsuariaOut)
-def update_user_admin(id_usuaria: int, datos: UsuariaCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def update_user_admin(id_usuaria: UUID, datos: UsuariaCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     """Actualiza los datos de una usuaria."""
     usuaria = db.query(Usuaria).filter(Usuaria.id_usuaria == id_usuaria).first()
     if not usuaria:
@@ -62,7 +63,7 @@ def update_user_admin(id_usuaria: int, datos: UsuariaCreate, db: Session = Depen
     return usuaria
 
 @router.delete("/users/{id_usuaria}", status_code=204)
-def delete_user_admin(id_usuaria: int, db: Session = Depends(get_db), current_user: Usuaria = Depends(require_admin)):
+def delete_user_admin(id_usuaria: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(require_admin)):
     """Elimina una usuaria y todos sus datos asociados (cascada)."""
     if id_usuaria == current_user.id_usuaria:
         raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")

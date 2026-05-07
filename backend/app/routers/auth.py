@@ -6,7 +6,7 @@ import string
 from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria
 from app.schemas.schemas import UsuariaCreate, UsuariaLogin, UsuariaOut, Token, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest
-from app.routers.auth_utils import hash_password, verify_password, create_access_token
+from app.routers.auth_utils import hash_password, verify_password, create_access_token, get_current_user
 from app.utils.email import enviar_otp_email
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
@@ -118,6 +118,6 @@ def reset_password(datos: ResetPasswordRequest, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UsuariaOut)
 def get_me(db: Session = Depends(get_db),
-           current_user: Usuaria = Depends(__import__("app.routers.auth_utils", fromlist=["get_current_user"]).get_current_user)):
+           current_user: Usuaria = Depends(get_current_user)):
     """Devuelve los datos de la usuaria autenticada."""
     return current_user

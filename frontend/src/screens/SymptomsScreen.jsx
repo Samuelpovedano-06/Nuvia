@@ -1,24 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Save, Heart, Cloud, Zap, Moon, Sun, Thermometer } from 'lucide-react';
 import { ApiService } from '../api';
 
-const SINTOMAS_LIST = [
-  { id: 1, nombre: 'Dolor Abdominal', icon: <Zap size={24} />, color: '#FF8A80' },
-  { id: 2, nombre: 'Pecho Sensible', icon: <Heart size={24} />, color: '#F48FB1' },
-  { id: 3, nombre: 'Cansancio', icon: <Moon size={24} />, color: '#90CAF9' },
-  { id: 4, nombre: 'Humor Variable', icon: <Cloud size={24} />, color: '#B39DDB' },
-  { id: 5, nombre: 'Acné', icon: <Sun size={24} />, color: '#FFF59D' },
-  { id: 6, nombre: 'Dolor de Cabeza', icon: <Zap size={24} />, color: '#CFD8DC' },
-  { id: 7, nombre: 'Hinchazón', icon: <Cloud size={24} />, color: '#A5D6A7' },
-  { id: 8, nombre: 'Tº Alta', icon: <Thermometer size={24} />, color: '#FFCC80' },
-];
+// Mapeo de iconos y colores por nombre de síntoma para mantener la estética
+const SINTOMA_STYLE = {
+  'Dolor Abdominal': { icon: <Zap size={24} />, color: '#FF8A80' },
+  'Pecho Sensible':  { icon: <Heart size={24} />, color: '#F48FB1' },
+  'Cansancio':       { icon: <Moon size={24} />, color: '#90CAF9' },
+  'Humor Variable':  { icon: <Cloud size={24} />, color: '#B39DDB' },
+  'Acné':            { icon: <Sun size={24} />, color: '#FFF59D' },
+  'Dolor de Cabeza': { icon: <Zap size={24} />, color: '#CFD8DC' },
+  'Hinchazón':       { icon: <Cloud size={24} />, color: '#A5D6A7' },
+  'Temperatura Alta':{ icon: <Thermometer size={24} />, color: '#FFCC80' },
+  'Default':         { icon: <Zap size={24} />, color: '#CFD8DC' }
+};
 
 export default function SymptomsScreen() {
   const navigate = useNavigate();
+  const [sintomasCatalogo, setSintomasCatalogo] = useState([]);
   const [selected, setSelected] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Cargar síntomas reales del backend al entrar
+  useEffect(() => {
+    const fetchSintomas = async () => {
+      try {
+        const data = await ApiService.getSintomas();
+        setSintomasCatalogo(data);
+      } catch (err) {
+        setMessage('❌ Error al cargar catálogo: ' + err.message);
+      }
+    };
+    fetchSintomas();
+  }, []);
 
   const toggleSintoma = (id) => {
     setSelected(prev => 
@@ -31,10 +47,10 @@ export default function SymptomsScreen() {
     setLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      // Registramos cada síntoma seleccionado individualmente
+      // Registramos cada síntoma seleccionado individualmente usando su UUID
       await Promise.all(selected.map(id => 
         ApiService.registrarSintoma({
-          id_sintoma: parseInt(id),
+          id_sintoma: id, // El ID ya es un UUID (string)
           fecha: today,
           intensidad: 3
         })
@@ -68,25 +84,28 @@ export default function SymptomsScreen() {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
-        {SINTOMAS_LIST.map(s => (
-          <div 
-            key={s.id}
-            onClick={() => toggleSintoma(s.id)}
-            className="card" 
-            style={{ 
-              margin: 0, 
-              textAlign: 'center', 
-              cursor: 'pointer',
-              border: selected.includes(s.id) ? `2px solid var(--primary)` : '2px solid transparent',
-              transition: 'all 0.2s'
-            }}
-          >
-            <div style={{ color: s.color, marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-              {s.icon}
+        {sintomasCatalogo.map(s => {
+          const style = SINTOMA_STYLE[s.nombre_sintoma] || SINTOMA_STYLE['Default'];
+          return (
+            <div 
+              key={s.id_sintoma}
+              onClick={() => toggleSintoma(s.id_sintoma)}
+              className="card" 
+              style={{ 
+                margin: 0, 
+                textAlign: 'center', 
+                cursor: 'pointer',
+                border: selected.includes(s.id_sintoma) ? `2px solid var(--primary)` : '2px solid transparent',
+                transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ color: style.color, marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+                {style.icon}
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: '500' }}>{s.nombre_sintoma}</span>
             </div>
-            <span style={{ fontSize: '14px', fontWeight: '500' }}>{s.nombre}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div style={{ marginTop: '40px', textAlign: 'center' }}>

@@ -1,12 +1,13 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
+import uuid
 
 
 class Usuaria(Base):
     __tablename__ = "usuarias"
 
-    id_usuaria     = Column(Integer, primary_key=True, autoincrement=True)
+    id_usuaria     = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     nombre         = Column(String(100), nullable=False)
     email          = Column(String(150), nullable=False, unique=True)
     password_hash  = Column(String(255), nullable=False)
@@ -26,8 +27,8 @@ class Usuaria(Base):
 class Ciclo(Base):
     __tablename__ = "ciclos"
 
-    id_ciclo             = Column(Integer, primary_key=True, autoincrement=True)
-    id_usuaria           = Column(Integer, ForeignKey("usuarias.id_usuaria"), nullable=False)
+    id_ciclo             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria           = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
     fecha_inicio         = Column(Date, nullable=False)
     fecha_fin            = Column(Date)
     duracion             = Column(Integer)
@@ -39,7 +40,7 @@ class Ciclo(Base):
 class Sintoma(Base):
     __tablename__ = "sintomas"
 
-    id_sintoma     = Column(Integer, primary_key=True, autoincrement=True)
+    id_sintoma     = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     nombre_sintoma = Column(String(100), nullable=False)
     categoria      = Column(String(100))
 
@@ -49,9 +50,9 @@ class Sintoma(Base):
 class RegistroSintoma(Base):
     __tablename__ = "registro_sintomas"
 
-    id_registro = Column(Integer, primary_key=True, autoincrement=True)
-    id_usuaria  = Column(Integer, ForeignKey("usuarias.id_usuaria"), nullable=False)
-    id_sintoma  = Column(Integer, ForeignKey("sintomas.id_sintoma"), nullable=False)
+    id_registro = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    id_sintoma  = Column(UUID(as_uuid=True), ForeignKey("sintomas.id_sintoma"), nullable=False)
     fecha       = Column(Date, nullable=False)
     intensidad  = Column(SmallInteger)
 
@@ -62,8 +63,8 @@ class RegistroSintoma(Base):
 class HistorialEstado(Base):
     __tablename__ = "historial_estados"
 
-    id_historial = Column(Integer, primary_key=True, autoincrement=True)
-    id_usuaria   = Column(Integer, ForeignKey("usuarias.id_usuaria"), nullable=False)
+    id_historial = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
     estado_animo = Column(String(100))
     fecha        = Column(Date, nullable=False)
 
@@ -73,8 +74,8 @@ class HistorialEstado(Base):
 class Prediccion(Base):
     __tablename__ = "predicciones"
 
-    id_prediccion        = Column(Integer, primary_key=True, autoincrement=True)
-    id_usuaria           = Column(Integer, ForeignKey("usuarias.id_usuaria"), nullable=False)
+    id_prediccion        = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria           = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
     proxima_menstruacion = Column(Date)
     ventana_fertil_inicio= Column(Date)
     ventana_fertil_fin   = Column(Date)
@@ -86,8 +87,8 @@ class Prediccion(Base):
 class ConfiguracionUsuaria(Base):
     __tablename__ = "configuracion_usuaria"
 
-    id_config                    = Column(Integer, primary_key=True, autoincrement=True)
-    id_usuaria                   = Column(Integer, ForeignKey("usuarias.id_usuaria"), nullable=False, unique=True)
+    id_config                    = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria                   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False, unique=True)
     notificaciones_activadas     = Column(SmallInteger, default=1)
     recordatorios_personalizados = Column(Text)
     tema_visual                  = Column(String(50), default="claro")

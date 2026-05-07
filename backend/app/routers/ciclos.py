@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from uuid import UUID
 from app.database.connection import get_db
 from app.models.models import Usuaria, Ciclo
 from app.schemas.schemas import CicloCreate, CicloUpdate, CicloOut
@@ -29,7 +30,7 @@ def listar_ciclos(db: Session = Depends(get_db),
 
 
 @router.get("/{id_ciclo}", response_model=CicloOut)
-def obtener_ciclo(id_ciclo: int, db: Session = Depends(get_db),
+def obtener_ciclo(id_ciclo: UUID, db: Session = Depends(get_db),
                   current_user: Usuaria = Depends(get_current_user)):
     ciclo = db.query(Ciclo).filter(
         Ciclo.id_ciclo == id_ciclo,
@@ -41,7 +42,7 @@ def obtener_ciclo(id_ciclo: int, db: Session = Depends(get_db),
 
 
 @router.put("/{id_ciclo}", response_model=CicloOut)
-def actualizar_ciclo(id_ciclo: int, datos: CicloUpdate,
+def actualizar_ciclo(id_ciclo: UUID, datos: CicloUpdate,
                      db: Session = Depends(get_db),
                      current_user: Usuaria = Depends(get_current_user)):
     """Actualiza fecha de fin y duración de un ciclo."""
@@ -60,7 +61,7 @@ def actualizar_ciclo(id_ciclo: int, datos: CicloUpdate,
 
 
 @router.delete("/{id_ciclo}", status_code=204)
-def eliminar_ciclo(id_ciclo: int, db: Session = Depends(get_db),
+def eliminar_ciclo(id_ciclo: UUID, db: Session = Depends(get_db),
                    current_user: Usuaria = Depends(get_current_user)):
     ciclo = db.query(Ciclo).filter(
         Ciclo.id_ciclo == id_ciclo,

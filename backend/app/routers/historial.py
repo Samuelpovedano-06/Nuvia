@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from uuid import UUID
 from app.database.connection import get_db
 from app.models.models import Usuaria, HistorialEstado
 from app.schemas.schemas import HistorialEstadoCreate, HistorialEstadoOut
@@ -30,7 +31,7 @@ def listar_estados(db: Session = Depends(get_db),
 
 
 @router.delete("/{id_historial}", status_code=204)
-def eliminar_estado(id_historial: int, db: Session = Depends(get_db),
+def eliminar_estado(id_historial: UUID, db: Session = Depends(get_db),
                     current_user: Usuaria = Depends(get_current_user)):
     estado = db.query(HistorialEstado).filter(
         HistorialEstado.id_historial == id_historial,

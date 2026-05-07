@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from uuid import UUID
 from app.database.connection import get_db
 from app.models.models import Usuaria, Sintoma, RegistroSintoma
 from app.schemas.schemas import SintomaOut, RegistroSintomaCreate, RegistroSintomaOut
@@ -44,7 +45,7 @@ def listar_registros_sintomas(db: Session = Depends(get_db),
 
 
 @router.delete("/registros-sintomas/{id_registro}", status_code=204)
-def eliminar_registro_sintoma(id_registro: int, db: Session = Depends(get_db),
+def eliminar_registro_sintoma(id_registro: UUID, db: Session = Depends(get_db),
                                current_user: Usuaria = Depends(get_current_user)):
     registro = db.query(RegistroSintoma).filter(
         RegistroSintoma.id_registro == id_registro,

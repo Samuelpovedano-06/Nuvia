@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import date, datetime
+from uuid import UUID
 
 
 # ─────────────────────── AUTH ───────────────────────
@@ -16,7 +17,7 @@ class UsuariaLogin(BaseModel):
     password: str
 
 class UsuariaOut(BaseModel):
-    id_usuaria: int
+    id_usuaria: UUID
     nombre: str
     email: str
     rol: str
@@ -56,8 +57,8 @@ class CicloUpdate(BaseModel):
     regularidad_estimado: Optional[str] = None
 
 class CicloOut(BaseModel):
-    id_ciclo: int
-    id_usuaria: int
+    id_ciclo: UUID
+    id_usuaria: UUID
     fecha_inicio: date
     fecha_fin: Optional[date]
     duracion: Optional[int]
@@ -70,7 +71,7 @@ class CicloOut(BaseModel):
 # ─────────────────────── SÍNTOMAS ───────────────────────
 
 class SintomaOut(BaseModel):
-    id_sintoma: int
+    id_sintoma: UUID
     nombre_sintoma: str
     categoria: Optional[str]
 
@@ -78,14 +79,14 @@ class SintomaOut(BaseModel):
         from_attributes = True
 
 class RegistroSintomaCreate(BaseModel):
-    id_sintoma: int
+    id_sintoma: UUID
     fecha: date
     intensidad: Optional[int] = None
 
 class RegistroSintomaOut(BaseModel):
-    id_registro: int
-    id_usuaria: int
-    id_sintoma: int
+    id_registro: UUID
+    id_usuaria: UUID
+    id_sintoma: UUID
     fecha: date
     intensidad: Optional[int]
 
@@ -100,8 +101,8 @@ class HistorialEstadoCreate(BaseModel):
     fecha: date
 
 class HistorialEstadoOut(BaseModel):
-    id_historial: int
-    id_usuaria: int
+    id_historial: UUID
+    id_usuaria: UUID
     estado_animo: Optional[str]
     fecha: date
 
@@ -112,8 +113,8 @@ class HistorialEstadoOut(BaseModel):
 # ─────────────────────── PREDICCIONES ───────────────────────
 
 class PrediccionOut(BaseModel):
-    id_prediccion: int
-    id_usuaria: int
+    id_prediccion: UUID
+    id_usuaria: UUID
     proxima_menstruacion: Optional[date]
     ventana_fertil_inicio: Optional[date]
     ventana_fertil_fin: Optional[date]
@@ -131,8 +132,8 @@ class ConfiguracionUpdate(BaseModel):
     tema_visual: Optional[str] = None
 
 class ConfiguracionOut(BaseModel):
-    id_config: int
-    id_usuaria: int
+    id_config: UUID
+    id_usuaria: UUID
     notificaciones_activadas: int
     recordatorios_personalizados: Optional[str]
     tema_visual: Optional[str]

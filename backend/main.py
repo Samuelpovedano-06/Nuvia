@@ -10,10 +10,10 @@ from sqlalchemy import text
 from app.database.connection import engine, Base
 from app.routers import auth, admin, ciclos, sintomas, historial, predicciones, configuracion
 
-# Crear tablas automáticamente si no existen
+# Crear tablas automaticamente si no existen
 Base.metadata.create_all(bind=engine)
 
-# Ejecutar alter table por si las columnas nuevas no existen en la BD de producción
+# Ejecutar alter table por si las columnas nuevas no existen en la BD de produccion
 with engine.connect() as conn:
     try:
         conn.execute(text("ALTER TABLE usuarias ADD COLUMN otp VARCHAR(10) NULL"))
@@ -34,14 +34,14 @@ with engine.connect() as conn:
 
 app = FastAPI(
     title="Nuvia API",
-    description="Backend de la aplicación Nuvia - Seguimiento del ciclo menstrual",
+    description="Backend de la aplicacion Nuvia - Seguimiento del ciclo menstrual",
     version="1.0.0",
 )
 
-# CORS - permite conexiones desde la app Flutter en desarrollo
+# CORS - permite todas las conexiones en desarrollo
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # En producción poner la URL específica
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
