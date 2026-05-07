@@ -183,12 +183,14 @@ export default function SymptomsScreen() {
           ApiService.registrarSintoma({ id_sintoma: id, fecha: today, intensidad: intensities[id] || 3 })
         ));
       }
+      
       await ApiService.registrarDatoDiario({
         fecha: today,
         notas,
         flujo,
         relaciones
       });
+
       setMessage('¡Registros guardados con éxito!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setMessage(''), 3000);

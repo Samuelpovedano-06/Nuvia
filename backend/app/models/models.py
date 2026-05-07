@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from app.database.connection import Base
 import uuid
 
-
 class Usuaria(Base):
     __tablename__ = "usuarias"
 
@@ -17,13 +16,12 @@ class Usuaria(Base):
     fecha_registro = Column(DateTime, server_default=func.now())
 
     # Relaciones
-    ciclos            = relationship("Ciclo",               back_populates="usuaria", cascade="all, delete")
-    registros         = relationship("RegistroSintoma",     back_populates="usuaria", cascade="all, delete")
-    registros_diarios = relationship("RegistroDiario",      back_populates="usuaria", cascade="all, delete")
-    historial         = relationship("HistorialEstado",     back_populates="usuaria", cascade="all, delete")
-    predicciones      = relationship("Prediccion",          back_populates="usuaria", cascade="all, delete")
-    configuracion     = relationship("ConfiguracionUsuaria",back_populates="usuaria", uselist=False, cascade="all, delete")
-
+    ciclos            = relationship("Ciclo",                back_populates="usuaria", cascade="all, delete")
+    registros         = relationship("RegistroSintoma",      back_populates="usuaria", cascade="all, delete")
+    registros_diarios = relationship("RegistroDiario",       back_populates="usuaria", cascade="all, delete")
+    historial         = relationship("HistorialEstado",      back_populates="usuaria", cascade="all, delete")
+    predicciones      = relationship("Prediccion",           back_populates="usuaria", cascade="all, delete")
+    configuracion     = relationship("ConfiguracionUsuaria", back_populates="usuaria", uselist=False, cascade="all, delete")
 
 class Ciclo(Base):
     __tablename__ = "ciclos"
@@ -31,12 +29,11 @@ class Ciclo(Base):
     id_ciclo             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     id_usuaria           = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
     fecha_inicio         = Column(Date, nullable=False)
-    fecha_fin            = Date
+    fecha_fin            = Column(Date)
     duracion             = Column(Integer)
     regularidad_estimado = Column(String(50))
 
     usuaria = relationship("Usuaria", back_populates="ciclos")
-
 
 class Sintoma(Base):
     __tablename__ = "sintomas"
@@ -46,7 +43,6 @@ class Sintoma(Base):
     categoria      = Column(String(100))
 
     registros = relationship("RegistroSintoma", back_populates="sintoma")
-
 
 class RegistroSintoma(Base):
     __tablename__ = "registro_sintomas"
@@ -60,51 +56,46 @@ class RegistroSintoma(Base):
     usuaria = relationship("Usuaria", back_populates="registros")
     sintoma = relationship("Sintoma", back_populates="registros")
 
-
 class RegistroDiario(Base):
     __tablename__ = "registros_diarios"
 
-    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_usuaria   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    fecha        = Column(Date, nullable=False)
-    notas        = Column(Text)
-    flujo        = Column(String(50))
-    relaciones   = Column(SmallInteger, default=0)
+    id         = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    fecha      = Column(Date, nullable=False)
+    notas      = Column(Text)
+    flujo      = Column(String(50))
+    relaciones = Column(SmallInteger) # 0: No, 1: Con proteccion, 2: Sin proteccion
 
     usuaria = relationship("Usuaria", back_populates="registros_diarios")
-
 
 class HistorialEstado(Base):
     __tablename__ = "historial_estados"
 
-    id_historial = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_usuaria   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    estado_animo = Column(String(100))
-    fecha        = Column(Date, nullable=False)
+    id_historial   = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    fecha          = Column(Date, nullable=False)
+    estado_general = Column(String(50))
+    humor          = Column(String(50))
 
     usuaria = relationship("Usuaria", back_populates="historial")
-
 
 class Prediccion(Base):
     __tablename__ = "predicciones"
 
-    id_prediccion        = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_usuaria           = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    proxima_menstruacion = Column(Date)
-    ventana_fertil_inicio= Column(Date)
-    ventana_fertil_fin   = Column(Date)
-    prediccion_ovulacion = Column(Date)
+    id_prediccion      = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria         = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    fecha_estimada     = Column(Date, nullable=False)
+    tipo_prediccion    = Column(String(50)) # Ovulacion, Periodo
+    probabilidad       = Column(Integer)
 
     usuaria = relationship("Usuaria", back_populates="predicciones")
-
 
 class ConfiguracionUsuaria(Base):
     __tablename__ = "configuracion_usuaria"
 
-    id_config                    = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_usuaria                   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False, unique=True)
-    notificaciones_activadas     = Column(SmallInteger, default=1)
-    recordatorios_personalizados = Column(Text)
-    tema_visual                  = Column(String(50), default="claro")
+    id_usuaria         = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), primary_key=True)
+    notificaciones     = Column(SmallInteger, server_default="1")
+    recordatorio_ciclo = Column(SmallInteger, server_default="1")
+    privacidad_estricta = Column(SmallInteger, server_default="0")
 
     usuaria = relationship("Usuaria", back_populates="configuracion")
