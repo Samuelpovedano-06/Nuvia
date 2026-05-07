@@ -89,7 +89,7 @@ const NuviaFace = ({ type, color = '#9b6c98' }) => {
     'variable': ( // Nueva cara: humor cambiante
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
         <circle cx="8" cy="9" r="1.5" fill={color} />
-        <path d="M15 10c1 1.5 3 1.5 4 0" /> 
+        <path d="M15 10c1 1.5 3 1.5 4 0" />
         <path d="M7 16c1 1 3-1 5 0s3 1 5-1" />
       </svg>
     )
@@ -100,28 +100,28 @@ const NuviaFace = ({ type, color = '#9b6c98' }) => {
 // Mapeo extendido para todos los sintomas
 const SINTOMA_STYLE = {
   // Fisicos
-  'Dolor Abdominal': { face: 'triste',    color: '#9b6c98' },
-  'Dolor de Cabeza': { face: 'triste',    color: '#9b6c98' },
-  'Pecho Sensible':  { face: 'molesta',   color: '#9b6c98' },
-  'Hinchazón':       { face: 'molesta',   color: '#9b6c98' },
-  'Cólicos':         { face: 'dolor_agudo', color: '#9b6c98' },
-  'Dolor de Espalda':{ face: 'triste',    color: '#9b6c98' },
-  'Antojos':         { icon: <Utensils size={24} />, color: '#9b6c98' },
-  'Náuseas':         { face: 'nauseas',   color: '#9b6c98' },
-  'Temperatura Alta':{ icon: <Thermometer size={24} />, color: '#9b6c98' },
+  'Dolor Abdominal': { face: 'triste', color: '#9b6c98' },
+  'Dolor de Cabeza': { face: 'triste', color: '#9b6c98' },
+  'Pecho Sensible': { face: 'molesta', color: '#9b6c98' },
+  'Hinchazón': { face: 'molesta', color: '#9b6c98' },
+  'Cólicos': { face: 'dolor_agudo', color: '#9b6c98' },
+  'Dolor de Espalda': { face: 'triste', color: '#9b6c98' },
+  'Antojos': { icon: <Utensils size={24} />, color: '#9b6c98' },
+  'Náuseas': { face: 'nauseas', color: '#9b6c98' },
+  'Temperatura Alta': { icon: <Thermometer size={24} />, color: '#9b6c98' },
   // Emocionales
-  'Humor Variable':  { face: 'variable',    color: '#9b6c98' },
-  'Ansiedad':        { face: 'ansiosa',     color: '#9b6c98' },
-  'Irritabilidad':   { face: 'molesta',     color: '#9b6c98' },
-  'Sensibilidad':    { face: 'sensible',    color: '#9b6c98' },
-  'Euforia':         { face: 'risa',        color: '#9b6c98' },
-  'Acné':            { face: 'molesta',     color: '#9b6c98' },
+  'Humor Variable': { face: 'variable', color: '#9b6c98' },
+  'Ansiedad': { face: 'ansiosa', color: '#9b6c98' },
+  'Irritabilidad': { face: 'molesta', color: '#9b6c98' },
+  'Sensibilidad': { face: 'sensible', color: '#9b6c98' },
+  'Euforia': { face: 'risa', color: '#9b6c98' },
+  'Acné': { face: 'molesta', color: '#9b6c98' },
   // Otros
-  'Cansancio':       { face: 'durmiendo', color: '#9b6c98' },
-  'Manchada':        { face: 'pena',      color: '#9b6c98' },
-  'Insomnio':        { face: 'despierta', color: '#9b6c98' },
-  'Libido Alta':     { face: 'enamorada', color: '#9b6c98' },
-  'Default':         { face: 'feliz',     color: '#9b6c98' }
+  'Cansancio': { face: 'durmiendo', color: '#9b6c98' },
+  'Manchada': { face: 'pena', color: '#9b6c98' },
+  'Insomnio': { face: 'despierta', color: '#9b6c98' },
+  'Libido Alta': { face: 'enamorada', color: '#9b6c98' },
+  'Default': { face: 'feliz', color: '#9b6c98' }
 };
 
 export default function SymptomsScreen() {
@@ -161,7 +161,7 @@ export default function SymptomsScreen() {
           intensidad: 3
         })
       ));
-      setMessage('✅ Síntomas guardados correctamente');
+      setMessage('Síntomas guardados correctamente');
       setTimeout(() => navigate('/'), 1500);
     } catch (err) {
       setMessage('❌ ' + err.message);
