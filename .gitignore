@@ -2,15 +2,14 @@
 node_modules/
 dist/
 build/
-.env
+
 .DS_Store
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
-venv/
-.env
+
 
 # Flutter/Dart (Already removed but for safety)
 .dart_tool/
@@ -25,3 +24,6 @@ yarn-debug.log*
 yarn-error.log*
 backend/__pycache__/main.cpython-313.pyc
 /backend/__pycache__
+backend/seed_extended_sintomas.py
+backend/recreate_db_uuid.py
+backend/.env
