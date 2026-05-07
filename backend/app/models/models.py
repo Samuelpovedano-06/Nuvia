@@ -17,11 +17,12 @@ class Usuaria(Base):
     fecha_registro = Column(DateTime, server_default=func.now())
 
     # Relaciones
-    ciclos         = relationship("Ciclo",               back_populates="usuaria", cascade="all, delete")
-    registros      = relationship("RegistroSintoma",     back_populates="usuaria", cascade="all, delete")
-    historial      = relationship("HistorialEstado",     back_populates="usuaria", cascade="all, delete")
-    predicciones   = relationship("Prediccion",          back_populates="usuaria", cascade="all, delete")
-    configuracion  = relationship("ConfiguracionUsuaria",back_populates="usuaria", uselist=False, cascade="all, delete")
+    ciclos            = relationship("Ciclo",               back_populates="usuaria", cascade="all, delete")
+    registros         = relationship("RegistroSintoma",     back_populates="usuaria", cascade="all, delete")
+    registros_diarios = relationship("RegistroDiario",      back_populates="usuaria", cascade="all, delete")
+    historial         = relationship("HistorialEstado",     back_populates="usuaria", cascade="all, delete")
+    predicciones      = relationship("Prediccion",          back_populates="usuaria", cascade="all, delete")
+    configuracion     = relationship("ConfiguracionUsuaria",back_populates="usuaria", uselist=False, cascade="all, delete")
 
 
 class Ciclo(Base):
@@ -30,7 +31,7 @@ class Ciclo(Base):
     id_ciclo             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     id_usuaria           = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
     fecha_inicio         = Column(Date, nullable=False)
-    fecha_fin            = Column(Date)
+    fecha_fin            = Date
     duracion             = Column(Integer)
     regularidad_estimado = Column(String(50))
 
@@ -58,6 +59,19 @@ class RegistroSintoma(Base):
 
     usuaria = relationship("Usuaria", back_populates="registros")
     sintoma = relationship("Sintoma", back_populates="registros")
+
+
+class RegistroDiario(Base):
+    __tablename__ = "registros_diarios"
+
+    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    fecha        = Column(Date, nullable=False)
+    notas        = Column(Text)
+    flujo        = Column(String(50))
+    relaciones   = Column(SmallInteger, default=0)
+
+    usuaria = relationship("Usuaria", back_populates="registros_diarios")
 
 
 class HistorialEstado(Base):

@@ -140,3 +140,23 @@ class ConfiguracionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ─────────────────────── REGISTROS DIARIOS (NOTAS, FLUJO, RELACIONES) ──────────
+
+class RegistroDiarioCreate(BaseModel):
+    fecha: date
+    notas: Optional[str] = None
+    flujo: Optional[str] = None
+    relaciones: Optional[int] = 0
+
+class RegistroDiarioOut(BaseModel):
+    id: UUID
+    id_usuaria: UUID
+    fecha: date
+    notas: Optional[str]
+    flujo: Optional[str]
+    relaciones: int
+
+    class Config:
+        from_attributes = True

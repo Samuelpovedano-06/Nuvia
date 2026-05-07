@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Save, Star, Utensils, Thermometer } from 'lucide-react';
+import { ChevronLeft, Save, Utensils, Droplets, Heart, FileText, Lightbulb, Sparkles, Egg, Cloud, Shield, ShieldOff } from 'lucide-react';
 import { ApiService } from '../api';
 
 // Componente para dibujar las caritas EXACTAS de la imagen usando SVG
@@ -85,60 +85,79 @@ const NuviaFace = ({ type, color = '#9b6c98' }) => {
         <circle cx="16" cy="11" r="1" fill={color} />
         <path d="M9 16c1 1 5 1 6 0" />
       </svg>
-    ),
-    'variable': (
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
-        <circle cx="8" cy="9" r="1.5" fill={color} />
-        <path d="M15 10c1 1.5 3 1.5 4 0" /> 
-        <path d="M7 16c1 1 3-1 5 0s3 1 5-1" />
-      </svg>
     )
   };
   return faces[type] || faces['feliz'];
 };
 
 const SINTOMA_STYLE = {
-  'Dolor Abdominal': { face: 'triste',      color: '#9b6c98' },
-  'Dolor de Cabeza': { face: 'triste',      color: '#9b6c98' },
-  'Pecho Sensible':  { face: 'molesta',     color: '#9b6c98' },
-  'Hinchazón':       { face: 'molesta',     color: '#9b6c98' },
-  'Cólicos':         { face: 'dolor_agudo', color: '#9b6c98' },
-  'Dolor de Espalda':{ face: 'triste',      color: '#9b6c98' },
-  'Antojos':         { icon: <Utensils size={24} />, color: '#9b6c98' },
-  'Náuseas':         { face: 'nauseas',     color: '#9b6c98' },
-  'Temperatura Alta':{ icon: <Thermometer size={24} />, color: '#9b6c98' },
-  'Humor Variable':  { face: 'variable',    color: '#9b6c98' },
-  'Ansiedad':        { face: 'ansiosa',     color: '#9b6c98' },
-  'Irritabilidad':   { face: 'molesta',     color: '#9b6c98' },
-  'Sensibilidad':    { face: 'sensible',    color: '#9b6c98' },
-  'Euforia':         { face: 'risa',        color: '#9b6c98' },
-  'Acné':            { face: 'molesta',     color: '#9b6c98' },
-  'Cansancio':       { face: 'durmiendo',   color: '#9b6c98' },
-  'Manchada':        { face: 'pena',        color: '#9b6c98' },
-  'Insomnio':        { face: 'despierta',   color: '#9b6c98' },
-  'Libido Alta':     { face: 'enamorada',   color: '#9b6c98' },
-  'Default':         { face: 'feliz',       color: '#9b6c98' }
+  'Dolor Abdominal': { face: 'triste',      color: '#9b6c98', tip: 'Un té de jengibre puede calmar los espasmos abdominales.' },
+  'Dolor de Cabeza': { face: 'triste',      color: '#9b6c98', tip: 'Apaga las luces fuertes y mantente hidratada.' },
+  'Pecho Sensible':  { face: 'molesta',     color: '#9b6c98', tip: 'Usa un sujetador más cómodo y evita la cafeína hoy.' },
+  'Hinchazón':       { face: 'molesta',     color: '#9b6c98', tip: 'Reduce la sal y bebe agua con limón para deshincharte.' },
+  'Cólicos':         { face: 'dolor_agudo', color: '#9b6c98', tip: 'El calor local es tu mejor aliado. ¡Manta eléctrica!' },
+  'Dolor de Espalda':{ face: 'triste',      color: '#9b6c98', tip: 'Estira suavemente la zona lumbar antes de dormir.' },
+  'Antojos':         { icon: <Utensils size={24} />, color: '#9b6c98', tip: 'Si buscas dulce, el chocolate negro >70% tiene magnesio clave.' },
+  'Náuseas':         { face: 'nauseas',     color: '#9b6c98', tip: 'Come algo seco como galletas saladas en pequeñas porciones.' },
+  'Ansiedad':        { face: 'ansiosa',     color: '#9b6c98', tip: 'Prueba la respiración 4-7-8 durante dos minutos.' },
+  'Sensibilidad':    { face: 'sensible',    color: '#9b6c98', tip: 'Sé amable contigo misma hoy, es normal sentirse así.' },
+  'Euforia':         { face: 'risa',        color: '#9b6c98', tip: '¡Aprovecha esta energía para terminar tus pendientes!' },
+  'Cansancio':       { face: 'durmiendo',   color: '#9b6c98', tip: 'Escucha a tu cuerpo. Una siesta de 20 min hará maravillas.' },
+  'Manchada':        { face: 'pena',        color: '#9b6c98', tip: 'Lleva contigo lo necesario, ¡que nada te pille por sorpresa!' },
+  'Insomnio':        { face: 'despierta',   color: '#9b6c98', tip: 'Evita las pantallas 1h antes de dormir y lee un libro.' },
+  'Libido Alta':     { face: 'enamorada',   color: '#9b6c98', tip: '¡Disfruta de este pico de vitalidad y conexión!' },
+  'Default':         { face: 'feliz',       color: '#9b6c98', tip: 'Recuerda que cada ciclo es único. ¡Vas muy bien!' }
 };
+
+const DISCHARGE_CARDS = [
+  { 
+    id: 'seco', 
+    label: 'Seco', 
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5s-3 3.5-3 5.5a7 7 0 0 0 7 7z" />
+        <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2.5" />
+      </svg>
+    ), 
+    tip: 'El flujo seco es normal al principio del ciclo.' 
+  },
+  { id: 'cremoso', label: 'Cremoso', icon: <Cloud size={24} />, tip: 'Indica que tu cuerpo se prepara para la fase fértil.' },
+  { id: 'clara_huevo', label: 'Clara Huevo', icon: <Egg size={24} />, tip: '¡Pico de fertilidad! El flujo elástico facilita la concepción.' },
+  { id: 'acuoso', label: 'Acuoso', icon: <Droplets size={24} fill="currentColor" />, tip: 'Muy fértil. Tu cuerpo está en su momento óptimo.' }
+];
 
 export default function SymptomsScreen() {
   const navigate = useNavigate();
+  const today = new Date().toISOString().split('T')[0];
+  
   const [sintomasCatalogo, setSintomasCatalogo] = useState([]);
-  const [selected, setSelected] = useState([]); // Array de IDs
-  const [intensities, setIntensities] = useState({}); // { id: intensidad }
+  const [selected, setSelected] = useState([]);
+  const [intensities, setIntensities] = useState({});
+  const [notas, setNotas] = useState('');
+  const [flujo, setFlujo] = useState('');
+  const [relaciones, setRelaciones] = useState(0); // 0: No, 1: Con, 2: Sin
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const fetchSintomas = async () => {
+    const init = async () => {
       try {
-        const data = await ApiService.getSintomas();
-        setSintomasCatalogo(data);
+        const [catalogo, diario] = await Promise.all([
+          ApiService.getSintomas(),
+          ApiService.getRegistroDiario(today)
+        ]);
+        setSintomasCatalogo(catalogo);
+        if (diario) {
+          setNotas(diario.notas || '');
+          setFlujo(diario.flujo || '');
+          setRelaciones(diario.relaciones || 0);
+        }
       } catch (err) {
-        setMessage('Error al cargar catálogo: ' + err.message);
+        console.error(err);
       }
     };
-    fetchSintomas();
-  }, []);
+    init();
+  }, [today]);
 
   const toggleSintoma = (id) => {
     if (selected.includes(id)) {
@@ -148,7 +167,7 @@ export default function SymptomsScreen() {
       setIntensities(newInt);
     } else {
       setSelected(prev => [...prev, id]);
-      setIntensities(prev => ({ ...prev, [id]: 3 })); // Default nivel 3
+      setIntensities(prev => ({ ...prev, [id]: 3 }));
     }
   };
 
@@ -157,28 +176,40 @@ export default function SymptomsScreen() {
   };
 
   const handleSave = async () => {
-    if (selected.length === 0) return;
     setLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
-      await Promise.all(selected.map(id => 
-        ApiService.registrarSintoma({
-          id_sintoma: id,
-          fecha: today,
-          intensidad: intensities[id] || 3
-        })
-      ));
+      if (selected.length > 0) {
+        await Promise.all(selected.map(id => 
+          ApiService.registrarSintoma({ id_sintoma: id, fecha: today, intensidad: intensities[id] || 3 })
+        ));
+      }
+      await ApiService.registrarDatoDiario({
+        fecha: today,
+        notas,
+        flujo,
+        relaciones
+      });
       setMessage('¡Registros guardados con éxito!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      setSelected([]); // Limpiar selección tras guardar
-      setIntensities({});
-      setTimeout(() => setMessage(''), 3000); // Quitar mensaje tras 3 seg
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setMessage('Error: ' + err.message);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const getActiveTip = () => {
+    if (flujo) {
+      const f = DISCHARGE_CARDS.find(d => d.id === flujo);
+      if (f) return f.tip;
+    }
+    if (selected.length > 0) {
+      const lastId = selected[selected.length - 1];
+      const sintoma = sintomasCatalogo.find(s => s.id_sintoma === lastId);
+      return SINTOMA_STYLE[sintoma?.nombre_sintoma]?.tip || SINTOMA_STYLE['Default'].tip;
+    }
+    return SINTOMA_STYLE['Default'].tip;
   };
 
   const categorias = {
@@ -196,31 +227,115 @@ export default function SymptomsScreen() {
       </div>
 
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <h2>¿Cómo te sientes?</h2>
-        <p className="subtitle">Selecciona tus síntomas y su intensidad</p>
+        <h2>Diario de Nuvia</h2>
+        <p className="subtitle">Tu salud, bajo control y con estilo</p>
       </div>
 
       {message && (
         <div style={{ 
-          textAlign: 'center', 
-          padding: '14px', 
-          background: 'white', 
-          color: message.includes('éxito') ? 'var(--primary)' : '#c62828',
-          borderRadius: '16px', 
-          marginBottom: '20px', 
-          maxWidth: '800px', 
-          width: '100%', 
-          margin: '0 auto 20px',
-          fontWeight: '600',
-          boxShadow: '0 4px 12px rgba(155, 108, 152, 0.12)',
-          border: `1px solid ${message.includes('éxito') ? 'rgba(155, 108, 152, 0.2)' : 'rgba(198, 40, 40, 0.2)'}`,
-          animation: 'fadeIn 0.3s ease-out'
+          textAlign: 'center', padding: '14px', background: 'white', color: 'var(--primary)',
+          borderRadius: '16px', marginBottom: '20px', maxWidth: '800px', width: '100%', margin: '0 auto 20px',
+          fontWeight: '600', boxShadow: '0 4px 12px rgba(155, 108, 152, 0.12)', border: '1px solid rgba(155, 108, 152, 0.2)'
         }}>
           {message}
         </div>
       )}
 
-      <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '30px' }}>
+      {/* Nuvia Tip */}
+      <div style={{ 
+        maxWidth: '800px', width: '100%', margin: '0 auto 30px', background: 'white', 
+        padding: '16px', borderRadius: '16px', display: 'flex', gap: '12px', alignItems: 'center',
+        border: '1px solid rgba(155, 108, 152, 0.1)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+      }}>
+        <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '12px', color: 'white' }}>
+          <Lightbulb size={24} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <strong style={{ display: 'block', fontSize: '12px', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nuvia Tip</strong>
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-dark)', fontWeight: '500' }}>{getActiveTip()}</p>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '35px' }}>
+        
+        {/* SECCIÓN ESTADO (FLUJO Y RELACIONES) */}
+        <div>
+          <h3 style={{ fontSize: '18px', marginBottom: '16px', borderLeft: '4px solid var(--primary)', paddingLeft: '12px' }}>Estado Corporal</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            
+            {/* Tarjeta Relaciones */}
+            <div 
+              className="card"
+              style={{
+                margin: 0, padding: '16px 12px', minHeight: relaciones > 0 ? '160px' : '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                border: relaciones > 0 ? '2px solid var(--primary)' : '2px solid transparent',
+                background: relaciones > 0 ? 'var(--primary-light)' : 'white',
+                transition: '0.3s', cursor: 'pointer'
+              }}
+              onClick={() => setRelaciones(relaciones > 0 ? 0 : 1)}
+            >
+              <div className="nuvia-sun-container" style={{ color: 'var(--primary)', marginBottom: '8px' }}>
+                <div className="nuvia-sun-rays"></div>
+                <div className="nuvia-sun-bg">
+                  <Heart size={24} fill={relaciones > 0 ? 'currentColor' : 'none'} />
+                </div>
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)' }}>Relaciones</span>
+              
+              {relaciones > 0 && (
+                <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <button 
+                    onClick={() => setRelaciones(1)}
+                    style={{
+                      flex: 1, padding: '6px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold',
+                      background: relaciones === 1 ? 'var(--primary)' : 'white',
+                      color: relaciones === 1 ? 'white' : 'var(--primary)',
+                      border: '1px solid var(--primary)', cursor: 'pointer'
+                    }}
+                  >
+                    <Shield size={12} style={{marginBottom: '2px'}} /> <br/> CON
+                  </button>
+                  <button 
+                    onClick={() => setRelaciones(2)}
+                    style={{
+                      flex: 1, padding: '6px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold',
+                      background: relaciones === 2 ? 'var(--primary)' : 'white',
+                      color: relaciones === 2 ? 'white' : 'var(--primary)',
+                      border: '1px solid var(--primary)', cursor: 'pointer'
+                    }}
+                  >
+                    <ShieldOff size={12} style={{marginBottom: '2px'}} /> <br/> SIN
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Tarjetas de Flujo */}
+            {DISCHARGE_CARDS.map(type => (
+              <div 
+                key={type.id}
+                className="card"
+                style={{
+                  margin: 0, padding: '16px 12px', minHeight: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  border: flujo === type.id ? '2px solid var(--primary)' : '2px solid transparent',
+                  background: flujo === type.id ? 'var(--primary-light)' : 'white',
+                  transition: '0.3s', cursor: 'pointer'
+                }}
+                onClick={() => setFlujo(flujo === type.id ? '' : type.id)}
+              >
+                <div className="nuvia-sun-container" style={{ color: 'var(--primary)', marginBottom: '8px' }}>
+                  <div className="nuvia-sun-rays"></div>
+                  <div className="nuvia-sun-bg">
+                    {type.icon}
+                  </div>
+                </div>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)' }}>{type.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Síntomas */}
         {Object.entries(categorias).map(([nombreCat, sintomas]) => (
           sintomas.length > 0 && (
             <div key={nombreCat}>
@@ -233,20 +348,12 @@ export default function SymptomsScreen() {
                   const isSelected = selected.includes(s.id_sintoma);
                   return (
                     <div 
-                      key={s.id_sintoma}
-                      className="card" 
+                      key={s.id_sintoma} className="card" 
                       style={{ 
-                        margin: 0, 
-                        padding: '16px 12px',
+                        margin: 0, padding: '16px 12px', minHeight: isSelected ? '160px' : '120px',
                         border: isSelected ? `2px solid var(--primary)` : '2px solid transparent',
                         background: isSelected ? 'var(--primary-light)' : 'white',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        textAlign: 'center',
-                        minHeight: isSelected ? '160px' : '120px',
-                        justifyContent: 'center'
+                        transition: 'all 0.3s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center'
                       }}
                       onClick={() => toggleSintoma(s.id_sintoma)}
                     >
@@ -256,46 +363,12 @@ export default function SymptomsScreen() {
                           {style.face ? <NuviaFace type={style.face} color={style.color} /> : style.icon}
                         </div>
                       </div>
-                      
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: isSelected ? '10px' : '0' }}>
-                        {s.nombre_sintoma}
-                      </span>
-
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)' }}>{s.nombre_sintoma}</span>
                       {isSelected && (
-                        <div 
-                          onClick={(e) => e.stopPropagation()} // Evita deseleccionar al tocar la intensidad
-                          style={{ 
-                            width: '100%',
-                            paddingTop: '8px', 
-                            borderTop: '1px dashed rgba(155, 108, 152, 0.2)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px'
-                          }}
-                        >
+                        <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', paddingTop: '8px', borderTop: '1px dashed rgba(155, 108, 152, 0.2)', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                             {[1, 2, 3, 4, 5].map(v => (
-                              <button
-                                key={v}
-                                onClick={() => updateIntensity(s.id_sintoma, v)}
-                                style={{
-                                  width: '24px',
-                                  height: '24px',
-                                  borderRadius: '6px',
-                                  border: 'none',
-                                  background: intensities[s.id_sintoma] === v ? 'var(--primary)' : 'rgba(155, 108, 152, 0.1)',
-                                  color: intensities[s.id_sintoma] === v ? 'white' : 'var(--primary)',
-                                  cursor: 'pointer',
-                                  fontWeight: 'bold',
-                                  fontSize: '11px',
-                                  transition: 'all 0.2s',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                {v}
-                              </button>
+                              <button key={v} onClick={() => updateIntensity(s.id_sintoma, v)} style={{ width: '24px', height: '24px', borderRadius: '6px', border: 'none', background: intensities[s.id_sintoma] === v ? 'var(--primary)' : 'rgba(155, 108, 152, 0.1)', color: intensities[s.id_sintoma] === v ? 'white' : 'var(--primary)', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>{v}</button>
                             ))}
                           </div>
                         </div>
@@ -307,21 +380,31 @@ export default function SymptomsScreen() {
             </div>
           )
         ))}
+
+        <div className="card" style={{ padding: '20px' }}>
+          <h4 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+            <FileText size={20} color="var(--primary)" /> Notas personales
+          </h4>
+          <textarea 
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            placeholder="Escribe algo importante de hoy..."
+            style={{
+              width: '100%', height: '100px', border: '1px solid #eee', borderRadius: '12px', padding: '12px',
+              fontSize: '14px', fontFamily: 'inherit', resize: 'none', background: '#fcfaff', outline: 'none'
+            }}
+          />
+        </div>
       </div>
 
       <div style={{ marginTop: '40px', textAlign: 'center', paddingBottom: '40px' }}>
         <button 
           onClick={handleSave}
-          disabled={loading || selected.length === 0}
+          disabled={loading}
           className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '200px', margin: '0 auto' }}
         >
-          {loading ? 'Guardando...' : (
-            <>
-              <Save size={20} />
-              Guardar Registro
-            </>
-          )}
+          {loading ? 'Guardando...' : <><Save size={20} /> Guardar Todo</>}
         </button>
       </div>
     </div>

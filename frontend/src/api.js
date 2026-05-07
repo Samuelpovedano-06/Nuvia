@@ -162,5 +162,22 @@ export const ApiService = {
     const res = await fetch(`${baseUrl}/predicciones/`, { headers: getHeaders() });
     if (!res.ok) throw new Error('No hay predicciones disponibles');
     return await res.json();
+  },
+
+  // Registros Diarios (Notas, Flujo, Relaciones)
+  getRegistroDiario: async (fecha) => {
+    const res = await fetch(`${baseUrl}/registros-diarios/${fecha}`, { headers: getHeaders() });
+    if (!res.ok) return { notas: '', flujo: '', relaciones: 0 };
+    return await res.json();
+  },
+
+  registrarDatoDiario: async (datos) => {
+    const res = await fetch(`${baseUrl}/registros-diarios`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(datos)
+    });
+    if (!res.ok) throw new Error('Error al guardar registro diario');
+    return await res.json();
   }
 };
