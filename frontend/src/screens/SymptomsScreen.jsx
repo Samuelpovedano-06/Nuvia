@@ -203,8 +203,8 @@ export default function SymptomsScreen() {
       {message && (
         <div style={{ 
           textAlign: 'center', 
-          padding: '12px', 
-          background: message.includes('éxito') ? 'var(--primary-light)' : '#ffebee', 
+          padding: '14px', 
+          background: 'white', 
           color: message.includes('éxito') ? 'var(--primary)' : '#c62828',
           borderRadius: '16px', 
           marginBottom: '20px', 
@@ -212,7 +212,9 @@ export default function SymptomsScreen() {
           width: '100%', 
           margin: '0 auto 20px',
           fontWeight: '600',
-          border: `1px solid ${message.includes('éxito') ? 'rgba(155, 108, 152, 0.2)' : 'rgba(198, 40, 40, 0.1)'}`
+          boxShadow: '0 4px 12px rgba(155, 108, 152, 0.12)',
+          border: `1px solid ${message.includes('éxito') ? 'rgba(155, 108, 152, 0.2)' : 'rgba(198, 40, 40, 0.2)'}`,
+          animation: 'fadeIn 0.3s ease-out'
         }}>
           {message}
         </div>
@@ -246,7 +248,7 @@ export default function SymptomsScreen() {
                         minHeight: isSelected ? '160px' : '120px',
                         justifyContent: 'center'
                       }}
-                      onClick={() => !isSelected && toggleSintoma(s.id_sintoma)}
+                      onClick={() => toggleSintoma(s.id_sintoma)}
                     >
                       <div className="nuvia-sun-container" style={{ color: style.color, marginBottom: '8px' }}>
                         <div className="nuvia-sun-rays"></div>
@@ -261,7 +263,7 @@ export default function SymptomsScreen() {
 
                       {isSelected && (
                         <div 
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()} // Evita deseleccionar al tocar la intensidad
                           style={{ 
                             width: '100%',
                             paddingTop: '8px', 
@@ -296,12 +298,6 @@ export default function SymptomsScreen() {
                               </button>
                             ))}
                           </div>
-                          <button 
-                            onClick={() => toggleSintoma(s.id_sintoma)}
-                            style={{ background: 'none', border: 'none', color: '#999', fontSize: '10px', textDecoration: 'underline', cursor: 'pointer' }}
-                          >
-                            Quitar
-                          </button>
                         </div>
                       )}
                     </div>
