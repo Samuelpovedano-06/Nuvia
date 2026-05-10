@@ -105,6 +105,12 @@ export default function ProfileScreen() {
     handleUpdateConfig('privacidad_estricta', newVal);
   };
 
+  const toggleRecordatorios = () => {
+    const newVal = recordatorioCiclo === 1 ? 0 : 1;
+    setRecordatorioCiclo(newVal);
+    handleUpdateConfig('recordatorio_ciclo', newVal);
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -271,17 +277,29 @@ export default function ProfileScreen() {
           </div>
         </div>
 
-        <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+        <div 
+          onClick={toggleRecordatorios}
+          style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+        >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: '#F3E5F5', padding: '10px', borderRadius: '50%', color: 'var(--primary)', marginRight: '16px' }}>
+            <div style={{ background: recordatorioCiclo ? '#F3E5F5' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: recordatorioCiclo ? 'var(--primary)' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
               <Settings size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Configuración general</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Preferencias de la app</div>
+              <div style={{ fontSize: '15px', fontWeight: '500' }}>Recordatorios de Ciclo</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Avisos personalizados</div>
             </div>
           </div>
-          <ChevronRight size={20} color="var(--text-light)" />
+          <div style={{ 
+            width: '42px', height: '22px', background: recordatorioCiclo ? 'var(--primary)' : '#ccc', 
+            borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
+          }}>
+            <div style={{ 
+              width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
+              position: 'absolute', left: recordatorioCiclo ? '22px' : '2px', top: '2px',
+              transition: 'left 0.3s'
+            }}></div>
+          </div>
         </div>
 
         {user?.rol === 'admin' && (
