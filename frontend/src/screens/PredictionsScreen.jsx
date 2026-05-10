@@ -3,31 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Sparkles, Zap, Heart, Calendar, TrendingUp, Lightbulb, MessageCircle, BarChart2 } from 'lucide-react';
 import { ApiService } from '../api';
 
+// Datos de detalle para los puntos del gráfico
+const PUNTOS_DETALLE = {
+  1: { title: 'Día 1: Inicio', desc: 'Menstruación. Fase de renovación hormonal.', icon: '🩸' },
+  5: { title: 'Día 5: Transición', desc: 'Fin del periodo. Los estrógenos suben.', icon: '✨' },
+  10: { title: 'Día 10: Preparación', desc: 'Inicio ventana fértil. Aumenta la energía.', icon: '🌿' },
+  14: { title: 'Día 14: Ovulación', desc: 'Pico de fertilidad. Te sientes radiante.', icon: '🥚' },
+  18: { title: 'Día 18: Fase Lútea', desc: 'La progesterona empieza a dominar.', icon: '🌙' },
+  22: { title: 'Día 22: Pico Lúteo', desc: 'Posibles síntomas premenstruales.', icon: '🧘' },
+  28: { title: 'Día 28: Cierre', desc: 'Preparación para el nuevo ciclo.', icon: '🔄' }
+};
+
 // Componente para el gráfico de curva
-const CycleGraph = ({ diaActual, duracion = 28 }) => {
-  const points = [];
+const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) => {
   const width = 800;
   const height = 120;
-  
-  // Generar puntos para una curva suave (sinusoidal simple)
-  for (let i = 0; i <= width; i += 10) {
-    const x = i;
-    const y = height / 2 + Math.sin((i / width) * Math.PI * 2 - Math.PI / 2) * (height / 3);
-    points.push(`${x},${y}`);
-  }
-
-  const pathData = `M 0,${height / 2 + Math.sin(-Math.PI / 2) * (height / 3)} Q ${width / 4},0 ${width / 2},${height / 2 + Math.sin(Math.PI / 2) * (height / 3)} T ${width},${height / 2 + Math.sin(3 * Math.PI / 2) * (height / 3)}`;
-  
-  // Posición del marcador hoy
-  const markerX = (diaActual / duracion) * width;
+  const puntosClave = [1, 5, 10, 14, 18, 22, duracion];
 
   return (
-    <div style={{ width: '100%', overflowX: 'auto', padding: '20px 0' }}>
+    <div style={{ width: '100%', overflowX: 'auto', padding: '20px 0', position: 'relative' }}>
       <svg viewBox={`0 0 ${width} ${height + 40}`} width={width} height={height + 40} style={{ overflow: 'visible' }}>
-        {/* Línea base */}
         <line x1="0" y1={height} x2={width} y2={height} stroke="var(--primary-light)" strokeWidth="1" strokeDasharray="4" />
         
-        {/* Curva del ciclo */}
         <path 
           d={`M 0,${height - 20} C ${width * 0.2},${height - 20} ${width * 0.4},20 ${width * 0.5},20 S ${width * 0.8},${height - 20} ${width},${height - 20}`} 
           fill="none" 
@@ -35,19 +32,24 @@ const CycleGraph = ({ diaActual, duracion = 28 }) => {
           strokeWidth="3" 
         />
 
-        {/* Marcadores de días clave */}
-        <circle cx="0" cy={height - 20} r="5" fill="var(--primary)" />
-        <circle cx={width * 0.5} cy="20" r="5" fill="var(--primary)" />
-        <circle cx={width} cy={height - 20} r="5" fill="var(--primary)" />
+        {puntosClave.map((dia) => {
+          const x = (dia / duracion) * width - (dia === 1 ? 0 : 0);
+          // Cálculo aproximado de Y basado en la curva bezier
+          let y = height - 20;
+          if (dia === 14) y = 20;
+          else if (dia === 10 || dia === 18) y = 50;
+          else if (dia === 5 || dia === 22) y = 80;
 
-        {/* Etiquetas de días */}
-        <text x="0" y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle">Día 1</text>
-        <text x={width * 0.18} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle">Día 5</text>
-        <text x={width * 0.35} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle">Día 10</text>
-        <text x={width * 0.5} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle" fontWeight="bold">Día 14</text>
-        <text x={width * 0.65} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle">Día 18</text>
-        <text x={width * 0.82} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle">Día 22</text>
-        <text x={width} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle">Día {duracion}</text>
+          const isSelected = selectedPoint === dia;
+
+          return (
+            <g key={dia} onClick={() => onSelectPoint(dia)} style={{ cursor: 'pointer' }}>
+              {isSelected && <circle cx={x} cy={y} r="10" fill="var(--primary)" opacity="0.2" />}
+              <circle cx={x} cy={y} r={isSelected ? "7" : "5"} fill={isSelected ? "var(--primary)" : "#fff"} stroke="var(--primary)" strokeWidth="2" />
+              <text x={x} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle" fontWeight={isSelected ? "bold" : "normal"}>Día {dia}</text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
@@ -57,6 +59,7 @@ export default function PredictionsScreen() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({ diaActual: 1, duracion: 28, eventos: [] });
+  const [selectedPoint, setSelectedPoint] = useState(14); // Por defecto ovulación
 
   useEffect(() => {
     const init = async () => {
@@ -71,12 +74,10 @@ export default function PredictionsScreen() {
           const inicio = new Date(ultimo.fecha_inicio);
           const duracion = config?.duracion_ciclo || 28;
           const diaActual = (Math.floor((hoy - inicio) / (86400000)) % duracion) + 1;
-
-          // Próximas fechas
           const proximoPeriodo = new Date(inicio.getTime() + duracion * 86400000);
           const ovulacion = new Date(proximoPeriodo.getTime() - 14 * 86400000);
-          
           setData({ diaActual, duracion, proximoPeriodo, ovulacion });
+          setSelectedPoint(14);
         }
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -85,6 +86,8 @@ export default function PredictionsScreen() {
   }, []);
 
   if (loading) return <div className="screen-container" style={{justifyContent:'center', alignItems:'center'}}><div className="loader"></div></div>;
+
+  const tooltipInfo = PUNTOS_DETALLE[selectedPoint] || PUNTOS_DETALLE[14];
 
   return (
     <div className="screen-container">
@@ -105,9 +108,29 @@ export default function PredictionsScreen() {
           <h3 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
             <TrendingUp size={18} color="var(--primary)" /> Evolución de tu ciclo
           </h3>
-          <div className="card" style={{ padding: '20px', overflow: 'hidden' }}>
-            <CycleGraph diaActual={data.diaActual} duracion={data.duracion} />
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '10px', fontSize: '12px' }}>
+          <div className="card" style={{ padding: '20px', overflow: 'hidden', position: 'relative' }}>
+            <CycleGraph 
+              diaActual={data.diaActual} 
+              duracion={data.duracion} 
+              onSelectPoint={setSelectedPoint}
+              selectedPoint={selectedPoint}
+            />
+            
+            {/* Tooltip Detalle */}
+            <div style={{ 
+              marginTop: '20px', background: 'rgba(255,255,255,0.8)', padding: '15px', 
+              borderRadius: '15px', border: '1px solid var(--primary-light)',
+              display: 'flex', alignItems: 'center', gap: '15px',
+              animation: 'fadeIn 0.3s ease'
+            }}>
+              <div style={{ fontSize: '30px' }}>{tooltipInfo.icon}</div>
+              <div>
+                <div style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '16px' }}>{tooltipInfo.title}</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-dark)' }}>{tooltipInfo.desc}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px', fontSize: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FF9A9E' }}></div> Menstruación
               </div>
