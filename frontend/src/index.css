@@ -407,3 +407,30 @@ h4 {
   background: var(--primary);
   border-radius: 10px 0 0 10px;
 }
+
+/* Modo Oscuro Global */
+body.dark-mode {
+  --primary: #d182d6;
+  --primary-light: #e891c8;
+  --bg-gradient: linear-gradient(180deg, #1a1a1a 0%, #2d1b2d 100%);
+  --white: #262626;
+  --text-dark: #f0f0f0;
+  --text-light: #b0a0b0;
+  background: #1a111a;
+  color: var(--text-dark);
+}
+
+body.dark-mode .card {
+  background: #262626;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .styled-input {
+  background: #333;
+  color: white;
+  border-color: #444;
+}
+
+body.dark-mode .custom-range {
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--value), #444 var(--value), #444 100%);
+}

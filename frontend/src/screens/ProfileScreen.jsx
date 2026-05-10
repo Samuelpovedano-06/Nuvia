@@ -28,8 +28,8 @@ export default function ProfileScreen() {
 
   // Estados de configuración
   const [notificaciones, setNotificaciones] = useState(1);
-  const [recordatorioCiclo, setRecordatorioCiclo] = useState(1);
   const [privacidadEstricta, setPrivacidadEstricta] = useState(0);
+  const [modoOscuro, setModoOscuro] = useState(0);
 
   useEffect(() => {
     ApiService.getCiclos()
@@ -46,8 +46,8 @@ export default function ProfileScreen() {
           if (config.duracion_ciclo) setCycleDuration(config.duracion_ciclo);
           if (config.edad) setEdad(String(config.edad));
           setNotificaciones(config.notificaciones ?? 1);
-          setRecordatorioCiclo(config.recordatorio_ciclo ?? 1);
           setPrivacidadEstricta(config.privacidad_estricta ?? 0);
+          setModoOscuro(config.modo_oscuro ?? 0);
         }
       })
       .catch(err => {
@@ -58,6 +58,15 @@ export default function ProfileScreen() {
         if (storedEdad) setEdad(storedEdad);
       });
   }, []);
+
+  // Efecto para aplicar modo oscuro al body
+  useEffect(() => {
+    if (modoOscuro) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [modoOscuro]);
 
   const handleUpdateConfig = async (key, val) => {
     try {
@@ -96,7 +105,9 @@ export default function ProfileScreen() {
   const toggleNotificaciones = () => {
     const newVal = notificaciones === 1 ? 0 : 1;
     setNotificaciones(newVal);
+    // Actualizamos ambos campos en la BD para simplificar
     handleUpdateConfig('notificaciones', newVal);
+    handleUpdateConfig('recordatorio_ciclo', newVal);
   };
 
   const togglePrivacidad = () => {
@@ -105,10 +116,10 @@ export default function ProfileScreen() {
     handleUpdateConfig('privacidad_estricta', newVal);
   };
 
-  const toggleRecordatorios = () => {
-    const newVal = recordatorioCiclo === 1 ? 0 : 1;
-    setRecordatorioCiclo(newVal);
-    handleUpdateConfig('recordatorio_ciclo', newVal);
+  const toggleModoOscuro = () => {
+    const newVal = modoOscuro === 1 ? 0 : 1;
+    setModoOscuro(newVal);
+    handleUpdateConfig('modo_oscuro', newVal);
   };
 
   const handleLogout = () => {
@@ -236,8 +247,8 @@ export default function ProfileScreen() {
               <Bell size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Recordatorios y alertas</div>
+              <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones y Alertas</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Gestiona avisos y recordatorios</div>
             </div>
           </div>
           <div style={{ 
@@ -278,25 +289,25 @@ export default function ProfileScreen() {
         </div>
 
         <div 
-          onClick={toggleRecordatorios}
+          onClick={toggleModoOscuro}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
         >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: recordatorioCiclo ? '#F3E5F5' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: recordatorioCiclo ? 'var(--primary)' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
+            <div style={{ background: modoOscuro ? '#333' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: modoOscuro ? '#ffeb3b' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
               <Settings size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Recordatorios de Ciclo</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Avisos personalizados</div>
+              <div style={{ fontSize: '15px', fontWeight: '500' }}>Modo Oscuro</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{modoOscuro ? 'Tema noche activo' : 'Tema día activo'}</div>
             </div>
           </div>
           <div style={{ 
-            width: '42px', height: '22px', background: recordatorioCiclo ? 'var(--primary)' : '#ccc', 
+            width: '42px', height: '22px', background: modoOscuro ? '#444' : '#ccc', 
             borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
           }}>
             <div style={{ 
               width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
-              position: 'absolute', left: recordatorioCiclo ? '22px' : '2px', top: '2px',
+              position: 'absolute', left: modoOscuro ? '22px' : '2px', top: '2px',
               transition: 'left 0.3s'
             }}></div>
           </div>

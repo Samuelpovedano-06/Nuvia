@@ -132,6 +132,7 @@ class ConfiguracionUpdate(BaseModel):
     privacidad_estricta: Optional[int] = None
     duracion_ciclo: Optional[int] = None
     edad: Optional[int] = None
+    modo_oscuro: Optional[int] = None
 
 class ConfiguracionOut(BaseModel):
     id_usuaria: UUID
@@ -140,6 +141,7 @@ class ConfiguracionOut(BaseModel):
     privacidad_estricta: int
     duracion_ciclo: int
     edad: Optional[int] = None
+    modo_oscuro: int
 
     class Config:
         from_attributes = True
