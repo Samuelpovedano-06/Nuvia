@@ -165,7 +165,10 @@ export default function ProfileScreen() {
           step={1}
           value={cycleDuration}
           onChange={handleDurationChange}
-          style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
+          className="custom-range"
+          style={{ 
+            '--value': `${((cycleDuration - 21) / (45 - 21)) * 100}%`
+          }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px', color: 'var(--text-light)' }}>
           <span>21 días</span>
