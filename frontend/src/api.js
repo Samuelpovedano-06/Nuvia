@@ -177,7 +177,11 @@ export const ApiService = {
       headers: getHeaders(),
       body: JSON.stringify(datos)
     });
-    if (!res.ok) throw new Error('Error al guardar registro diario');
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try { const err = await res.json(); detail += ': ' + (err.detail || JSON.stringify(err)); } catch {}
+      throw new Error(detail);
+    }
     return await res.json();
   }
 };

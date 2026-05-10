@@ -156,7 +156,7 @@ class RegistroDiarioOut(BaseModel):
     fecha: date
     notas: Optional[str]
     flujo: Optional[str]
-    relaciones: int
+    relaciones: Optional[int] = 0
 
     class Config:
         from_attributes = True
