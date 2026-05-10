@@ -235,7 +235,7 @@ export default function SymptomsScreen() {
 
       {message && (
         <div style={{ 
-          textAlign: 'center', padding: '14px', background: 'white', color: 'var(--primary)',
+          textAlign: 'center', padding: '14px', background: 'var(--white)', color: 'var(--primary)',
           borderRadius: '16px', marginBottom: '20px', maxWidth: '800px', width: '100%', margin: '0 auto 20px',
           fontWeight: '600', boxShadow: '0 4px 12px rgba(155, 108, 152, 0.12)', border: '1px solid rgba(155, 108, 152, 0.2)'
         }}>
@@ -245,7 +245,7 @@ export default function SymptomsScreen() {
 
       {/* Nuvia Tip */}
       <div style={{ 
-        maxWidth: '800px', width: '100%', margin: '0 auto 30px', background: 'white', 
+        maxWidth: '800px', width: '100%', margin: '0 auto 30px', background: 'var(--white)', 
         padding: '16px', borderRadius: '16px', display: 'flex', gap: '12px', alignItems: 'center',
         border: '1px solid rgba(155, 108, 152, 0.1)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
       }}>
@@ -271,7 +271,7 @@ export default function SymptomsScreen() {
               style={{
                 margin: 0, padding: '16px 12px', minHeight: relaciones > 0 ? '160px' : '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 border: relaciones > 0 ? '2px solid var(--primary)' : '2px solid transparent',
-                background: relaciones > 0 ? 'var(--primary-light)' : 'white',
+                background: relaciones > 0 ? 'var(--primary-light)' : 'var(--white)',
                 transition: '0.3s', cursor: 'pointer'
               }}
               onClick={() => setRelaciones(relaciones > 0 ? 0 : 1)}
@@ -320,7 +320,7 @@ export default function SymptomsScreen() {
                 style={{
                   margin: 0, padding: '16px 12px', minHeight: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   border: flujo === type.id ? '2px solid var(--primary)' : '2px solid transparent',
-                  background: flujo === type.id ? 'var(--primary-light)' : 'white',
+                  background: flujo === type.id ? 'var(--primary-light)' : 'var(--white)',
                   transition: '0.3s', cursor: 'pointer'
                 }}
                 onClick={() => setFlujo(flujo === type.id ? '' : type.id)}
@@ -354,7 +354,7 @@ export default function SymptomsScreen() {
                       style={{ 
                         margin: 0, padding: '16px 12px', minHeight: isSelected ? '160px' : '120px',
                         border: isSelected ? `2px solid var(--primary)` : '2px solid transparent',
-                        background: isSelected ? 'var(--primary-light)' : 'white',
+                        background: isSelected ? 'var(--primary-light)' : 'var(--white)',
                         transition: 'all 0.3s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center'
                       }}
                       onClick={() => toggleSintoma(s.id_sintoma)}
@@ -393,7 +393,7 @@ export default function SymptomsScreen() {
             placeholder="Escribe algo importante de hoy..."
             style={{
               width: '100%', height: '100px', border: '1px solid #eee', borderRadius: '12px', padding: '12px',
-              fontSize: '14px', fontFamily: 'inherit', resize: 'none', background: '#fcfaff', outline: 'none'
+              fontSize: '14px', fontFamily: 'inherit', resize: 'none', background: 'var(--white)', color: 'var(--text-dark)', outline: 'none'
             }}
           />
         </div>
