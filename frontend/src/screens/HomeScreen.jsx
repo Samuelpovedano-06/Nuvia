@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { Sparkles, Heart, Zap } from 'lucide-react';
+import { Sparkles, Heart, Zap, Calendar } from 'lucide-react';
 
 const getPhaseInfo = (day, duration = 28) => {
   if (day <= 5) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
