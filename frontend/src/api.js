@@ -183,5 +183,23 @@ export const ApiService = {
       throw new Error(detail);
     }
     return await res.json();
+  },
+
+  // Configuración
+  getConfig: async () => {
+    const res = await fetch(`${baseUrl}/configuracion/`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Error al obtener configuración');
+    return await res.json();
+  },
+
+  updateConfig: async (datos) => {
+    const res = await fetch(`${baseUrl}/configuracion/`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(datos)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al actualizar configuración');
+    return data;
   }
 };

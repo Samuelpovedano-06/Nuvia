@@ -127,16 +127,17 @@ class PrediccionOut(BaseModel):
 # ─────────────────────── CONFIGURACIÓN ───────────────────────
 
 class ConfiguracionUpdate(BaseModel):
-    notificaciones_activadas: Optional[int] = None
-    recordatorios_personalizados: Optional[str] = None
-    tema_visual: Optional[str] = None
+    notificaciones: Optional[int] = None
+    recordatorio_ciclo: Optional[int] = None
+    privacidad_estricta: Optional[int] = None
+    duracion_ciclo: Optional[int] = None
 
 class ConfiguracionOut(BaseModel):
-    id_config: UUID
     id_usuaria: UUID
-    notificaciones_activadas: int
-    recordatorios_personalizados: Optional[str]
-    tema_visual: Optional[str]
+    notificaciones: int
+    recordatorio_ciclo: int
+    privacidad_estricta: int
+    duracion_ciclo: int
 
     class Config:
         from_attributes = True

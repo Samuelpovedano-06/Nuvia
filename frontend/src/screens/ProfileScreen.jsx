@@ -30,27 +30,43 @@ export default function ProfileScreen() {
     ApiService.getCiclos()
       .then(data => {
         setCiclos(data);
-        const stored = localStorage.getItem('nuvia_cycle_duration');
-        if (stored) {
-          setCycleDuration(Number(stored));
-        } else {
-          const lastWithDuration = [...data].reverse().find(c => c.duracion);
-          if (lastWithDuration) setCycleDuration(lastWithDuration.duracion);
-        }
       })
       .catch(console.error)
       .finally(() => setLoadingCiclos(false));
+
+    // Cargar configuración de la base de datos
+    ApiService.getConfig()
+      .then(config => {
+        if (config && config.duracion_ciclo) {
+          setCycleDuration(config.duracion_ciclo);
+        }
+      })
+      .catch(err => {
+        console.warn("No se pudo cargar la configuración, usando valor local:", err);
+        const stored = localStorage.getItem('nuvia_cycle_duration');
+        if (stored) setCycleDuration(Number(stored));
+      });
 
     const storedEdad = localStorage.getItem('nuvia_edad');
     if (storedEdad) setEdad(storedEdad);
   }, []);
 
-  const handleDurationChange = (e) => {
+  const handleDurationChange = async (e) => {
     const val = Number(e.target.value);
     setCycleDuration(val);
+    
+    // Guardar localmente para rapidez
     localStorage.setItem('nuvia_cycle_duration', val);
-    setDurationSaved(true);
-    setTimeout(() => setDurationSaved(false), 1500);
+    
+    try {
+      // Guardar en la base de datos
+      await ApiService.updateConfig({ duracion_ciclo: val });
+      setDurationSaved(true);
+      setTimeout(() => setDurationSaved(false), 1500);
+    } catch (err) {
+      console.error("Error al guardar en BD:", err);
+      // Opcional: mostrar error al usuario
+    }
   };
 
   const handleSaveEdad = () => {
