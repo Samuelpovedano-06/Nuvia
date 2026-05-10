@@ -96,7 +96,7 @@ export default function ProfileScreen() {
         </h4>
 
         {/* Edad */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-light)' }}>Edad</span>
           {editingEdad ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -118,7 +118,7 @@ export default function ProfileScreen() {
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: '500' }}>{edad ? `${edad} años` : '—'}</span>
+              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{edad ? `${edad} años` : '—'}</span>
               <button
                 onClick={() => { setEdadInput(edad); setEditingEdad(true); }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
@@ -130,9 +130,9 @@ export default function ProfileScreen() {
         </div>
 
         {/* Desde */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-light)' }}>Usando Nuvia desde</span>
-          <span style={{ fontWeight: '500' }}>{formatFecha(user?.fecha_registro)}</span>
+          <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{formatFecha(user?.fecha_registro)}</span>
         </div>
 
         {/* Ciclos */}
