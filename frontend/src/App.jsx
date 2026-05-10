@@ -13,6 +13,16 @@ import PredictionsScreen from './screens/PredictionsScreen';
 function App() {
   const { user, loading } = useContext(AuthContext);
 
+  // Aplicar modo oscuro globalmente al cargar la app
+  React.useEffect(() => {
+    const savedMode = localStorage.getItem('nuvia_modo_oscuro');
+    if (savedMode === '1') {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>

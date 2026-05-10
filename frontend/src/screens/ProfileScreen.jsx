@@ -47,7 +47,10 @@ export default function ProfileScreen() {
           if (config.edad) setEdad(String(config.edad));
           setNotificaciones(config.notificaciones ?? 1);
           setPrivacidadEstricta(config.privacidad_estricta ?? 0);
-          setModoOscuro(config.modo_oscuro ?? 0);
+          
+          const dark = config.modo_oscuro ?? 0;
+          setModoOscuro(dark);
+          localStorage.setItem('nuvia_modo_oscuro', dark);
         }
       })
       .catch(err => {
@@ -119,6 +122,7 @@ export default function ProfileScreen() {
   const toggleModoOscuro = () => {
     const newVal = modoOscuro === 1 ? 0 : 1;
     setModoOscuro(newVal);
+    localStorage.setItem('nuvia_modo_oscuro', newVal);
     handleUpdateConfig('modo_oscuro', newVal);
   };
 
