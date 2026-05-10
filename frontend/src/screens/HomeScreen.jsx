@@ -66,7 +66,8 @@ export default function HomeScreen() {
 
           setNextEvents({
             period: proximoPeriodo,
-            fertile: fertileMsg
+            fertile: fertileMsg,
+            ovulation: diaActual <= ovulacion ? `En ${ovulacion - diaActual} d.` : `En ${(duracion - diaActual) + ovulacion} d.`
           });
 
         } else {
@@ -107,7 +108,8 @@ export default function HomeScreen() {
         border: 'none',
         transition: 'all 0.5s ease',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        marginBottom: '16px'
       }}>
         {loadingData ? (
           <div style={{ padding: '20px', textAlign: 'center' }}><div className="loader" style={{ borderColor: 'white', borderTopColor: 'transparent' }}></div></div>
@@ -140,33 +142,54 @@ export default function HomeScreen() {
         )}
       </div>
 
-      {/* Vistazo Rápido */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-        <div className="card" style={{ 
-          margin: 0, padding: '16px', border: 'none', color: 'white',
-          background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Sparkles size={16} />
-            <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.9 }}>Días fértiles</span>
+      {/* Caja Grande de Indicadores */}
+      <div className="card" style={{ padding: '12px', background: 'rgba(255,255,255,0.4)', margin: '0 0 16px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          
+          {/* Días Fértiles */}
+          <div className="card" style={{ 
+            margin: 0, padding: '10px', border: 'none', color: 'white', minHeight: '80px',
+            background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+              <Sparkles size={12} />
+              <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase' }}>Fértil</span>
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{nextEvents.fertile}</div>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.fertile}</div>
-        </div>
 
-        <div className="card" style={{ 
-          margin: 0, padding: '16px', border: 'none', color: 'white',
-          background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Heart size={16} fill="white" />
-            <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.9 }}>Próximo periodo</span>
+          {/* Próximo Periodo */}
+          <div className="card" style={{ 
+            margin: 0, padding: '10px', border: 'none', color: 'white', minHeight: '80px',
+            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+              <Heart size={12} fill="white" />
+              <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase' }}>Periodo</span>
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{nextEvents.period}</div>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.period}</div>
+
+          {/* Ovulación */}
+          <div className="card" style={{ 
+            margin: 0, padding: '10px', border: 'none', color: 'white', minHeight: '80px',
+            background: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+              <Zap size={12} fill="white" />
+              <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase' }}>Ovulac.</span>
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{nextEvents.ovulation}</div>
+          </div>
+
         </div>
       </div>
 
       {/* Grid Menu */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div className="card" onClick={() => navigate('/sintomas')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌸</div>
           <h4 style={{ margin: 0 }}>Registrar Síntoma</h4>
