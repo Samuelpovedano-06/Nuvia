@@ -2,7 +2,10 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ApiService } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Users, Shield, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff } from 'lucide-react';
+import { 
+  ChevronLeft, Users, Shield, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, 
+  TrendingUp, Activity, Calendar, Download, Settings, Zap, ArrowUpRight
+} from 'lucide-react';
 
 export default function AdminPanelScreen() {
   const { user } = useContext(AuthContext);
@@ -13,7 +16,7 @@ export default function AdminPanelScreen() {
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState(null); // null means "Create New"
+  const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({ nombre: '', email: '', password: '', rol: 'usuaria' });
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -71,125 +74,156 @@ export default function AdminPanelScreen() {
   };
 
   const handleDeleteUser = async (id) => {
-    if (window.confirm('¿Estás segura de eliminar esta usuaria y todos sus datos? Esta acción es irreversible.')) {
+    if (window.confirm('¿Estás segura de eliminar esta usuaria y todos sus datos?')) {
       try {
         await ApiService.deleteUserAdmin(id);
         fetchUsers();
-      } catch (err) {
-        alert(err.message);
-      }
+      } catch (err) { alert(err.message); }
     }
   };
 
   return (
     <div className="screen-container">
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-          <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Volver</span>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px' }}>
+          <ChevronLeft size={18} /> Volver
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ background: 'var(--primary)', padding: '12px', borderRadius: '16px', color: 'white', marginRight: '16px' }}>
-            <Shield size={28} />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '24px', margin: 0 }}>Panel Admin</h2>
-            <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '14px' }}>Gestión de usuarias</p>
-          </div>
-        </div>
-        <button onClick={() => handleOpenModal()} style={{ background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(176,91,181,0.3)' }}>
-          <UserPlus size={22} />
-        </button>
+      <div style={{ marginBottom: '25px' }}>
+        <h2 style={{ fontSize: '32px', color: 'var(--primary)', margin: 0, fontWeight: '700' }}>Panel de Admin</h2>
+        <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '14px' }}>Gestión y estadísticas del sistema</p>
       </div>
 
-      <div className="card">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px' }}>Usuarias ({users.length})</h3>
+      {/* Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div className="card" style={{ 
+          margin: 0, background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)', 
+          color: 'white', border: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          padding: '24px'
+        }}>
+          <Users size={24} style={{ marginBottom: '12px', opacity: 0.8 }} />
+          <div style={{ fontSize: '14px', opacity: 0.9 }}>Usuarias activas</div>
+          <div style={{ fontSize: '36px', fontWeight: 'bold', margin: '4px 0' }}>1,247</div>
         </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="card" style={{ margin: 0, padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Activity size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
+            <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Registros hoy</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>342</div>
+          </div>
+        </div>
+      </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        <div className="card" style={{ margin: 0, padding: '16px' }}>
+          <Calendar size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
+          <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Ciclos totales</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>4,821</div>
+        </div>
+        <div className="card" style={{ margin: 0, padding: '16px' }}>
+          <TrendingUp size={20} color="#4CAF50" style={{ marginBottom: '8px' }} />
+          <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Crecimiento</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#4CAF50' }}>+12%</div>
+        </div>
+      </div>
+
+      {/* Actividad Reciente */}
+      <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Actividad reciente</h3>
+      <div className="card" style={{ padding: '0', marginBottom: '24px', overflow: 'hidden' }}>
+        {[
+          { label: 'Nueva usuaria registrada', time: 'Hace 5 minutos', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.05)' },
+          { label: '128 registros diarios completados', time: 'Hace 1 hora', color: '#9C27B0', bg: 'rgba(156, 39, 176, 0.03)' },
+          { label: 'Actualización de predicciones', time: 'Hace 2 horas', color: '#FF9A9E', bg: 'rgba(255, 154, 158, 0.05)' }
+        ].map((item, i) => (
+          <div key={i} style={{ 
+            padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px',
+            background: item.bg, borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none'
+          }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color }}></div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: '500' }}>{item.label}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>{item.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Lista de Usuarias */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '18px', margin: 0 }}>Lista de usuarias</h3>
+        <button onClick={() => navigate('/admin/users')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '13px', cursor: 'pointer' }}>Ver todas</button>
+      </div>
+
+      <div className="card" style={{ padding: '0', marginBottom: '24px' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}><div className="loader"></div></div>
+          <div style={{ padding: '40px', textAlign: 'center' }}><div className="loader"></div></div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {users.map(u => (
-              <div key={u.id_usuaria} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, marginRight: '8px' }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    background: u.rol === 'admin' ? 'var(--primary)' : 'var(--primary-light)',
-                    borderRadius: '50%',
-                    marginRight: '12px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    color: 'white',
-                    fontWeight: '600',
-                    flexShrink: 0
-                  }}>
-                    {u.nombre.charAt(0).toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.nombre} {u.rol === 'admin' && '👑'}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.email}</div>
-                  </div>
+          users.slice(0, 4).map((u, i) => (
+            <div key={u.id_usuaria} style={{ 
+              padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderBottom: i < 3 ? '1px solid rgba(0,0,0,0.03)' : 'none'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ 
+                  width: '36px', height: '36px', borderRadius: '50%', background: ['#BA68C8', '#FF9A9E', '#A78BFA', '#F472B6'][i % 4],
+                  display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold'
+                }}>
+                  {u.nombre.charAt(0)}
                 </div>
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                  <button onClick={() => handleOpenModal(u)} style={{ padding: '8px', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Edit size={18} /></button>
-                  <button onClick={() => handleDeleteUser(u.id_usuaria)} style={{ padding: '8px', background: 'none', border: 'none', color: '#ff5252', cursor: 'pointer' }}><Trash2 size={18} /></button>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '600' }}>{u.nombre}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>{u.email}</div>
                 </div>
               </div>
-            ))}
-          </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '13px', fontWeight: '500' }}>{Math.floor(Math.random() * 10) + 1} ciclos</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>Hace {Math.floor(Math.random() * 24)} horas</div>
+              </div>
+            </div>
+          ))
         )}
       </div>
 
-      {/* Modal for Create/Edit */}
-      {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-          <div className="card" style={{ maxWidth: '400px', width: '100%', padding: '30px', position: 'relative', animation: 'fadeIn 0.3s ease' }}>
-            <button onClick={() => setShowModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)' }}>
-              <X size={24} />
-            </button>
-
-            <h3 style={{ marginBottom: '20px' }}>{editingUser ? 'Editar Usuaria' : 'Nueva Usuaria'}</h3>
-
-            {error && <div style={{ color: 'red', fontSize: '13px', marginBottom: '15px', background: '#ffebee', padding: '10px', borderRadius: '8px' }}>{error}</div>}
-
-            <form onSubmit={handleSaveUser}>
-              <div className="input-group">
-                <label className="input-label">Nombre</label>
-                <input type="text" className="styled-input" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} required />
-              </div>
-              <div className="input-group">
-                <label className="input-label">Email</label>
-                <input type="email" className="styled-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required />
-              </div>
-              <div className="input-group" style={{ position: 'relative' }}>
-                <label className="input-label">{editingUser ? 'Password (dejar vacío para no cambiar)' : 'Password'}</label>
-                <input type={showPassword ? "text" : "password"} className="styled-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} required={!editingUser} style={{ paddingRight: '45px' }} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="password-toggle" style={{ top: '38px' }}>
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-              <div className="input-group">
-                <label className="input-label">Rol</label>
-                <select className="styled-input" value={formData.rol} onChange={e => setFormData({ ...formData, rol: e.target.value })} style={{ appearance: 'none' }}>
-                  <option value="usuaria">Usuaria</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </div>
-
-              <button type="submit" className="btn-primary" disabled={submitting}>
-                {submitting ? 'Guardando...' : (editingUser ? 'Actualizar' : 'Crear Usuario')}
-              </button>
-            </form>
+      {/* Configuración del Sistema */}
+      <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Configuración del sistema</h3>
+      <div className="card" style={{ padding: '8px 0', marginBottom: '24px' }}>
+        {[
+          { icon: <Settings size={18} />, label: 'Configuración de notificaciones' },
+          { icon: <Zap size={18} />, label: 'Algoritmos de predicción' },
+          { icon: <Users size={18} />, label: 'Gestión de usuarios' }
+        ].map((item, i) => (
+          <div key={i} style={{ 
+            padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
+            borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none'
+          }}>
+            <div style={{ color: 'var(--primary)' }}>{item.icon}</div>
+            <div style={{ fontSize: '14px' }}>{item.label}</div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+
+      {/* Export Button */}
+      <button style={{ 
+        width: '100%', padding: '16px', background: 'var(--primary)', color: 'white', 
+        border: 'none', borderRadius: '16px', fontSize: '15px', fontWeight: '600',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+        cursor: 'pointer', marginBottom: '40px'
+      }}>
+        <Download size={18} /> Exportar datos del sistema
+      </button>
+
+      {/* Help Floating Icon */}
+      <div style={{ 
+        position: 'fixed', bottom: '20px', right: '20px', width: '40px', height: '40px',
+        background: '#333', color: 'white', borderRadius: '50%', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px'
+      }}>
+        ?
+      </div>
     </div>
   );
 }
+
 
