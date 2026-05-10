@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import LoginScreen from './screens/LoginScreen';
@@ -14,7 +14,7 @@ function App() {
   const { user, loading } = useContext(AuthContext);
 
   // Aplicar modo oscuro globalmente al cargar la app
-  React.useEffect(() => {
+  useEffect(() => {
     const savedMode = localStorage.getItem('nuvia_modo_oscuro');
     if (savedMode === '1') {
       document.body.classList.add('dark-mode');

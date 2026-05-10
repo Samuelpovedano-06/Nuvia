@@ -3,19 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Sparkles, Zap, Heart, Calendar, ArrowRight } from 'lucide-react';
 import { ApiService } from '../api';
 
+// Helper para Droplets (usando function para hoisting)
+function Droplets() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5s-3 3.5-3 5.5a7 7 0 0 0 7 7z" />
+    </svg>
+  );
+}
+
 const FASES_INFO = {
   'Menstrual': { color: '#FF4D4D', icon: <Droplets />, advice: 'Momento de descanso y mimos. Prioriza el sueño y el calor local.' },
   'Folicular': { color: '#FFB74D', icon: <Zap />, advice: 'Tu energía empieza a subir. ¡Buen momento para nuevos proyectos!' },
   'Ovulatoria': { color: '#BA68C8', icon: <Sparkles />, advice: 'Pico de vitalidad y fertilidad. ¡Te sientes radiante!' },
   'Lútea': { color: '#64B5F6', icon: <Heart />, advice: 'Baja el ritmo gradualmente. Escucha a tu cuerpo y mantente hidratada.' }
 };
-
-// Helper para Droplets (no importado de lucide-react para evitar errores si falta)
-const Droplets = () => (
-  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5s-3 3.5-3 5.5a7 7 0 0 0 7 7z" />
-  </svg>
-);
 
 export default function PredictionsScreen() {
   const navigate = useNavigate();
