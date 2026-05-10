@@ -47,6 +47,13 @@ export default function CalendarScreen() {
            currentDate.getFullYear() === today.getFullYear();
   };
 
+  const isFuture = (day) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return checkDate > today;
+  };
+
   // Lógica simple de detección de días de periodo (basada en ciclos registrados)
   const getDayStatus = (day) => {
     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -98,11 +105,12 @@ export default function CalendarScreen() {
     // Días del mes
     for (let d = 1; d <= totalDays; d++) {
       const status = getDayStatus(d);
+      const future = isFuture(d);
       days.push(
         <div 
           key={d} 
-          className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''}`}
-          onClick={() => navigate('/sintomas')}
+          className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''} ${future ? 'future' : ''}`}
+          onClick={() => !future && navigate('/sintomas')}
         >
           <span className="day-number">{d}</span>
           {status === 'ovulacion' && <Sparkles size={10} className="ovulacion-icon" />}
@@ -187,6 +195,14 @@ export default function CalendarScreen() {
         }
         .calendar-day:hover {
           background: #f0f0f0;
+        }
+        .calendar-day.future {
+          opacity: 0.4;
+          cursor: not-allowed;
+          filter: grayscale(1);
+        }
+        .calendar-day.future:hover {
+          background: var(--white);
         }
         body.dark-mode .calendar-day:hover {
           background: #333;
