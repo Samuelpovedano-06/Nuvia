@@ -38,7 +38,7 @@ export default function HomeScreen() {
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div>
           <h4 style={{ margin: 0 }}>Calendario</h4>
         </div>
-        <div className="card" style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
+        <div className="card" onClick={() => navigate('/predicciones')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔮</div>
           <h4 style={{ margin: 0 }}>Predicciones</h4>
         </div>
