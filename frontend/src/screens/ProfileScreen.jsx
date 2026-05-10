@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun } from 'lucide-react';
 import { ApiService } from '../api';
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -293,8 +293,8 @@ export default function ProfileScreen() {
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
         >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: modoOscuro ? '#333' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: modoOscuro ? '#ffeb3b' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
-              <Settings size={18} />
+            <div style={{ background: modoOscuro ? '#333' : '#FFF9C4', padding: '10px', borderRadius: '50%', color: modoOscuro ? '#ffeb3b' : '#FBC02D', marginRight: '16px', transition: 'all 0.3s' }}>
+              {modoOscuro ? <Moon size={18} /> : <Sun size={18} />}
             </div>
             <div>
               <div style={{ fontSize: '15px', fontWeight: '500' }}>Modo Oscuro</div>
