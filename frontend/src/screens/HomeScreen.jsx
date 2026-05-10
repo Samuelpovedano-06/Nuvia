@@ -142,20 +142,26 @@ export default function HomeScreen() {
 
       {/* Vistazo Rápido */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-        <div className="card" style={{ margin: 0, padding: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', marginBottom: '8px' }}>
-            <div style={{ background: 'var(--primary-light)', padding: '6px', borderRadius: '8px' }}><Sparkles size={16} /></div>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-light)' }}>Días fértiles</span>
+        <div className="card" style={{ 
+          margin: 0, padding: '16px', border: 'none', color: 'white',
+          background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Sparkles size={16} />
+            <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.9 }}>Días fértiles</span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-dark)' }}>{nextEvents.fertile}</div>
+          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.fertile}</div>
         </div>
 
-        <div className="card" style={{ margin: 0, padding: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FF4D4D', marginBottom: '8px' }}>
-            <div style={{ background: 'rgba(255,77,77,0.1)', padding: '6px', borderRadius: '8px' }}><Heart size={16} fill="currentColor" /></div>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-light)' }}>Próximo periodo</span>
+        <div className="card" style={{ 
+          margin: 0, padding: '16px', border: 'none', color: 'white',
+          background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Heart size={16} fill="white" />
+            <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.9 }}>Próximo periodo</span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--text-dark)' }}>{nextEvents.period}</div>
+          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.period}</div>
         </div>
       </div>
 
