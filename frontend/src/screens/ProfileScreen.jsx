@@ -20,7 +20,9 @@ export default function ProfileScreen() {
   const [loadingCiclos, setLoadingCiclos] = useState(true);
 
   const [cycleDuration, setCycleDuration] = useState(28);
+  const [periodDuration, setPeriodDuration] = useState(5);
   const [durationSaved, setDurationSaved] = useState(false);
+  const [periodSaved, setPeriodSaved] = useState(false);
 
   const [edad, setEdad] = useState('');
   const [editingEdad, setEditingEdad] = useState(false);
@@ -44,6 +46,7 @@ export default function ProfileScreen() {
       .then(config => {
         if (config) {
           if (config.duracion_ciclo) setCycleDuration(config.duracion_ciclo);
+          if (config.duracion_periodo) setPeriodDuration(config.duracion_periodo);
           if (config.edad) setEdad(String(config.edad));
           setNotificaciones(config.notificaciones ?? 1);
           setPrivacidadEstricta(config.privacidad_estricta ?? 0);
@@ -82,13 +85,24 @@ export default function ProfileScreen() {
   const handleDurationChange = async (e) => {
     const val = Number(e.target.value);
     setCycleDuration(val);
-    localStorage.setItem('nuvia_cycle_duration', val);
     try {
       await ApiService.updateConfig({ duracion_ciclo: val });
       setDurationSaved(true);
       setTimeout(() => setDurationSaved(false), 1500);
     } catch (err) {
-      console.error("Error al guardar en BD:", err);
+      console.error("Error al guardar ciclo:", err);
+    }
+  };
+
+  const handlePeriodChange = async (e) => {
+    const val = Number(e.target.value);
+    setPeriodDuration(val);
+    try {
+      await ApiService.updateConfig({ duracion_periodo: val });
+      setPeriodSaved(true);
+      setTimeout(() => setPeriodSaved(false), 1500);
+    } catch (err) {
+      console.error("Error al guardar periodo:", err);
     }
   };
 
@@ -216,6 +230,8 @@ export default function ProfileScreen() {
         <h4 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--primary)', fontWeight: '600', opacity: 0.9 }}>
           Configuración del ciclo
         </h4>
+        
+        {/* Duración Ciclo */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-light)' }}>Duración del ciclo</span>
           <span style={{ fontWeight: '600', color: durationSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
@@ -231,12 +247,34 @@ export default function ProfileScreen() {
           onChange={handleDurationChange}
           className="custom-range"
           style={{ 
-            '--value': `${((cycleDuration - 21) / (45 - 21)) * 100}%`
+            '--value': `${((cycleDuration - 21) / (45 - 21)) * 100}%`,
+            marginBottom: '20px'
+          }}
+        />
+
+        {/* Duración Periodo */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
+          <span style={{ color: 'var(--text-light)' }}>Duración del periodo</span>
+          <span style={{ fontWeight: '600', color: periodSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
+            {periodSaved ? '✓ Guardado' : `${periodDuration} días`}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={3}
+          max={10}
+          step={1}
+          value={periodDuration}
+          onChange={handlePeriodChange}
+          className="custom-range range-pink"
+          style={{ 
+            '--value': `${((periodDuration - 3) / (10 - 3)) * 100}%`,
+            '--thumb-color': '#FF9A9E'
           }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px', color: 'var(--text-light)' }}>
-          <span>21 días</span>
-          <span>45 días</span>
+          <span>3 días</span>
+          <span>10 días</span>
         </div>
       </div>
 

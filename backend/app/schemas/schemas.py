@@ -131,6 +131,7 @@ class ConfiguracionUpdate(BaseModel):
     recordatorio_ciclo: Optional[int] = None
     privacidad_estricta: Optional[int] = None
     duracion_ciclo: Optional[int] = None
+    duracion_periodo: Optional[int] = None
     edad: Optional[int] = None
     modo_oscuro: Optional[int] = None
 
@@ -140,6 +141,7 @@ class ConfiguracionOut(BaseModel):
     recordatorio_ciclo: int
     privacidad_estricta: int
     duracion_ciclo: int
+    duracion_periodo: int
     edad: Optional[int] = None
     modo_oscuro: int
 
