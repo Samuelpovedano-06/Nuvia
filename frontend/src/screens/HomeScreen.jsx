@@ -101,54 +101,27 @@ export default function HomeScreen() {
         </button>
       </div>
 
-      {/* Hero Card Dinámica */}
-      <div className="card" style={{ 
-        background: cycleStatus.color, 
-        color: 'white', 
-        border: 'none',
-        transition: 'all 0.5s ease',
-        position: 'relative',
-        overflow: 'hidden',
-        marginBottom: '16px'
-      }}>
-        {loadingData ? (
-          <div style={{ padding: '20px', textAlign: 'center' }}><div className="loader" style={{ borderColor: 'white', borderTopColor: 'transparent' }}></div></div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h3 style={{ color: 'white', fontSize: '24px', margin: 0 }}>Día {cycleStatus.day || '—'}</h3>
-                <p style={{ opacity: 0.9, margin: '4px 0 0 0' }}>{cycleStatus.phase}</p>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
-                HOY
-              </div>
-            </div>
-            
-            <div style={{ marginTop: '24px' }}>
-              <div style={{ height: '6px', background: 'rgba(255,255,255,0.3)', borderRadius: '3px', position: 'relative' }}>
-                <div style={{ 
-                  position: 'absolute', left: 0, top: 0, height: '100%', 
-                  width: `${cycleStatus.progress}%`, background: 'white', 
-                  borderRadius: '3px', transition: 'width 1s ease' 
-                }}></div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.2)', padding: '12px', borderRadius: '12px', fontSize: '13px' }}>
-              {cycleStatus.desc}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Caja Grande de Indicadores */}
+      {/* Caja Grande de Indicadores (Ahora con el Día incluido) */}
       <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.4)', margin: '0 0 16px 0' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           
+          {/* Día Actual (Sustituye al Hero Card) */}
+          <div className="card" style={{ 
+            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
+            background: cycleStatus.color,
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <Calendar size={14} />
+              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Día {cycleStatus.day || '—'}</span>
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', lineHeight: '1.2' }}>{cycleStatus.phase}</div>
+          </div>
+
           {/* Días Fértiles */}
           <div className="card" style={{ 
-            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '90px',
+            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
             background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center'
           }}>
@@ -161,7 +134,7 @@ export default function HomeScreen() {
 
           {/* Próximo Periodo */}
           <div className="card" style={{ 
-            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '90px',
+            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
             background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center'
           }}>
@@ -174,7 +147,7 @@ export default function HomeScreen() {
 
           {/* Ovulación */}
           <div className="card" style={{ 
-            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '90px',
+            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
             background: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center'
           }}>
