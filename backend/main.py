@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -21,6 +21,11 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(sintomas.router)
 app.include_router(diario.router)
+app.include_router(ciclos.router)
+app.include_router(configuracion.router)
+app.include_router(historial.router)
+app.include_router(predicciones.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def read_root():

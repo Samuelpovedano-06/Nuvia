@@ -131,6 +131,7 @@ class ConfiguracionUpdate(BaseModel):
     recordatorio_ciclo: Optional[int] = None
     privacidad_estricta: Optional[int] = None
     duracion_ciclo: Optional[int] = None
+    edad: Optional[int] = None
 
 class ConfiguracionOut(BaseModel):
     id_usuaria: UUID
@@ -138,6 +139,7 @@ class ConfiguracionOut(BaseModel):
     recordatorio_ciclo: int
     privacidad_estricta: int
     duracion_ciclo: int
+    edad: Optional[int] = None
 
     class Config:
         from_attributes = True

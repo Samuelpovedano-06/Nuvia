@@ -40,15 +40,17 @@ export default function ProfileScreen() {
         if (config && config.duracion_ciclo) {
           setCycleDuration(config.duracion_ciclo);
         }
+        if (config && config.edad) {
+          setEdad(String(config.edad));
+        }
       })
       .catch(err => {
         console.warn("No se pudo cargar la configuración, usando valor local:", err);
         const stored = localStorage.getItem('nuvia_cycle_duration');
         if (stored) setCycleDuration(Number(stored));
+        const storedEdad = localStorage.getItem('nuvia_edad');
+        if (storedEdad) setEdad(storedEdad);
       });
-
-    const storedEdad = localStorage.getItem('nuvia_edad');
-    if (storedEdad) setEdad(storedEdad);
   }, []);
 
   const handleDurationChange = async (e) => {
@@ -69,11 +71,15 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSaveEdad = () => {
+  const handleSaveEdad = async () => {
     const val = edadInput.trim();
     if (val && Number(val) > 0) {
       setEdad(val);
-      localStorage.setItem('nuvia_edad', val);
+      try {
+        await ApiService.updateConfig({ edad: Number(val) });
+      } catch (err) {
+        console.error("Error al guardar edad:", err);
+      }
     }
     setEditingEdad(false);
   };

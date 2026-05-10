@@ -98,5 +98,6 @@ class ConfiguracionUsuaria(Base):
     recordatorio_ciclo = Column(SmallInteger, server_default="1")
     privacidad_estricta = Column(SmallInteger, server_default="0")
     duracion_ciclo     = Column(SmallInteger, server_default="28")
+    edad               = Column(SmallInteger, nullable=True)
 
     usuaria = relationship("Usuaria", back_populates="configuracion")
