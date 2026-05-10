@@ -1,11 +1,66 @@
-import React, { useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check } from 'lucide-react';
+import { ApiService } from '../api';
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function formatFecha(fecha) {
+  if (!fecha) return '—';
+  const d = new Date(fecha);
+  return `${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
 
 export default function ProfileScreen() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const [ciclos, setCiclos] = useState([]);
+  const [loadingCiclos, setLoadingCiclos] = useState(true);
+
+  const [cycleDuration, setCycleDuration] = useState(28);
+  const [durationSaved, setDurationSaved] = useState(false);
+
+  const [edad, setEdad] = useState('');
+  const [editingEdad, setEditingEdad] = useState(false);
+  const [edadInput, setEdadInput] = useState('');
+
+  useEffect(() => {
+    ApiService.getCiclos()
+      .then(data => {
+        setCiclos(data);
+        const stored = localStorage.getItem('nuvia_cycle_duration');
+        if (stored) {
+          setCycleDuration(Number(stored));
+        } else {
+          const lastWithDuration = [...data].reverse().find(c => c.duracion);
+          if (lastWithDuration) setCycleDuration(lastWithDuration.duracion);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoadingCiclos(false));
+
+    const storedEdad = localStorage.getItem('nuvia_edad');
+    if (storedEdad) setEdad(storedEdad);
+  }, []);
+
+  const handleDurationChange = (e) => {
+    const val = Number(e.target.value);
+    setCycleDuration(val);
+    localStorage.setItem('nuvia_cycle_duration', val);
+    setDurationSaved(true);
+    setTimeout(() => setDurationSaved(false), 1500);
+  };
+
+  const handleSaveEdad = () => {
+    const val = edadInput.trim();
+    if (val && Number(val) > 0) {
+      setEdad(val);
+      localStorage.setItem('nuvia_edad', val);
+    }
+    setEditingEdad(false);
+  };
 
   const handleLogout = () => {
     logout();
@@ -15,26 +70,18 @@ export default function ProfileScreen() {
   return (
     <div className="screen-container">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '30px', width: '100%', maxWidth: '800px', margin: '0 auto 10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto 10px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
           <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Volver</span>
         </button>
       </div>
 
-      {/* Profile Header */}
+      {/* Avatar */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <div style={{ 
-          width: '100px', 
-          height: '100px', 
-          background: 'var(--primary-light)', 
-          borderRadius: '50%', 
-          margin: '0 auto 16px',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          fontSize: '42px',
-          color: 'white',
-          fontWeight: '500'
+        <div style={{
+          width: '100px', height: '100px', background: 'var(--primary-light)', borderRadius: '50%',
+          margin: '0 auto 16px', display: 'flex', justifyContent: 'center', alignItems: 'center',
+          fontSize: '42px', color: 'white', fontWeight: '500'
         }}>
           {user?.nombre?.charAt(0).toUpperCase() || 'U'}
         </div>
@@ -42,34 +89,87 @@ export default function ProfileScreen() {
         <p style={{ color: 'var(--text-light)', fontSize: '15px' }}>{user?.email}</p>
       </div>
 
-      {/* Information Sections */}
+      {/* Información personal */}
       <div className="card" style={{ padding: '20px' }}>
-        <h4 style={{ fontSize: '16px', marginBottom: '16px', opacity: 0.8 }}>Información personal</h4>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px' }}>
+        <h4 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--primary)', fontWeight: '600', opacity: 0.9 }}>
+          Información personal
+        </h4>
+
+        {/* Edad */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-light)' }}>Edad</span>
-          <span style={{ fontWeight: '500' }}>28 años</span>
+          {editingEdad ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="number"
+                value={edadInput}
+                onChange={e => setEdadInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSaveEdad()}
+                autoFocus
+                min={10} max={99}
+                style={{
+                  width: '60px', padding: '4px 8px', border: '1px solid var(--primary)',
+                  borderRadius: '8px', fontSize: '14px', textAlign: 'center', outline: 'none'
+                }}
+              />
+              <button onClick={handleSaveEdad} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex' }}>
+                <Check size={18} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: '500' }}>{edad ? `${edad} años` : '—'}</span>
+              <button
+                onClick={() => { setEdadInput(edad); setEditingEdad(true); }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Desde */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-light)' }}>Usando Nuvia desde</span>
-          <span style={{ fontWeight: '500' }}>Septiembre 2025</span>
+          <span style={{ fontWeight: '500' }}>{formatFecha(user?.fecha_registro)}</span>
         </div>
+
+        {/* Ciclos */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-light)' }}>Ciclos registrados</span>
-          <span style={{ fontWeight: '500', color: 'var(--primary-light)' }}>3 ciclos</span>
+          {loadingCiclos
+            ? <span style={{ color: 'var(--text-light)' }}>...</span>
+            : <span style={{ fontWeight: '600', color: 'var(--primary)' }}>
+                {ciclos.length} {ciclos.length === 1 ? 'ciclo' : 'ciclos'}
+              </span>
+          }
         </div>
       </div>
 
+      {/* Configuración del ciclo */}
       <div className="card" style={{ padding: '20px' }}>
-        <h4 style={{ fontSize: '16px', marginBottom: '16px', opacity: 0.8 }}>Configuración del ciclo</h4>
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-            <span style={{ color: 'var(--text-light)' }}>Duración del ciclo</span>
-            <span style={{ fontWeight: '500', color: 'var(--primary-light)' }}>28 días</span>
-          </div>
-          <div style={{ height: '8px', background: 'var(--bubble-3)', borderRadius: '4px', position: 'relative' }}>
-            <div style={{ width: '45%', height: '100%', background: 'var(--primary)', borderRadius: '4px' }}></div>
-            <div style={{ width: '20px', height: '20px', background: '#333', border: '2px solid white', borderRadius: '4px', position: 'absolute', top: '-6px', left: '42%' }}></div>
-          </div>
+        <h4 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--primary)', fontWeight: '600', opacity: 0.9 }}>
+          Configuración del ciclo
+        </h4>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
+          <span style={{ color: 'var(--text-light)' }}>Duración del ciclo</span>
+          <span style={{ fontWeight: '600', color: durationSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
+            {durationSaved ? '✓ Guardado' : `${cycleDuration} días`}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={21}
+          max={45}
+          step={1}
+          value={cycleDuration}
+          onChange={handleDurationChange}
+          style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px', color: 'var(--text-light)' }}>
+          <span>21 días</span>
+          <span>45 días</span>
         </div>
       </div>
 
@@ -86,7 +186,7 @@ export default function ProfileScreen() {
             </div>
           </div>
           <div style={{ width: '48px', height: '24px', background: 'var(--primary)', borderRadius: '12px', position: 'relative' }}>
-             <div style={{ width: '20px', height: '20px', background: 'white', borderRadius: '50%', position: 'absolute', right: '2px', top: '2px' }}></div>
+            <div style={{ width: '20px', height: '20px', background: 'white', borderRadius: '50%', position: 'absolute', right: '2px', top: '2px' }}></div>
           </div>
         </div>
 
@@ -116,18 +216,10 @@ export default function ProfileScreen() {
           <ChevronRight size={20} color="var(--text-light)" />
         </div>
 
-        {/* ADMIN PANEL OPTION (Only for Admins) */}
         {user?.rol === 'admin' && (
-          <div 
+          <div
             onClick={() => navigate('/admin')}
-            style={{ 
-              padding: '12px 20px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              cursor: 'pointer',
-              borderTop: '1px solid rgba(0,0,0,0.05)'
-            }}
+            style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderTop: '1px solid rgba(0,0,0,0.05)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ background: '#F3E5F5', padding: '10px', borderRadius: '50%', color: 'var(--primary)', marginRight: '16px' }}>
