@@ -143,46 +143,46 @@ export default function HomeScreen() {
       </div>
 
       {/* Caja Grande de Indicadores */}
-      <div className="card" style={{ padding: '12px', background: 'rgba(255,255,255,0.4)', margin: '0 0 16px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+      <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.4)', margin: '0 0 16px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           
           {/* Días Fértiles */}
           <div className="card" style={{ 
-            margin: 0, padding: '10px', border: 'none', color: 'white', minHeight: '80px',
+            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '90px',
             background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-              <Sparkles size={12} />
-              <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase' }}>Fértil</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <Sparkles size={14} />
+              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fértil</span>
             </div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{nextEvents.fertile}</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.fertile}</div>
           </div>
 
           {/* Próximo Periodo */}
           <div className="card" style={{ 
-            margin: 0, padding: '10px', border: 'none', color: 'white', minHeight: '80px',
+            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '90px',
             background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-              <Heart size={12} fill="white" />
-              <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase' }}>Periodo</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <Heart size={14} fill="white" />
+              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Periodo</span>
             </div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{nextEvents.period}</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.period}</div>
           </div>
 
           {/* Ovulación */}
           <div className="card" style={{ 
-            margin: 0, padding: '10px', border: 'none', color: 'white', minHeight: '80px',
+            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '90px',
             background: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)',
             display: 'flex', flexDirection: 'column', justifyContent: 'center'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-              <Zap size={12} fill="white" />
-              <span style={{ fontSize: '9px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase' }}>Ovulac.</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <Zap size={14} fill="white" />
+              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ovulac.</span>
             </div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{nextEvents.ovulation}</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.ovulation}</div>
           </div>
 
         </div>
