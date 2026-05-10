@@ -1,0 +1,225 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles } from 'lucide-react';
+import { ApiService } from '../api';
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+export default function CalendarScreen() {
+  const navigate = useNavigate();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [ciclos, setCiclos] = useState([]);
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [ciclosData, configData] = await Promise.all([
+          ApiService.getCiclos(),
+          ApiService.getConfig()
+        ]);
+        setCiclos(ciclosData);
+        setConfig(configData);
+      } catch (err) {
+        console.error("Error cargando datos del calendario:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year, month) => {
+    const day = new Date(year, month, 1).getDay();
+    return day === 0 ? 6 : day - 1; // Ajustar para que lunes sea 0
+  };
+
+  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+
+  const isToday = (day) => {
+    const today = new Date();
+    return day === today.getDate() && 
+           currentDate.getMonth() === today.getMonth() && 
+           currentDate.getFullYear() === today.getFullYear();
+  };
+
+  // Lógica simple de detección de días de periodo (basada en ciclos registrados)
+  const getDayStatus = (day) => {
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateObj = new Date(dateStr);
+
+    // 1. Verificar si es un día de periodo REAL (registrado)
+    const isPeriodoReal = ciclos.some(c => {
+      const inicio = new Date(c.fecha_inicio);
+      const fin = c.fecha_fin ? new Date(c.fecha_fin) : new Date(inicio.getTime() + 5 * 24 * 60 * 60 * 1000);
+      return dateObj >= inicio && dateObj <= fin;
+    });
+
+    if (isPeriodoReal) return 'periodo';
+
+    // 2. Predicciones simplificadas si hay configuración
+    if (config && ciclos.length > 0) {
+      const ultimoCiclo = ciclos[0]; // Asumiendo ordenados por fecha desc
+      const inicioUltimo = new Date(ultimoCiclo.fecha_inicio);
+      const duracion = config.duracion_ciclo || 28;
+      
+      // Próximo inicio estimado
+      const proximoInicio = new Date(inicioUltimo.getTime() + duracion * 24 * 60 * 60 * 1000);
+      const proximoFin = new Date(proximoInicio.getTime() + 5 * 24 * 60 * 60 * 1000);
+
+      if (dateObj >= proximoInicio && dateObj <= proximoFin) return 'prediccion-periodo';
+
+      // Ventana fértil (aprox 14 días antes del próximo periodo)
+      const ovulacion = new Date(proximoInicio.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const ventanaInicio = new Date(ovulacion.getTime() - 3 * 24 * 60 * 60 * 1000);
+      const ventanaFin = new Date(ovulacion.getTime() + 1 * 24 * 60 * 60 * 1000);
+
+      if (dateObj.toDateString() === ovulacion.toDateString()) return 'ovulacion';
+      if (dateObj >= ventanaInicio && dateObj <= ventanaFin) return 'fertil';
+    }
+
+    return null;
+  };
+
+  const renderDays = () => {
+    const days = [];
+    const totalDays = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth());
+    const firstDay = getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth());
+
+    // Espacios vacíos
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+    }
+
+    // Días del mes
+    for (let d = 1; d <= totalDays; d++) {
+      const status = getDayStatus(d);
+      days.push(
+        <div 
+          key={d} 
+          className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''}`}
+          onClick={() => navigate('/sintomas')}
+        >
+          <span className="day-number">{d}</span>
+          {status === 'ovulacion' && <Sparkles size={10} className="ovulacion-icon" />}
+        </div>
+      );
+    }
+    return days;
+  };
+
+  return (
+    <div className="screen-container">
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '800px', margin: '0 auto 20px' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+          <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Volver</span>
+        </button>
+      </div>
+
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          <CalendarIcon color="var(--primary)" /> Calendario Nuvia
+        </h2>
+        <p className="subtitle">Visualiza tu ciclo y planifica tus días</p>
+      </div>
+
+      <div className="card" style={{ padding: '20px', maxWidth: '400px', margin: '0 auto 30px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <button onClick={prevMonth} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><ChevronLeft /></button>
+          <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--primary)' }}>
+            {MESES[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </h3>
+          <button onClick={nextMonth} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><ChevronRight /></button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', textAlign: 'center', marginBottom: '10px' }}>
+          {DIAS_SEMANA.map(d => (
+            <div key={d} style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-light)', padding: '5px 0' }}>{d}</div>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
+          {renderDays()}
+        </div>
+      </div>
+
+      {/* Leyenda */}
+      <div className="card" style={{ padding: '16px', maxWidth: '400px', margin: '0 auto' }}>
+        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-dark)' }}>Leyenda</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ff4d4d' }}></div>
+            <span>Periodo</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ff4d4d', opacity: 0.3 }}></div>
+            <span>Predicción</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'var(--primary-light)' }}></div>
+            <span>Fase Fértil</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={12} color="var(--primary)" />
+            <span>Ovulación</span>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .calendar-day {
+          aspect-ratio: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          border-radius: 12px;
+          cursor: pointer;
+          position: relative;
+          transition: 0.2s;
+          color: var(--text-dark);
+          background: var(--white);
+        }
+        .calendar-day:hover {
+          background: #f0f0f0;
+        }
+        body.dark-mode .calendar-day:hover {
+          background: #333;
+        }
+        .calendar-day.empty {
+          cursor: default;
+          background: transparent !important;
+        }
+        .calendar-day.today {
+          border: 2px solid var(--primary);
+          font-weight: bold;
+        }
+        .calendar-day.periodo {
+          background: #ff4d4d !important;
+          color: white !important;
+        }
+        .calendar-day.prediccion-periodo {
+          background: rgba(255, 77, 77, 0.3) !important;
+        }
+        .calendar-day.fertil {
+          background: var(--primary-light) !important;
+        }
+        .calendar-day.ovulacion {
+          background: var(--primary-light) !important;
+          font-weight: bold;
+        }
+        .ovulacion-icon {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          color: var(--primary);
+        }
+      `}</style>
+    </div>
+  );
+}
