@@ -26,6 +26,11 @@ export default function ProfileScreen() {
   const [editingEdad, setEditingEdad] = useState(false);
   const [edadInput, setEdadInput] = useState('');
 
+  // Estados de configuración
+  const [notificaciones, setNotificaciones] = useState(1);
+  const [recordatorioCiclo, setRecordatorioCiclo] = useState(1);
+  const [privacidadEstricta, setPrivacidadEstricta] = useState(0);
+
   useEffect(() => {
     ApiService.getCiclos()
       .then(data => {
@@ -37,11 +42,12 @@ export default function ProfileScreen() {
     // Cargar configuración de la base de datos
     ApiService.getConfig()
       .then(config => {
-        if (config && config.duracion_ciclo) {
-          setCycleDuration(config.duracion_ciclo);
-        }
-        if (config && config.edad) {
-          setEdad(String(config.edad));
+        if (config) {
+          if (config.duracion_ciclo) setCycleDuration(config.duracion_ciclo);
+          if (config.edad) setEdad(String(config.edad));
+          setNotificaciones(config.notificaciones ?? 1);
+          setRecordatorioCiclo(config.recordatorio_ciclo ?? 1);
+          setPrivacidadEstricta(config.privacidad_estricta ?? 0);
         }
       })
       .catch(err => {
@@ -53,21 +59,24 @@ export default function ProfileScreen() {
       });
   }, []);
 
+  const handleUpdateConfig = async (key, val) => {
+    try {
+      await ApiService.updateConfig({ [key]: val });
+    } catch (err) {
+      console.error(`Error al actualizar ${key}:`, err);
+    }
+  };
+
   const handleDurationChange = async (e) => {
     const val = Number(e.target.value);
     setCycleDuration(val);
-    
-    // Guardar localmente para rapidez
     localStorage.setItem('nuvia_cycle_duration', val);
-    
     try {
-      // Guardar en la base de datos
       await ApiService.updateConfig({ duracion_ciclo: val });
       setDurationSaved(true);
       setTimeout(() => setDurationSaved(false), 1500);
     } catch (err) {
       console.error("Error al guardar en BD:", err);
-      // Opcional: mostrar error al usuario
     }
   };
 
@@ -82,6 +91,18 @@ export default function ProfileScreen() {
       }
     }
     setEditingEdad(false);
+  };
+
+  const toggleNotificaciones = () => {
+    const newVal = notificaciones === 1 ? 0 : 1;
+    setNotificaciones(newVal);
+    handleUpdateConfig('notificaciones', newVal);
+  };
+
+  const togglePrivacidad = () => {
+    const newVal = privacidadEstricta === 1 ? 0 : 1;
+    setPrivacidadEstricta(newVal);
+    handleUpdateConfig('privacidad_estricta', newVal);
   };
 
   const handleLogout = () => {
@@ -200,9 +221,12 @@ export default function ProfileScreen() {
 
       {/* Options List */}
       <div className="card" style={{ padding: '10px 0' }}>
-        <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div 
+          onClick={toggleNotificaciones}
+          style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+        >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: '#FCE4EC', padding: '10px', borderRadius: '50%', color: '#E91E63', marginRight: '16px' }}>
+            <div style={{ background: notificaciones ? '#FCE4EC' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: notificaciones ? '#E91E63' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
               <Bell size={18} />
             </div>
             <div>
@@ -210,22 +234,41 @@ export default function ProfileScreen() {
               <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Recordatorios y alertas</div>
             </div>
           </div>
-          <div style={{ width: '48px', height: '24px', background: 'var(--primary)', borderRadius: '12px', position: 'relative' }}>
-            <div style={{ width: '20px', height: '20px', background: 'white', borderRadius: '50%', position: 'absolute', right: '2px', top: '2px' }}></div>
+          <div style={{ 
+            width: '42px', height: '22px', background: notificaciones ? 'var(--primary)' : '#ccc', 
+            borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
+          }}>
+            <div style={{ 
+              width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
+              position: 'absolute', left: notificaciones ? '22px' : '2px', top: '2px',
+              transition: 'left 0.3s'
+            }}></div>
           </div>
         </div>
 
-        <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+        <div 
+          onClick={togglePrivacidad}
+          style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+        >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: '#F3E5F5', padding: '10px', borderRadius: '50%', color: 'var(--primary)', marginRight: '16px' }}>
+            <div style={{ background: privacidadEstricta ? '#F3E5F5' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: privacidadEstricta ? 'var(--primary)' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
               <Lock size={18} />
             </div>
             <div>
               <div style={{ fontSize: '15px', fontWeight: '500' }}>Privacidad</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Gestiona tus datos</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{privacidadEstricta ? 'Máxima protección activa' : 'Gestiona tus datos'}</div>
             </div>
           </div>
-          <ChevronRight size={20} color="var(--text-light)" />
+          <div style={{ 
+            width: '42px', height: '22px', background: privacidadEstricta ? 'var(--primary)' : '#ccc', 
+            borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
+          }}>
+            <div style={{ 
+              width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
+              position: 'absolute', left: privacidadEstricta ? '22px' : '2px', top: '2px',
+              transition: 'left 0.3s'
+            }}></div>
+          </div>
         </div>
 
         <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
