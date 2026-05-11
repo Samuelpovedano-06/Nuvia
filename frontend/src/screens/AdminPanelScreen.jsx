@@ -174,8 +174,10 @@ export default function AdminPanelScreen() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ 
-                  width: '36px', height: '36px', borderRadius: '50%', background: ['#BA68C8', '#FF9A9E', '#A78BFA', '#F472B6'][i % 4],
-                  display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold'
+                  width: '36px', height: '36px', borderRadius: '50%', 
+                  background: 'linear-gradient(135deg, var(--primary) 0%, #F472B6 100%)',
+                  display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold',
+                  boxShadow: '0 2px 8px rgba(186, 104, 200, 0.2)'
                 }}>
                   {u.nombre.charAt(0)}
                 </div>

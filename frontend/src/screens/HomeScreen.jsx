@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { Sparkles, Heart, Zap, Calendar } from 'lucide-react';
+import { Sparkles, Heart, Zap, Calendar, Activity, User } from 'lucide-react';
 
 const getPhaseInfo = (day, duration = 28) => {
   if (day <= 5) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
@@ -270,7 +270,9 @@ export default function HomeScreen() {
           <h4 style={{ margin: 0 }}>Registrar Síntoma</h4>
         </div>
         <div className="card" onClick={() => navigate('/calendar')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div>
+          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+            <Calendar size={32} />
+          </div>
           <h4 style={{ margin: 0 }}>Calendario y Ciclo</h4>
         </div>
         <div className="card" onClick={() => navigate('/wellness')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
@@ -280,7 +282,9 @@ export default function HomeScreen() {
           <h4 style={{ margin: 0 }}>Mi Bienestar</h4>
         </div>
         <div className="card" onClick={() => navigate('/profile')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>👤</div>
+          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+            <User size={32} />
+          </div>
           <h4 style={{ margin: 0 }}>Mi Perfil</h4>
         </div>
       </div>

@@ -116,7 +116,7 @@ export default function AdminUsersScreen() {
     <div className="screen-container">
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <button onClick={() => navigate('/admin')} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
           <ChevronLeft size={20} /> <span>Panel Admin</span>
         </button>
         <button 
@@ -158,8 +158,10 @@ export default function AdminUsersScreen() {
           <div key={u.id_usuaria} className="card" style={{ margin: 0, padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', animation: `fadeIn 0.3s ease ${i * 0.05}s both` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div style={{ 
-                width: '45px', height: '45px', borderRadius: '50%', background: u.rol === 'admin' ? 'var(--primary)' : '#f3f4f6', 
-                display: 'flex', justifyContent: 'center', alignItems: 'center', color: u.rol === 'admin' ? 'white' : '#666', fontWeight: 'bold', fontSize: '18px'
+                width: '45px', height: '45px', borderRadius: '50%', 
+                background: 'linear-gradient(135deg, var(--primary) 0%, #F472B6 100%)', 
+                display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', fontSize: '18px',
+                boxShadow: '0 4px 10px rgba(186, 104, 200, 0.15)'
               }}>
                 {u.nombre.charAt(0).toUpperCase()}
               </div>
