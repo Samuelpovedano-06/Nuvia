@@ -55,8 +55,11 @@ def get_admin_stats(db: Session = Depends(get_db), _=Depends(require_admin)):
 
 @router.get("/users", response_model=List[UsuariaOut])
 def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
-    """Lista todas las usuarias del sistema."""
-    return db.query(Usuaria).all()
+    """Lista todas las usuarias del sistema con su conteo de ciclos."""
+    users = db.query(Usuaria).all()
+    for user in users:
+        user.total_ciclos = db.query(Ciclo).filter(Ciclo.id_usuaria == user.id_usuaria).count()
+    return users
 
 @router.post("/users", response_model=UsuariaOut, status_code=201)
 def create_user_admin(datos: UsuariaCreate, db: Session = Depends(get_db), _=Depends(require_admin)):

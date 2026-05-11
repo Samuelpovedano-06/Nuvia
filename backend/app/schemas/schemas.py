@@ -22,6 +22,8 @@ class UsuariaOut(BaseModel):
     email: str
     rol: str
     fecha_registro: Optional[datetime]
+    ultimo_acceso: Optional[datetime]
+    total_ciclos: Optional[int] = 0
 
     class Config:
         from_attributes = True

@@ -14,6 +14,7 @@ class Usuaria(Base):
     otp            = Column(String(10), nullable=True)
     otp_expiry     = Column(DateTime, nullable=True)
     fecha_registro = Column(DateTime, server_default=func.now())
+    ultimo_acceso  = Column(DateTime, nullable=True)
 
     # Relaciones
     ciclos            = relationship("Ciclo",                back_populates="usuaria", cascade="all, delete")

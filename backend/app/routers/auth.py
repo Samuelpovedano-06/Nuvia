@@ -50,6 +50,11 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
         )
 
     token = create_access_token(data={"sub": str(usuaria.id_usuaria)})
+    
+    # Actualizar último acceso
+    usuaria.ultimo_acceso = datetime.now()
+    db.commit()
+
     return {"access_token": token, "token_type": "bearer"}
 
 

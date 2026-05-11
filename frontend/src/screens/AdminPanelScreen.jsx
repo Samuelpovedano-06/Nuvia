@@ -185,8 +185,12 @@ export default function AdminPanelScreen() {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', fontWeight: '500' }}>{u.rol}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>ID: {u.id_usuaria.toString().slice(0, 5)}...</div>
+                <div style={{ fontSize: '13px', fontWeight: '500' }}>{u.total_ciclos || 0} ciclos</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+                  {u.ultimo_acceso 
+                    ? `Último acceso: ${new Date(u.ultimo_acceso).toLocaleDateString()} ${new Date(u.ultimo_acceso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                    : 'Sin actividad'}
+                </div>
               </div>
             </div>
           ))
