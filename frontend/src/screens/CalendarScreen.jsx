@@ -164,15 +164,15 @@ export default function CalendarScreen() {
             <span>Periodo</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ff4d4d', opacity: 0.3 }}></div>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1px dashed #ff4d4d', background: 'rgba(255, 77, 77, 0.15)' }}></div>
             <span>Predicción</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'var(--primary-light)' }}></div>
-            <span>Fase Fértil</span>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1px dashed var(--primary)', background: 'rgba(186, 104, 200, 0.15)' }}></div>
+            <span>Día Fértil</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={12} color="var(--primary)" />
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--primary)' }}></div>
             <span>Ovulación</span>
           </div>
         </div>
@@ -197,12 +197,10 @@ export default function CalendarScreen() {
           background: #f0f0f0;
         }
         .calendar-day.future {
-          opacity: 0.4;
           cursor: not-allowed;
-          filter: grayscale(1);
         }
-        .calendar-day.future:hover {
-          background: var(--white);
+        .calendar-day.future .day-number {
+          opacity: 0.5;
         }
         body.dark-mode .calendar-day:hover {
           background: #333;
@@ -220,20 +218,24 @@ export default function CalendarScreen() {
           color: white !important;
         }
         .calendar-day.prediccion-periodo {
-          background: rgba(255, 77, 77, 0.3) !important;
+          background: rgba(255, 77, 77, 0.15) !important;
+          border: 1px dashed #ff4d4d;
         }
         .calendar-day.fertil {
-          background: var(--primary-light) !important;
+          background: rgba(186, 104, 200, 0.15) !important;
+          border: 1px dashed var(--primary);
         }
         .calendar-day.ovulacion {
-          background: var(--primary-light) !important;
+          background: var(--primary) !important;
+          color: white !important;
           font-weight: bold;
+          box-shadow: 0 0 10px rgba(156, 39, 176, 0.3);
         }
         .ovulacion-icon {
           position: absolute;
           top: 4px;
           right: 4px;
-          color: var(--primary);
+          color: white;
         }
       `}</style>
     </div>
