@@ -84,12 +84,16 @@ export default function CalendarScreen() {
 
       const duracionP = config?.duracion_periodo || 5;
       
-      // Asegurar que la fase folicular (melocotón) dure al menos 6-7 días
-      const ventanaInicio = duracionP + 7; 
+      // Lógica Dinámica: Ovulación normal a 14 días del final
+      const ovulacionBase = duracion - 14;
+      const inicioFertilBase = ovulacionBase - 3;
+
+      // Regla de Oro: Asegurar al menos 3 días de Fase Folicular (Melocotón)
+      const ventanaInicio = Math.max(duracionP + 4, inicioFertilBase); 
       const ovulacion = ventanaInicio + 3;
       const ventanaFin = ovulacion + 1;
 
-      // Definición de fases con Margen Generoso
+      // Definición de fases Orgánica con Margen Mínimo
       if (diaCiclo <= duracionP) return 'prediccion-periodo';
       if (diaCiclo < ventanaInicio) return 'folicular';
       if (diaCiclo === ovulacion) return 'ovulacion'; 
