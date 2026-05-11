@@ -1,13 +1,49 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 from uuid import UUID
+from datetime import date, timedelta
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria
-from app.schemas.schemas import UsuariaOut, UsuariaCreate
+from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma
+from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut
 from app.routers.auth_utils import get_current_user, hash_password
 
 router = APIRouter(prefix="/admin", tags=["Administración"])
+
+@router.get("/stats", response_model=AdminStatsOut)
+def get_admin_stats(db: Session = Depends(get_db), _=Depends(require_admin)):
+    """Obtiene estadísticas reales del sistema."""
+    hoy = date.today()
+    hace_una_semana = hoy - timedelta(days=7)
+    hace_dos_semanas = hoy - timedelta(days=14)
+
+    # 1. Totales
+    total_users = db.query(Usuaria).count()
+    total_ciclos = db.query(Ciclo).count()
+    
+    # 2. Registros de hoy (síntomas)
+    registros_hoy = db.query(RegistroSintoma).filter(RegistroSintoma.fecha == hoy).count()
+    
+    # 3. Crecimiento Semanal (Usuarias nuevas esta semana vs semana pasada)
+    users_esta_semana = db.query(Usuaria).filter(Usuaria.fecha_registro >= hace_una_semana).count()
+    users_semana_pasada = db.query(Usuaria).filter(
+        Usuaria.fecha_registro >= hace_dos_semanas,
+        Usuaria.fecha_registro < hace_una_semana
+    ).count()
+    
+    # Cálculo de porcentaje
+    if users_semana_pasada == 0:
+        crecimiento = 100.0 if users_esta_semana > 0 else 0.0
+    else:
+        crecimiento = ((users_esta_semana - users_semana_pasada) / users_semana_pasada) * 100
+        
+    return {
+        "total_users": total_users,
+        "total_ciclos": total_ciclos,
+        "registros_hoy": registros_hoy,
+        "crecimiento_semanal": round(crecimiento, 2)
+    }
 
 # Función para verificar si el usuario es administrador
 def require_admin(current_user: Usuaria = Depends(get_current_user)):

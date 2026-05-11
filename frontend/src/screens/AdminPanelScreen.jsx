@@ -11,6 +11,7 @@ export default function AdminPanelScreen() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [stats, setStats] = useState({ total_users: 0, total_ciclos: 0, registros_hoy: 0, crecimiento_semanal: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -25,15 +26,19 @@ export default function AdminPanelScreen() {
     if (user && user.rol !== 'admin') {
       navigate('/');
     } else {
-      fetchUsers();
+      fetchData();
     }
   }, [user, navigate]);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const data = await ApiService.getUsers();
-      setUsers(data);
+      const [usersData, statsData] = await Promise.all([
+        ApiService.getUsers(),
+        ApiService.getAdminStats()
+      ]);
+      setUsers(usersData);
+      setStats(statsData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -105,13 +110,13 @@ export default function AdminPanelScreen() {
         }}>
           <Users size={24} style={{ marginBottom: '12px', opacity: 0.8 }} />
           <div style={{ fontSize: '14px', opacity: 0.9 }}>Usuarias registradas</div>
-          <div style={{ fontSize: '36px', fontWeight: 'bold', margin: '4px 0' }}>{users.length.toLocaleString()}</div>
+          <div style={{ fontSize: '36px', fontWeight: 'bold', margin: '4px 0' }}>{stats.total_users.toLocaleString()}</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="card" style={{ margin: 0, padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Activity size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
             <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Registros hoy</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{Math.floor(users.length * 1.5) + 12}</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{stats.registros_hoy}</div>
           </div>
         </div>
       </div>
@@ -120,12 +125,14 @@ export default function AdminPanelScreen() {
         <div className="card" style={{ margin: 0, padding: '16px' }}>
           <Calendar size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
           <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Ciclos totales</div>
-          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{(users.length * 4.2).toFixed(0)}</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{stats.total_ciclos.toLocaleString()}</div>
         </div>
         <div className="card" style={{ margin: 0, padding: '16px' }}>
-          <TrendingUp size={20} color="#4CAF50" style={{ marginBottom: '8px' }} />
-          <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Crecimiento</div>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#4CAF50' }}>+{users.length > 0 ? '5.2%' : '0%'}</div>
+          <TrendingUp size={20} color={stats.crecimiento_semanal >= 0 ? "#4CAF50" : "#F44336"} style={{ marginBottom: '8px' }} />
+          <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Crecimiento sem.</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: stats.crecimiento_semanal >= 0 ? "#4CAF50" : "#F44336" }}>
+            {stats.crecimiento_semanal >= 0 ? '+' : ''}{stats.crecimiento_semanal}%
+          </div>
         </div>
       </div>
 

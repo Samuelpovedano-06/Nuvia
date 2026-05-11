@@ -87,6 +87,13 @@ export const ApiService = {
     return data;
   },
 
+  getAdminStats: async () => {
+    const res = await fetch(`${baseUrl}/admin/stats`, { headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al obtener estadísticas');
+    return data;
+  },
+
   createUserAdmin: async (userData) => {
     const res = await fetch(`${baseUrl}/admin/users`, {
       method: 'POST',

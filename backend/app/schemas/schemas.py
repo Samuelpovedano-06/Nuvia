@@ -167,3 +167,11 @@ class RegistroDiarioOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ─────────────────────── ADMIN STATS ───────────────────────
+
+class AdminStatsOut(BaseModel):
+    total_users: int
+    total_ciclos: int
+    registros_hoy: int
+    crecimiento_semanal: float
