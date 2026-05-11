@@ -23,46 +23,29 @@ const OvuloIcon = ({ size = 40, color = '#C084FC', opacity = 1 }) => (
 );
 import { ApiService } from '../api';
 
-// Datos de detalle para los puntos del gráfico con Iconos Estilizados
-const getPuntosDetalle = (duracion) => {
-  const ovulacion = Math.max(1, duracion - 14);
-  return {
-    1: {
-      title: 'Día 1: Inicio',
-      desc: 'Menstruación. Fase de renovación hormonal.',
-      icon: null
-    },
-    5: {
-      title: 'Día 5: Transición',
-      desc: 'Fin del periodo. Los estrógenos suben.',
-      icon: null
-    },
-    10: {
-      title: 'Día 10: Ventana Fértil',
-      desc: 'Tus niveles de energía y libido suben.',
-      icon: null
-    },
-    [ovulacion]: {
-      title: `Día ${ovulacion}: Ovulación`,
-      desc: 'Momento pico de fertilidad. Te sientes radiante.',
-      icon: <div style={{ background: '#FAF5FF', padding: '10px', borderRadius: '50%' }}><OvuloIcon size={32} /></div>
-    },
-    [ovulacion + 4]: {
-      title: 'Fase de Preparación',
-      desc: 'La progesterona sube. Es hora de bajar el ritmo.',
-      icon: null
-    },
-    [duracion - 4]: {
-      title: 'Fase de Preparación (Pico)',
-      desc: 'Posibles síntomas premenstruales. ¡Cuídate!',
-      icon: null
-    },
-    [duracion]: {
-      title: `Día ${duracion}: Cierre`,
-      desc: 'Preparación para el nuevo ciclo.',
-      icon: null
-    }
-  };
+const calcPuntosClave = (duracion) => {
+  const ov = Math.max(7, duracion - 14);
+  const p2 = Math.round(duracion * 0.18);
+  const p3 = Math.round((p2 + ov) / 2);
+  const p5 = ov + Math.round((duracion - ov) * 0.35);
+  const p6 = ov + Math.round((duracion - ov) * 0.72);
+  return [...new Set([1, p2, p3, ov, p5, p6, duracion])]
+    .filter(d => d >= 1 && d <= duracion)
+    .sort((a, b) => a - b);
+};
+
+const getPuntosDetalle = (puntosClave) => {
+  const [d1, d2, d3, d4, d5, d6, d7] = puntosClave;
+  const r = {};
+  if (d1) r[d1] = { title: `Día ${d1}: Inicio`,        desc: 'Menstruación. Fase de renovación hormonal.' };
+  if (d2) r[d2] = { title: `Día ${d2}: Transición`,     desc: 'Fin del periodo. Los estrógenos suben.' };
+  if (d3) r[d3] = { title: `Día ${d3}: Ventana Fértil`, desc: 'Inicio ventana fértil. Aumenta la energía.' };
+  if (d4) r[d4] = { title: `Día ${d4}: Ovulación`,      desc: 'Pico de fertilidad. Te sientes radiante.',
+    icon: <div style={{ background: '#FAF5FF', padding: '10px', borderRadius: '50%' }}><OvuloIcon size={32} /></div> };
+  if (d5) r[d5] = { title: `Día ${d5}: Fase Lútea`,     desc: 'La progesterona empieza a dominar.' };
+  if (d6) r[d6] = { title: `Día ${d6}: Pico Lúteo`,     desc: 'Posibles síntomas premenstruales.' };
+  if (d7) r[d7] = { title: `Día ${d7}: Cierre`,         desc: 'Preparación para el nuevo ciclo.' };
+  return r;
 };
 
 const getYOnCurve = (x, ovulacionX, width, height) => {
@@ -94,8 +77,8 @@ const getYOnCurve = (x, ovulacionX, width, height) => {
 const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) => {
   const width = 800;
   const height = 120;
-  const ovulacion = Math.max(1, duracion - 14);
-  const puntosClave = [...new Set([1, 5, 10, ovulacion, ovulacion + 4, duracion - 4, duracion])].sort((a, b) => a - b);
+  const puntosClave = calcPuntosClave(duracion);
+  const ovulacion = Math.max(7, duracion - 14);
   const ovulacionX = (ovulacion / duracion) * width;
   const getX = (dia) => (dia / duracion) * width;
 
@@ -158,7 +141,7 @@ export default function PredictionsScreen() {
         const ovulacion = new Date(proximoPeriodo.getTime() - 14 * 86400000);
 
         setData({ diaActual, duracion, proximoPeriodo, ovulacion });
-        setSelectedPoint(14);
+        setSelectedPoint(Math.max(7, duracion - 14));
       } catch (err) {
         console.error(err);
       }
@@ -169,8 +152,10 @@ export default function PredictionsScreen() {
 
   if (loading) return <div className="screen-container" style={{ justifyContent: 'center', alignItems: 'center' }}><div className="loader"></div></div>;
 
-  const puntosDetalle = getPuntosDetalle(data.duracion);
-  const tooltipInfo = puntosDetalle[selectedPoint] || puntosDetalle[Math.max(1, data.duracion - 14)];
+  const puntosClave = calcPuntosClave(data.duracion);
+  const puntosDetalle = getPuntosDetalle(puntosClave);
+  const ovulacionDia = Math.max(7, data.duracion - 14);
+  const tooltipInfo = puntosDetalle[selectedPoint] || puntosDetalle[ovulacionDia];
 
   return (
     <div className="screen-container">
