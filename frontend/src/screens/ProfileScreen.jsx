@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun } from 'lucide-react';
@@ -82,28 +82,37 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleDurationChange = async (e) => {
+  const durationTimer = useRef(null);
+  const periodTimer = useRef(null);
+
+  const handleDurationChange = (e) => {
     const val = Number(e.target.value);
     setCycleDuration(val);
-    try {
-      await ApiService.updateConfig({ duracion_ciclo: val });
-      setDurationSaved(true);
-      setTimeout(() => setDurationSaved(false), 1500);
-    } catch (err) {
-      console.error("Error al guardar ciclo:", err);
-    }
+    clearTimeout(durationTimer.current);
+    durationTimer.current = setTimeout(async () => {
+      try {
+        await ApiService.updateConfig({ duracion_ciclo: val });
+        setDurationSaved(true);
+        setTimeout(() => setDurationSaved(false), 1500);
+      } catch (err) {
+        console.error("Error al guardar ciclo:", err);
+      }
+    }, 600);
   };
 
-  const handlePeriodChange = async (e) => {
+  const handlePeriodChange = (e) => {
     const val = Number(e.target.value);
     setPeriodDuration(val);
-    try {
-      await ApiService.updateConfig({ duracion_periodo: val });
-      setPeriodSaved(true);
-      setTimeout(() => setPeriodSaved(false), 1500);
-    } catch (err) {
-      console.error("Error al guardar periodo:", err);
-    }
+    clearTimeout(periodTimer.current);
+    periodTimer.current = setTimeout(async () => {
+      try {
+        await ApiService.updateConfig({ duracion_periodo: val });
+        setPeriodSaved(true);
+        setTimeout(() => setPeriodSaved(false), 1500);
+      } catch (err) {
+        console.error("Error al guardar periodo:", err);
+      }
+    }, 600);
   };
 
   const handleSaveEdad = async () => {
