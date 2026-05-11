@@ -148,32 +148,64 @@ export default function CalendarScreen() {
   };
 
   const getDayStatus = (day) => {
-    const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    // Función auxiliar para obtener YYYY-MM-DD en hora LOCAL
+    const toLocalYMD = (date) => {
+      const d = new Date(date);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dayNum}`;
+    };
+
+    // Fecha actual de la celda del calendario
+    const dObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dStr = toLocalYMD(dObj);
+
+    // 1. Verificar si es un día de periodo REAL (registrado)
     const isPeriodoReal = ciclos.some(c => {
-      const inicio = new Date(c.fecha_inicio);
+      const inicioStr = toLocalYMD(c.fecha_inicio);
       const duracionP = config?.duracion_periodo || 5;
-      const fin = c.fecha_fin ? new Date(c.fecha_fin) : new Date(inicio.getTime() + (duracionP - 1) * 24 * 60 * 60 * 1000);
-      return dateObj >= inicio && dateObj <= fin;
+      
+      let finStr;
+      if (c.fecha_fin) {
+        finStr = toLocalYMD(c.fecha_fin);
+      } else {
+        const finDate = new Date(c.fecha_inicio);
+        finDate.setDate(finDate.getDate() + (duracionP - 1));
+        finStr = toLocalYMD(finDate);
+      }
+      
+      return dStr >= inicioStr && dStr <= finStr;
     });
+
     if (isPeriodoReal) return 'periodo';
+
+    // 2. Predicciones continuas si hay configuración
     if (config && ciclos.length > 0) {
       const ultimoCiclo = ciclos[0]; 
       const inicioUltimo = new Date(ultimoCiclo.fecha_inicio);
+      inicioUltimo.setHours(0,0,0,0);
+      dObj.setHours(0,0,0,0);
+
       const duracion = config.duracion_ciclo || 28;
-      const diffTime = dateObj.getTime() - inicioUltimo.getTime();
+      const diffTime = dObj.getTime() - inicioUltimo.getTime();
       const diffDays = Math.floor(diffTime / 86400000);
+      
       let diaCiclo = ((diffDays % duracion) + duracion) % duracion + 1;
       const duracionP = config?.duracion_periodo || 5;
+      
       const ovulacionBase = duracion - 14;
       const inicioFertilBase = ovulacionBase - 3;
       const ventanaInicio = Math.max(duracionP + 4, inicioFertilBase); 
       const ovulacion = ventanaInicio + 3;
       const ventanaFin = ovulacion + 1;
+
       if (diaCiclo <= duracionP) return 'prediccion-periodo';
       if (diaCiclo < ventanaInicio) return 'folicular';
       if (diaCiclo === ovulacion) return 'ovulacion'; 
       if (diaCiclo >= ventanaInicio && diaCiclo <= ventanaFin) return 'fertil';
     }
+
     return null;
   };
 
