@@ -166,14 +166,6 @@ export default function AdminPanelScreen() {
         </button>
       </div>
 
-      {/* Help Floating Icon */}
-      <div style={{ 
-        position: 'fixed', bottom: '20px', right: '20px', width: '40px', height: '40px',
-        background: '#333', color: 'white', borderRadius: '50%', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px'
-      }}>
-        ?
-      </div>
     </div>
   );
 }
