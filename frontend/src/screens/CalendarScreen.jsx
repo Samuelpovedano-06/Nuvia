@@ -83,7 +83,12 @@ export default function CalendarScreen() {
       let diaCiclo = ((diffDays % duracion) + duracion) % duracion + 1;
 
       const duracionP = config?.duracion_periodo || 5;
-      const ovulacion = Math.max(duracionP + 2, duracion - 14); // Al menos 2 días tras el periodo
+      
+      // Asegurar que la ventana fértil empiece al menos 3 días después de la regla
+      const minInicioFertil = duracionP + 3;
+      const ovulacionCalculada = duracion - 14;
+      const ovulacion = Math.max(minInicioFertil + 3, ovulacionCalculada); 
+      
       const ventanaInicio = ovulacion - 3;
       const ventanaFin = ovulacion + 1;
 
