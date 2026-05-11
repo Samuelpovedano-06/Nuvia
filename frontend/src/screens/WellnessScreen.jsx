@@ -55,15 +55,25 @@ export default function WellnessScreen() {
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState('folicular');
   const [day, setDay] = useState(1);
+  const [recentHealth, setRecentHealth] = useState({ symptoms: [], states: [] });
+  const [customAdvice, setCustomAdvice] = useState(null);
 
   useEffect(() => {
-    const fetchPhase = async () => {
+    const fetchEverything = async () => {
       try {
-        const [ciclos, config] = await Promise.all([
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        
+        const [ciclos, config, sToday, sYesterday, dToday, dYesterday] = await Promise.all([
           ApiService.getCiclos(),
-          ApiService.getConfig()
+          ApiService.getConfig(),
+          ApiService.getRegistrosSintomas(today),
+          ApiService.getRegistrosSintomas(yesterday),
+          ApiService.getRegistroDiario(today),
+          ApiService.getRegistroDiario(yesterday)
         ]);
 
+        // 1. Determinar Fase
         if (ciclos.length > 0) {
           const ultimo = ciclos[0];
           const duracion = config?.duracion_ciclo || 28;
@@ -71,23 +81,67 @@ export default function WellnessScreen() {
           const hoy = new Date();
           const inicio = new Date(ultimo.fecha_inicio);
           const diaActual = (Math.floor((hoy - inicio) / 86400000) % duracion) + 1;
-          
           setDay(diaActual);
           
-          // Lógica de fases para consejos
           if (diaActual <= duracionP) setPhase('menstrual');
           else if (diaActual < (duracion - 14) - 3) setPhase('folicular');
           else if (diaActual <= (duracion - 14) + 1) setPhase('ovulatoria');
           else setPhase('lutea');
         }
+
+        // 2. Procesar Salud Reciente
+        const allSymptoms = [...(sToday || []), ...(sYesterday || [])];
+        const allStates = [dToday, dYesterday].filter(d => d && (d.flujo || d.relaciones));
+        setRecentHealth({ symptoms: allSymptoms, states: allStates });
+
+        // 3. Generar Consejo Dinámico (Machine Learning "Ligero")
+        generateDynamicAdvice(allSymptoms, dToday);
+
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchPhase();
+    fetchEverything();
   }, []);
+
+  const generateDynamicAdvice = (symptoms, daily) => {
+    const names = symptoms.map(s => s.nombre_sintoma || s.id_sintoma); // Simplificado
+    let advice = null;
+
+    if (names.some(n => n.includes('Dolor') || n.includes('Cólicos'))) {
+      advice = {
+        title: 'Foco: Alivio del Dolor',
+        desc: 'Tus registros muestran molestias físicas. Prioriza el magnesio y el calor local. Evita ejercicios de impacto hoy.',
+        icon: <Zap size={20} color="#F6416C" />,
+        color: '#FFF1F2'
+      };
+    } else if (names.includes('Cansancio') || names.includes('Insomnio')) {
+      advice = {
+        title: 'Foco: Recuperación',
+        desc: 'Has reportado fatiga. Tu cuerpo pide descanso extra. Intenta dormir 1h más y reduce la intensidad de tus tareas.',
+        icon: <Moon size={20} color="#0369A1" />,
+        color: '#F0F9FF'
+      };
+    } else if (names.includes('Ansiedad') || names.includes('Sensibilidad')) {
+      advice = {
+        title: 'Foco: Equilibrio Mental',
+        desc: 'Detectamos sensibilidad emocional. Es un gran día para escribir en tu diario o practicar 5 min de respiración guiada.',
+        icon: <Flower2 size={20} color="#7C3AED" />,
+        color: '#F5F3FF'
+      };
+    } else if (names.includes('Euforia') || names.includes('Libido Alta')) {
+      advice = {
+        title: 'Foco: Máxima Potencia',
+        desc: '¡Estás en un pico de energía! Aprovecha para resolver tareas difíciles o hacer un entrenamiento intenso.',
+        icon: <Sparkles size={20} color="#ED8F03" />,
+        color: '#FFFBEB'
+      };
+    }
+
+    setCustomAdvice(advice);
+  };
 
   if (loading) return <div className="screen-container" style={{ justifyContent: 'center', alignItems: 'center' }}><div className="loader"></div></div>;
 
@@ -103,8 +157,25 @@ export default function WellnessScreen() {
 
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
         <h2 style={{ fontSize: '28px', color: 'var(--primary)', margin: '0 0 5px 0' }}>Nuvia Bienestar</h2>
-        <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>Consejos personalizados para tu día {day}</p>
+        <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>Basado en tu estado de los últimos días</p>
       </div>
+
+      {/* SECCIÓN INTELIGENTE: Escáner de Salud */}
+      {customAdvice && (
+        <div className="card" style={{ 
+          background: customAdvice.color, border: `1px solid ${customAdvice.color}`, 
+          padding: '16px', marginBottom: '25px', display: 'flex', gap: '15px', alignItems: 'center',
+          animation: 'scaleIn 0.3s ease'
+        }}>
+          <div style={{ background: 'white', padding: '10px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
+            {customAdvice.icon}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '2px', color: '#333' }}>{customAdvice.title}</div>
+            <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.4' }}>{customAdvice.desc}</div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Card de Fase */}
       <div className="card" style={{ 
@@ -124,29 +195,37 @@ export default function WellnessScreen() {
 
       <div style={{ display: 'grid', gap: '15px', paddingBottom: '40px' }}>
         
-        {/* Alimentación */}
+        {/* Alimentación Adaptativa */}
         <div className="card" style={{ margin: 0, padding: '20px', background: 'white', display: 'flex', gap: '15px' }}>
           <div style={{ background: '#FFF7ED', padding: '12px', borderRadius: '15px', color: '#C2410C', height: 'fit-content' }}>
             <Utensils size={24} />
           </div>
           <div>
             <h4 style={{ margin: '0 0 5px 0', color: '#C2410C' }}>Alimentación</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>{currentAdvice.food}</p>
+            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>
+              {customAdvice?.title === 'Foco: Alivio del Dolor' 
+                ? 'Prioriza alimentos antiinflamatorios como cúrcuma, frutos rojos y pescados ricos en Omega-3.' 
+                : currentAdvice.food}
+            </p>
           </div>
         </div>
 
-        {/* Ejercicio */}
+        {/* Ejercicio Adaptativo */}
         <div className="card" style={{ margin: 0, padding: '20px', background: 'white', display: 'flex', gap: '15px' }}>
           <div style={{ background: '#F0F9FF', padding: '12px', borderRadius: '15px', color: '#0369A1', height: 'fit-content' }}>
             <Zap size={24} />
           </div>
           <div>
             <h4 style={{ margin: '0 0 5px 0', color: '#0369A1' }}>Actividad Física</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>{currentAdvice.exercise}</p>
+            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>
+              {customAdvice?.title === 'Foco: Recuperación'
+                ? 'Hoy tu cuerpo necesita regenerarse. Prueba con movilidad articular suave o un paseo corto al aire libre.'
+                : currentAdvice.exercise}
+            </p>
           </div>
         </div>
 
-        {/* Autocuidado */}
+        {/* Autocuidado Dinámico */}
         <div className="card" style={{ margin: 0, padding: '20px', background: 'white', display: 'flex', gap: '15px' }}>
           <div style={{ background: '#FDF2F8', padding: '12px', borderRadius: '15px', color: '#BE185D', height: 'fit-content' }}>
             <Heart size={24} />

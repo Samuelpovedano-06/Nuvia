@@ -274,7 +274,9 @@ export default function HomeScreen() {
           <h4 style={{ margin: 0 }}>Calendario y Ciclo</h4>
         </div>
         <div className="card" onClick={() => navigate('/wellness')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🧘‍♀️</div>
+          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+            <Sparkles size={32} />
+          </div>
           <h4 style={{ margin: 0 }}>Mi Bienestar</h4>
         </div>
         <div className="card" onClick={() => navigate('/profile')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
