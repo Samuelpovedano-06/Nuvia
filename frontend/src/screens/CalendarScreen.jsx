@@ -83,12 +83,15 @@ export default function CalendarScreen() {
       let diaCiclo = ((diffDays % duracion) + duracion) % duracion + 1;
 
       const duracionP = config?.duracion_periodo || 5;
+      const ovulacion = Math.max(duracionP + 2, duracion - 14); // Al menos 2 días tras el periodo
+      const ventanaInicio = ovulacion - 3;
+      const ventanaFin = ovulacion + 1;
 
-      // Definición de fases (alineado con la Home)
+      // Definición de fases Dinámica
       if (diaCiclo <= duracionP) return 'prediccion-periodo';
-      if (diaCiclo <= 10) return 'folicular';
-      if (diaCiclo === 14) return 'ovulacion'; 
-      if (diaCiclo >= 11 && diaCiclo <= 16) return 'fertil';
+      if (diaCiclo < ventanaInicio) return 'folicular';
+      if (diaCiclo === ovulacion) return 'ovulacion'; 
+      if (diaCiclo >= ventanaInicio && diaCiclo <= ventanaFin) return 'fertil';
       
       return null; 
     }
