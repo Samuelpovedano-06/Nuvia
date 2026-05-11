@@ -68,25 +68,26 @@ export default function CalendarScreen() {
 
     if (isPeriodoReal) return 'periodo';
 
-    // 2. Predicciones simplificadas si hay configuración
+    // 2. Predicciones continuas si hay configuración
     if (config && ciclos.length > 0) {
-      const ultimoCiclo = ciclos[0]; // Asumiendo ordenados por fecha desc
+      const ultimoCiclo = ciclos[0]; 
       const inicioUltimo = new Date(ultimoCiclo.fecha_inicio);
       const duracion = config.duracion_ciclo || 28;
+      
+      // Calcular cuántos días han pasado desde el último inicio registrado
+      const diffTime = dateObj.getTime() - inicioUltimo.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Normalizar día al rango [1, duracion] usando módulo
+      let diaCiclo = ((diffDays % duracion) + duracion) % duracion + 1;
 
-      // Próximo inicio estimado
-      const proximoInicio = new Date(inicioUltimo.getTime() + duracion * 24 * 60 * 60 * 1000);
-      const proximoFin = new Date(proximoInicio.getTime() + 5 * 24 * 60 * 60 * 1000);
-
-      if (dateObj >= proximoInicio && dateObj <= proximoFin) return 'prediccion-periodo';
-
-      // Ventana fértil (aprox 14 días antes del próximo periodo)
-      const ovulacion = new Date(proximoInicio.getTime() - 14 * 24 * 60 * 60 * 1000);
-      const ventanaInicio = new Date(ovulacion.getTime() - 3 * 24 * 60 * 60 * 1000);
-      const ventanaFin = new Date(ovulacion.getTime() + 1 * 24 * 60 * 60 * 1000);
-
-      if (dateObj.toDateString() === ovulacion.toDateString()) return 'ovulacion';
-      if (dateObj >= ventanaInicio && dateObj <= ventanaFin) return 'fertil';
+      // Definición de fases (alineado con la Home)
+      if (diaCiclo <= 5) return 'prediccion-periodo';
+      if (diaCiclo <= 10) return 'folicular';
+      if (diaCiclo === 14) return 'ovulacion'; 
+      if (diaCiclo >= 11 && diaCiclo <= 16) return 'fertil';
+      
+      return null; 
     }
 
     return null;
@@ -157,22 +158,26 @@ export default function CalendarScreen() {
 
       {/* Leyenda */}
       <div className="card" style={{ padding: '16px', maxWidth: '400px', margin: '0 auto' }}>
-        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-dark)' }}>Leyenda</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '12px' }}>
+        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-dark)' }}>Leyenda del Ciclo</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '11px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ff4d4d' }}></div>
+            <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#ff4d4d' }}></div>
             <span>Periodo</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dashed #A855F7', background: 'rgba(168, 85, 247, 0.1)' }}></div>
+            <div style={{ width: '10px', height: '10px', borderRadius: '3px', border: '1px dashed #A855F7', background: 'rgba(168, 85, 247, 0.1)' }}></div>
             <span>Predicción Regla</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dotted #F472B6', background: 'rgba(244, 114, 182, 0.1)' }}></div>
-            <span>Día Fértil</span>
+            <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(255, 183, 94, 0.2)' }}></div>
+            <span>Fase Folicular</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--primary)' }}></div>
+            <div style={{ width: '10px', height: '10px', borderRadius: '3px', border: '1px dotted #F472B6', background: 'rgba(244, 114, 182, 0.1)' }}></div>
+            <span>Ventana Fértil</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)' }}></div>
             <span>Ovulación</span>
           </div>
         </div>
@@ -221,6 +226,10 @@ export default function CalendarScreen() {
           background: rgba(168, 85, 247, 0.1) !important;
           border: 1.5px dashed #A855F7;
           color: #6B21A8 !important;
+        }
+        .calendar-day.folicular {
+          background: rgba(255, 183, 94, 0.1) !important;
+          color: #ED8F03 !important;
         }
         .calendar-day.fertil {
           background: rgba(244, 114, 182, 0.1) !important;
