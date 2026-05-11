@@ -17,6 +17,7 @@ export default function HomeScreen() {
   const [cycleStatus, setCycleStatus] = useState({ day: 0, phase: '...', desc: 'Cargando datos...', color: 'var(--primary-light)', progress: 0 });
   const [nextEvents, setNextEvents] = useState({ period: '—', fertile: '—' });
   const [loadingData, setLoadingData] = useState(true);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,18 +91,15 @@ export default function HomeScreen() {
   }, []);
 
   const handleLogPeriod = async () => {
-    if (window.confirm('¿Quieres registrar que tu periodo ha empezado hoy?')) {
-      try {
-        setLoadingData(true);
-        // Formato YYYY-MM-DD
-        const hoy = new Date().toISOString().split('T')[0];
-        await ApiService.crearCiclo({ fecha_inicio: hoy });
-        // Recargar datos
-        window.location.reload(); 
-      } catch (err) {
-        alert('Error al registrar el ciclo: ' + err.message);
-        setLoadingData(false);
-      }
+    setShowConfirm(false);
+    try {
+      setLoadingData(true);
+      const hoy = new Date().toISOString().split('T')[0];
+      await ApiService.crearCiclo({ fecha_inicio: hoy });
+      window.location.reload(); 
+    } catch (err) {
+      alert('Error al registrar el ciclo: ' + err.message);
+      setLoadingData(false);
     }
   };
 
@@ -175,36 +173,36 @@ export default function HomeScreen() {
           </div>
 
         </div>
-      </div>
 
-      {/* Botón de Registro de Periodo */}
-      <button 
-        onClick={handleLogPeriod}
-        disabled={loadingData}
-        style={{
-          width: '100%',
-          padding: '16px',
-          borderRadius: '16px',
-          border: 'none',
-          background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
-          color: 'white',
-          fontSize: '16px',
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
-          marginBottom: '24px',
-          cursor: 'pointer',
-          boxShadow: '0 4px 15px rgba(246, 65, 108, 0.2)',
-          transition: 'transform 0.2s'
-        }}
-        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-      >
-        <Heart size={20} fill="white" />
-        {loadingData ? 'Guardando...' : 'Hoy empezó mi periodo'}
-      </button>
+        {/* Botón de Registro de Periodo - Ahora dentro del contenedor para igualar ancho */}
+        <button 
+          onClick={() => setShowConfirm(true)}
+          disabled={loadingData}
+          style={{
+            width: '100%',
+            marginTop: '16px',
+            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+            color: 'white',
+            border: 'none',
+            padding: '16px',
+            borderRadius: '20px',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            boxShadow: '0 4px 15px rgba(246, 65, 108, 0.2)',
+            transition: 'transform 0.2s ease'
+          }}
+          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <Heart size={18} fill="white" />
+          {loadingData ? 'Guardando...' : 'Hoy empezó mi periodo'}
+        </button>
+      </div>
 
       {/* Grid Menu */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -225,6 +223,61 @@ export default function HomeScreen() {
           <h4 style={{ margin: 0 }}>Mi Perfil</h4>
         </div>
       </div>
+
+      {/* Modal de Confirmación Estilo Nuvia */}
+      {showConfirm && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease'
+        }}>
+          <div className="card" style={{
+            maxWidth: '320px', width: '100%', padding: '25px', textAlign: 'center',
+            background: 'white', borderRadius: '25px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            <div style={{ 
+              width: '60px', height: '60px', borderRadius: '50%', background: '#FFF1F2',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 15px', color: '#F6416C'
+            }}>
+              <Heart size={30} fill="#F6416C" />
+            </div>
+            <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>¿Empezó tu periodo?</h3>
+            <p style={{ margin: '0 0 25px', fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
+              Registraremos hoy como el primer día de tu nuevo ciclo.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button 
+                onClick={handleLogPeriod}
+                style={{
+                  background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+                  color: 'white', border: 'none', padding: '12px', borderRadius: '15px',
+                  fontWeight: 'bold', fontSize: '14px', cursor: 'pointer',
+                  boxShadow: '0 4px 10px rgba(246, 65, 108, 0.3)'
+                }}
+              >
+                Sí, empezó hoy
+              </button>
+              <button 
+                onClick={() => setShowConfirm(false)}
+                style={{
+                  background: 'transparent', color: '#999', border: 'none',
+                  padding: '10px', fontSize: '14px', cursor: 'pointer'
+                }}
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      `}</style>
     </div>
   );
 }
