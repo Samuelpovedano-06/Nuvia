@@ -288,8 +288,4 @@ export default function PredictionsScreen() {
       `}</style>
     </div>
   );
-}nd: #F3E8FF"] { background: #7E22CE !important; color: white !important; }
-      `}</style>
-    </div>
-  );
 }
