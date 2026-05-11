@@ -3,10 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Sparkles, Zap, Heart, Calendar, TrendingUp, Lightbulb, MessageCircle, BarChart2 } from 'lucide-react';
 
 const OvuloIcon = ({ size = 40, color = '#C084FC', opacity = 1 }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" style={{ opacity }}>
-    <ellipse cx="12" cy="12" rx="7" ry="9" />
-    <circle cx="12" cy="12" r="3" fill={color} opacity="0.35" stroke={color} strokeWidth="1.2" />
-    <circle cx="13.5" cy="10.5" r="0.8" fill={color} />
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" style={{ opacity }}>
+    {/* Halo exterior (Zona Pelúcida) */}
+    <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="0.5" strokeDasharray="2 1" opacity="0.5" />
+    <circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth="1.2" opacity="0.8" />
+    
+    {/* Cuerpo del óvulo (Citoplasma) */}
+    <circle cx="12" cy="12" r="6" fill={color} opacity="0.15" />
+    
+    {/* Núcleo con brillo */}
+    <circle cx="12" cy="12" r="2.5" fill={color} opacity="0.4" stroke={color} strokeWidth="1" />
+    <circle cx="11.2" cy="11.2" r="0.8" fill="white" opacity="0.9" />
+    
+    {/* Pequeños destellos de vitalidad */}
+    <circle cx="17" cy="8" r="0.5" fill={color} />
+    <circle cx="18.5" cy="12" r="0.7" fill={color} opacity="0.6" />
+    <circle cx="7" cy="15" r="0.6" fill={color} opacity="0.8" />
   </svg>
 );
 import { ApiService } from '../api';
