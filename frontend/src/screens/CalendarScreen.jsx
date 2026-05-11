@@ -164,11 +164,11 @@ export default function CalendarScreen() {
             <span>Periodo</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dashed #10B981', background: 'rgba(16, 185, 129, 0.1)' }}></div>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dashed #A855F7', background: 'rgba(168, 85, 247, 0.1)' }}></div>
             <span>Predicción Regla</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dotted #ff4d4d', background: 'rgba(255, 77, 77, 0.1)' }}></div>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dotted #F472B6', background: 'rgba(244, 114, 182, 0.1)' }}></div>
             <span>Día Fértil</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -218,14 +218,14 @@ export default function CalendarScreen() {
           color: white !important;
         }
         .calendar-day.prediccion-periodo {
-          background: rgba(16, 185, 129, 0.1) !important;
-          border: 1.5px dashed #10B981;
-          color: #065F46 !important;
+          background: rgba(168, 85, 247, 0.1) !important;
+          border: 1.5px dashed #A855F7;
+          color: #6B21A8 !important;
         }
         .calendar-day.fertil {
-          background: rgba(255, 77, 77, 0.1) !important;
-          border: 1.5px dotted #ff4d4d;
-          color: #B91C1C !important;
+          background: rgba(244, 114, 182, 0.1) !important;
+          border: 1.5px dotted #F472B6;
+          color: #9D174D !important;
         }
         .calendar-day.ovulacion {
           background: var(--primary) !important;
