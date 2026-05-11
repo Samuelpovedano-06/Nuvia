@@ -271,11 +271,11 @@ export default function HomeScreen() {
         </div>
         <div className="card" onClick={() => navigate('/calendar')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div>
-          <h4 style={{ margin: 0 }}>Calendario</h4>
+          <h4 style={{ margin: 0 }}>Calendario y Ciclo</h4>
         </div>
-        <div className="card" onClick={() => navigate('/predicciones')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔮</div>
-          <h4 style={{ margin: 0 }}>Predicciones</h4>
+        <div className="card" onClick={() => navigate('/wellness')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
+          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🧘‍♀️</div>
+          <h4 style={{ margin: 0 }}>Mi Bienestar</h4>
         </div>
         <div className="card" onClick={() => navigate('/profile')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>👤</div>

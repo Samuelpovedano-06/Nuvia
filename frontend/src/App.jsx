@@ -8,7 +8,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import AdminPanelScreen from './screens/AdminPanelScreen';
 import SymptomsScreen from './screens/SymptomsScreen';
 import CalendarScreen from './screens/CalendarScreen';
-import PredictionsScreen from './screens/PredictionsScreen';
+import WellnessScreen from './screens/WellnessScreen';
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -42,7 +42,7 @@ function App() {
         <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
         <Route path="/sintomas" element={user ? <SymptomsScreen /> : <Navigate to="/login" />} />
         <Route path="/calendar" element={user ? <CalendarScreen /> : <Navigate to="/login" />} />
-        <Route path="/predicciones" element={user ? <PredictionsScreen /> : <Navigate to="/login" />} />
+        <Route path="/wellness" element={user ? <WellnessScreen /> : <Navigate to="/login" />} />
         <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
         
         <Route path="*" element={<Navigate to="/" />} />
