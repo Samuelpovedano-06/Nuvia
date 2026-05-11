@@ -219,14 +219,18 @@ export default function AdminPanelScreen() {
       <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Configuración del sistema</h3>
       <div className="card" style={{ padding: '8px 0', marginBottom: '30px' }}>
         {[
-          { icon: <Settings size={18} />, label: 'Configuración de notificaciones' },
-          { icon: <Zap size={18} />, label: 'Algoritmos de predicción' },
-          { icon: <Users size={18} />, label: 'Gestión de usuarios' }
+          { icon: <Settings size={18} />, label: 'Configuración de notificaciones', path: '/admin/config' },
+          { icon: <Zap size={18} />, label: 'Algoritmos de predicción', path: '/admin/config' },
+          { icon: <Users size={18} />, label: 'Gestión de usuarios', path: '/admin/users' }
         ].map((item, i) => (
-          <div key={i} style={{ 
-            padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-            borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none'
-          }}>
+          <div 
+            key={i} 
+            onClick={() => navigate(item.path)}
+            style={{ 
+              padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
+              borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none'
+            }}
+          >
             <div style={{ color: 'var(--primary)' }}>{item.icon}</div>
             <div style={{ fontSize: '14px' }}>{item.label}</div>
           </div>

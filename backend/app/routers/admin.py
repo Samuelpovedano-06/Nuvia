@@ -5,8 +5,8 @@ from typing import List
 from uuid import UUID
 from datetime import date, datetime, timedelta
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma
-from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut
+from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, ConfiguracionSistema
+from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut, AdminConfigOut, AdminConfigUpdate
 from app.routers.auth_utils import get_current_user, hash_password
 
 router = APIRouter(prefix="/admin", tags=["Administración"])
@@ -143,3 +143,31 @@ def delete_user_admin(id_usuaria: UUID, db: Session = Depends(get_db), current_u
     db.delete(usuaria)
     db.commit()
     return None
+
+@router.get("/config", response_model=AdminConfigOut)
+def get_system_config(db: Session = Depends(get_db), _=Depends(require_admin)):
+    """Obtiene la configuración global del sistema."""
+    config = db.query(ConfiguracionSistema).first()
+    if not config:
+        # Crear configuración inicial si no existe
+        config = ConfiguracionSistema()
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    return config
+
+@router.put("/config", response_model=AdminConfigOut)
+def update_system_config(datos: AdminConfigUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
+    """Actualiza la configuración global del sistema."""
+    config = db.query(ConfiguracionSistema).first()
+    if not config:
+        config = ConfiguracionSistema()
+        db.add(config)
+    
+    # Actualizar campos
+    for key, value in datos.dict(exclude_unset=True).items():
+        setattr(config, key, value)
+    
+    db.commit()
+    db.refresh(config)
+    return config

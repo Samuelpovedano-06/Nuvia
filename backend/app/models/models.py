@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text, Boolean
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
 import uuid
@@ -104,3 +104,13 @@ class ConfiguracionUsuaria(Base):
     modo_oscuro        = Column(SmallInteger, server_default="0")
 
     usuaria = relationship("Usuaria", back_populates="configuracion")
+
+class ConfiguracionSistema(Base):
+    __tablename__ = "configuracion_sistema"
+    id = Column(Integer, primary_key=True, index=True)
+    modo_mantenimiento = Column(Boolean, default=False)
+    version_algoritmo = Column(String(50), default="1.0.0-nuvia")
+    notificaciones_globales = Column(Boolean, default=True)
+    max_dias_ciclo = Column(Integer, default=45)
+    min_dias_ciclo = Column(Integer, default=21)
+    ultima_actualizacion = Column(DateTime, default=func.now(), onupdate=func.now())

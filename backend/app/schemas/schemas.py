@@ -177,3 +177,24 @@ class AdminStatsOut(BaseModel):
     total_ciclos: int
     registros_hoy: int
     crecimiento_semanal: float
+
+# ─────────────────────── ADMIN CONFIG ───────────────────────
+
+class AdminConfigUpdate(BaseModel):
+    modo_mantenimiento: Optional[bool] = None
+    version_algoritmo: Optional[str] = None
+    notificaciones_globales: Optional[bool] = None
+    max_dias_ciclo: Optional[int] = None
+    min_dias_ciclo: Optional[int] = None
+
+class AdminConfigOut(BaseModel):
+    id: int
+    modo_mantenimiento: bool
+    version_algoritmo: str
+    notificaciones_globales: bool
+    max_dias_ciclo: int
+    min_dias_ciclo: int
+    ultima_actualizacion: datetime
+
+    class Config:
+        from_attributes = True

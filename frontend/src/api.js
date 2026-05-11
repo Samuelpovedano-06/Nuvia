@@ -134,6 +134,24 @@ export const ApiService = {
     return await res.blob();
   },
 
+  getSystemConfig: async () => {
+    const res = await fetch(`${baseUrl}/admin/config`, { headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al obtener configuración del sistema');
+    return data;
+  },
+
+  updateSystemConfig: async (datos) => {
+    const res = await fetch(`${baseUrl}/admin/config`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(datos)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al actualizar configuración del sistema');
+    return data;
+  },
+
   // Ciclos
   getCiclos: async () => {
     const res = await fetch(`${baseUrl}/ciclos/`, { headers: getHeaders() });

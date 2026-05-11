@@ -7,6 +7,7 @@ import HomeScreen from './screens/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AdminPanelScreen from './screens/AdminPanelScreen';
 import AdminUsersScreen from './screens/AdminUsersScreen';
+import AdminConfigScreen from './screens/AdminConfigScreen';
 import SymptomsScreen from './screens/SymptomsScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import WellnessScreen from './screens/WellnessScreen';
@@ -46,6 +47,7 @@ function App() {
         <Route path="/wellness" element={user ? <WellnessScreen /> : <Navigate to="/login" />} />
         <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.rol === 'admin' ? <AdminUsersScreen /> : <Navigate to="/" />} />
+        <Route path="/admin/config" element={user?.rol === 'admin' ? <AdminConfigScreen /> : <Navigate to="/" />} />
         
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
