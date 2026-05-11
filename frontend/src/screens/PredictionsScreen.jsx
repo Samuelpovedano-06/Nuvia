@@ -13,80 +13,54 @@ const PUNTOS_DETALLE = {
   22: { title: 'Día 22: Pico Lúteo', desc: 'Posibles síntomas premenstruales.', icon: '🧘' },
   28: { title: 'Día 28: Cierre', desc: 'Preparación para el nuevo ciclo.', icon: '🔄' }
 };
-
-// Componente para el gráfico de curva
 const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) => {
   const width = 800;
-  const height = 100;
-  const padding = 20;
+  const height = 120;
   const puntosClave = [1, 5, 10, 14, 18, 22, duracion];
 
-  // Función para calcular la Y de la curva en cualquier punto X (Día)
-  // Usamos una función seno modificada para que el pico esté cerca del día 14 (ovulación)
-  const getY = (dia) => {
-    // Normalizamos el día al rango [0, 1] respecto a la duración
-    const t = dia / duracion;
-    // Creamos una curva que sube en la ovulación y baja en los extremos
-    // Usamos Math.sin para una curva suave. 
-    // Queremos el pico en el centro aprox (dia 14)
-    const sinVal = Math.sin(t * Math.PI); 
-    return height - (sinVal * (height - padding)) + padding;
-  };
+  // Cálculo de X para cada día
+  const getX = (dia) => (dia / duracion) * width;
 
-  // Generar los puntos del path dinámicamente
-  const pathData = Array.from({ length: 51 }, (_, i) => {
-    const dia = (i / 50) * duracion;
-    const x = (dia / duracion) * width;
-    const y = getY(dia);
-    return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
-  }).join(' ');
+  // Curva orgánica usando Bezier pero calculada para que el pico esté en el día 14 aprox
+  // Independientemente de la duración total
+  const ovulacionX = (14 / duracion) * width;
+  const pathData = `
+    M 0,${height - 20} 
+    C ${ovulacionX * 0.4},${height - 20} 
+      ${ovulacionX * 0.8},20 
+      ${ovulacionX},20 
+    S ${width},${height - 20} 
+      ${width},${height - 20}
+  `;
 
   return (
     <div style={{ width: '100%', padding: '20px 0', position: 'relative' }}>
-      <svg viewBox={`0 0 ${width} ${height + 60}`} width="100%" style={{ overflow: 'visible', display: 'block' }}>
-        {/* Línea base */}
-        <line x1="0" y1={height + 20} x2={width} y2={height + 20} stroke="var(--primary-light)" strokeWidth="1" strokeDasharray="4" opacity="0.3" />
+      <svg viewBox={`0 0 ${width} ${height + 40}`} width="100%" style={{ overflow: 'visible', display: 'block' }}>
+        <line x1="0" y1={height} x2={width} y2={height} stroke="var(--primary-light)" strokeWidth="1" strokeDasharray="4" opacity="0.4" />
         
-        {/* Curva Dinámica */}
         <path 
           d={pathData} 
           fill="none" 
           stroke="var(--primary)" 
           strokeWidth="3" 
           strokeLinecap="round"
-          strokeLinejoin="round"
         />
 
-        {/* Puntos Interactivos */}
         {puntosClave.map((dia) => {
-          const x = (dia / duracion) * width;
-          const y = getY(dia);
+          const x = getX(dia);
+          // Y aproximada para que coincida con la curva visual
+          let y = height - 20;
+          if (dia === 14) y = 20;
+          else if (dia === 10 || dia === 18) y = 55;
+          else if (dia === 5 || dia === 22) y = 85;
+
           const isSelected = selectedPoint === dia;
 
           return (
             <g key={dia} onClick={() => onSelectPoint(dia)} style={{ cursor: 'pointer' }}>
-              {isSelected && (
-                <circle cx={x} cy={y} r="12" fill="var(--primary)" opacity="0.15">
-                  <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite" />
-                </circle>
-              )}
-              <circle 
-                cx={x} cy={y} 
-                r={isSelected ? "7" : "5"} 
-                fill={isSelected ? "var(--primary)" : "#fff"} 
-                stroke="var(--primary)" 
-                strokeWidth="2.5" 
-                style={{ transition: 'all 0.3s ease' }}
-              />
-              <text 
-                x={x} y={height + 45} 
-                fontSize="11" 
-                fill={isSelected ? "var(--primary)" : "var(--text-light)"} 
-                textAnchor="middle" 
-                fontWeight={isSelected ? "700" : "500"}
-              >
-                Día {dia}
-              </text>
+              {isSelected && <circle cx={x} cy={y} r="10" fill="var(--primary)" opacity="0.2" />}
+              <circle cx={x} cy={y} r={isSelected ? "7" : "5"} fill={isSelected ? "var(--primary)" : "#fff"} stroke="var(--primary)" strokeWidth="2.5" />
+              <text x={x} y={height + 25} fontSize="11" fill="var(--text-light)" textAnchor="middle" fontWeight={isSelected ? "bold" : "normal"}>Día {dia}</text>
             </g>
           );
         })}
@@ -98,8 +72,8 @@ const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) 
 export default function PredictionsScreen() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({ diaActual: 1, duracion: 28, eventos: [] });
-  const [selectedPoint, setSelectedPoint] = useState(14); // Por defecto ovulación
+  const [data, setData] = useState({ diaActual: 1, duracion: 28 });
+  const [selectedPoint, setSelectedPoint] = useState(14);
 
   useEffect(() => {
     const init = async () => {
@@ -116,9 +90,8 @@ export default function PredictionsScreen() {
         if (ciclos.length > 0) {
           inicio = new Date(ciclos[0].fecha_inicio);
         } else {
-          // Si no hay ciclos, estimamos desde hoy para evitar NaN
           inicio = new Date();
-          inicio.setDate(hoy.getDate() - 1); // Simulamos que empezó ayer
+          inicio.setDate(hoy.getDate() - 1);
         }
 
         const diaActual = (Math.floor((hoy - inicio) / (86400000)) % duracion) + 1;
@@ -129,14 +102,6 @@ export default function PredictionsScreen() {
         setSelectedPoint(14);
       } catch (err) { 
         console.error(err); 
-        // Fallback en caso de error total
-        const fallbackInicio = new Date();
-        setData({ 
-          diaActual: 1, 
-          duracion: 28, 
-          proximoPeriodo: new Date(fallbackInicio.getTime() + 28 * 86400000),
-          ovulacion: new Date(fallbackInicio.getTime() + 14 * 86400000)
-        });
       }
       finally { setLoading(false); }
     };
@@ -146,16 +111,6 @@ export default function PredictionsScreen() {
   if (loading) return <div className="screen-container" style={{justifyContent:'center', alignItems:'center'}}><div className="loader"></div></div>;
 
   const tooltipInfo = PUNTOS_DETALLE[selectedPoint] || PUNTOS_DETALLE[14];
-
-  // Componente para el Óvulo Estilizado (estilo Síntomas)
-  const NuviaOvum = ({ size = 40, color = '#C084FC' }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" strokeDasharray="2 2" />
-      <circle cx="12" cy="12" r="6" fill={color} fillOpacity="0.2" stroke={color} strokeWidth="2" />
-      <circle cx="12" cy="12" r="2" fill={color} />
-      <circle cx="15" cy="9" r="1" fill="white" />
-    </svg>
-  );
 
   return (
     <div className="screen-container">
@@ -263,8 +218,8 @@ export default function PredictionsScreen() {
             background: 'linear-gradient(to right, #FAF5FF, #F3E8FF)', 
             borderLeft: '5px solid #C084FC', padding: '20px', position: 'relative'
           }}>
-            <div style={{ position: 'absolute', right: '20px', top: '25px', opacity: 0.6 }}>
-              <NuviaOvum size={45} />
+            <div style={{ position: 'absolute', right: '20px', top: '25px', opacity: 0.1 }}>
+              <Egg size={45} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{ background: '#C084FC', padding: '8px', borderRadius: '10px', color: 'white' }}><TrendingUp size={20} /></div>
@@ -330,6 +285,10 @@ export default function PredictionsScreen() {
         body.dark-mode .card div[style*="background: #E0F2FE"] { background: #0369A1 !important; color: white !important; }
         body.dark-mode .card div[style*="background: #FEF3C7"] { background: #B45309 !important; color: white !important; }
         body.dark-mode .card div[style*="background: #F3E8FF"] { background: #7E22CE !important; color: white !important; }
+      `}</style>
+    </div>
+  );
+}nd: #F3E8FF"] { background: #7E22CE !important; color: white !important; }
       `}</style>
     </div>
   );
