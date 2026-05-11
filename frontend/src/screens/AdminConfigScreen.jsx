@@ -54,7 +54,7 @@ export default function AdminConfigScreen() {
     <div className="screen-container">
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '25px' }}>
-        <button onClick={() => navigate('/admin')} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
           <ChevronLeft size={20} /> <span>Panel Admin</span>
         </button>
       </div>
