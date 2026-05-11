@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
 from uuid import UUID
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma
 from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut
