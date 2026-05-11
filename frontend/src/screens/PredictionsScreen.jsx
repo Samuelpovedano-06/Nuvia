@@ -68,18 +68,36 @@ export default function PredictionsScreen() {
           ApiService.getCiclos(),
           ApiService.getConfig()
         ]);
+        
+        const duracion = config?.duracion_ciclo || 28;
+        let hoy = new Date();
+        let inicio;
+
         if (ciclos.length > 0) {
-          const ultimo = ciclos[0];
-          const hoy = new Date();
-          const inicio = new Date(ultimo.fecha_inicio);
-          const duracion = config?.duracion_ciclo || 28;
-          const diaActual = (Math.floor((hoy - inicio) / (86400000)) % duracion) + 1;
-          const proximoPeriodo = new Date(inicio.getTime() + duracion * 86400000);
-          const ovulacion = new Date(proximoPeriodo.getTime() - 14 * 86400000);
-          setData({ diaActual, duracion, proximoPeriodo, ovulacion });
-          setSelectedPoint(14);
+          inicio = new Date(ciclos[0].fecha_inicio);
+        } else {
+          // Si no hay ciclos, estimamos desde hoy para evitar NaN
+          inicio = new Date();
+          inicio.setDate(hoy.getDate() - 1); // Simulamos que empezó ayer
         }
-      } catch (err) { console.error(err); }
+
+        const diaActual = (Math.floor((hoy - inicio) / (86400000)) % duracion) + 1;
+        const proximoPeriodo = new Date(inicio.getTime() + duracion * 86400000);
+        const ovulacion = new Date(proximoPeriodo.getTime() - 14 * 86400000);
+        
+        setData({ diaActual, duracion, proximoPeriodo, ovulacion });
+        setSelectedPoint(14);
+      } catch (err) { 
+        console.error(err); 
+        // Fallback en caso de error total
+        const fallbackInicio = new Date();
+        setData({ 
+          diaActual: 1, 
+          duracion: 28, 
+          proximoPeriodo: new Date(fallbackInicio.getTime() + 28 * 86400000),
+          ovulacion: new Date(fallbackInicio.getTime() + 14 * 86400000)
+        });
+      }
       finally { setLoading(false); }
     };
     init();
@@ -88,6 +106,16 @@ export default function PredictionsScreen() {
   if (loading) return <div className="screen-container" style={{justifyContent:'center', alignItems:'center'}}><div className="loader"></div></div>;
 
   const tooltipInfo = PUNTOS_DETALLE[selectedPoint] || PUNTOS_DETALLE[14];
+
+  // Componente para el Óvulo Estilizado (estilo Síntomas)
+  const NuviaOvum = ({ size = 40, color = '#C084FC' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" strokeDasharray="2 2" />
+      <circle cx="12" cy="12" r="6" fill={color} fillOpacity="0.2" stroke={color} strokeWidth="2" />
+      <circle cx="12" cy="12" r="2" fill={color} />
+      <circle cx="15" cy="9" r="1" fill="white" />
+    </svg>
+  );
 
   return (
     <div className="screen-container">
@@ -157,8 +185,12 @@ export default function PredictionsScreen() {
                 <p style={{ margin: 0, fontSize: '13px', color: '#EF4444' }}>Menstruación</p>
               </div>
             </div>
-            <div style={{ fontSize: '16px', fontWeight: '600', color: '#7F1D1D' }}>{data.proximoPeriodo?.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</div>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#991B1B' }}>En {Math.max(0, Math.floor((data.proximoPeriodo - new Date()) / 86400000))} días • Duración estimada: 4-5 días</p>
+            <div style={{ fontSize: '16px', fontWeight: '600', color: '#7F1D1D' }}>
+              {data.proximoPeriodo ? data.proximoPeriodo.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) : 'Pendiente'}
+            </div>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#991B1B' }}>
+              En {data.proximoPeriodo ? Math.max(0, Math.floor((data.proximoPeriodo - new Date()) / 86400000)) : '—'} días • Duración estimada: 4-5 días
+            </p>
           </div>
 
           {/* Ventana Fértil */}
@@ -175,9 +207,15 @@ export default function PredictionsScreen() {
               </div>
             </div>
             <div style={{ fontSize: '16px', fontWeight: '600', color: '#4C1D95' }}>
-              {new Date(data.ovulacion?.getTime() - 3*86400000).toLocaleDateString('es-ES', { day: 'numeric' })} - {new Date(data.ovulacion?.getTime() + 1*86400000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+              {data.ovulacion ? (
+                <>
+                  {new Date(data.ovulacion.getTime() - 3*86400000).toLocaleDateString('es-ES', { day: 'numeric' })} - {new Date(data.ovulacion.getTime() + 1*86400000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                </>
+              ) : 'Pendiente'}
             </div>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#5B21B6' }}>Comienza en {Math.max(0, Math.floor((new Date(data.ovulacion?.getTime() - 3*86400000) - new Date()) / 86400000))} días • 5 días de duración</p>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#5B21B6' }}>
+              Comienza en {data.ovulacion ? Math.max(0, Math.floor((new Date(data.ovulacion.getTime() - 3*86400000) - new Date()) / 86400000)) : '—'} días • 5 días de duración
+            </p>
           </div>
 
           {/* Ovulación */}
@@ -185,7 +223,9 @@ export default function PredictionsScreen() {
             background: 'linear-gradient(to right, #FAF5FF, #F3E8FF)', 
             borderLeft: '5px solid #C084FC', padding: '20px', position: 'relative'
           }}>
-            <div style={{ position: 'absolute', right: '20px', top: '20px', fontSize: '40px', opacity: 0.2 }}>🥚</div>
+            <div style={{ position: 'absolute', right: '20px', top: '25px', opacity: 0.6 }}>
+              <NuviaOvum size={45} />
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{ background: '#C084FC', padding: '8px', borderRadius: '10px', color: 'white' }}><TrendingUp size={20} /></div>
               <div>
@@ -193,8 +233,12 @@ export default function PredictionsScreen() {
                 <p style={{ margin: 0, fontSize: '13px', color: '#9333EA' }}>Estimación</p>
               </div>
             </div>
-            <div style={{ fontSize: '16px', fontWeight: '600', color: '#6B21A8' }}>{data.ovulacion?.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</div>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#7E22CE' }}>En {Math.max(0, Math.floor((data.ovulacion - new Date()) / 86400000))} días • Probabilidad: Alta</p>
+            <div style={{ fontSize: '16px', fontWeight: '600', color: '#6B21A8' }}>
+              {data.ovulacion ? data.ovulacion.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) : 'Pendiente'}
+            </div>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#7E22CE' }}>
+              En {data.ovulacion ? Math.max(0, Math.floor((data.ovulacion - new Date()) / 86400000)) : '—'} días • Probabilidad: Alta
+            </p>
           </div>
         </div>
 
