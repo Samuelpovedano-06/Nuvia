@@ -42,9 +42,9 @@ export default function CalendarScreen() {
 
   const isToday = (day) => {
     const today = new Date();
-    return day === today.getDate() && 
-           currentDate.getMonth() === today.getMonth() && 
-           currentDate.getFullYear() === today.getFullYear();
+    return day === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear();
   };
 
   const isFuture = (day) => {
@@ -73,7 +73,7 @@ export default function CalendarScreen() {
       const ultimoCiclo = ciclos[0]; // Asumiendo ordenados por fecha desc
       const inicioUltimo = new Date(ultimoCiclo.fecha_inicio);
       const duracion = config.duracion_ciclo || 28;
-      
+
       // Próximo inicio estimado
       const proximoInicio = new Date(inicioUltimo.getTime() + duracion * 24 * 60 * 60 * 1000);
       const proximoFin = new Date(proximoInicio.getTime() + 5 * 24 * 60 * 60 * 1000);
@@ -107,8 +107,8 @@ export default function CalendarScreen() {
       const status = getDayStatus(d);
       const future = isFuture(d);
       days.push(
-        <div 
-          key={d} 
+        <div
+          key={d}
           className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''} ${future ? 'future' : ''}`}
           onClick={() => !future && navigate('/sintomas')}
         >
@@ -164,11 +164,11 @@ export default function CalendarScreen() {
             <span>Periodo</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1px dashed #ff4d4d', background: 'rgba(255, 77, 77, 0.15)' }}></div>
-            <span>Predicción</span>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dashed #10B981', background: 'rgba(16, 185, 129, 0.1)' }}></div>
+            <span>Predicción Regla</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1px dashed var(--primary)', background: 'rgba(186, 104, 200, 0.15)' }}></div>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', border: '1.5px dotted #ff4d4d', background: 'rgba(255, 77, 77, 0.1)' }}></div>
             <span>Día Fértil</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -218,12 +218,14 @@ export default function CalendarScreen() {
           color: white !important;
         }
         .calendar-day.prediccion-periodo {
-          background: rgba(255, 77, 77, 0.15) !important;
-          border: 1px dashed #ff4d4d;
+          background: rgba(16, 185, 129, 0.1) !important;
+          border: 1.5px dashed #10B981;
+          color: #065F46 !important;
         }
         .calendar-day.fertil {
-          background: rgba(186, 104, 200, 0.15) !important;
-          border: 1px dashed var(--primary);
+          background: rgba(255, 77, 77, 0.1) !important;
+          border: 1.5px dotted #ff4d4d;
+          color: #B91C1C !important;
         }
         .calendar-day.ovulacion {
           background: var(--primary) !important;
