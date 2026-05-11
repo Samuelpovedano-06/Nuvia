@@ -18,6 +18,9 @@ export default function HomeScreen() {
   const [nextEvents, setNextEvents] = useState({ period: '—', fertile: '—' });
   const [loadingData, setLoadingData] = useState(true);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [activeCycle, setActiveCycle] = useState(null);
+  const [userConfig, setUserConfig] = useState(null);
+  const [rawCiclos, setRawCiclos] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +31,13 @@ export default function HomeScreen() {
         ]);
 
         if (ciclos.length > 0) {
+          setRawCiclos(ciclos);
+          setUserConfig(config);
+          
+          // Detectar si hay un ciclo "abierto" (sin fecha_fin)
+          const abierto = ciclos.find(c => !c.fecha_fin);
+          setActiveCycle(abierto);
+
           const ultimoCiclo = ciclos[0];
           const fechaInicio = new Date(ultimoCiclo.fecha_inicio);
           const hoy = new Date();
@@ -95,10 +105,56 @@ export default function HomeScreen() {
     try {
       setLoadingData(true);
       const hoy = new Date().toISOString().split('T')[0];
-      await ApiService.crearCiclo({ fecha_inicio: hoy });
+
+      if (activeCycle) {
+        // CERRAR CICLO (Terminó hoy)
+        await ApiService.actualizarCiclo(activeCycle.id, { fecha_fin: hoy });
+        
+        // --- MOTOR DE APRENDIZAJE NUVIA ---
+        const todosLosCiclos = await ApiService.getCiclos();
+        const completados = todosLosCiclos.filter(c => c.fecha_inicio && c.fecha_fin);
+        
+        if (completados.length > 0) {
+          const updates = {};
+          
+          // 1. Calcular nueva duración promedio del periodo (lo rojo)
+          let totalPeriodo = 0;
+          completados.forEach(c => {
+            const diff = (new Date(c.fecha_fin) - new Date(c.fecha_inicio)) / (86400000);
+            totalPeriodo += Math.floor(diff) + 1;
+          });
+          const nuevaDuracionP = Math.round(totalPeriodo / completados.length);
+          if (nuevaDuracionP !== userConfig.duracion_periodo) {
+            updates.duracion_periodo = nuevaDuracionP;
+          }
+
+          // 2. Calcular nueva frecuencia promedio (el ciclo)
+          if (todosLosCiclos.length >= 2) {
+            let totalCiclo = 0;
+            let count = 0;
+            for (let i = 0; i < Math.min(3, todosLosCiclos.length - 1); i++) {
+              const diff = Math.abs(new Date(todosLosCiclos[i].fecha_inicio) - new Date(todosLosCiclos[i+1].fecha_inicio)) / 86400000;
+              totalCiclo += Math.floor(diff);
+              count++;
+            }
+            const nuevaFrecuencia = Math.round(totalCiclo / count);
+            if (nuevaFrecuencia !== userConfig.duracion_ciclo) {
+              updates.duracion_ciclo = nuevaFrecuencia;
+            }
+          }
+
+          if (Object.keys(updates).length > 0) {
+            await ApiService.updateConfig(updates);
+          }
+        }
+      } else {
+        // EMPEZAR NUEVO CICLO
+        await ApiService.crearCiclo({ fecha_inicio: hoy });
+      }
+      
       window.location.reload(); 
     } catch (err) {
-      alert('Error al registrar el ciclo: ' + err.message);
+      alert('Error al procesar el registro: ' + err.message);
       setLoadingData(false);
     }
   };
@@ -174,14 +230,14 @@ export default function HomeScreen() {
 
         </div>
 
-        {/* Botón de Registro de Periodo - Ahora dentro del contenedor para igualar ancho */}
+        {/* Botón de Registro Inteligente (Dual) */}
         <button 
           onClick={() => setShowConfirm(true)}
           disabled={loadingData}
           style={{
             width: '100%',
             marginTop: '16px',
-            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', // Siempre Nuvia
             color: 'white',
             border: 'none',
             padding: '16px',
@@ -194,13 +250,16 @@ export default function HomeScreen() {
             justifyContent: 'center',
             gap: '10px',
             boxShadow: '0 4px 15px rgba(246, 65, 108, 0.2)',
-            transition: 'transform 0.2s ease'
+            transition: 'all 0.3s ease'
           }}
           onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
           onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
-          <Heart size={18} fill="white" />
-          {loadingData ? 'Guardando...' : 'Hoy empezó mi periodo'}
+          {activeCycle ? <Calendar size={18} /> : <Heart size={18} fill="white" />}
+          {loadingData 
+            ? 'Procesando...' 
+            : (activeCycle ? 'Mi periodo terminó hoy' : 'Hoy empezó mi periodo')
+          }
         </button>
       </div>
 
@@ -224,7 +283,7 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Modal de Confirmación Estilo Nuvia */}
+      {/* Modal de Confirmación Estilo Nuvia Adaptado */}
       {showConfirm && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -238,15 +297,20 @@ export default function HomeScreen() {
             animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
             <div style={{ 
-              width: '60px', height: '60px', borderRadius: '50%', background: '#FFF1F2',
+              width: '60px', height: '60px', borderRadius: '50%', 
+              background: '#FFF1F2',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 15px', color: '#F6416C'
             }}>
-              <Heart size={30} fill="#F6416C" />
+              {activeCycle ? <Calendar size={30} /> : <Heart size={30} fill="#F6416C" />}
             </div>
-            <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>¿Empezó tu periodo?</h3>
+            <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>
+              {activeCycle ? '¿Terminó tu periodo?' : '¿Empezó tu periodo?'}
+            </h3>
             <p style={{ margin: '0 0 25px', fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
-              Registraremos hoy como el primer día de tu nuevo ciclo.
+              {activeCycle 
+                ? 'Nuvia calculará tu duración real para ajustar tus predicciones automáticamente.'
+                : 'Registraremos hoy como el primer día de tu nuevo ciclo.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button 
@@ -258,7 +322,7 @@ export default function HomeScreen() {
                   boxShadow: '0 4px 10px rgba(246, 65, 108, 0.3)'
                 }}
               >
-                Sí, empezó hoy
+                {activeCycle ? 'Sí, terminó hoy' : 'Sí, empezó hoy'}
               </button>
               <button 
                 onClick={() => setShowConfirm(false)}

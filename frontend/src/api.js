@@ -139,6 +139,17 @@ export const ApiService = {
     return data;
   },
 
+  actualizarCiclo: async (id, datos) => {
+    const res = await fetch(`${baseUrl}/ciclos/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(datos)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al actualizar ciclo');
+    return data;
+  },
+
   // Síntomas
   getSintomas: async () => {
     const res = await fetch(`${baseUrl}/sintomas`, { headers: getHeaders() });
