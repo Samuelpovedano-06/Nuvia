@@ -32,6 +32,7 @@ export default function ProfileScreen() {
   const [notificaciones, setNotificaciones] = useState(1);
   const [privacidadEstricta, setPrivacidadEstricta] = useState(0);
   const [modoOscuro, setModoOscuro] = useState(0);
+  const [isCycleEditable, setIsCycleEditable] = useState(false);
 
   useEffect(() => {
     ApiService.getCiclos()
