@@ -104,12 +104,12 @@ export default function AdminPanelScreen() {
       {/* Stats Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '16px' }}>
         <div className="card" style={{ 
-          margin: 0, background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)', 
-          color: 'white', border: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          padding: '24px'
+          margin: 0, background: 'white', 
+          color: '#1e293b', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)'
         }}>
-          <Users size={24} style={{ marginBottom: '12px', opacity: 0.8 }} />
-          <div style={{ fontSize: '14px', opacity: 0.9 }}>Usuarias registradas</div>
+          <Users size={24} color="var(--primary)" style={{ marginBottom: '12px' }} />
+          <div style={{ fontSize: '14px', color: 'var(--text-light)' }}>Usuarias registradas</div>
           <div style={{ fontSize: '36px', fontWeight: 'bold', margin: '4px 0' }}>{stats.total_users.toLocaleString()}</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
