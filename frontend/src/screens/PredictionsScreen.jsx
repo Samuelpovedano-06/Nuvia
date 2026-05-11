@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Sparkles, Zap, Heart, Calendar, TrendingUp, Lightbulb, MessageCircle, BarChart2, Egg } from 'lucide-react';
+import { ChevronLeft, Sparkles, Zap, Heart, Calendar, TrendingUp, Lightbulb, MessageCircle, BarChart2 } from 'lucide-react';
+
+const OvuloIcon = ({ size = 40, color = '#C084FC', opacity = 1 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" style={{ opacity }}>
+    <ellipse cx="12" cy="12" rx="7" ry="9" />
+    <circle cx="12" cy="12" r="3" fill={color} opacity="0.35" stroke={color} strokeWidth="1.2" />
+    <circle cx="13.5" cy="10.5" r="0.8" fill={color} />
+  </svg>
+);
 import { ApiService } from '../api';
 
 // Datos de detalle para los puntos del gráfico
@@ -13,49 +21,55 @@ const PUNTOS_DETALLE = {
   22: { title: 'Día 22: Pico Lúteo', desc: 'Posibles síntomas premenstruales.', icon: '🧘' },
   28: { title: 'Día 28: Cierre', desc: 'Preparación para el nuevo ciclo.', icon: '🔄' }
 };
+const getYOnCurve = (x, ovulacionX, width, height) => {
+  const y0 = height - 20;
+  const yPeak = 20;
+  const bezierY = (t, p0, p1, p2, p3) =>
+    (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3;
+  const bezierX = (t, p0, p1, p2, p3) =>
+    (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3;
+
+  const findT = (targetX, x0, x1, x2, x3) => {
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      bezierX(mid, x0, x1, x2, x3) < targetX ? (lo = mid) : (hi = mid);
+    }
+    return (lo + hi) / 2;
+  };
+
+  if (x <= ovulacionX) {
+    const t = findT(x, 0, ovulacionX * 0.4, ovulacionX * 0.8, ovulacionX);
+    return bezierY(t, y0, y0, yPeak, yPeak);
+  } else {
+    const t = findT(x, ovulacionX, ovulacionX * 1.2, width, width);
+    return bezierY(t, yPeak, yPeak, y0, y0);
+  }
+};
+
 const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) => {
   const width = 800;
   const height = 120;
   const puntosClave = [1, 5, 10, 14, 18, 22, duracion];
-
-  // Cálculo de X para cada día
+  const ovulacionX = (14 / duracion) * width;
   const getX = (dia) => (dia / duracion) * width;
 
-  // Curva orgánica usando Bezier pero calculada para que el pico esté en el día 14 aprox
-  // Independientemente de la duración total
-  const ovulacionX = (14 / duracion) * width;
   const pathData = `
-    M 0,${height - 20} 
-    C ${ovulacionX * 0.4},${height - 20} 
-      ${ovulacionX * 0.8},20 
-      ${ovulacionX},20 
-    S ${width},${height - 20} 
-      ${width},${height - 20}
+    M 0,${height - 20}
+    C ${ovulacionX * 0.4},${height - 20} ${ovulacionX * 0.8},20 ${ovulacionX},20
+    S ${width},${height - 20} ${width},${height - 20}
   `;
 
   return (
     <div style={{ width: '100%', padding: '20px 0', position: 'relative' }}>
       <svg viewBox={`0 0 ${width} ${height + 40}`} width="100%" style={{ overflow: 'visible', display: 'block' }}>
         <line x1="0" y1={height} x2={width} y2={height} stroke="var(--primary-light)" strokeWidth="1" strokeDasharray="4" opacity="0.4" />
-        
-        <path 
-          d={pathData} 
-          fill="none" 
-          stroke="var(--primary)" 
-          strokeWidth="3" 
-          strokeLinecap="round"
-        />
+        <path d={pathData} fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" />
 
         {puntosClave.map((dia) => {
           const x = getX(dia);
-          // Y aproximada para que coincida con la curva visual
-          let y = height - 20;
-          if (dia === 14) y = 20;
-          else if (dia === 10 || dia === 18) y = 55;
-          else if (dia === 5 || dia === 22) y = 85;
-
+          const y = getYOnCurve(x, ovulacionX, width, height);
           const isSelected = selectedPoint === dia;
-
           return (
             <g key={dia} onClick={() => onSelectPoint(dia)} style={{ cursor: 'pointer' }}>
               {isSelected && <circle cx={x} cy={y} r="10" fill="var(--primary)" opacity="0.2" />}
@@ -218,8 +232,8 @@ export default function PredictionsScreen() {
             background: 'linear-gradient(to right, #FAF5FF, #F3E8FF)', 
             borderLeft: '5px solid #C084FC', padding: '20px', position: 'relative'
           }}>
-            <div style={{ position: 'absolute', right: '20px', top: '25px', opacity: 0.1 }}>
-              <Egg size={45} />
+            <div style={{ position: 'absolute', right: '20px', top: '15px' }}>
+              <OvuloIcon size={50} color="#C084FC" opacity={0.18} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{ background: '#C084FC', padding: '8px', borderRadius: '10px', color: 'white' }}><TrendingUp size={20} /></div>
