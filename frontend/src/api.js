@@ -127,6 +127,12 @@ export const ApiService = {
     }
     return true;
   },
+  
+  exportData: async () => {
+    const res = await fetch(`${baseUrl}/admin/export`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Error al exportar datos');
+    return await res.blob();
+  },
 
   // Ciclos
   getCiclos: async () => {

@@ -87,6 +87,22 @@ export default function AdminPanelScreen() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const blob = await ApiService.exportData();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nuvia_export_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      alert('Error al exportar: ' + err.message);
+    }
+  };
+
   return (
     <div className="screen-container">
       {/* Header */}
@@ -219,12 +235,15 @@ export default function AdminPanelScreen() {
 
       {/* Export Button */}
       <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-        <button style={{ 
-          padding: '12px 30px', background: 'var(--primary)', color: 'white', 
-          border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '600',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-          cursor: 'pointer', boxShadow: '0 4px 15px rgba(186, 104, 200, 0.2)'
-        }}>
+        <button 
+          onClick={handleExport}
+          style={{ 
+            padding: '12px 30px', background: 'var(--primary)', color: 'white', 
+            border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '600',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            cursor: 'pointer', boxShadow: '0 4px 15px rgba(186, 104, 200, 0.2)'
+          }}
+        >
           <Download size={18} /> Exportar datos
         </button>
       </div>

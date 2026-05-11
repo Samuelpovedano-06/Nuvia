@@ -53,6 +53,36 @@ def get_admin_stats(db: Session = Depends(get_db), _=Depends(require_admin)):
         "crecimiento_semanal": round(crecimiento, 2)
     }
 
+@router.get("/export")
+def export_data(db: Session = Depends(get_db), _=Depends(require_admin)):
+    """Exporta todos los datos críticos de usuarias para backup o análisis."""
+    users = db.query(Usuaria).all()
+    export_list = []
+    
+    for u in users:
+        ciclos_count = db.query(Ciclo).filter(Ciclo.id_usuaria == u.id_usuaria).count()
+        export_list.append({
+            "id": str(u.id_usuaria),
+            "nombre": u.nombre,
+            "email": u.email,
+            "rol": u.rol,
+            "fecha_registro": u.fecha_registro.isoformat() if u.fecha_registro else None,
+            "ultimo_acceso": u.ultimo_acceso.isoformat() if u.ultimo_acceso else None,
+            "total_ciclos": ciclos_count
+        })
+    
+    import json
+    content = json.dumps(export_list, indent=4, ensure_ascii=False)
+    
+    from fastapi import Response
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": f"attachment; filename=nuvia_export_{datetime.now().strftime('%Y-%m-%d')}.json"
+        }
+    )
+
 @router.get("/users", response_model=List[UsuariaOut])
 def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
     """Lista todas las usuarias del sistema con su conteo de ciclos."""
