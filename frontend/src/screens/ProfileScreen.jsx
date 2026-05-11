@@ -231,11 +231,11 @@ export default function ProfileScreen() {
           Configuración del ciclo
         </h4>
         
-        {/* Duración Ciclo */}
+        {/* Frecuencia Periodo (antes Duración Ciclo) */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
-          <span style={{ color: 'var(--text-light)' }}>Duración del ciclo</span>
+          <span style={{ color: 'var(--text-light)' }}>Frecuencia del periodo</span>
           <span style={{ fontWeight: '600', color: durationSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
-            {durationSaved ? '✓ Guardado' : `${cycleDuration} días`}
+            {durationSaved ? '✓ Guardado' : `Cada ${cycleDuration} días`}
           </span>
         </div>
         <input
