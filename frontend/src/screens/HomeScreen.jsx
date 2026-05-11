@@ -89,6 +89,22 @@ export default function HomeScreen() {
     fetchData();
   }, []);
 
+  const handleLogPeriod = async () => {
+    if (window.confirm('¿Quieres registrar que tu periodo ha empezado hoy?')) {
+      try {
+        setLoadingData(true);
+        // Formato YYYY-MM-DD
+        const hoy = new Date().toISOString().split('T')[0];
+        await ApiService.crearCiclo({ fecha_inicio: hoy });
+        // Recargar datos
+        window.location.reload(); 
+      } catch (err) {
+        alert('Error al registrar el ciclo: ' + err.message);
+        setLoadingData(false);
+      }
+    }
+  };
+
   return (
     <div className="screen-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
@@ -160,6 +176,35 @@ export default function HomeScreen() {
 
         </div>
       </div>
+
+      {/* Botón de Registro de Periodo */}
+      <button 
+        onClick={handleLogPeriod}
+        disabled={loadingData}
+        style={{
+          width: '100%',
+          padding: '16px',
+          borderRadius: '16px',
+          border: 'none',
+          background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+          color: 'white',
+          fontSize: '16px',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          marginBottom: '24px',
+          cursor: 'pointer',
+          boxShadow: '0 4px 15px rgba(246, 65, 108, 0.2)',
+          transition: 'transform 0.2s'
+        }}
+        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        <Heart size={20} fill="white" />
+        {loadingData ? 'Guardando...' : 'Hoy empezó mi periodo'}
+      </button>
 
       {/* Grid Menu */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
