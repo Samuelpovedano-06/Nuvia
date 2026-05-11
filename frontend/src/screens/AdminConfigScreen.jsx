@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { ChevronLeft, Bell, Zap, Shield, Save, RefreshCw, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Bell, Zap, Shield, Save, RefreshCw, AlertTriangle, Check } from 'lucide-react';
 
 export default function AdminConfigScreen() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [config, setConfig] = useState({
     modo_mantenimiento: false,
     version_algoritmo: '1.0.0',
@@ -34,7 +35,8 @@ export default function AdminConfigScreen() {
     setSaving(true);
     try {
       await ApiService.updateSystemConfig(config);
-      alert('Configuración guardada correctamente');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       alert('Error: ' + err.message);
     } finally {
@@ -196,7 +198,30 @@ export default function AdminConfigScreen() {
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes slideInUp {
+          from { transform: translateY(100px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
       `}</style>
+
+      {/* Notificación de Éxito Estilo Nuvia */}
+      {showSuccess && (
+        <div style={{
+          position: 'fixed', bottom: '40px', left: '20px', right: '20px',
+          background: 'white', padding: '16px 24px', borderRadius: '20px',
+          display: 'flex', alignItems: 'center', gap: '15px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+          zIndex: 1000, animation: 'slideInUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)'
+        }}>
+          <div style={{ background: '#E8F5E9', color: '#4CAF50', padding: '8px', borderRadius: '50%', display: 'flex' }}>
+            <Check size={20} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>Cambios guardados</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>La configuración global se ha actualizado correctamente.</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

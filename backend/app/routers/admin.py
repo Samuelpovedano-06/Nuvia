@@ -171,3 +171,9 @@ def update_system_config(datos: AdminConfigUpdate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(config)
     return config
+
+@router.get("/status/public")
+def get_public_status(db: Session = Depends(get_db)):
+    """Endpoint público para verificar el estado del sistema (mantenimiento)."""
+    config = db.query(ConfiguracionSistema).first()
+    return {"modo_mantenimiento": config.modo_mantenimiento if config else False}

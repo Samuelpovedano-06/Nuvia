@@ -152,6 +152,12 @@ export const ApiService = {
     return data;
   },
 
+  getPublicStatus: async () => {
+    const res = await fetch(`${baseUrl}/admin/status/public`);
+    if (!res.ok) return { modo_mantenimiento: false };
+    return await res.json();
+  },
+
   // Ciclos
   getCiclos: async () => {
     const res = await fetch(`${baseUrl}/ciclos/`, { headers: getHeaders() });

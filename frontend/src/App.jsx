@@ -1,6 +1,7 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
+import { ApiService } from './api';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -11,12 +12,20 @@ import AdminConfigScreen from './screens/AdminConfigScreen';
 import SymptomsScreen from './screens/SymptomsScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import WellnessScreen from './screens/WellnessScreen';
+import { Heart } from 'lucide-react';
 
 function App() {
   const { user, loading } = useContext(AuthContext);
+  const [maintenance, setMaintenance] = React.useState(false);
 
   // Aplicar modo oscuro globalmente al cargar la app
   useEffect(() => {
+    const checkStatus = async () => {
+      const status = await ApiService.getPublicStatus();
+      setMaintenance(status.modo_mantenimiento);
+    };
+    checkStatus();
+
     const savedMode = localStorage.getItem('nuvia_modo_oscuro');
     if (savedMode === '1') {
       document.body.classList.add('dark-mode');
@@ -29,6 +38,24 @@ function App() {
     return (
       <div className="app-container" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div className="loader"></div>
+      </div>
+    );
+  }
+
+  // Pantalla de Mantenimiento (Solo si no es admin)
+  if (maintenance && user?.rol !== 'admin') {
+    return (
+      <div className="screen-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px' }}>
+        <div style={{ background: '#FFF1F2', padding: '30px', borderRadius: '50%', color: '#F6416C', marginBottom: '30px' }}>
+          <Heart size={60} fill="#F6416C" />
+        </div>
+        <h1 style={{ color: 'var(--primary)', marginBottom: '16px' }}>Nuvia se está renovando</h1>
+        <p style={{ color: 'var(--text-light)', lineHeight: '1.6', maxWidth: '300px' }}>
+          Estamos realizando mejoras para cuidar mejor de ti. Volveremos en unos minutos con una experiencia aún más premium.
+        </p>
+        <div style={{ marginTop: '40px', fontSize: '12px', color: 'var(--text-light)', opacity: 0.7 }}>
+          Gracias por tu paciencia 💜
+        </div>
       </div>
     );
   }

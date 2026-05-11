@@ -10,7 +10,6 @@ import {
 export default function AdminPanelScreen() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({ total_users: 0, total_ciclos: 0, registros_hoy: 0, crecimiento_semanal: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -33,11 +32,7 @@ export default function AdminPanelScreen() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersData, statsData] = await Promise.all([
-        ApiService.getUsers(),
-        ApiService.getAdminStats()
-      ]);
-      setUsers(usersData);
+      const statsData = await ApiService.getAdminStats();
       setStats(statsData);
     } catch (err) {
       setError(err.message);
@@ -46,46 +41,6 @@ export default function AdminPanelScreen() {
     }
   };
 
-  const handleOpenModal = (u = null) => {
-    if (u) {
-      setEditingUser(u);
-      setFormData({ nombre: u.nombre, email: u.email, password: '', rol: u.rol });
-    } else {
-      setEditingUser(null);
-      setFormData({ nombre: '', email: '', password: '', rol: 'usuaria' });
-    }
-    setShowModal(true);
-    setShowPassword(false);
-    setError('');
-  };
-
-  const handleSaveUser = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    try {
-      if (editingUser) {
-        await ApiService.updateUserAdmin(editingUser.id_usuaria, formData);
-      } else {
-        await ApiService.createUserAdmin(formData);
-      }
-      setShowModal(false);
-      fetchUsers();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDeleteUser = async (id) => {
-    if (window.confirm('¿Estás segura de eliminar esta usuaria y todos sus datos?')) {
-      try {
-        await ApiService.deleteUserAdmin(id);
-        fetchUsers();
-      } catch (err) { alert(err.message); }
-    }
-  };
 
   const handleExport = async () => {
     try {
@@ -156,9 +111,9 @@ export default function AdminPanelScreen() {
       <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Actividad reciente</h3>
       <div className="card" style={{ padding: '0', marginBottom: '24px', overflow: 'hidden' }}>
         {[
-          { label: 'Sincronización de base de datos', time: 'Ahora mismo', color: '#4CAF50', bg: 'rgba(76, 175, 80, 0.05)' },
-          { label: `${users.length} perfiles analizados`, time: 'Hace 1 minuto', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.03)' },
-          { label: 'Servidor de predicciones activo', time: 'Sistema estable', color: '#9C27B0', bg: 'rgba(156, 39, 176, 0.05)' }
+          { label: 'Sistema Nuvia activo', time: 'Ahora mismo', color: '#4CAF50', bg: 'rgba(76, 175, 80, 0.05)' },
+          { label: 'Servidor estable', time: 'Hace 1 minuto', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.03)' },
+          { label: 'Motor de IA operativo', time: 'Sistema estable', color: '#9C27B0', bg: 'rgba(156, 39, 176, 0.05)' }
         ].map((item, i) => (
           <div key={i} style={{ 
             padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px',
@@ -173,47 +128,6 @@ export default function AdminPanelScreen() {
         ))}
       </div>
 
-      {/* Lista de Usuarias */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '18px', margin: 0 }}>Lista de usuarias</h3>
-        <button onClick={() => navigate('/admin/users')} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '13px', cursor: 'pointer' }}>Ver todas</button>
-      </div>
-
-      <div className="card" style={{ padding: '0', marginBottom: '24px' }}>
-        {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}><div className="loader"></div></div>
-        ) : (
-          users.slice(0, 4).map((u, i) => (
-            <div key={u.id_usuaria} style={{ 
-              padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              borderBottom: i < users.slice(0, 4).length - 1 ? '1px solid rgba(0,0,0,0.03)' : 'none'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ 
-                  width: '36px', height: '36px', borderRadius: '50%', 
-                  background: 'linear-gradient(135deg, var(--primary) 0%, #F472B6 100%)',
-                  display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold',
-                  boxShadow: '0 2px 8px rgba(186, 104, 200, 0.2)'
-                }}>
-                  {u.nombre.charAt(0)}
-                </div>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '600' }}>{u.nombre}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>{u.email}</div>
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', fontWeight: '500' }}>{u.total_ciclos || 0} ciclos</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>
-                  {u.ultimo_acceso 
-                    ? `Último acceso: ${new Date(u.ultimo_acceso).toLocaleDateString()} ${new Date(u.ultimo_acceso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
-                    : 'Sin actividad'}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
 
       {/* Configuración del Sistema */}
       <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Configuración del sistema</h3>
