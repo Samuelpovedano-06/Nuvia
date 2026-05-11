@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Sparkles, Zap, Heart, Calendar, TrendingUp, Lightbulb, MessageCircle, BarChart2 } from 'lucide-react';
+import { ChevronLeft, Sparkles, Zap, Heart, Calendar, TrendingUp, Lightbulb, MessageCircle, BarChart2, Droplets, Moon, Coffee, RefreshCw } from 'lucide-react';
 
 const OvuloIcon = ({ size = 40, color = '#C084FC', opacity = 1 }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none" style={{ opacity }}>
     {/* Halo exterior (Zona Pelúcida) */}
     <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="0.5" strokeDasharray="2 1" opacity="0.5" />
     <circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth="1.2" opacity="0.8" />
-    
+
     {/* Cuerpo del óvulo (Citoplasma) */}
     <circle cx="12" cy="12" r="6" fill={color} opacity="0.15" />
-    
+
     {/* Núcleo con brillo */}
     <circle cx="12" cy="12" r="2.5" fill={color} opacity="0.4" stroke={color} strokeWidth="1" />
     <circle cx="11.2" cy="11.2" r="0.8" fill="white" opacity="0.9" />
-    
+
     {/* Pequeños destellos de vitalidad */}
     <circle cx="17" cy="8" r="0.5" fill={color} />
     <circle cx="18.5" cy="12" r="0.7" fill={color} opacity="0.6" />
@@ -23,23 +23,55 @@ const OvuloIcon = ({ size = 40, color = '#C084FC', opacity = 1 }) => (
 );
 import { ApiService } from '../api';
 
-// Datos de detalle para los puntos del gráfico
-const PUNTOS_DETALLE = {
-  1: { title: 'Día 1: Inicio', desc: 'Menstruación. Fase de renovación hormonal.', icon: '🩸' },
-  5: { title: 'Día 5: Transición', desc: 'Fin del periodo. Los estrógenos suben.', icon: '✨' },
-  10: { title: 'Día 10: Preparación', desc: 'Inicio ventana fértil. Aumenta la energía.', icon: '🌿' },
-  14: { title: 'Día 14: Ovulación', desc: 'Pico de fertilidad. Te sientes radiante.', icon: '🥚' },
-  18: { title: 'Día 18: Fase Lútea', desc: 'La progesterona empieza a dominar.', icon: '🌙' },
-  22: { title: 'Día 22: Pico Lúteo', desc: 'Posibles síntomas premenstruales.', icon: '🧘' },
-  28: { title: 'Día 28: Cierre', desc: 'Preparación para el nuevo ciclo.', icon: '🔄' }
+// Datos de detalle para los puntos del gráfico con Iconos Estilizados
+const getPuntosDetalle = (duracion) => {
+  const ovulacion = Math.max(1, duracion - 14);
+  return {
+    1: {
+      title: 'Día 1: Inicio',
+      desc: 'Menstruación. Fase de renovación hormonal.',
+      icon: null
+    },
+    5: {
+      title: 'Día 5: Transición',
+      desc: 'Fin del periodo. Los estrógenos suben.',
+      icon: null
+    },
+    10: {
+      title: 'Día 10: Ventana Fértil',
+      desc: 'Tus niveles de energía y libido suben.',
+      icon: null
+    },
+    [ovulacion]: {
+      title: `Día ${ovulacion}: Ovulación`,
+      desc: 'Momento pico de fertilidad. Te sientes radiante.',
+      icon: <div style={{ background: '#FAF5FF', padding: '10px', borderRadius: '50%' }}><OvuloIcon size={32} /></div>
+    },
+    [ovulacion + 4]: {
+      title: 'Fase de Preparación',
+      desc: 'La progesterona sube. Es hora de bajar el ritmo.',
+      icon: null
+    },
+    [duracion - 4]: {
+      title: 'Fase de Preparación (Pico)',
+      desc: 'Posibles síntomas premenstruales. ¡Cuídate!',
+      icon: null
+    },
+    [duracion]: {
+      title: `Día ${duracion}: Cierre`,
+      desc: 'Preparación para el nuevo ciclo.',
+      icon: null
+    }
+  };
 };
+
 const getYOnCurve = (x, ovulacionX, width, height) => {
   const y0 = height - 20;
   const yPeak = 20;
   const bezierY = (t, p0, p1, p2, p3) =>
-    (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3;
+    (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t ** 2 * p2 + t ** 3 * p3;
   const bezierX = (t, p0, p1, p2, p3) =>
-    (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3;
+    (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t ** 2 * p2 + t ** 3 * p3;
 
   const findT = (targetX, x0, x1, x2, x3) => {
     let lo = 0, hi = 1;
@@ -62,8 +94,9 @@ const getYOnCurve = (x, ovulacionX, width, height) => {
 const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) => {
   const width = 800;
   const height = 120;
-  const puntosClave = [1, 5, 10, 14, 18, 22, duracion];
-  const ovulacionX = (14 / duracion) * width;
+  const ovulacion = Math.max(1, duracion - 14);
+  const puntosClave = [...new Set([1, 5, 10, ovulacion, ovulacion + 4, duracion - 4, duracion])].sort((a, b) => a - b);
+  const ovulacionX = (ovulacion / duracion) * width;
   const getX = (dia) => (dia / duracion) * width;
 
   const pathData = `
@@ -108,7 +141,7 @@ export default function PredictionsScreen() {
           ApiService.getCiclos(),
           ApiService.getConfig()
         ]);
-        
+
         const duracion = config?.duracion_ciclo || 28;
         let hoy = new Date();
         let inicio;
@@ -123,20 +156,21 @@ export default function PredictionsScreen() {
         const diaActual = (Math.floor((hoy - inicio) / (86400000)) % duracion) + 1;
         const proximoPeriodo = new Date(inicio.getTime() + duracion * 86400000);
         const ovulacion = new Date(proximoPeriodo.getTime() - 14 * 86400000);
-        
+
         setData({ diaActual, duracion, proximoPeriodo, ovulacion });
         setSelectedPoint(14);
-      } catch (err) { 
-        console.error(err); 
+      } catch (err) {
+        console.error(err);
       }
       finally { setLoading(false); }
     };
     init();
   }, []);
 
-  if (loading) return <div className="screen-container" style={{justifyContent:'center', alignItems:'center'}}><div className="loader"></div></div>;
+  if (loading) return <div className="screen-container" style={{ justifyContent: 'center', alignItems: 'center' }}><div className="loader"></div></div>;
 
-  const tooltipInfo = PUNTOS_DETALLE[selectedPoint] || PUNTOS_DETALLE[14];
+  const puntosDetalle = getPuntosDetalle(data.duracion);
+  const tooltipInfo = puntosDetalle[selectedPoint] || puntosDetalle[Math.max(1, data.duracion - 14)];
 
   return (
     <div className="screen-container">
@@ -158,16 +192,16 @@ export default function PredictionsScreen() {
             <TrendingUp size={18} color="var(--primary)" /> Evolución de tu ciclo
           </h3>
           <div className="card" style={{ padding: '20px', overflow: 'hidden', position: 'relative' }}>
-            <CycleGraph 
-              diaActual={data.diaActual} 
-              duracion={data.duracion} 
+            <CycleGraph
+              diaActual={data.diaActual}
+              duracion={data.duracion}
               onSelectPoint={setSelectedPoint}
               selectedPoint={selectedPoint}
             />
-            
+
             {/* Tooltip Detalle */}
-            <div style={{ 
-              marginTop: '20px', background: 'rgba(255,255,255,0.8)', padding: '15px', 
+            <div style={{
+              marginTop: '20px', background: 'rgba(255,255,255,0.8)', padding: '15px',
               borderRadius: '15px', border: '1px solid var(--primary-light)',
               display: 'flex', alignItems: 'center', gap: '15px',
               animation: 'fadeIn 0.3s ease'
@@ -192,13 +226,12 @@ export default function PredictionsScreen() {
 
         {/* Tarjetas de Predicción */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '40px' }}>
-          
+
           {/* Próximo Periodo */}
-          <div className="card" style={{ 
-            background: 'linear-gradient(to right, #FFF1F2, #FFE4E6)', 
+          <div className="card" style={{
+            background: 'linear-gradient(to right, #FFF1F2, #FFE4E6)',
             borderLeft: '5px solid #FF9A9E', padding: '20px', position: 'relative'
           }}>
-            <div style={{ position: 'absolute', right: '20px', top: '20px', fontSize: '40px', opacity: 0.2 }}>🌸</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{ background: '#FF9A9E', padding: '8px', borderRadius: '10px', color: 'white' }}><Calendar size={20} /></div>
               <div>
@@ -215,11 +248,10 @@ export default function PredictionsScreen() {
           </div>
 
           {/* Ventana Fértil */}
-          <div className="card" style={{ 
-            background: 'linear-gradient(to right, #F5F3FF, #EDE9FE)', 
+          <div className="card" style={{
+            background: 'linear-gradient(to right, #F5F3FF, #EDE9FE)',
             borderLeft: '5px solid #A78BFA', padding: '20px', position: 'relative'
           }}>
-            <div style={{ position: 'absolute', right: '20px', top: '20px', fontSize: '40px', opacity: 0.2 }}>🌿</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{ background: '#A78BFA', padding: '8px', borderRadius: '10px', color: 'white' }}><Heart size={20} /></div>
               <div>
@@ -230,18 +262,18 @@ export default function PredictionsScreen() {
             <div style={{ fontSize: '16px', fontWeight: '600', color: '#4C1D95' }}>
               {data.ovulacion ? (
                 <>
-                  {new Date(data.ovulacion.getTime() - 3*86400000).toLocaleDateString('es-ES', { day: 'numeric' })} - {new Date(data.ovulacion.getTime() + 1*86400000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                  {new Date(data.ovulacion.getTime() - 3 * 86400000).toLocaleDateString('es-ES', { day: 'numeric' })} - {new Date(data.ovulacion.getTime() + 1 * 86400000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                 </>
               ) : 'Pendiente'}
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#5B21B6' }}>
-              Comienza en {data.ovulacion ? Math.max(0, Math.floor((new Date(data.ovulacion.getTime() - 3*86400000) - new Date()) / 86400000)) : '—'} días • 5 días de duración
+              Comienza en {data.ovulacion ? Math.max(0, Math.floor((new Date(data.ovulacion.getTime() - 3 * 86400000) - new Date()) / 86400000)) : '—'} días • 5 días de duración
             </p>
           </div>
 
           {/* Ovulación */}
-          <div className="card" style={{ 
-            background: 'linear-gradient(to right, #FAF5FF, #F3E8FF)', 
+          <div className="card" style={{
+            background: 'linear-gradient(to right, #FAF5FF, #F3E8FF)',
             borderLeft: '5px solid #C084FC', padding: '20px', position: 'relative'
           }}>
             <div style={{ position: 'absolute', right: '20px', top: '15px' }}>
@@ -273,7 +305,7 @@ export default function PredictionsScreen() {
               <div style={{ background: '#E0F2FE', padding: '10px', borderRadius: '12px', color: '#0369A1' }}><BarChart2 size={20} /></div>
               <div>
                 <div style={{ fontWeight: '600', fontSize: '14px' }}>Ciclo regular</div>
-                <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Tu ciclo ha sido consistente en los últimos 3 meses ({data.duracion-1}-{data.duracion+1} días)</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Tu ciclo ha sido consistente en los últimos 3 meses ({data.duracion - 1}-{data.duracion + 1} días)</div>
               </div>
             </div>
             <div className="card" style={{ margin: 0, padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', background: 'rgba(255,255,255,0.5)' }}>
