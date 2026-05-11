@@ -235,13 +235,28 @@ export default function ProfileScreen() {
       </div>
 
       {/* Configuración del ciclo */}
-      <div className="card" style={{ padding: '20px' }}>
-        <h4 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--primary)', fontWeight: '600', opacity: 0.9 }}>
-          Configuración del ciclo
-        </h4>
+      <div className="card" style={{ padding: '20px', position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h4 style={{ fontSize: '16px', margin: 0, color: 'var(--primary)', fontWeight: '600', opacity: 0.9 }}>
+            Configuración del ciclo
+          </h4>
+          <button 
+            onClick={() => setIsCycleEditable(!isCycleEditable)}
+            style={{ 
+              background: isCycleEditable ? 'var(--primary)' : '#f1f5f9', 
+              color: isCycleEditable ? 'white' : '#64748b',
+              border: 'none', borderRadius: '20px', padding: '6px 12px', fontSize: '12px',
+              fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {isCycleEditable ? <Lock size={14} /> : <Settings size={14} />}
+            {isCycleEditable ? 'Bloquear' : 'Editar'}
+          </button>
+        </div>
         
         {/* Frecuencia Periodo (antes Duración Ciclo) */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', opacity: isCycleEditable ? 1 : 0.6 }}>
           <span style={{ color: 'var(--text-light)' }}>Frecuencia del periodo</span>
           <span style={{ fontWeight: '600', color: durationSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
             {durationSaved ? '✓ Guardado' : `Cada ${cycleDuration} días`}
@@ -252,21 +267,24 @@ export default function ProfileScreen() {
           min={21}
           max={45}
           step={1}
+          disabled={!isCycleEditable}
           value={cycleDuration}
           onChange={handleDurationChange}
           className="custom-range"
           style={{ 
             '--value': `${((cycleDuration - 21) / (45 - 21)) * 100}%`,
-            marginBottom: '6px'
+            marginBottom: '6px',
+            opacity: isCycleEditable ? 1 : 0.5,
+            cursor: isCycleEditable ? 'pointer' : 'not-allowed'
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '12px', color: 'var(--text-light)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '12px', color: 'var(--text-light)', opacity: isCycleEditable ? 1 : 0.6 }}>
           <span>21 días</span>
           <span>45 días</span>
         </div>
 
         {/* Duración Periodo */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', opacity: isCycleEditable ? 1 : 0.6 }}>
           <span style={{ color: 'var(--text-light)' }}>Duración del periodo</span>
           <span style={{ fontWeight: '600', color: periodSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
             {periodSaved ? '✓ Guardado' : `${periodDuration} días`}
@@ -277,16 +295,19 @@ export default function ProfileScreen() {
           min={3}
           max={10}
           step={1}
+          disabled={!isCycleEditable}
           value={periodDuration}
           onChange={handlePeriodChange}
           className="custom-range range-pink"
           style={{ 
             '--value': `${((periodDuration - 3) / (10 - 3)) * 100}%`,
             '--thumb-color': '#FF9A9E',
-            marginBottom: '6px'
+            marginBottom: '6px',
+            opacity: isCycleEditable ? 1 : 0.5,
+            cursor: isCycleEditable ? 'pointer' : 'not-allowed'
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-light)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-light)', opacity: isCycleEditable ? 1 : 0.6 }}>
           <span>3 días</span>
           <span>10 días</span>
         </div>
