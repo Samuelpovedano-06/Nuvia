@@ -21,8 +21,8 @@ const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) 
   const puntosClave = [1, 5, 10, 14, 18, 22, duracion];
 
   return (
-    <div style={{ width: '100%', overflowX: 'auto', padding: '20px 0', position: 'relative' }}>
-      <svg viewBox={`0 0 ${width} ${height + 40}`} width={width} height={height + 40} style={{ overflow: 'visible' }}>
+    <div style={{ width: '100%', padding: '20px 0', position: 'relative' }}>
+      <svg viewBox={`0 0 ${width} ${height + 40}`} width="100%" style={{ overflow: 'visible', display: 'block' }}>
         <line x1="0" y1={height} x2={width} y2={height} stroke="var(--primary-light)" strokeWidth="1" strokeDasharray="4" />
         
         <path 
