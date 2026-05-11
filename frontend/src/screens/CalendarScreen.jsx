@@ -84,15 +84,12 @@ export default function CalendarScreen() {
 
       const duracionP = config?.duracion_periodo || 5;
       
-      // Asegurar que la ventana fértil empiece al menos 3 días después de la regla
-      const minInicioFertil = duracionP + 3;
-      const ovulacionCalculada = duracion - 14;
-      const ovulacion = Math.max(minInicioFertil + 3, ovulacionCalculada); 
-      
-      const ventanaInicio = ovulacion - 3;
+      // Asegurar que la fase folicular (melocotón) dure al menos 6-7 días
+      const ventanaInicio = duracionP + 7; 
+      const ovulacion = ventanaInicio + 3;
       const ventanaFin = ovulacion + 1;
 
-      // Definición de fases Dinámica
+      // Definición de fases con Margen Generoso
       if (diaCiclo <= duracionP) return 'prediccion-periodo';
       if (diaCiclo < ventanaInicio) return 'folicular';
       if (diaCiclo === ovulacion) return 'ovulacion'; 
