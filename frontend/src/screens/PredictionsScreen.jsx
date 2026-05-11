@@ -17,36 +17,76 @@ const PUNTOS_DETALLE = {
 // Componente para el gráfico de curva
 const CycleGraph = ({ diaActual, duracion = 28, onSelectPoint, selectedPoint }) => {
   const width = 800;
-  const height = 120;
+  const height = 100;
+  const padding = 20;
   const puntosClave = [1, 5, 10, 14, 18, 22, duracion];
+
+  // Función para calcular la Y de la curva en cualquier punto X (Día)
+  // Usamos una función seno modificada para que el pico esté cerca del día 14 (ovulación)
+  const getY = (dia) => {
+    // Normalizamos el día al rango [0, 1] respecto a la duración
+    const t = dia / duracion;
+    // Creamos una curva que sube en la ovulación y baja en los extremos
+    // Usamos Math.sin para una curva suave. 
+    // Queremos el pico en el centro aprox (dia 14)
+    const sinVal = Math.sin(t * Math.PI); 
+    return height - (sinVal * (height - padding)) + padding;
+  };
+
+  // Generar los puntos del path dinámicamente
+  const pathData = Array.from({ length: 51 }, (_, i) => {
+    const dia = (i / 50) * duracion;
+    const x = (dia / duracion) * width;
+    const y = getY(dia);
+    return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
+  }).join(' ');
 
   return (
     <div style={{ width: '100%', padding: '20px 0', position: 'relative' }}>
-      <svg viewBox={`0 0 ${width} ${height + 40}`} width="100%" style={{ overflow: 'visible', display: 'block' }}>
-        <line x1="0" y1={height} x2={width} y2={height} stroke="var(--primary-light)" strokeWidth="1" strokeDasharray="4" />
+      <svg viewBox={`0 0 ${width} ${height + 60}`} width="100%" style={{ overflow: 'visible', display: 'block' }}>
+        {/* Línea base */}
+        <line x1="0" y1={height + 20} x2={width} y2={height + 20} stroke="var(--primary-light)" strokeWidth="1" strokeDasharray="4" opacity="0.3" />
         
+        {/* Curva Dinámica */}
         <path 
-          d={`M 0,${height - 20} C ${width * 0.2},${height - 20} ${width * 0.4},20 ${width * 0.5},20 S ${width * 0.8},${height - 20} ${width},${height - 20}`} 
+          d={pathData} 
           fill="none" 
           stroke="var(--primary)" 
           strokeWidth="3" 
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
 
+        {/* Puntos Interactivos */}
         {puntosClave.map((dia) => {
-          const x = (dia / duracion) * width - (dia === 1 ? 0 : 0);
-          // Cálculo aproximado de Y basado en la curva bezier
-          let y = height - 20;
-          if (dia === 14) y = 20;
-          else if (dia === 10 || dia === 18) y = 50;
-          else if (dia === 5 || dia === 22) y = 80;
-
+          const x = (dia / duracion) * width;
+          const y = getY(dia);
           const isSelected = selectedPoint === dia;
 
           return (
             <g key={dia} onClick={() => onSelectPoint(dia)} style={{ cursor: 'pointer' }}>
-              {isSelected && <circle cx={x} cy={y} r="10" fill="var(--primary)" opacity="0.2" />}
-              <circle cx={x} cy={y} r={isSelected ? "7" : "5"} fill={isSelected ? "var(--primary)" : "#fff"} stroke="var(--primary)" strokeWidth="2" />
-              <text x={x} y={height + 25} fontSize="10" fill="var(--text-light)" textAnchor="middle" fontWeight={isSelected ? "bold" : "normal"}>Día {dia}</text>
+              {isSelected && (
+                <circle cx={x} cy={y} r="12" fill="var(--primary)" opacity="0.15">
+                  <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite" />
+                </circle>
+              )}
+              <circle 
+                cx={x} cy={y} 
+                r={isSelected ? "7" : "5"} 
+                fill={isSelected ? "var(--primary)" : "#fff"} 
+                stroke="var(--primary)" 
+                strokeWidth="2.5" 
+                style={{ transition: 'all 0.3s ease' }}
+              />
+              <text 
+                x={x} y={height + 45} 
+                fontSize="11" 
+                fill={isSelected ? "var(--primary)" : "var(--text-light)"} 
+                textAnchor="middle" 
+                fontWeight={isSelected ? "700" : "500"}
+              >
+                Día {dia}
+              </text>
             </g>
           );
         })}
