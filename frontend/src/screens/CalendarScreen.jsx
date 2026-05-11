@@ -62,7 +62,8 @@ export default function CalendarScreen() {
     // 1. Verificar si es un día de periodo REAL (registrado)
     const isPeriodoReal = ciclos.some(c => {
       const inicio = new Date(c.fecha_inicio);
-      const fin = c.fecha_fin ? new Date(c.fecha_fin) : new Date(inicio.getTime() + 5 * 24 * 60 * 60 * 1000);
+      const duracionP = config?.duracion_periodo || 5;
+      const fin = c.fecha_fin ? new Date(c.fecha_fin) : new Date(inicio.getTime() + (duracionP - 1) * 24 * 60 * 60 * 1000);
       return dateObj >= inicio && dateObj <= fin;
     });
 
@@ -81,8 +82,10 @@ export default function CalendarScreen() {
       // Normalizar día al rango [1, duracion] usando módulo
       let diaCiclo = ((diffDays % duracion) + duracion) % duracion + 1;
 
+      const duracionP = config?.duracion_periodo || 5;
+
       // Definición de fases (alineado con la Home)
-      if (diaCiclo <= 5) return 'prediccion-periodo';
+      if (diaCiclo <= duracionP) return 'prediccion-periodo';
       if (diaCiclo <= 10) return 'folicular';
       if (diaCiclo === 14) return 'ovulacion'; 
       if (diaCiclo >= 11 && diaCiclo <= 16) return 'fertil';
