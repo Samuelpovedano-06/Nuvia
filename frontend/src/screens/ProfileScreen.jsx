@@ -248,9 +248,13 @@ export default function ProfileScreen() {
           className="custom-range"
           style={{ 
             '--value': `${((cycleDuration - 21) / (45 - 21)) * 100}%`,
-            marginBottom: '20px'
+            marginBottom: '6px'
           }}
         />
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '12px', color: 'var(--text-light)' }}>
+          <span>21 días</span>
+          <span>45 días</span>
+        </div>
 
         {/* Duración Periodo */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
@@ -269,10 +273,11 @@ export default function ProfileScreen() {
           className="custom-range range-pink"
           style={{ 
             '--value': `${((periodDuration - 3) / (10 - 3)) * 100}%`,
-            '--thumb-color': '#FF9A9E'
+            '--thumb-color': '#FF9A9E',
+            marginBottom: '6px'
           }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px', color: 'var(--text-light)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-light)' }}>
           <span>3 días</span>
           <span>10 días</span>
         </div>
