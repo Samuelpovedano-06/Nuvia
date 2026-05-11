@@ -11,6 +11,8 @@ COLUMNS = [
     ("recordatorio_ciclo",  "SMALLINT DEFAULT 1"),
     ("privacidad_estricta", "SMALLINT DEFAULT 0"),
     ("duracion_ciclo",      "SMALLINT DEFAULT 28"),
+    ("duracion_periodo",    "SMALLINT DEFAULT 5"),
+    ("modo_oscuro",         "SMALLINT DEFAULT 0"),
     ("edad",                "SMALLINT"),
 ]
 

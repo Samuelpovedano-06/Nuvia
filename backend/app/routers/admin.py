@@ -11,6 +11,14 @@ from app.routers.auth_utils import get_current_user, hash_password
 
 router = APIRouter(prefix="/admin", tags=["Administración"])
 
+def require_admin(current_user: Usuaria = Depends(get_current_user)):
+    if current_user.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Se requieren privilegios de administrador"
+        )
+    return current_user
+
 @router.get("/stats", response_model=AdminStatsOut)
 def get_admin_stats(db: Session = Depends(get_db), _=Depends(require_admin)):
     """Obtiene estadísticas reales del sistema."""
@@ -44,15 +52,6 @@ def get_admin_stats(db: Session = Depends(get_db), _=Depends(require_admin)):
         "registros_hoy": registros_hoy,
         "crecimiento_semanal": round(crecimiento, 2)
     }
-
-# Función para verificar si el usuario es administrador
-def require_admin(current_user: Usuaria = Depends(get_current_user)):
-    if current_user.rol != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acceso denegado: Se requieren privilegios de administrador"
-        )
-    return current_user
 
 @router.get("/users", response_model=List[UsuariaOut])
 def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
