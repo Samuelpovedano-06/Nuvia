@@ -24,6 +24,10 @@ class UsuariaOut(BaseModel):
     fecha_registro: Optional[datetime]
     ultimo_acceso: Optional[datetime]
     total_ciclos: Optional[int] = 0
+    total_sintomas: Optional[int] = 0
+    total_notas: Optional[int] = 0
+    ultima_fecha_periodo: Optional[date] = None
+    estado: Optional[str] = "Activa"
 
     class Config:
         from_attributes = True

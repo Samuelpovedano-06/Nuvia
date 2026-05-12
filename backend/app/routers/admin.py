@@ -85,10 +85,33 @@ def export_data(db: Session = Depends(get_db), _=Depends(require_admin)):
 
 @router.get("/users", response_model=List[UsuariaOut])
 def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
-    """Lista todas las usuarias del sistema con su conteo de ciclos."""
+    """Lista todas las usuarias del sistema con estadísticas detalladas."""
     users = db.query(Usuaria).all()
+    hoy = datetime.now()
+    
     for user in users:
+        # Conteos básicos
         user.total_ciclos = db.query(Ciclo).filter(Ciclo.id_usuaria == user.id_usuaria).count()
+        user.total_sintomas = db.query(RegistroSintoma).filter(RegistroSintoma.id_usuaria == user.id_usuaria).count()
+        
+        # Conteo de notas (Registros diarios con texto)
+        user.total_notas = db.query(RegistroDiario).filter(
+            RegistroDiario.id_usuaria == user.id_usuaria,
+            RegistroDiario.notas != None,
+            RegistroDiario.notas != ""
+        ).count()
+        
+        # Última fecha de periodo
+        ultimo_ciclo = db.query(Ciclo).filter(Ciclo.id_usuaria == user.id_usuaria).order_by(Ciclo.fecha_inicio.desc()).first()
+        user.ultima_fecha_periodo = ultimo_ciclo.fecha_inicio if ultimo_ciclo else None
+        
+        # Estado de actividad
+        if user.ultimo_acceso:
+            diff = (hoy - user.ultimo_acceso).days
+            user.estado = "Inactiva" if diff > 30 else "Activa"
+        else:
+            user.estado = "Pendiente"
+            
     return users
 
 @router.post("/users", response_model=UsuariaOut, status_code=201)

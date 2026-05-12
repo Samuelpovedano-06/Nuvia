@@ -314,7 +314,16 @@ export default function AdminUsersScreen() {
                   {viewingUser.nombre.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '18px' }}>Ficha de Usuaria</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '18px' }}>Ficha de Usuaria</h3>
+                    <span style={{ 
+                      fontSize: '10px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px',
+                      background: viewingUser.estado === 'Activa' ? '#D1FAE5' : (viewingUser.estado === 'Inactiva' ? '#FEE2E2' : '#F3F4F6'),
+                      color: viewingUser.estado === 'Activa' ? '#065F46' : (viewingUser.estado === 'Inactiva' ? '#991B1B' : '#374151')
+                    }}>
+                      {viewingUser.estado}
+                    </span>
+                  </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>ID: {viewingUser.id_usuaria.toString().slice(0, 8)}...</div>
                 </div>
               </div>
@@ -323,16 +332,21 @@ export default function AdminUsersScreen() {
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '25px' }}>
-              <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '15px', textAlign: 'center' }}>
-                <Users size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
-                <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ciclos</div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>{viewingUser.total_ciclos || 0}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '25px' }}>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
+                <Users size={18} color="var(--primary)" style={{ marginBottom: '6px' }} />
+                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Ciclos</div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>{viewingUser.total_ciclos || 0}</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '15px', textAlign: 'center' }}>
-                <Shield size={20} color="#10b981" style={{ marginBottom: '8px' }} />
-                <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rol</div>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', textTransform: 'capitalize' }}>{viewingUser.rol}</div>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
+                <Activity size={18} color="#F472B6" style={{ marginBottom: '6px' }} />
+                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Síntomas</div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>{viewingUser.total_sintomas || 0}</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '15px', textAlign: 'center' }}>
+                <Lightbulb size={18} color="#F59E0B" style={{ marginBottom: '6px' }} />
+                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Notas</div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>{viewingUser.total_notas || 0}</div>
               </div>
             </div>
 
@@ -362,15 +376,35 @@ export default function AdminUsersScreen() {
                   </div>
                 </div>
               </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F43F5E' }}>
+                  <Droplets size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>Última regla registrada</div>
+                  <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
+                    {viewingUser.ultima_fecha_periodo ? new Date(viewingUser.ultima_fecha_periodo).toLocaleDateString() : 'Ninguna'}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <button 
-              onClick={() => { setShowViewModal(false); handleOpenModal(viewingUser); }}
-              className="btn-primary"
-              style={{ width: '100%', padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-            >
-              <Edit size={18} /> Editar Perfil Completo
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => { setShowViewModal(false); handleOpenModal(viewingUser); }}
+                className="btn-primary"
+                style={{ flex: 2, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px' }}
+              >
+                <Edit size={16} /> Editar Perfil
+              </button>
+              <button 
+                onClick={() => { setShowViewModal(false); handleOpenModal(viewingUser); }}
+                style={{ flex: 1, padding: '14px', borderRadius: '15px', border: '1px solid #e2e8f0', background: 'white', color: '#64748b', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <Lock size={16} /> Clave
+              </button>
+            </div>
           </div>
         </div>
       )}
