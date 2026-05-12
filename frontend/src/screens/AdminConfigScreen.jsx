@@ -114,17 +114,17 @@ export default function AdminConfigScreen() {
               type="number" 
               className="config-input"
               value={config.min_dias_ciclo}
-              onChange={e => setConfig({...config, min_dias_ciclo: parseInt(e.target.value)})}
+              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, min_dias_ciclo: v}); }}
               style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>
           <div>
             <label style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '6px' }}>Máx. Frecuencia del periodo</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               className="config-input"
               value={config.max_dias_ciclo}
-              onChange={e => setConfig({...config, max_dias_ciclo: parseInt(e.target.value)})}
+              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, max_dias_ciclo: v}); }}
               style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>
@@ -133,21 +133,21 @@ export default function AdminConfigScreen() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div>
             <label style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '6px' }}>Mín. Duración del periodo</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               className="config-input"
               value={config.min_dias_periodo}
-              onChange={e => setConfig({...config, min_dias_periodo: parseInt(e.target.value)})}
+              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, min_dias_periodo: v}); }}
               style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>
           <div>
             <label style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '6px' }}>Máx. Duración del periodo</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               className="config-input"
               value={config.max_dias_periodo}
-              onChange={e => setConfig({...config, max_dias_periodo: parseInt(e.target.value)})}
+              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, max_dias_periodo: v}); }}
               style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>

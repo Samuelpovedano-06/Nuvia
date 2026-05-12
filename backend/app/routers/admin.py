@@ -186,8 +186,8 @@ def get_public_status(db: Session = Depends(get_db)):
         }
     return {
         "modo_mantenimiento": config.modo_mantenimiento,
-        "min_dias_ciclo": config.min_dias_ciclo,
-        "max_dias_ciclo": config.max_dias_ciclo,
-        "min_dias_periodo": config.min_dias_periodo,
-        "max_dias_periodo": config.max_dias_periodo
+        "min_dias_ciclo": config.min_dias_ciclo if config.min_dias_ciclo is not None else 21,
+        "max_dias_ciclo": config.max_dias_ciclo if config.max_dias_ciclo is not None else 45,
+        "min_dias_periodo": config.min_dias_periodo if config.min_dias_periodo is not None else 3,
+        "max_dias_periodo": config.max_dias_periodo if config.max_dias_periodo is not None else 10
     }
