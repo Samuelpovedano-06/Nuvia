@@ -83,7 +83,23 @@ const NuviaFace = ({ type, color = '#9b6c98' }) => {
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
         <circle cx="8" cy="11" r="1" fill={color} />
         <circle cx="16" cy="11" r="1" fill={color} />
-        <path d="M9 16c1 1 5 1 6 0" />
+        <path d="M10 16c1 1 3 1 4 0" />
+        <path d="M16 14v2" strokeWidth="2" opacity="0.6" /> {/* Lagrimita */}
+      </svg>
+    ),
+    'irritable': (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M6 8l3 2M18 8l-3 2" strokeWidth="3" /> {/* Cejas */}
+        <circle cx="8" cy="13" r="1" fill={color} />
+        <circle cx="16" cy="13" r="1" fill={color} />
+        <path d="M9 18h6" />
+      </svg>
+    ),
+    'variable': (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <circle cx="8" cy="10" r="1.5" fill={color} />
+        <path d="M15 10l2 1" strokeWidth="3" /> {/* Ojo picado */}
+        <path d="M7 17c2-2 6 2 8 0" />
       </svg>
     )
   };
@@ -101,6 +117,8 @@ const SINTOMA_STYLE = {
   'Náuseas':         { face: 'nauseas',     color: '#9b6c98', tip: 'Come algo seco como galletas saladas en pequeñas porciones.' },
   'Ansiedad':        { face: 'ansiosa',     color: '#9b6c98', tip: 'Prueba la respiración 4-7-8 durante dos minutos.' },
   'Sensibilidad':    { face: 'sensible',    color: '#9b6c98', tip: 'Sé amable contigo misma hoy, es normal sentirse así.' },
+  'Irritabilidad':   { face: 'irritable',   color: '#9b6c98', tip: 'Respira hondo antes de reaccionar. Tu cuerpo está bajo presión.' },
+  'Humor Variable':  { face: 'variable',    color: '#9b6c98', tip: 'Es normal que tus hormonas causen estos altibajos hoy.' },
   'Euforia':         { face: 'risa',        color: '#9b6c98', tip: '¡Aprovecha esta energía para terminar tus pendientes!' },
   'Cansancio':       { face: 'durmiendo',   color: '#9b6c98', tip: 'Escucha a tu cuerpo. Una siesta de 20 min hará maravillas.' },
   'Manchada':        { face: 'pena',        color: '#9b6c98', tip: 'Lleva contigo lo necesario, ¡que nada te pille por sorpresa!' },
