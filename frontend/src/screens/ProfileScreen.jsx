@@ -70,20 +70,36 @@ export default function ProfileScreen() {
         const storedEdad = localStorage.getItem('nuvia_edad');
         if (storedEdad) setEdad(storedEdad);
       });
-    // Cargar rangos del sistema (público)
-    ApiService.getPublicStatus()
-      .then(status => {
-        if (status) {
-          setSystemRanges({
-            min_dias_ciclo: status.min_dias_ciclo || 21,
-            max_dias_ciclo: status.max_dias_ciclo || 45,
-            min_dias_periodo: status.min_dias_periodo || 3,
-            max_dias_periodo: status.max_dias_periodo || 10
-          });
-        }
-      })
-      .catch(console.error);
-  }, []);
+    // Cargar rangos del sistema
+    if (user?.rol === 'admin') {
+      ApiService.getSystemConfig()
+        .then(config => {
+          if (config) {
+            setSystemRanges({
+              min_dias_ciclo: config.min_dias_ciclo || 21,
+              max_dias_ciclo: config.max_dias_ciclo || 45,
+              min_dias_periodo: config.min_dias_periodo || 3,
+              max_dias_periodo: config.max_dias_periodo || 10
+            });
+          }
+        })
+        .catch(console.error);
+    } else {
+      // Para usuarias normales, usar el endpoint público
+      ApiService.getPublicStatus()
+        .then(status => {
+          if (status) {
+            setSystemRanges({
+              min_dias_ciclo: status.min_dias_ciclo || 21,
+              max_dias_ciclo: status.max_dias_ciclo || 45,
+              min_dias_periodo: status.min_dias_periodo || 3,
+              max_dias_periodo: status.max_dias_periodo || 10
+            });
+          }
+        })
+        .catch(console.error);
+    }
+  }, [user]);
 
   // Efecto para aplicar modo oscuro al body
   useEffect(() => {
