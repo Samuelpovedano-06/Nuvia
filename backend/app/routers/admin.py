@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
@@ -196,8 +196,10 @@ def update_system_config(datos: AdminConfigUpdate, db: Session = Depends(get_db)
     return config
 
 @router.get("/status/public")
-def get_public_status(db: Session = Depends(get_db)):
+def get_public_status(response: Response, db: Session = Depends(get_db)):
     """Endpoint público para verificar el estado del sistema (mantenimiento y rangos)."""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
     config = db.query(ConfiguracionSistema).first()
     if not config:
         return {

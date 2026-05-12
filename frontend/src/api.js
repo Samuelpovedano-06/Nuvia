@@ -153,7 +153,7 @@ export const ApiService = {
   },
 
   getPublicStatus: async () => {
-    const res = await fetch(`${baseUrl}/admin/status/public`, { cache: 'no-cache' });
+    const res = await fetch(`${baseUrl}/admin/status/public?_=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return { modo_mantenimiento: false };
     const data = await res.json();
     console.log('[Nuvia] getPublicStatus:', data);
