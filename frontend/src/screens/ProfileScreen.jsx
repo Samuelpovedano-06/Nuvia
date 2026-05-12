@@ -33,6 +33,12 @@ export default function ProfileScreen() {
   const [privacidadEstricta, setPrivacidadEstricta] = useState(0);
   const [modoOscuro, setModoOscuro] = useState(0);
   const [isCycleEditable, setIsCycleEditable] = useState(false);
+  const [systemRanges, setSystemRanges] = useState({
+    min_dias_ciclo: 21,
+    max_dias_ciclo: 45,
+    min_dias_periodo: 3,
+    max_dias_periodo: 10
+  });
 
   useEffect(() => {
     ApiService.getCiclos()
@@ -64,6 +70,19 @@ export default function ProfileScreen() {
         const storedEdad = localStorage.getItem('nuvia_edad');
         if (storedEdad) setEdad(storedEdad);
       });
+    // Cargar rangos del sistema (público)
+    ApiService.getPublicStatus()
+      .then(status => {
+        if (status) {
+          setSystemRanges({
+            min_dias_ciclo: status.min_dias_ciclo || 21,
+            max_dias_ciclo: status.max_dias_ciclo || 45,
+            min_dias_periodo: status.min_dias_periodo || 3,
+            max_dias_periodo: status.max_dias_periodo || 10
+          });
+        }
+      })
+      .catch(console.error);
   }, []);
 
   // Efecto para aplicar modo oscuro al body
@@ -265,23 +284,23 @@ export default function ProfileScreen() {
         </div>
         <input
           type="range"
-          min={21}
-          max={45}
+          min={systemRanges.min_dias_ciclo}
+          max={systemRanges.max_dias_ciclo}
           step={1}
           disabled={!isCycleEditable}
           value={cycleDuration}
           onChange={handleDurationChange}
           className="custom-range"
           style={{ 
-            '--value': `${((cycleDuration - 21) / (45 - 21)) * 100}%`,
+            '--value': `${((cycleDuration - systemRanges.min_dias_ciclo) / (systemRanges.max_dias_ciclo - systemRanges.min_dias_ciclo)) * 100}%`,
             marginBottom: '6px',
             opacity: isCycleEditable ? 1 : 0.5,
             cursor: isCycleEditable ? 'pointer' : 'not-allowed'
           }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '12px', color: 'var(--text-light)', opacity: isCycleEditable ? 1 : 0.6 }}>
-          <span>21 días</span>
-          <span>45 días</span>
+          <span>{systemRanges.min_dias_ciclo} días</span>
+          <span>{systemRanges.max_dias_ciclo} días</span>
         </div>
 
         {/* Duración Periodo */}
@@ -293,15 +312,15 @@ export default function ProfileScreen() {
         </div>
         <input
           type="range"
-          min={3}
-          max={10}
+          min={systemRanges.min_dias_periodo}
+          max={systemRanges.max_dias_periodo}
           step={1}
           disabled={!isCycleEditable}
           value={periodDuration}
           onChange={handlePeriodChange}
           className="custom-range range-pink"
           style={{ 
-            '--value': `${((periodDuration - 3) / (10 - 3)) * 100}%`,
+            '--value': `${((periodDuration - systemRanges.min_dias_periodo) / (systemRanges.max_dias_periodo - systemRanges.min_dias_periodo)) * 100}%`,
             '--thumb-color': '#FF9A9E',
             marginBottom: '6px',
             opacity: isCycleEditable ? 1 : 0.5,
@@ -309,8 +328,8 @@ export default function ProfileScreen() {
           }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-light)', opacity: isCycleEditable ? 1 : 0.6 }}>
-          <span>3 días</span>
-          <span>10 días</span>
+          <span>{systemRanges.min_dias_periodo} días</span>
+          <span>{systemRanges.max_dias_periodo} días</span>
         </div>
       </div>
 

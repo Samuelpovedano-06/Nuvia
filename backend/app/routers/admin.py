@@ -174,6 +174,20 @@ def update_system_config(datos: AdminConfigUpdate, db: Session = Depends(get_db)
 
 @router.get("/status/public")
 def get_public_status(db: Session = Depends(get_db)):
-    """Endpoint público para verificar el estado del sistema (mantenimiento)."""
+    """Endpoint público para verificar el estado del sistema (mantenimiento y rangos)."""
     config = db.query(ConfiguracionSistema).first()
-    return {"modo_mantenimiento": config.modo_mantenimiento if config else False}
+    if not config:
+        return {
+            "modo_mantenimiento": False,
+            "min_dias_ciclo": 21,
+            "max_dias_ciclo": 45,
+            "min_dias_periodo": 3,
+            "max_dias_periodo": 10
+        }
+    return {
+        "modo_mantenimiento": config.modo_mantenimiento,
+        "min_dias_ciclo": config.min_dias_ciclo,
+        "max_dias_ciclo": config.max_dias_ciclo,
+        "min_dias_periodo": config.min_dias_periodo,
+        "max_dias_periodo": config.max_dias_periodo
+    }
