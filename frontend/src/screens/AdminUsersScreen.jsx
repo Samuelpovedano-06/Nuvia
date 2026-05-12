@@ -115,7 +115,7 @@ export default function AdminUsersScreen() {
   return (
     <div className="screen-container">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '20px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
           <ChevronLeft size={20} /> <span>Panel Admin</span>
         </button>
@@ -156,26 +156,26 @@ export default function AdminUsersScreen() {
       <div style={{ display: 'grid', gap: '12px', paddingBottom: '40px' }}>
         {filteredUsers.map((u, i) => (
           <div key={u.id_usuaria} className="card" style={{ margin: 0, padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', animation: `fadeIn 0.3s ease ${i * 0.05}s both` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1, minWidth: 0 }}>
               <div style={{ 
-                width: '45px', height: '45px', borderRadius: '50%', 
+                width: '45px', height: '45px', borderRadius: '50%', flexShrink: 0,
                 background: 'linear-gradient(135deg, var(--primary) 0%, #F472B6 100%)', 
                 display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', fontSize: '18px',
                 boxShadow: '0 4px 10px rgba(186, 104, 200, 0.15)'
               }}>
                 {u.nombre.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <div style={{ fontWeight: '600', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {u.nombre}
-                  {u.rol === 'admin' && <span style={{ fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase' }}>Admin</span>}
-                  {u.rol === 'pareja' && <span style={{ fontSize: '10px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase' }}>Pareja</span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: '600', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre}</span>
+                  {u.rol === 'admin' && <span style={{ fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Admin</span>}
+                  {u.rol === 'pareja' && <span style={{ fontSize: '10px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Pareja</span>}
                 </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{u.email}</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
               </div>
             </div>
             
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginLeft: '10px', flexShrink: 0 }}>
               <button onClick={() => handleOpenViewModal(u)} title="Ver Resumen" style={{ background: '#f0f9ff', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#0369a1' }}>
                 <Eye size={18} />
               </button>
