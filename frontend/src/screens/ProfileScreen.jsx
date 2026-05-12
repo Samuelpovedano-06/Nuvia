@@ -1,16 +1,185 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils } from 'lucide-react';
 import { ApiService } from '../api';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 function formatFecha(fecha) {
   if (!fecha) return '—';
   const d = new Date(fecha);
   return `${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
+
+const calcPuntosClave = (duracion) => {
+  const ov = Math.max(7, duracion - 14);
+  const p2 = Math.round(duracion * 0.18);
+  const p3 = Math.round((p2 + ov) / 2);
+  const p5 = ov + Math.round((duracion - ov) * 0.35);
+  const p6 = ov + Math.round((duracion - ov) * 0.72);
+  return [...new Set([1, p2, p3, ov, p5, p6, duracion])].sort((a, b) => a - b);
+};
+
+const getYOnCurve = (x, ovulacionX, width, height) => {
+  const y0 = height - 10;
+  const yPeak = 10;
+  const bezierY = (t, p0, p1, p2, p3) => (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t ** 2 * p2 + t ** 3 * p3;
+  const bezierX = (t, p0, p1, p2, p3) => (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t ** 2 * p2 + t ** 3 * p3;
+  const findT = (targetX, x0, x1, x2, x3) => {
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 20; i++) {
+      const mid = (lo + hi) / 2;
+      bezierX(mid, x0, x1, x2, x3) < targetX ? (lo = mid) : (hi = mid);
+    }
+    return (lo + hi) / 2;
+  };
+  if (x <= ovulacionX) {
+    const t = findT(x, 0, ovulacionX * 0.4, ovulacionX * 0.8, ovulacionX);
+    return bezierY(t, y0, y0, yPeak, yPeak);
+  } else {
+    const t = findT(x, ovulacionX, ovulacionX * 1.2, width, width);
+    return bezierY(t, yPeak, yPeak, y0, y0);
+  }
+};
+
+const ReportGraph = ({ duracion = 28 }) => {
+  const W = 800, H = 90, PAD = 20;
+  const yBase = H - 18, yPeak = 12;
+  const puntosClave = calcPuntosClave(duracion);
+  const ovulacion = Math.max(7, duracion - 14);
+  const ovX = PAD + ((ovulacion - 1) / (duracion - 1)) * (W - 2 * PAD);
+  const endX = W - PAD;
+  const getX = (dia) => PAD + ((dia - 1) / (duracion - 1)) * (W - 2 * PAD);
+
+  const bez = (t, p0, p1, p2, p3) => (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3;
+  const findT = (tx, x0, x1, x2, x3) => {
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 25; i++) { const m=(lo+hi)/2; bez(m,x0,x1,x2,x3)<tx?(lo=m):(hi=m); }
+    return (lo+hi)/2;
+  };
+  const getY = (x) => {
+    if (x <= ovX) {
+      const t = findT(x, PAD, ovX*0.4, ovX*0.85, ovX);
+      return bez(t, yBase, yBase, yPeak, yPeak);
+    }
+    const t = findT(x, ovX, ovX*1.15, endX, endX);
+    return bez(t, yPeak, yPeak, yBase, yBase);
+  };
+  const pathD = `M ${PAD},${yBase} C ${ovX*0.4},${yBase} ${ovX*0.85},${yPeak} ${ovX},${yPeak} S ${endX},${yBase} ${endX},${yBase}`;
+  const ovPct = `${((ovX / W) * 100).toFixed(1)}%`;
+
+  return (
+    <div style={{ width: '100%', background: '#fff' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+        <path d={pathD} fill="none" stroke="#9b6c98" strokeWidth="2.5" strokeLinecap="round" opacity="0.35" />
+        {puntosClave.map((dia) => {
+          const x = getX(dia);
+          return <circle key={dia} cx={x} cy={getY(x)} r="5.5" fill="#9b6c98" />;
+        })}
+      </svg>
+      <div style={{ position: 'relative', height: '18px', fontSize: '11px', color: '#9b6c98', marginTop: '4px' }}>
+        <span style={{ position: 'absolute', left: PAD }}>Inicio del Ciclo</span>
+        <span style={{ position: 'absolute', left: ovPct, transform: 'translateX(-50%)' }}>Ovulación</span>
+        <span style={{ position: 'absolute', right: PAD }}>Fin del Ciclo</span>
+      </div>
+    </div>
+  );
+};
+
+// Lógica de iconos compartida para el reporte
+const NuviaFace = ({ type, color = '#9b6c98' }) => {
+  const faces = {
+    'feliz': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <circle cx="8" cy="10" r="1" fill={color} />
+        <circle cx="16" cy="10" r="1" fill={color} />
+        <path d="M7 15c1.5 2 5.5 2 7 0" />
+      </svg>
+    ),
+    'risa': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 9l3 2-3 2M18 9l-3 2 3 2" />
+        <path d="M7 15c1 3 9 3 10 0z" fill={color} opacity="0.3" /><path d="M7 15c1 3 9 3 10 0" />
+      </svg>
+    ),
+    'triste': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M8 9c-.5 1-1.5 1-2 0M18 9c-.5 1-1.5 1-2 0" /><path d="M8 17c1.5-2 6.5-2 8 0" />
+      </svg>
+    ),
+    'molesta': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round">
+        <path d="M6 10h4M14 10h4" /><path d="M8 17c1.5-2 6.5-2 8 0" strokeWidth="2.5" />
+      </svg>
+    ),
+    'dolor_agudo': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 8l3 2-3 2M18 8l-3 2 3 2" /><path d="M9 17h6" />
+      </svg>
+    ),
+    'sensible': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <circle cx="8" cy="11" r="1" fill={color} /><circle cx="16" cy="11" r="1" fill={color} />
+        <path d="M10 16c1 1 3 1 4 0" /><path d="M16 14v2" strokeWidth="2" opacity="0.6" />
+      </svg>
+    ),
+    'irritable': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M6 8l3 2M18 8l-3 2" strokeWidth="3" />
+        <circle cx="8" cy="13" r="1" fill={color} /><circle cx="16" cy="13" r="1" fill={color} /><path d="M9 18h6" />
+      </svg>
+    ),
+    'variable': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <circle cx="8" cy="10" r="1.5" fill={color} /><path d="M15 10l2 1" strokeWidth="3" /><path d="M7 17c2-2 6 2 8 0" />
+      </svg>
+    ),
+    'enamorada': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill={color} stroke={color} strokeWidth="1">
+        <path d="M8 7c-1.5-1.5-4 0-2 2.5 1 1 2 2 2 2s1-1 2-2c2-2.5-.5-4-2-2.5z" />
+        <path d="M16 7c-1.5-1.5-4 0-2 2.5 1 1 2 2 2 2s1-1 2-2c2-2.5-.5-4-2-2.5z" />
+        <path d="M8 16c1.5 2 6.5 2 8 0" fill="none" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    ),
+    'nauseas': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M8 9c0 1-1 1-1 0M17 9c0 1-1 1-1 0" /><path d="M7 16c1-1 2 1 3-1s2 1 3-1 2 1 3-1 2 1 3-1" />
+      </svg>
+    ),
+    'ansiosa': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M6 11l2-2 2 2M14 11l2-2 2 2" /><path d="M8 16h8l-1 1-1-1-1 1-1-1-1 1-1-1-1 1" />
+      </svg>
+    )
+  };
+  return faces[type] || faces['feliz'];
+};
+
+const SINTOMA_STYLE = {
+  'Dolor Abdominal': { face: 'triste' },
+  'Dolor de Cabeza': { face: 'triste' },
+  'Pecho Sensible':  { face: 'molesta' },
+  'Hinchazón':       { face: 'molesta' },
+  'Cólicos':         { face: 'dolor_agudo' },
+  'Dolor de Espalda':{ face: 'triste' },
+  'Antojos':         { icon: <Utensils size={18} /> },
+  'Náuseas':         { face: 'nauseas' },
+  'Ansiedad':        { face: 'ansiosa' },
+  'Sensibilidad':    { face: 'sensible' },
+  'Irritabilidad':   { face: 'irritable' },
+  'Humor Variable':  { face: 'variable' },
+  'Euforia':         { face: 'risa' },
+  'Cansancio':       { face: 'durmiendo' },
+  'Manchada':        { face: 'pena' },
+  'Insomnio':        { face: 'despierta' },
+  'Libido Alta':     { face: 'enamorada' }
+};
 
 export default function ProfileScreen() {
   const { user, logout } = useContext(AuthContext);
@@ -40,6 +209,73 @@ export default function ProfileScreen() {
     max_dias_periodo: 10
   });
   const [globalNotifsDisabled, setGlobalNotifsDisabled] = useState(false);
+  const [reportData, setReportData] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  // Cargar datos para el reporte
+  const prepareReportData = async () => {
+    setExporting(true);
+    try {
+      const [sintomas_raw, diarios_raw, sintomas_cat] = await Promise.all([
+        ApiService.getRegistrosSintomas(),
+        ApiService.getRegistrosDiarios(),
+        ApiService.getSintomas()
+      ]);
+
+      const sintomaMap = {};
+      sintomas_cat.forEach(s => { sintomaMap[s.id_sintoma] = s.nombre_sintoma; });
+
+      const logs = [];
+      sintomas_raw?.forEach(s => {
+        logs.push({ ...s, type: 'symptom', label: sintomaMap[s.id_sintoma] || 'Síntoma' });
+      });
+      diarios_raw?.forEach(d => {
+        if (d.notas) logs.push({ ...d, type: 'note', label: d.notas });
+      });
+
+      logs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+      setReportData({
+        ciclos: ciclos.slice(0, 2),
+        logs: logs,
+        stats: {
+          totalSintomas: sintomas_raw?.length || 0,
+          totalNotas: diarios_raw?.filter(d => d.notas)?.length || 0
+        }
+      });
+
+      // Dar tiempo para que el portal se renderice
+      setTimeout(async () => {
+        const reportElement = document.getElementById('nuvia-report');
+        if (!reportElement) {
+          setExporting(false);
+          return;
+        }
+
+        const canvas = await html2canvas(reportElement, {
+          scale: 2, // Mayor calidad
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Informe_Salud_Nuvia_${user?.username || 'Usuario'}.pdf`);
+
+        setExporting(false);
+        setReportData(null); // Limpiar después de descargar
+      }, 1000);
+
+    } catch (err) {
+      console.error(err);
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     ApiService.getCiclos()
@@ -465,6 +701,30 @@ export default function ProfileScreen() {
           </div>
         )}
       </div>
+      
+      {/* Export Data */}
+      <div className="card" style={{ padding: '5px 0', marginTop: '20px' }}>
+        <div
+          onClick={prepareReportData}
+          style={{
+            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: exporting ? 'wait' : 'pointer'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ background: '#F3E5F5', padding: '8px', borderRadius: '10px', color: 'var(--primary)', marginRight: '15px' }}>
+              <Download size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '500', color: 'var(--text-dark)' }}>
+                {exporting ? 'Generando Informe...' : 'Exportar Informe de Salud (PDF)'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Resumen de tus últimos 2 meses</div>
+            </div>
+          </div>
+          <ChevronRight size={18} color="#cbd5e1" />
+        </div>
+      </div>
 
       {/* Logout */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -474,6 +734,183 @@ export default function ProfileScreen() {
         <p style={{ marginTop: '20px', color: 'var(--text-light)', fontSize: '13px' }}>Nuvia v1.0.0</p>
         <p style={{ marginTop: '8px', color: 'var(--text-light)', fontSize: '12px' }}>💜 Hecho con amor para tu bienestar</p>
       </div>
+      {/* REPORTE OCULTO PARA EXPORTACIÓN USANDO PORTAL */}
+      {reportData && createPortal(
+        <div id="nuvia-report" style={{
+          position: 'absolute', left: '-9999px', top: 0, width: '800px', background: 'white', color: '#333',
+          padding: '60px', fontFamily: 'Inter, sans-serif'
+        }}>
+          <style>
+            {`
+              .report-section { margin-bottom: 40px; }
+              .ovulo-mini { 
+                border: 2px solid #9b6c98; 
+                border-radius: 50%; 
+                width: 32px; 
+                height: 32px; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                background: white; 
+              }
+              .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              .report-table th { text-align: left; padding: 12px; border-bottom: 2px solid #9b6c98; color: #9b6c98; }
+              .report-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+            `}
+          </style>
+
+          <header style={{ borderBottom: '3px solid #9b6c98', paddingBottom: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <h1 style={{ color: '#9b6c98', margin: 0, fontSize: '32px' }}>Informe Nuvia</h1>
+              <p style={{ color: '#666', margin: '5px 0 0' }}>Reporte de Salud Femenina • {user?.nombre_completo || user?.username}</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>Generado el {new Date().toLocaleDateString()}</p>
+            </div>
+          </header>
+
+          <div className="report-section">
+            <h2 style={{ fontSize: '20px', color: '#9b6c98', borderBottom: '2px solid #9b6c98', paddingBottom: '8px', marginBottom: '25px' }}>Calendarios de Seguimiento</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+              {[1, 0].map(offset => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - offset);
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+
+                return (
+                  <div key={offset} style={{ background: 'white', padding: '20px', borderRadius: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)', border: '1px solid #f0f0f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      <span style={{ color: '#9b6c98', fontSize: '18px' }}>‹</span>
+                      <h3 style={{ fontSize: '18px', margin: 0, color: '#9b6c98', fontWeight: 'bold' }}>{MESES[month]} {year}</h3>
+                      <span style={{ color: '#9b6c98', fontSize: '18px' }}>›</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', fontSize: '12px', textAlign: 'center', color: '#9b6c98', marginBottom: '10px' }}>
+                      {DIAS_SEMANA.map(d => <div key={d} style={{ fontWeight: '500' }}>{d}</div>)}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+                      {Array.from({ length: firstDay }).map((_, i) => <div key={i}></div>)}
+                      {Array.from({ length: daysInMonth }).map((_, i) => {
+                        const day = i + 1;
+                        let bg = 'transparent', color = '#555', border = 'none', br = '8px', fw = 'normal';
+                        const dObj = new Date(year, month, day);
+                        const todayISO = new Date().toISOString().split('T')[0];
+                        const dayISO = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                        const isToday = dayISO === todayISO;
+
+                        if (ciclos.length > 0) {
+                          const inicio = new Date(ciclos[0].fecha_inicio);
+                          inicio.setHours(0,0,0,0);
+                          const diff = Math.floor((dObj - inicio) / 86400000);
+                          if (diff >= 0) {
+                            const dCiclo = (diff % cycleDuration) + 1;
+                            const isFuture = diff >= cycleDuration;
+                            const ovDia = Math.max(7, cycleDuration - 14);
+                            const fertilS = ovDia - 3, fertilE = ovDia + 1;
+                            if (!isFuture) {
+                              if (dCiclo <= periodDuration) { bg='#ff4d4d'; color='white'; br='50%'; }
+                              else if (dCiclo === ovDia) { bg='#9b6c98'; color='white'; br='50%'; }
+                              else if (dCiclo >= fertilS && dCiclo <= fertilE) { border='1.5px dashed #F472B6'; color='#F472B6'; br='50%'; }
+                              else if (dCiclo > periodDuration && dCiclo < fertilS) { bg='rgba(255,183,94,0.2)'; color='#B45309'; br='50%'; }
+                            } else if (dCiclo <= periodDuration) {
+                              border='1.5px dashed #A855F7'; color='#A855F7'; br='50%';
+                            }
+                          }
+                        }
+                        if (isToday) {
+                          fw = 'bold';
+                          if (bg === 'transparent' && border === 'none') { border='2px solid #9b6c98'; color='#9b6c98'; br='50%'; }
+                        }
+
+                        return (
+                          <div key={day} style={{
+                            aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '12px', fontWeight: fw, background: bg, color, borderRadius: br, border
+                          }}>
+                            {day}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Leyenda del Ciclo */}
+            <div style={{ marginTop: '30px', padding: '0 10px' }}>
+              <h3 style={{ fontSize: '18px', color: '#333', marginBottom: '15px' }}>Leyenda del Ciclo</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                {[
+                  { bg: '#ff4d4d', border: 'none', label: 'Periodo' },
+                  { bg: 'rgba(168,85,247,0.06)', border: '1.5px dashed #A855F7', color: '#A855F7', label: 'Predicción Regla' },
+                  { bg: 'rgba(255,183,94,0.25)', border: 'none', label: 'Fase Folicular' },
+                  { bg: 'transparent', border: '1.5px dashed #F472B6', color: '#F472B6', label: 'Ventana Fértil' },
+                  { bg: '#9b6c98', border: 'none', label: 'Ovulación' },
+                ].map(({ bg, border, label }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: bg, border, flexShrink: 0 }}></div>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="report-section">
+            <h2 style={{ fontSize: '20px', color: '#9b6c98', borderBottom: '2px solid #9b6c98', paddingBottom: '8px', marginBottom: '20px' }}>Curva Hormonal y Puntos Clave</h2>
+            <div style={{ padding: '0 10px' }}>
+              <ReportGraph duracion={cycleDuration} />
+            </div>
+          </div>
+
+          <div className="report-section">
+            <h2 style={{ fontSize: '20px', color: '#9b6c98', borderBottom: '2px solid #9b6c98', paddingBottom: '8px', marginBottom: '20px' }}>Historial Detallado</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
+              <div>
+                <h3 style={{ fontSize: '14px', color: '#9b6c98', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Activity size={14} /> Síntomas
+                </h3>
+                {reportData.logs.filter(l => l.type === 'symptom').map((log, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <span style={{ fontSize: '11px', color: '#aaa', minWidth: '55px', flexShrink: 0 }}>
+                      {new Date(log.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                    </span>
+                    <div style={{ position: 'relative', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', width: '32px', height: '32px', border: '2px dotted #9b6c98', borderRadius: '50%', opacity: 0.6 }}></div>
+                      <div style={{ position: 'absolute', width: '22px', height: '22px', border: '2px solid #9b6c98', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+                        <NuviaFace type={SINTOMA_STYLE[log.label]?.face || 'feliz'} />
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#9b6c98', fontWeight: '500' }}>{log.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h3 style={{ fontSize: '14px', color: '#9b6c98', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FileText size={14} /> Registros Diarios
+                </h3>
+                {reportData.logs.filter(l => l.type === 'note').map((log, i) => (
+                  <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '3px' }}>
+                      {new Date(log.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>{log.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <footer style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '11px', color: '#bbb' }}>
+            Este informe es una recopilación de datos registrados por la usuaria en Nuvia Wellness App.
+            No sustituye el consejo médico profesional.
+          </footer>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
