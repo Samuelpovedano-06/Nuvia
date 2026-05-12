@@ -98,6 +98,16 @@ const ReportGraph = ({ duracion = 28 }) => {
 };
 
 // Lógica de iconos compartida para el reporte
+const LogoNuvia = ({ size = 24, color = '#9b6c98' }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <svg viewBox="0 0 24 24" width={size * 1.5} height={size * 1.5} fill="none">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill={color} />
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="0.5" strokeDasharray="2 2" opacity="0.3" />
+    </svg>
+    <span style={{ fontSize: `${size}px`, fontWeight: '800', letterSpacing: '-0.5px', color: color, fontFamily: 'Outfit, sans-serif' }}>Nuvia</span>
+  </div>
+);
+
 const NuviaFace = ({ type, color = '#9b6c98' }) => {
   const faces = {
     'feliz': (
@@ -216,10 +226,16 @@ export default function ProfileScreen() {
   const [globalNotifsDisabled, setGlobalNotifsDisabled] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportMonths, setExportMonths] = useState(2);
+  const [customMonths, setCustomMonths] = useState('');
 
   // Cargar datos para el reporte
-  const prepareReportData = async () => {
+  const prepareReportData = async (months) => {
+    // Validar el valor de meses
+    const numMonths = parseInt(months) || 2;
     setExporting(true);
+    setShowExportModal(false);
     try {
       const [sintomas_raw, diarios_raw, sintomas_cat] = await Promise.all([
         ApiService.getRegistrosSintomas(),
@@ -230,27 +246,28 @@ export default function ProfileScreen() {
       const sintomaMap = {};
       sintomas_cat.forEach(s => { sintomaMap[s.id_sintoma] = s.nombre_sintoma; });
 
-      const twoMonthsAgo = new Date();
-      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - numMonths);
 
       const logs = [];
       sintomas_raw?.forEach(s => {
-        if (new Date(s.fecha) >= twoMonthsAgo)
+        if (new Date(s.fecha) >= startDate)
           logs.push({ ...s, type: 'symptom', label: sintomaMap[s.id_sintoma] || 'Síntoma' });
       });
       diarios_raw?.forEach(d => {
-        if (d.notas && new Date(d.fecha) >= twoMonthsAgo)
+        if (d.notas && new Date(d.fecha) >= startDate)
           logs.push({ ...d, type: 'note', label: d.notas });
       });
 
       logs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
       setReportData({
-        ciclos: ciclos.slice(0, 2),
+        ciclos: ciclos.filter(c => new Date(c.fecha_inicio) >= startDate).slice(0, 24),
         logs: logs,
+        months: numMonths,
         stats: {
-          totalSintomas: sintomas_raw?.length || 0,
-          totalNotas: diarios_raw?.filter(d => d.notas)?.length || 0
+          totalSintomas: logs.filter(l => l.type === 'symptom').length,
+          totalNotas: logs.filter(l => l.type === 'note').length
         }
       });
 
@@ -723,7 +740,7 @@ export default function ProfileScreen() {
       {/* Export Data */}
       <div className="card" style={{ padding: '5px 0', marginTop: '20px' }}>
         <div
-          onClick={prepareReportData}
+          onClick={() => setShowExportModal(true)}
           style={{
             padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             cursor: exporting ? 'wait' : 'pointer'
@@ -737,12 +754,105 @@ export default function ProfileScreen() {
               <div style={{ fontSize: '15px', fontWeight: '500', color: 'var(--text-dark)' }}>
                 {exporting ? 'Generando Informe...' : 'Exportar Informe de Salud (PDF)'}
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Resumen de tus últimos 2 meses</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Elige el rango de tiempo a exportar</div>
             </div>
           </div>
           <ChevronRight size={18} color="#cbd5e1" />
         </div>
       </div>
+
+      {/* MODAL DE EXPORTACIÓN */}
+      {showExportModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '20px', backdropFilter: 'blur(4px)'
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '380px', padding: '30px', animation: 'slideUp 0.3s ease' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: 'var(--primary)', fontSize: '20px' }}>Exportar Informe</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '25px' }}>¿Cuántos meses de historial quieres incluir?</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '15px' }}>
+              {[1, 3, 6].map(m => (
+                <button
+                  key={m}
+                  onClick={() => { setExportMonths(m); setCustomMonths(''); }}
+                  style={{
+                    padding: '12px 5px', borderRadius: '12px', border: exportMonths === m ? '2px solid var(--primary)' : '1px solid #eee',
+                    background: exportMonths === m ? '#FDF2F8' : 'white', color: exportMonths === m ? 'var(--primary)' : '#666',
+                    fontWeight: '600', cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s'
+                  }}
+                >
+                  {m} m.
+                </button>
+              ))}
+              <button
+                onClick={() => { setExportMonths(12); setCustomMonths(''); }}
+                style={{
+                  padding: '12px 5px', borderRadius: '12px', border: exportMonths === 12 ? '2px solid var(--primary)' : '1px solid #eee',
+                  background: exportMonths === 12 ? '#FDF2F8' : 'white', color: exportMonths === 12 ? 'var(--primary)' : '#666',
+                  fontWeight: '600', cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s'
+                }}
+              >
+                12 m.
+              </button>
+              <button
+                onClick={() => setExportMonths('custom')}
+                style={{
+                  gridColumn: 'span 2', padding: '12px', borderRadius: '12px', 
+                  border: exportMonths === 'custom' ? '2px solid var(--primary)' : '1px solid #eee',
+                  background: exportMonths === 'custom' ? '#FDF2F8' : 'white', color: exportMonths === 'custom' ? 'var(--primary)' : '#666',
+                  fontWeight: '600', cursor: 'pointer', fontSize: '14px'
+                }}
+              >
+                Personalizado
+              </button>
+            </div>
+
+            {exportMonths === 'custom' && (
+              <div style={{ marginBottom: '25px', animation: 'fadeIn 0.3s' }}>
+                <label style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Introduce el número de meses</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={customMonths}
+                  onChange={(e) => setCustomMonths(e.target.value)}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: '12px', border: '2px solid var(--primary)',
+                    background: '#fff', color: 'var(--primary)', fontWeight: 'bold', outline: 'none', fontSize: '16px'
+                  }}
+                  placeholder="Ej: 5"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+              <button
+                onClick={() => setShowExportModal(false)}
+                style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#f0f0f0', color: '#666', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const val = exportMonths === 'custom' ? customMonths : exportMonths;
+                  prepareReportData(val);
+                }}
+                disabled={exportMonths === 'custom' && !customMonths}
+                style={{ 
+                  flex: 1, padding: '14px', borderRadius: '12px', border: 'none', 
+                  background: (exportMonths === 'custom' && !customMonths) ? '#ccc' : 'var(--primary)', 
+                  color: 'white', fontWeight: 'bold', cursor: 'pointer', opacity: (exportMonths === 'custom' && !customMonths) ? 0.6 : 1
+                }}
+              >
+                Exportar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logout */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -760,10 +870,11 @@ export default function ProfileScreen() {
           }}>
             <header style={{ borderBottom: '3px solid #9b6c98', paddingBottom: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div>
-                <h1 style={{ color: '#9b6c98', margin: 0, fontSize: '32px' }}>Informe Nuvia</h1>
-                <p style={{ color: '#666', margin: '5px 0 0' }}>Reporte de Salud Femenina • {user?.nombre_completo || user?.username}</p>
+                <LogoNuvia size={28} />
+                <p style={{ color: '#666', margin: '10px 0 0', fontSize: '14px' }}>Reporte de Salud Femenina • {user?.nombre_completo || user?.username}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: '12px', color: '#999', margin: '0 0 5px 0' }}>Historial de {reportData.months} meses</p>
                 <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>Generado el {new Date().toLocaleDateString()}</p>
               </div>
             </header>
@@ -771,7 +882,8 @@ export default function ProfileScreen() {
             <div style={{ marginBottom: '40px' }}>
               <h2 style={{ fontSize: '20px', color: '#9b6c98', borderBottom: '2px solid #9b6c98', paddingBottom: '8px', marginBottom: '25px' }}>Calendarios de Seguimiento</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-                {[1, 0].map(offset => {
+                {Array.from({ length: Math.min(reportData.months, 2) }).map((_, i) => {
+                  const offset = Math.min(reportData.months, 2) - 1 - i;
                   const date = new Date();
                   date.setMonth(date.getMonth() - offset);
                   const year = date.getFullYear();
