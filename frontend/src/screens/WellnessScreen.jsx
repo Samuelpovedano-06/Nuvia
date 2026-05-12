@@ -1,8 +1,145 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Sparkles, Coffee, Utensils, Zap, Moon, Heart, Info, Flower2, LayoutGrid, BookOpen, Activity } from 'lucide-react';
+import { ChevronLeft, Sparkles, Coffee, Utensils, Zap, Moon, Heart, Info, Flower2, LayoutGrid, BookOpen, Activity, FileText, Cloud, Egg, Droplets, Shield, ShieldOff } from 'lucide-react';
 import { ApiService } from '../api';
 
+// Componente para dibujar las caritas EXACTAS (Portado de SymptomsScreen)
+const NuviaFace = ({ type, color = 'white' }) => {
+  const faces = {
+    'feliz': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <circle cx="8" cy="10" r="1" fill={color} />
+        <circle cx="16" cy="10" r="1" fill={color} />
+        <path d="M7 15c1.5 2 5.5 2 7 0" />
+      </svg>
+    ),
+    'risa': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 9l3 2-3 2M18 9l-3 2 3 2" />
+        <path d="M7 15c1 3 9 3 10 0z" fill={color} opacity="0.3" />
+        <path d="M7 15c1 3 9 3 10 0" />
+      </svg>
+    ),
+    'triste': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M8 9c-.5 1-1.5 1-2 0M18 9c-.5 1-1.5 1-2 0" />
+        <path d="M8 17c1.5-2 6.5-2 8 0" />
+      </svg>
+    ),
+    'molesta': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round">
+        <path d="M6 10h4M14 10h4" />
+        <path d="M8 17c1.5-2 6.5-2 8 0" strokeWidth="2.5" />
+      </svg>
+    ),
+    'enamorada': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill={color} stroke={color} strokeWidth="1">
+        <path d="M8 7c-1.5-1.5-4 0-2 2.5 1 1 2 2 2 2s1-1 2-2c2-2.5-.5-4-2-2.5z" />
+        <path d="M16 7c-1.5-1.5-4 0-2 2.5 1 1 2 2 2 2s1-1 2-2c2-2.5-.5-4-2-2.5z" />
+        <path d="M8 16c1.5 2 6.5 2 8 0" fill="none" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    ),
+    'durmiendo': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M6 10c1 1.5 3 1.5 4 0M14 10c1 1.5 3 1.5 4 0" />
+        <path d="M8 16c1.5 1.5 6.5 1.5 8 0" />
+      </svg>
+    ),
+    'despierta': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+        <circle cx="7" cy="10" r="3" />
+        <circle cx="17" cy="10" r="3" />
+        <circle cx="7" cy="10" r="1" fill={color} />
+        <circle cx="17" cy="10" r="1" fill={color} />
+        <path d="M9 17h6" strokeWidth="2.5" />
+      </svg>
+    ),
+    'nauseas': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M8 9c0 1-1 1-1 0M17 9c0 1-1 1-1 0" />
+        <path d="M7 16c1-1 2 1 3-1s2 1 3-1 2 1 3-1 2 1 3-1" />
+      </svg>
+    ),
+    'ansiosa': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M6 11l2-2 2 2M14 11l2-2 2 2" />
+        <path d="M8 16h8l-1 1-1-1-1 1-1-1-1 1-1-1-1 1" />
+      </svg>
+    ),
+    'pena': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M9 10c-.5-1-1.5-1-2 0M17 10c-.5-1-1.5-1-2 0" />
+        <path d="M10 17c1-1 3-1 4 0" />
+        <circle cx="6" cy="13" r="1" fill={color} opacity="0.4" />
+      </svg>
+    ),
+    'dolor_agudo': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 8l3 2-3 2M18 8l-3 2 3 2" />
+        <path d="M9 17h6" />
+      </svg>
+    ),
+    'sensible': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <circle cx="8" cy="11" r="1" fill={color} />
+        <circle cx="16" cy="11" r="1" fill={color} />
+        <path d="M10 16c1 1 3 1 4 0" />
+        <path d="M16 14v2" strokeWidth="2" opacity="0.6" />
+      </svg>
+    ),
+    'irritable': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M6 8l3 2M18 8l-3 2" strokeWidth="3" />
+        <circle cx="8" cy="13" r="1" fill={color} />
+        <circle cx="16" cy="13" r="1" fill={color} />
+        <path d="M9 18h6" />
+      </svg>
+    ),
+    'variable': (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+        <circle cx="8" cy="10" r="1.5" fill={color} />
+        <path d="M15 10l2 1" strokeWidth="3" />
+        <path d="M7 17c2-2 6 2 8 0" />
+      </svg>
+    )
+  };
+  return faces[type] || faces['feliz'];
+};
+
+const SINTOMA_STYLE = {
+  'Dolor Abdominal': { face: 'triste',      color: '#9b6c98' },
+  'Dolor de Cabeza': { face: 'triste',      color: '#9b6c98' },
+  'Pecho Sensible':  { face: 'molesta',     color: '#9b6c98' },
+  'Hinchazón':       { face: 'molesta',     color: '#9b6c98' },
+  'Cólicos':         { face: 'dolor_agudo', color: '#9b6c98' },
+  'Dolor de Espalda':{ face: 'triste',      color: '#9b6c98' },
+  'Antojos':         { icon: <Utensils size={18} />, color: '#9b6c98' },
+  'Náuseas':         { face: 'nauseas',     color: '#9b6c98' },
+  'Ansiedad':        { face: 'ansiosa',     color: '#9b6c98' },
+  'Sensibilidad':    { face: 'sensible',    color: '#9b6c98' },
+  'Irritabilidad':   { face: 'irritable',   color: '#9b6c98' },
+  'Humor Variable':  { face: 'variable',    color: '#9b6c98' },
+  'Euforia':         { face: 'risa',        color: '#9b6c98' },
+  'Cansancio':       { face: 'durmiendo',   color: '#9b6c98' },
+  'Manchada':        { face: 'pena',        color: '#9b6c98' },
+  'Insomnio':        { face: 'despierta',   color: '#9b6c98' },
+  'Libido Alta':     { face: 'enamorada',   color: '#9b6c98' },
+  'Default':         { face: 'feliz',       color: '#9b6c98' }
+};
+
+const BODY_STATE_STYLE = {
+  'seco': { label: 'Flujo Seco', icon: (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5s-3 3.5-3 5.5a7 7 0 0 0 7 7z" />
+      <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2.5" />
+    </svg>
+  )},
+  'cremoso': { label: 'Flujo Cremoso', icon: <Cloud size={18} /> },
+  'clara_huevo': { label: 'Flujo Clara Huevo', icon: <Egg size={18} /> },
+  'acuoso': { label: 'Flujo Acuoso', icon: <Droplets size={18} /> },
+  'rel_con': { label: 'Relaciones (Con)', icon: <Shield size={18} /> },
+  'rel_sin': { label: 'Relaciones (Sin)', icon: <ShieldOff size={18} /> }
+};
 const ADVICE_DATABASE = {
   menstrual: {
     title: 'Fase Menstrual',
@@ -57,12 +194,16 @@ export default function WellnessScreen() {
   useEffect(() => {
     const fetchWellness = async () => {
       try {
-        const [ciclos, config, s7, d7] = await Promise.all([
+        const [ciclos, config, s7, d7, sintomas] = await Promise.all([
           ApiService.getCiclos(),
           ApiService.getConfig(),
-          ApiService.getRegistrosSintomas(), // Get last week
-          ApiService.getRegistrosDiarios()   // Get last week
+          ApiService.getRegistrosSintomas(),
+          ApiService.getRegistrosDiarios(),
+          ApiService.getSintomas()
         ]);
+
+        const sintomaMap = {};
+        sintomas?.forEach(s => { sintomaMap[s.id_sintoma] = s.nombre_sintoma; });
 
         if (ciclos.length > 0) {
           const ultimo = ciclos[0];
@@ -79,10 +220,27 @@ export default function WellnessScreen() {
           else setPhase('lutea');
         }
 
+        const merged = [];
+        
+        // Síntomas
+        s7?.forEach(s => {
+          merged.push({ ...s, type: 'symptom', label: sintomaMap[s.id_sintoma] || 'Síntoma' });
+        });
+
+        // Datos Diarios (Notas, Flujo, Relaciones)
+        d7?.forEach(d => {
+          if (d.notas) merged.push({ ...d, type: 'note', label: d.notas });
+          if (d.flujo) merged.push({ ...d, type: 'body', label: BODY_STATE_STYLE[d.flujo]?.label || 'Flujo', subtype: d.flujo });
+          if (d.relaciones === 1) merged.push({ ...d, type: 'body', label: 'Relaciones (Con)', subtype: 'rel_con' });
+          if (d.relaciones === 2) merged.push({ ...d, type: 'body', label: 'Relaciones (Sin)', subtype: 'rel_sin' });
+        });
+
+        merged.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
         setStats({
           symptomsCount: s7?.length || 0,
-          notesCount: d7?.filter(d => d.notas)?.length || 0,
-          recent: [...(s7 || [])].slice(0, 5)
+          notesCount: d7?.filter(d => d.notas || d.flujo || d.relaciones > 0)?.length || 0,
+          recent: merged.slice(0, 15) // Show up to 15 recent items
         });
 
       } catch (err) {
@@ -157,7 +315,7 @@ export default function WellnessScreen() {
       ) : (
         <div style={{ display: 'grid', gap: '15px' }}>
           <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
-            <h4 style={{ fontSize: '13px', color: '#64748b', textTransform: 'uppercase', marginBottom: '15px' }}>Resumen Semanal</h4>
+            <h4 style={{ fontSize: '13px', color: '#64748b', textTransform: 'uppercase', marginBottom: '15px' }}>Resumen Reciente</h4>
             <div style={{ display: 'flex', justifyContent: 'space-around' }}>
               <div>
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary)' }}>{stats.symptomsCount}</div>
@@ -171,19 +329,50 @@ export default function WellnessScreen() {
             </div>
           </div>
 
-          <h4 style={{ fontSize: '15px', margin: '10px 0 5px 0' }}>Registros Recientes</h4>
-          {stats.recent.length > 0 ? stats.recent.map((s, i) => (
-            <div key={i} className="card" style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></div>
-                <span style={{ fontSize: '14px', fontWeight: '500' }}>{s.nombre_sintoma}</span>
+          <h4 style={{ fontSize: '15px', margin: '10px 0 5px 0' }}>Línea de Vida</h4>
+          {stats.recent.length > 0 ? stats.recent.map((item, i) => (
+            <div key={i} className="card" style={{ 
+              padding: '15px', display: 'flex', gap: '15px', alignItems: 'flex-start', margin: 0,
+              background: item.type === 'note' ? '#FDF4FF' : 'white',
+              border: item.type === 'note' ? '1px solid #F5D0FE' : '1px solid #f1f5f9'
+            }}>
+              <div style={{ width: '40px', height: '40px', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {item.type === 'note' ? (
+                  <div style={{ background: '#E879F9', padding: '8px', borderRadius: '10px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={18} />
+                  </div>
+                ) : item.type === 'body' ? (
+                  <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '10px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {BODY_STATE_STYLE[item.subtype]?.icon || <Activity size={18} />}
+                  </div>
+                ) : (() => {
+                  const s = SINTOMA_STYLE[item.label] || SINTOMA_STYLE['Default'];
+                  return (
+                    <div className="nuvia-sun-container" style={{ margin: 0, transform: 'scale(0.57)', color: s.color }}>
+                      <div className="nuvia-sun-rays"></div>
+                      <div className="nuvia-sun-bg">
+                        {s.face ? <NuviaFace type={s.face} color={s.color} /> : s.icon}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
-              <span style={{ fontSize: '12px', color: '#94a3b8' }}>{new Date(s.fecha).toLocaleDateString()}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase' }}>
+                    {new Date(item.fecha).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                  </span>
+                  <span style={{ fontSize: '10px', color: '#cbd5e1' }}>{item.type === 'note' ? 'NOTA' : 'SÍNTOMA'}</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '14px', color: '#334155', fontWeight: item.type === 'note' ? '500' : '400', lineHeight: '1.4' }}>
+                  {item.label}
+                </p>
+              </div>
             </div>
           )) : (
             <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
               <LayoutGrid size={48} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
-              <p>No hay registros esta semana</p>
+              <p>No hay actividad registrada</p>
             </div>
           )}
         </div>
