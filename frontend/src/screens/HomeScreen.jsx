@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { Sparkles, Heart, Zap, Calendar, Activity, User } from 'lucide-react';
+import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets } from 'lucide-react';
 
 const getPhaseInfo = (day, duration = 28) => {
   if (day <= 5) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
@@ -21,28 +21,30 @@ export default function HomeScreen() {
   const [activeCycle, setActiveCycle] = useState(null);
   const [userConfig, setUserConfig] = useState(null);
   const [rawCiclos, setRawCiclos] = useState([]);
+  const [customAdvice, setCustomAdvice] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ciclos, config] = await Promise.all([
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+        const [ciclos, config, sToday, sYesterday, dToday] = await Promise.all([
           ApiService.getCiclos(),
-          ApiService.getConfig()
+          ApiService.getConfig(),
+          ApiService.getRegistrosSintomas(today),
+          ApiService.getRegistrosSintomas(yesterday),
+          ApiService.getRegistroDiario(today)
         ]);
 
         if (ciclos.length > 0) {
           setRawCiclos(ciclos);
           setUserConfig(config);
           
-          // Detectar si hay un ciclo "abierto" (sin fecha_fin)
-          const abierto = ciclos.find(c => !c.fecha_fin);
-          setActiveCycle(abierto);
-
           const ultimoCiclo = ciclos[0];
           const fechaInicio = new Date(ultimoCiclo.fecha_inicio);
           const hoy = new Date();
           const duracion = config?.duracion_ciclo || 28;
-
           const diffTime = Math.abs(hoy - fechaInicio);
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
           const diaActual = (diffDays % duracion) + 1;
@@ -56,45 +58,47 @@ export default function HomeScreen() {
             progress: (diaActual / duracion) * 100
           });
 
-          // Calcular próximos eventos
+          // Consejos dinámicos (Wellness 2.0)
+          const allSymptoms = [...(sToday || []), ...(sYesterday || [])];
+          generateDynamicAdvice(allSymptoms, dToday);
+
+          // ... resto de lógica de eventos ...
           const diasParaPeriodo = duracion - diaActual;
           const proximoPeriodo = diasParaPeriodo === 0 ? '¡Hoy!' : `En ${diasParaPeriodo} ${diasParaPeriodo === 1 ? 'día' : 'días'}`;
-          
           let fertileMsg = '—';
-          const ovulacion = 14; // simplificado
+          const ovulacion = Math.max(7, duracion - 14);
           const fertInicio = ovulacion - 3;
           const fertFin = ovulacion + 1;
-
-          if (diaActual >= fertInicio && diaActual <= fertFin) {
-            fertileMsg = '¡Ahora!';
-          } else if (diaActual < fertInicio) {
-            const diasParaFert = fertInicio - diaActual;
-            fertileMsg = `En ${diasParaFert} ${diasParaFert === 1 ? 'día' : 'días'}`;
-          } else {
-            const diasParaFert = (duracion - diaActual) + fertInicio;
-            fertileMsg = `En ${diasParaFert} días`;
-          }
+          if (diaActual >= fertInicio && diaActual <= fertFin) fertileMsg = '¡Ahora!';
+          else if (diaActual < fertInicio) fertileMsg = `En ${fertInicio - diaActual} d.`;
+          else fertileMsg = `En ${(duracion - diaActual) + fertInicio} d.`;
 
           setNextEvents({
             period: proximoPeriodo,
             fertile: fertileMsg,
             ovulation: diaActual <= ovulacion ? `En ${ovulacion - diaActual} d.` : `En ${(duracion - diaActual) + ovulacion} d.`
           });
-
-        } else {
-          setCycleStatus({
-            day: 0,
-            phase: 'Sin ciclos registrados',
-            desc: 'Registra tu último periodo para empezar',
-            color: 'var(--primary-light)',
-            progress: 0
-          });
+          const abierto = ciclos.find(c => !c.fecha_fin);
+          setActiveCycle(abierto);
         }
       } catch (err) {
-        console.error("Error cargando datos de la home:", err);
+        console.error(err);
       } finally {
         setLoadingData(false);
       }
+    };
+
+    const generateDynamicAdvice = (symptoms, daily) => {
+      const names = symptoms.map(s => s.nombre_sintoma || '');
+      let advice = null;
+      if (names.some(n => n.includes('Dolor') || n.includes('Cólicos'))) {
+        advice = { title: 'Foco: Alivio', desc: 'Molestias detectadas. Prioriza el calor local y descanso.', icon: <Zap size={18} color="#F6416C" />, color: '#FFF1F2' };
+      } else if (names.some(n => n.includes('Cansancio') || n.includes('Sueño'))) {
+        advice = { title: 'Foco: Energía', desc: 'Reportas fatiga. Intenta dormir 1h extra hoy.', icon: <Moon size={18} color="#0369A1" />, color: '#F0F9FF' };
+      } else if (names.some(n => n.includes('Ansiedad') || n.includes('Estrés'))) {
+        advice = { title: 'Foco: Calma', desc: 'Día para meditar o escribir. Respira hondo.', icon: <Flower2 size={18} color="#7C3AED" />, color: '#F5F3FF' };
+      }
+      setCustomAdvice(advice);
     };
 
     fetchData();
@@ -171,61 +175,63 @@ export default function HomeScreen() {
         </button>
       </div>
 
-      {/* Caja Grande de Indicadores (Ahora con el Día incluido) */}
-      <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.4)', margin: '0 0 16px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          
-          {/* Día Actual (Sustituye al Hero Card) */}
-          <div className="card" style={{ 
-            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
-            background: cycleStatus.color,
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <Calendar size={14} />
-              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Día {cycleStatus.day || '—'}</span>
-            </div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', lineHeight: '1.2' }}>{cycleStatus.phase}</div>
-          </div>
+      {/* Hero Card de Fase (Estilo Premium Flo) */}
+      <div className="card" style={{ 
+        background: cycleStatus.color, color: 'white', padding: '25px', 
+        border: 'none', marginBottom: '20px', position: 'relative', overflow: 'hidden',
+        boxShadow: '0 8px 25px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.15 }}>
+          <Sparkles size={160} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <Calendar size={16} />
+          <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '11px' }}>Día {cycleStatus.day || '—'} de tu ciclo</span>
+        </div>
+        <h3 style={{ fontSize: '26px', margin: '0 0 5px 0', color: 'white' }}>{cycleStatus.phase}</h3>
+        <p style={{ margin: 0, opacity: 0.95, fontSize: '15px', fontWeight: '500' }}>{cycleStatus.desc}</p>
+      </div>
 
+      {/* Escáner de Bienestar Inteligente */}
+      {customAdvice && (
+        <div className="card" style={{ 
+          background: customAdvice.color, border: `1px solid ${customAdvice.color}`, 
+          padding: '14px 18px', marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center',
+          animation: 'scaleIn 0.3s ease', margin: '0 0 20px 0'
+        }}>
+          <div style={{ background: 'white', padding: '8px', borderRadius: '10px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
+            {customAdvice.icon}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '1px', color: '#333' }}>{customAdvice.title}</div>
+            <div style={{ fontSize: '12px', color: '#555', lineHeight: '1.3' }}>{customAdvice.desc}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Caja de Indicadores Rápidos */}
+      <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.5)', border: '1px solid #f1f5f9', margin: '0 0 16px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          
           {/* Días Fértiles */}
-          <div className="card" style={{ 
-            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
-            background: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <Sparkles size={14} />
-              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fértil</span>
-            </div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.fertile}</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#9C27B0', marginBottom: '4px' }}><Sparkles size={18} style={{ margin: '0 auto' }} /></div>
+            <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Fértil</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{nextEvents.fertile}</div>
           </div>
 
           {/* Próximo Periodo */}
-          <div className="card" style={{ 
-            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
-            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <Heart size={14} fill="white" />
-              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Periodo</span>
-            </div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.period}</div>
+          <div style={{ textAlign: 'center', borderLeft: '1px solid #eee', borderRight: '1px solid #eee' }}>
+            <div style={{ color: '#F6416C', marginBottom: '4px' }}><Heart size={18} fill="#F6416C" style={{ margin: '0 auto' }} /></div>
+            <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Periodo</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{nextEvents.period}</div>
           </div>
 
           {/* Ovulación */}
-          <div className="card" style={{ 
-            margin: 0, padding: '16px', border: 'none', color: 'white', minHeight: '100px',
-            background: 'linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <Zap size={14} fill="white" />
-              <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ovulac.</span>
-            </div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{nextEvents.ovulation}</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#7C3AED', marginBottom: '4px' }}><Zap size={18} fill="#7C3AED" style={{ margin: '0 auto' }} /></div>
+            <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Ovulac.</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{nextEvents.ovulation}</div>
           </div>
 
         </div>

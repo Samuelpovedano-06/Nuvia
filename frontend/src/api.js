@@ -196,8 +196,9 @@ export const ApiService = {
     return await res.json();
   },
 
-  getRegistrosSintomas: async (fecha) => {
-    const res = await fetch(`${baseUrl}/registros-sintomas/${fecha}`, { headers: getHeaders() });
+  getRegistrosSintomas: async (fecha = null) => {
+    const url = fecha ? `${baseUrl}/registros-sintomas/${fecha}` : `${baseUrl}/registros-sintomas`;
+    const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
@@ -224,6 +225,12 @@ export const ApiService = {
   getRegistroDiario: async (fecha) => {
     const res = await fetch(`${baseUrl}/registros-diarios/${fecha}`, { headers: getHeaders() });
     if (!res.ok) return { notas: '', flujo: '', relaciones: 0 };
+    return await res.json();
+  },
+
+  getRegistrosDiarios: async () => {
+    const res = await fetch(`${baseUrl}/registros-diarios`, { headers: getHeaders() });
+    if (!res.ok) return [];
     return await res.json();
   },
 

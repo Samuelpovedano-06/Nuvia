@@ -1,79 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Sparkles, Coffee, Utensils, Zap, Moon, Heart, Info, Flower2 } from 'lucide-react';
+import { ChevronLeft, Sparkles, Coffee, Utensils, Zap, Moon, Heart, Info, Flower2, LayoutGrid, BookOpen, Activity } from 'lucide-react';
 import { ApiService } from '../api';
 
 const ADVICE_DATABASE = {
   menstrual: {
     title: 'Fase Menstrual',
-    subtitle: 'Tiempo de renovación y descanso',
+    subtitle: 'Tiempo de renovación',
     color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
-    bgLight: '#FFF1F2',
     icon: <Moon size={24} />,
-    food: 'Alimentos ricos en hierro (espinacas, lentejas) y magnesio para los calambres.',
-    exercise: 'Yoga suave, estiramientos o caminar tranquilo. Tu cuerpo necesita recuperar energía.',
-    care: 'Aplica calor en el abdomen y prioriza el sueño. Es un buen momento para meditar.',
-    mood: 'Puedes sentirte más introspectiva y con ganas de estar tranquila. Escucha a tu cuerpo.'
+    food: 'Alimentos ricos en hierro y magnesio.',
+    exercise: 'Yoga suave o caminar tranquilo.',
+    care: 'Aplica calor local y descansa extra.',
+    mood: 'Introspección y calma profunda.'
   },
   folicular: {
     title: 'Fase Folicular',
-    subtitle: 'Tu energía empieza a despegar',
+    subtitle: 'Energía en ascenso',
     color: 'linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%)',
-    bgLight: '#FFFBEB',
     icon: <Zap size={24} />,
-    food: 'Carbohidratos complejos y alimentos probióticos. Tu metabolismo es más eficiente ahora.',
-    exercise: 'Entrenamientos de fuerza o cardio moderado. Te sentirás con más potencia.',
-    care: 'Momento ideal para probar rutinas nuevas de skin-care. Tu piel está más receptiva.',
-    mood: 'Aumenta la creatividad y las ganas de socializar. Aprovecha para planificar proyectos.'
+    food: 'Carbohidratos complejos y fibra.',
+    exercise: 'Entrenamiento de fuerza moderado.',
+    care: 'Prueba nuevas rutinas de cuidado.',
+    mood: 'Creatividad y ganas de socializar.'
   },
   ovulatoria: {
     title: 'Fase Ovulatoria',
-    subtitle: 'Tu pico máximo de vitalidad',
+    subtitle: 'Pico de vitalidad',
     color: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)',
-    bgLight: '#FAF5FF',
     icon: <Sparkles size={24} />,
-    food: 'Alimentos antioxidantes y mucha hidratación. Evita el exceso de sal.',
-    exercise: 'HIIT, running o actividades de alta intensidad. Estás en tu punto más fuerte.',
-    care: 'Te sientes radiante. Es el mejor momento para eventos sociales o presentaciones importantes.',
-    mood: 'Máxima confianza en ti misma y libido alta. Te sientes más comunicativa que nunca.'
+    food: 'Antioxidantes y mucha hidratación.',
+    exercise: 'HIIT o cardio de alta intensidad.',
+    care: 'Brilla en tus eventos sociales.',
+    mood: 'Máxima confianza y libido alta.'
   },
   lutea: {
     title: 'Fase Lútea',
-    subtitle: 'Preparando el aterrizaje',
+    subtitle: 'Preparando el descanso',
     color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    bgLight: '#F0F9FF',
     icon: <Coffee size={24} />,
-    food: 'Grasas saludables (aguacate, nueces) para estabilizar el azúcar y evitar antojos.',
-    exercise: 'Pilates o cardio suave. No te exijas demasiado si sientes pesadez.',
-    care: 'Baños relajantes y evitar el exceso de cafeína para reducir la ansiedad premenstrual.',
-    mood: 'Puedes estar más sensible o irritable. Practica la autocompasión y descansa extra.'
+    food: 'Grasas saludables y omega-3.',
+    exercise: 'Pilates o estiramientos activos.',
+    care: 'Baños relajantes y menos cafeína.',
+    mood: 'Sensibilidad y autocompasión.'
   }
 };
 
 export default function WellnessScreen() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('guide');
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState('folicular');
   const [day, setDay] = useState(1);
-  const [recentHealth, setRecentHealth] = useState({ symptoms: [], states: [] });
-  const [customAdvice, setCustomAdvice] = useState(null);
+  const [stats, setStats] = useState({ symptomsCount: 0, notesCount: 0, recent: [] });
 
   useEffect(() => {
-    const fetchEverything = async () => {
+    const fetchWellness = async () => {
       try {
-        const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        
-        const [ciclos, config, sToday, sYesterday, dToday, dYesterday] = await Promise.all([
+        const [ciclos, config, s7, d7] = await Promise.all([
           ApiService.getCiclos(),
           ApiService.getConfig(),
-          ApiService.getRegistrosSintomas(today),
-          ApiService.getRegistrosSintomas(yesterday),
-          ApiService.getRegistroDiario(today),
-          ApiService.getRegistroDiario(yesterday)
+          ApiService.getRegistrosSintomas(), // Get last week
+          ApiService.getRegistrosDiarios()   // Get last week
         ]);
 
-        // 1. Determinar Fase
         if (ciclos.length > 0) {
           const ultimo = ciclos[0];
           const duracion = config?.duracion_ciclo || 28;
@@ -89,13 +79,11 @@ export default function WellnessScreen() {
           else setPhase('lutea');
         }
 
-        // 2. Procesar Salud Reciente
-        const allSymptoms = [...(sToday || []), ...(sYesterday || [])];
-        const allStates = [dToday, dYesterday].filter(d => d && (d.flujo || d.relaciones));
-        setRecentHealth({ symptoms: allSymptoms, states: allStates });
-
-        // 3. Generar Consejo Dinámico (Machine Learning "Ligero")
-        generateDynamicAdvice(allSymptoms, dToday);
+        setStats({
+          symptomsCount: s7?.length || 0,
+          notesCount: d7?.filter(d => d.notas)?.length || 0,
+          recent: [...(s7 || [])].slice(0, 5)
+        });
 
       } catch (err) {
         console.error(err);
@@ -103,161 +91,103 @@ export default function WellnessScreen() {
         setLoading(false);
       }
     };
-    fetchEverything();
+    fetchWellness();
   }, []);
-
-  const generateDynamicAdvice = (symptoms, daily) => {
-    const names = symptoms.map(s => s.nombre_sintoma || s.id_sintoma); // Simplificado
-    let advice = null;
-
-    if (names.some(n => n.includes('Dolor') || n.includes('Cólicos'))) {
-      advice = {
-        title: 'Foco: Alivio del Dolor',
-        desc: 'Tus registros muestran molestias físicas. Prioriza el magnesio y el calor local. Evita ejercicios de impacto hoy.',
-        icon: <Zap size={20} color="#F6416C" />,
-        color: '#FFF1F2'
-      };
-    } else if (names.includes('Cansancio') || names.includes('Insomnio')) {
-      advice = {
-        title: 'Foco: Recuperación',
-        desc: 'Has reportado fatiga. Tu cuerpo pide descanso extra. Intenta dormir 1h más y reduce la intensidad de tus tareas.',
-        icon: <Moon size={20} color="#0369A1" />,
-        color: '#F0F9FF'
-      };
-    } else if (names.includes('Ansiedad') || names.includes('Sensibilidad')) {
-      advice = {
-        title: 'Foco: Equilibrio Mental',
-        desc: 'Detectamos sensibilidad emocional. Es un gran día para escribir en tu diario o practicar 5 min de respiración guiada.',
-        icon: <Flower2 size={20} color="#7C3AED" />,
-        color: '#F5F3FF'
-      };
-    } else if (names.includes('Euforia') || names.includes('Libido Alta')) {
-      advice = {
-        title: 'Foco: Máxima Potencia',
-        desc: '¡Estás en un pico de energía! Aprovecha para resolver tareas difíciles o hacer un entrenamiento intenso.',
-        icon: <Sparkles size={20} color="#ED8F03" />,
-        color: '#FFFBEB'
-      };
-    }
-
-    setCustomAdvice(advice);
-  };
 
   if (loading) return <div className="screen-container" style={{ justifyContent: 'center', alignItems: 'center' }}><div className="loader"></div></div>;
 
   const currentAdvice = ADVICE_DATABASE[phase];
 
   return (
-    <div className="screen-container">
+    <div className="screen-container" style={{ paddingBottom: '40px' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-          <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Volver</span>
+          <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Atrás</span>
         </button>
       </div>
 
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '28px', color: 'var(--primary)', margin: '0 0 5px 0' }}>Nuvia Bienestar</h2>
-        <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>Basado en tu estado de los últimos días</p>
+      <h2 style={{ fontSize: '28px', color: 'var(--primary)', marginBottom: '5px' }}>Bienestar</h2>
+      <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '25px' }}>Día {day} • {currentAdvice.title}</p>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.5)', padding: '4px', borderRadius: '15px', marginBottom: '25px', border: '1px solid #f1f5f9' }}>
+        <button 
+          onClick={() => setActiveTab('guide')}
+          style={{ flex: 1, padding: '10px', borderRadius: '12px', border: 'none', background: activeTab === 'guide' ? 'white' : 'transparent', color: activeTab === 'guide' ? 'var(--primary)' : '#64748b', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: activeTab === 'guide' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none' }}
+        >
+          <BookOpen size={18} /> Guía
+        </button>
+        <button 
+          onClick={() => setActiveTab('habits')}
+          style={{ flex: 1, padding: '10px', borderRadius: '12px', border: 'none', background: activeTab === 'habits' ? 'white' : 'transparent', color: activeTab === 'habits' ? 'var(--primary)' : '#64748b', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: activeTab === 'habits' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none' }}
+        >
+          <Activity size={18} /> Mi Actividad
+        </button>
       </div>
 
-      {/* SECCIÓN INTELIGENTE: Escáner de Salud */}
-      {customAdvice && (
-        <div className="card" style={{ 
-          background: customAdvice.color, border: `1px solid ${customAdvice.color}`, 
-          padding: '16px', marginBottom: '25px', display: 'flex', gap: '15px', alignItems: 'center',
-          animation: 'scaleIn 0.3s ease'
-        }}>
-          <div style={{ background: 'white', padding: '10px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
-            {customAdvice.icon}
+      {activeTab === 'guide' ? (
+        <div style={{ display: 'grid', gap: '15px' }}>
+          <div className="card" style={{ background: currentAdvice.color, color: 'white', border: 'none', padding: '25px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', right: '-10px', top: '-10px', opacity: 0.2 }}><Flower2 size={120} /></div>
+            <div style={{ fontSize: '12px', fontWeight: '800', opacity: 0.8, textTransform: 'uppercase', marginBottom: '5px' }}>Enfoque de Hoy</div>
+            <h3 style={{ fontSize: '24px', margin: 0 }}>{currentAdvice.subtitle}</h3>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '2px', color: '#333' }}>{customAdvice.title}</div>
-            <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.4' }}>{customAdvice.desc}</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div className="card" style={{ margin: 0, padding: '20px', textAlign: 'center' }}>
+              <div style={{ background: '#FFF7ED', width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#C2410C' }}><Utensils size={24} /></div>
+              <h4 style={{ fontSize: '14px', marginBottom: '6px' }}>Dieta</h4>
+              <p style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>{currentAdvice.food}</p>
+            </div>
+            <div className="card" style={{ margin: 0, padding: '20px', textAlign: 'center' }}>
+              <div style={{ background: '#F0F9FF', width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#0369A1' }}><Zap size={24} /></div>
+              <h4 style={{ fontSize: '14px', marginBottom: '6px' }}>Deporte</h4>
+              <p style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>{currentAdvice.exercise}</p>
+            </div>
           </div>
+
+          <div className="card" style={{ padding: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
+            <div style={{ background: '#FDF2F8', padding: '12px', borderRadius: '12px', color: '#BE185D' }}><Heart size={24} /></div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '15px' }}>Autocuidado</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>{currentAdvice.care}</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '15px' }}>
+          <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
+            <h4 style={{ fontSize: '13px', color: '#64748b', textTransform: 'uppercase', marginBottom: '15px' }}>Resumen Semanal</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+              <div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary)' }}>{stats.symptomsCount}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Síntomas</div>
+              </div>
+              <div style={{ width: '1px', background: '#eee' }}></div>
+              <div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary)' }}>{stats.notesCount}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Notas</div>
+              </div>
+            </div>
+          </div>
+
+          <h4 style={{ fontSize: '15px', margin: '10px 0 5px 0' }}>Registros Recientes</h4>
+          {stats.recent.length > 0 ? stats.recent.map((s, i) => (
+            <div key={i} className="card" style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></div>
+                <span style={{ fontSize: '14px', fontWeight: '500' }}>{s.nombre_sintoma}</span>
+              </div>
+              <span style={{ fontSize: '12px', color: '#94a3b8' }}>{new Date(s.fecha).toLocaleDateString()}</span>
+            </div>
+          )) : (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+              <LayoutGrid size={48} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
+              <p>No hay registros esta semana</p>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Hero Card de Fase */}
-      <div className="card" style={{ 
-        background: currentAdvice.color, color: 'white', padding: '25px', 
-        border: 'none', marginBottom: '25px', position: 'relative', overflow: 'hidden' 
-      }}>
-        <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.2 }}>
-          <Flower2 size={150} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-          {currentAdvice.icon}
-          <span style={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '12px' }}>Fase Actual</span>
-        </div>
-        <h3 style={{ fontSize: '24px', margin: '0 0 5px 0' }}>{currentAdvice.title}</h3>
-        <p style={{ margin: 0, opacity: 0.9 }}>{currentAdvice.subtitle}</p>
-      </div>
-
-      <div style={{ display: 'grid', gap: '15px', paddingBottom: '40px' }}>
-        
-        {/* Alimentación Adaptativa */}
-        <div className="card" style={{ margin: 0, padding: '20px', background: 'white', display: 'flex', gap: '15px' }}>
-          <div style={{ background: '#FFF7ED', padding: '12px', borderRadius: '15px', color: '#C2410C', height: 'fit-content' }}>
-            <Utensils size={24} />
-          </div>
-          <div>
-            <h4 style={{ margin: '0 0 5px 0', color: '#C2410C' }}>Alimentación</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>
-              {customAdvice?.title === 'Foco: Alivio del Dolor' 
-                ? 'Prioriza alimentos antiinflamatorios como cúrcuma, frutos rojos y pescados ricos en Omega-3.' 
-                : currentAdvice.food}
-            </p>
-          </div>
-        </div>
-
-        {/* Ejercicio Adaptativo */}
-        <div className="card" style={{ margin: 0, padding: '20px', background: 'white', display: 'flex', gap: '15px' }}>
-          <div style={{ background: '#F0F9FF', padding: '12px', borderRadius: '15px', color: '#0369A1', height: 'fit-content' }}>
-            <Zap size={24} />
-          </div>
-          <div>
-            <h4 style={{ margin: '0 0 5px 0', color: '#0369A1' }}>Actividad Física</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>
-              {customAdvice?.title === 'Foco: Recuperación'
-                ? 'Hoy tu cuerpo necesita regenerarse. Prueba con movilidad articular suave o un paseo corto al aire libre.'
-                : currentAdvice.exercise}
-            </p>
-          </div>
-        </div>
-
-        {/* Autocuidado Dinámico */}
-        <div className="card" style={{ margin: 0, padding: '20px', background: 'white', display: 'flex', gap: '15px' }}>
-          <div style={{ background: '#FDF2F8', padding: '12px', borderRadius: '15px', color: '#BE185D', height: 'fit-content' }}>
-            <Heart size={24} />
-          </div>
-          <div>
-            <h4 style={{ margin: '0 0 5px 0', color: '#BE185D' }}>Autocuidado</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>{currentAdvice.care}</p>
-          </div>
-        </div>
-
-        {/* Estado de Ánimo */}
-        <div className="card" style={{ margin: 0, padding: '20px', background: 'white', display: 'flex', gap: '15px' }}>
-          <div style={{ background: '#F5F3FF', padding: '12px', borderRadius: '15px', color: '#6D28D9', height: 'fit-content' }}>
-            <Info size={24} />
-          </div>
-          <div>
-            <h4 style={{ margin: '0 0 5px 0', color: '#6D28D9' }}>Tu Energía</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: '#444', lineHeight: '1.5' }}>{currentAdvice.mood}</p>
-          </div>
-        </div>
-
-      </div>
-
-      <style>{`
-        body.dark-mode .card:not([style*="background: linear-gradient"]) {
-          background: #1f1f1f !important;
-          border: 1px solid #333 !important;
-        }
-        body.dark-mode .card p {
-          color: #ccc !important;
-        }
-      `}</style>
     </div>
   );
 }
