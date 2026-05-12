@@ -49,45 +49,50 @@ const getYOnCurve = (x, ovulacionX, width, height) => {
 };
 
 const ReportGraph = ({ duracion = 28 }) => {
-  const W = 800, H = 90, PAD = 20;
-  const yBase = H - 18, yPeak = 12;
+  const W = 800, H = 120, PAD = 20;
+  const yBase = 70, yPeak = 12;
   const puntosClave = calcPuntosClave(duracion);
   const ovulacion = Math.max(7, duracion - 14);
   const ovX = PAD + ((ovulacion - 1) / (duracion - 1)) * (W - 2 * PAD);
   const endX = W - PAD;
   const getX = (dia) => PAD + ((dia - 1) / (duracion - 1)) * (W - 2 * PAD);
 
-  const bez = (t, p0, p1, p2, p3) => (1-t)**3*p0 + 3*(1-t)**2*t*p1 + 3*(1-t)*t**2*p2 + t**3*p3;
+  const bez = (t, p0, p1, p2, p3) => (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t ** 2 * p2 + t ** 3 * p3;
   const findT = (tx, x0, x1, x2, x3) => {
     let lo = 0, hi = 1;
-    for (let i = 0; i < 25; i++) { const m=(lo+hi)/2; bez(m,x0,x1,x2,x3)<tx?(lo=m):(hi=m); }
-    return (lo+hi)/2;
+    for (let i = 0; i < 25; i++) { const m = (lo + hi) / 2; bez(m, x0, x1, x2, x3) < tx ? (lo = m) : (hi = m); }
+    return (lo + hi) / 2;
   };
   const getY = (x) => {
     if (x <= ovX) {
-      const t = findT(x, PAD, ovX*0.4, ovX*0.85, ovX);
+      const t = findT(x, PAD, ovX * 0.4, ovX * 0.85, ovX);
       return bez(t, yBase, yBase, yPeak, yPeak);
     }
-    const t = findT(x, ovX, ovX*1.15, endX, endX);
+    const t = findT(x, ovX, ovX * 1.15, endX, endX);
     return bez(t, yPeak, yPeak, yBase, yBase);
   };
-  const pathD = `M ${PAD},${yBase} C ${ovX*0.4},${yBase} ${ovX*0.85},${yPeak} ${ovX},${yPeak} S ${endX},${yBase} ${endX},${yBase}`;
-  const ovPct = `${((ovX / W) * 100).toFixed(1)}%`;
+  const pathD = `M ${PAD},${yBase} C ${ovX * 0.4},${yBase} ${ovX * 0.85},${yPeak} ${ovX},${yPeak} S ${endX},${yBase} ${endX},${yBase}`;
 
   return (
     <div style={{ width: '100%', background: '#fff' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block' }}>
         <path d={pathD} fill="none" stroke="#9b6c98" strokeWidth="2.5" strokeLinecap="round" opacity="0.35" />
         {puntosClave.map((dia) => {
           const x = getX(dia);
-          return <circle key={dia} cx={x} cy={getY(x)} r="5.5" fill="#9b6c98" />;
+          const y = getY(x);
+          return (
+            <g key={dia}>
+              <circle cx={x} cy={y} r="5.5" fill="#9b6c98" />
+              <text x={x} y={yBase + 17} textAnchor="middle" fontSize="11" fill="#9b6c98" fontFamily="Inter, sans-serif">
+                Día {dia}
+              </text>
+            </g>
+          );
         })}
+        <text x={PAD} y={yBase + 32} fontSize="10" fill="#bbb" fontFamily="Inter, sans-serif">Inicio del Ciclo</text>
+        <text x={ovX} y={yBase + 32} textAnchor="middle" fontSize="10" fill="#bbb" fontFamily="Inter, sans-serif">Ovulación</text>
+        <text x={endX} y={yBase + 32} textAnchor="end" fontSize="10" fill="#bbb" fontFamily="Inter, sans-serif">Fin del Ciclo</text>
       </svg>
-      <div style={{ position: 'relative', height: '18px', fontSize: '11px', color: '#9b6c98', marginTop: '4px' }}>
-        <span style={{ position: 'absolute', left: PAD }}>Inicio del Ciclo</span>
-        <span style={{ position: 'absolute', left: ovPct, transform: 'translateX(-50%)' }}>Ovulación</span>
-        <span style={{ position: 'absolute', right: PAD }}>Fin del Ciclo</span>
-      </div>
     </div>
   );
 };
@@ -164,21 +169,21 @@ const NuviaFace = ({ type, color = '#9b6c98' }) => {
 const SINTOMA_STYLE = {
   'Dolor Abdominal': { face: 'triste' },
   'Dolor de Cabeza': { face: 'triste' },
-  'Pecho Sensible':  { face: 'molesta' },
-  'Hinchazón':       { face: 'molesta' },
-  'Cólicos':         { face: 'dolor_agudo' },
-  'Dolor de Espalda':{ face: 'triste' },
-  'Antojos':         { icon: <Utensils size={18} /> },
-  'Náuseas':         { face: 'nauseas' },
-  'Ansiedad':        { face: 'ansiosa' },
-  'Sensibilidad':    { face: 'sensible' },
-  'Irritabilidad':   { face: 'irritable' },
-  'Humor Variable':  { face: 'variable' },
-  'Euforia':         { face: 'risa' },
-  'Cansancio':       { face: 'durmiendo' },
-  'Manchada':        { face: 'pena' },
-  'Insomnio':        { face: 'despierta' },
-  'Libido Alta':     { face: 'enamorada' }
+  'Pecho Sensible': { face: 'molesta' },
+  'Hinchazón': { face: 'molesta' },
+  'Cólicos': { face: 'dolor_agudo' },
+  'Dolor de Espalda': { face: 'triste' },
+  'Antojos': { icon: <Utensils size={18} /> },
+  'Náuseas': { face: 'nauseas' },
+  'Ansiedad': { face: 'ansiosa' },
+  'Sensibilidad': { face: 'sensible' },
+  'Irritabilidad': { face: 'irritable' },
+  'Humor Variable': { face: 'variable' },
+  'Euforia': { face: 'risa' },
+  'Cansancio': { face: 'durmiendo' },
+  'Manchada': { face: 'pena' },
+  'Insomnio': { face: 'despierta' },
+  'Libido Alta': { face: 'enamorada' }
 };
 
 export default function ProfileScreen() {
@@ -714,7 +719,7 @@ export default function ProfileScreen() {
           </div>
         )}
       </div>
-      
+
       {/* Export Data */}
       <div className="card" style={{ padding: '5px 0', marginTop: '20px' }}>
         <div
@@ -744,7 +749,6 @@ export default function ProfileScreen() {
         <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#ff5252', fontSize: '16px', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', cursor: 'pointer' }}>
           <LogOut size={18} style={{ marginRight: '8px' }} /> Cerrar sesión
         </button>
-        <p style={{ marginTop: '20px', color: 'var(--text-light)', fontSize: '13px' }}>Nuvia v1.0.0</p>
         <p style={{ marginTop: '8px', color: 'var(--text-light)', fontSize: '12px' }}>💜 Hecho con amor para tu bienestar</p>
       </div>
       {/* REPORTE OCULTO — PÁGINA 1: cabecera, calendarios, gráfica */}
@@ -791,11 +795,11 @@ export default function ProfileScreen() {
                           let bg = 'transparent', color = '#555', border = 'none', br = '8px', fw = 'normal';
                           const dObj = new Date(year, month, day);
                           const todayISO = new Date().toISOString().split('T')[0];
-                          const dayISO = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                          const dayISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                           const isToday = dayISO === todayISO;
                           if (ciclos.length > 0) {
                             const inicio = new Date(ciclos[0].fecha_inicio);
-                            inicio.setHours(0,0,0,0);
+                            inicio.setHours(0, 0, 0, 0);
                             const diff = Math.floor((dObj - inicio) / 86400000);
                             if (diff >= 0) {
                               const dCiclo = (diff % cycleDuration) + 1;
@@ -803,18 +807,18 @@ export default function ProfileScreen() {
                               const ovDia = Math.max(7, cycleDuration - 14);
                               const fertilS = ovDia - 3, fertilE = ovDia + 1;
                               if (!isFuture) {
-                                if (dCiclo <= periodDuration)                          { bg='#ff4d4d'; color='white'; br='50%'; }
-                                else if (dCiclo === ovDia)                             { bg='#9b6c98'; color='white'; br='50%'; }
-                                else if (dCiclo >= fertilS && dCiclo <= fertilE)       { border='1.5px dashed #F472B6'; color='#F472B6'; br='50%'; }
-                                else if (dCiclo > periodDuration && dCiclo < fertilS) { bg='rgba(255,183,94,0.2)'; color='#B45309'; br='50%'; }
+                                if (dCiclo <= periodDuration) { bg = '#ff4d4d'; color = 'white'; br = '50%'; }
+                                else if (dCiclo === ovDia) { bg = '#9b6c98'; color = 'white'; br = '50%'; }
+                                else if (dCiclo >= fertilS && dCiclo <= fertilE) { border = '1.5px dashed #F472B6'; color = '#F472B6'; br = '50%'; }
+                                else if (dCiclo > periodDuration && dCiclo < fertilS) { bg = 'rgba(255,183,94,0.2)'; color = '#B45309'; br = '50%'; }
                               } else if (dCiclo <= periodDuration) {
-                                border='1.5px dashed #A855F7'; color='#A855F7'; br='50%';
+                                border = '1.5px dashed #A855F7'; color = '#A855F7'; br = '50%';
                               }
                             }
                           }
                           if (isToday) {
                             fw = 'bold';
-                            if (bg === 'transparent' && border === 'none') { border='2px solid #9b6c98'; color='#9b6c98'; br='50%'; }
+                            if (bg === 'transparent' && border === 'none') { border = '2px solid #9b6c98'; color = '#9b6c98'; br = '50%'; }
                           }
                           return (
                             <div key={day} style={{
@@ -835,11 +839,11 @@ export default function ProfileScreen() {
                 <h3 style={{ fontSize: '18px', color: '#333', marginBottom: '15px' }}>Leyenda del Ciclo</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
                   {[
-                    { bg: '#ff4d4d',               border: 'none',                    label: 'Periodo' },
-                    { bg: 'rgba(168,85,247,0.06)', border: '1.5px dashed #A855F7',    label: 'Predicción Regla' },
-                    { bg: 'rgba(255,183,94,0.25)', border: 'none',                    label: 'Fase Folicular' },
-                    { bg: 'transparent',           border: '1.5px dashed #F472B6',    label: 'Ventana Fértil' },
-                    { bg: '#9b6c98',               border: 'none',                    label: 'Ovulación' },
+                    { bg: '#ff4d4d', border: 'none', label: 'Periodo' },
+                    { bg: 'rgba(168,85,247,0.06)', border: '1.5px dashed #A855F7', label: 'Predicción Regla' },
+                    { bg: 'rgba(255,183,94,0.25)', border: 'none', label: 'Fase Folicular' },
+                    { bg: 'transparent', border: '1.5px dashed #F472B6', label: 'Ventana Fértil' },
+                    { bg: '#9b6c98', border: 'none', label: 'Ovulación' },
                   ].map(({ bg, border, label }) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: bg, border, flexShrink: 0 }}></div>
@@ -858,7 +862,7 @@ export default function ProfileScreen() {
             </div>
 
             <footer style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '11px', color: '#bbb' }}>
-              Este informe es una recopilación de datos registrados por la usuaria en Nuvia Wellness App. No sustituye el consejo médico profesional.
+              Este informe es una recopilación de datos registrados por la usuaria en Nuvia. No sustituye el consejo médico profesional.
             </footer>
           </div>
 
