@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import date
-from typing import List
+from typing import List, Optional
 from app.database.connection import get_db
 from app.models import models
 from app.schemas import schemas
@@ -10,30 +10,24 @@ from app.routers.auth_utils import get_current_user
 router = APIRouter(tags=["Diario"])
 
 @router.get("/registros-diarios", response_model=List[schemas.RegistroDiarioOut])
-def listar_registros_diarios(db: Session = Depends(get_db),
+def listar_registros_diarios(fecha: Optional[date] = None,
+                              db: Session = Depends(get_db),
                               current_user: models.Usuaria = Depends(get_current_user)):
-    return db.query(models.RegistroDiario)\
-             .filter(models.RegistroDiario.id_usuaria == current_user.id_usuaria)\
-             .order_by(models.RegistroDiario.fecha.desc()).all()
-
-@router.get("/registros-diarios/{fecha}", response_model=schemas.RegistroDiarioOut)
-def obtener_registro_diario(fecha: date, db: Session = Depends(get_db),
-                           current_user: models.Usuaria = Depends(get_current_user)):
-    registro = db.query(models.RegistroDiario).filter(
-        models.RegistroDiario.id_usuaria == current_user.id_usuaria,
-        models.RegistroDiario.fecha == fecha
-    ).first()
-
-    if not registro:
-        return {
-            "id": "00000000-0000-0000-0000-000000000000",
-            "id_usuaria": current_user.id_usuaria,
-            "fecha": fecha,
-            "notas": "",
-            "flujo": "",
-            "relaciones": 0
-        }
-    return registro
+    query = db.query(models.RegistroDiario)\
+              .filter(models.RegistroDiario.id_usuaria == current_user.id_usuaria)
+    if fecha:
+        registro = query.filter(models.RegistroDiario.fecha == fecha).first()
+        if not registro:
+            return [{
+                "id": "00000000-0000-0000-0000-000000000000",
+                "id_usuaria": current_user.id_usuaria,
+                "fecha": fecha,
+                "notas": "",
+                "flujo": "",
+                "relaciones": 0
+            }]
+        return [registro]
+    return query.order_by(models.RegistroDiario.fecha.desc()).all()
 
 @router.post("/registros-diarios", response_model=schemas.RegistroDiarioOut)
 def registrar_dato_diario(datos: schemas.RegistroDiarioCreate, db: Session = Depends(get_db),

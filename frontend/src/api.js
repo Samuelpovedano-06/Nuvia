@@ -223,9 +223,10 @@ export const ApiService = {
 
   // Registros Diarios (Notas, Flujo, Relaciones)
   getRegistroDiario: async (fecha) => {
-    const res = await fetch(`${baseUrl}/registros-diarios/${fecha}`, { headers: getHeaders() });
+    const res = await fetch(`${baseUrl}/registros-diarios?fecha=${fecha}`, { headers: getHeaders() });
     if (!res.ok) return { notas: '', flujo: '', relaciones: 0 };
-    return await res.json();
+    const arr = await res.json();
+    return arr[0] || { notas: '', flujo: '', relaciones: 0 };
   },
 
   getRegistrosDiarios: async () => {
