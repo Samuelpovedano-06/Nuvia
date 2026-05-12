@@ -153,9 +153,11 @@ export const ApiService = {
   },
 
   getPublicStatus: async () => {
-    const res = await fetch(`${baseUrl}/admin/status/public`);
+    const res = await fetch(`${baseUrl}/admin/status/public`, { cache: 'no-cache' });
     if (!res.ok) return { modo_mantenimiento: false };
-    return await res.json();
+    const data = await res.json();
+    console.log('[Nuvia] getPublicStatus:', data);
+    return data;
   },
 
   // Ciclos
