@@ -17,6 +17,31 @@ export default function AdminConfigScreen() {
     min_dias_periodo: 3
   });
 
+  const [errors, setErrors] = useState({
+    ciclo: '',
+    periodo: ''
+  });
+
+  const validate = (newConfig) => {
+    const newErrors = { ciclo: '', periodo: '' };
+    
+    // Validar negativos
+    if (newConfig.min_dias_ciclo < 0 || newConfig.max_dias_ciclo < 0) {
+      newErrors.ciclo = 'Los valores deben ser positivos.';
+    } else if (newConfig.max_dias_ciclo <= newConfig.min_dias_ciclo) {
+      newErrors.ciclo = 'La frecuencia máxima debe ser estrictamente mayor a la mínima.';
+    }
+
+    if (newConfig.min_dias_periodo < 0 || newConfig.max_dias_periodo < 0) {
+      newErrors.periodo = 'Los valores deben ser positivos.';
+    } else if (newConfig.max_dias_periodo <= newConfig.min_dias_periodo) {
+      newErrors.periodo = 'La duración máxima debe ser estrictamente mayor a la mínima.';
+    }
+
+    setErrors(newErrors);
+    return !newErrors.ciclo && !newErrors.periodo;
+  };
+
   useEffect(() => {
     fetchConfig();
   }, []);
@@ -24,7 +49,9 @@ export default function AdminConfigScreen() {
   const fetchConfig = async () => {
     try {
       const data = await ApiService.getSystemConfig();
-      setConfig(prev => ({ ...prev, ...data }));
+      const updatedConfig = { ...config, ...data };
+      setConfig(updatedConfig);
+      validate(updatedConfig);
     } catch (err) {
       console.error(err);
     } finally {
@@ -33,6 +60,8 @@ export default function AdminConfigScreen() {
   };
 
   const handleUpdate = async () => {
+    if (!validate(config)) return;
+
     setSaving(true);
     try {
       await ApiService.updateSystemConfig(config);
@@ -113,45 +142,67 @@ export default function AdminConfigScreen() {
             <input 
               type="number" 
               className="config-input"
+              min={0}
               value={config.min_dias_ciclo}
-              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, min_dias_ciclo: v}); }}
-              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
+              onChange={e => {
+                const newConfig = {...config, min_dias_ciclo: e.target.value === '' ? '' : parseInt(e.target.value)};
+                setConfig(newConfig);
+                validate(newConfig);
+              }}
+              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: errors.ciclo ? '1px solid #FF9A9E' : '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>
           <div>
             <label style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '6px' }}>Máx. Frecuencia del periodo</label>
-            <input
-              type="number"
+            <input 
+              type="number" 
               className="config-input"
+              min={0}
               value={config.max_dias_ciclo}
-              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, max_dias_ciclo: v}); }}
-              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
+              onChange={e => {
+                const newConfig = {...config, max_dias_ciclo: e.target.value === '' ? '' : parseInt(e.target.value)};
+                setConfig(newConfig);
+                validate(newConfig);
+              }}
+              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: errors.ciclo ? '1px solid #FF9A9E' : '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>
         </div>
+        {errors.ciclo && <p style={{ color: '#F6416C', fontSize: '11px', marginTop: '-15px', marginBottom: '15px' }}>{errors.ciclo}</p>}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           <div>
             <label style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '6px' }}>Mín. Duración del periodo</label>
-            <input
-              type="number"
+            <input 
+              type="number" 
               className="config-input"
+              min={0}
               value={config.min_dias_periodo}
-              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, min_dias_periodo: v}); }}
-              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
+              onChange={e => {
+                const newConfig = {...config, min_dias_periodo: e.target.value === '' ? '' : parseInt(e.target.value)};
+                setConfig(newConfig);
+                validate(newConfig);
+              }}
+              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: errors.periodo ? '1px solid #FF9A9E' : '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>
           <div>
             <label style={{ fontSize: '13px', color: 'var(--text-light)', display: 'block', marginBottom: '6px' }}>Máx. Duración del periodo</label>
-            <input
-              type="number"
+            <input 
+              type="number" 
               className="config-input"
+              min={0}
               value={config.max_dias_periodo}
-              onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v)) setConfig({...config, max_dias_periodo: v}); }}
-              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
+              onChange={e => {
+                const newConfig = {...config, max_dias_periodo: e.target.value === '' ? '' : parseInt(e.target.value)};
+                setConfig(newConfig);
+                validate(newConfig);
+              }}
+              style={{ width: '100%', padding: '10px', borderRadius: '10px', border: errors.periodo ? '1px solid #FF9A9E' : '1px solid #eee', fontSize: '14px', outline: 'none', transition: 'border-color 0.3s' }}
             />
           </div>
         </div>
+        {errors.periodo && <p style={{ color: '#F6416C', fontSize: '11px', marginTop: '5px' }}>{errors.periodo}</p>}
       </div>
 
       {/* Seguridad y Mantenimiento */}
@@ -196,13 +247,14 @@ export default function AdminConfigScreen() {
       <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
         <button 
           onClick={handleUpdate}
-          disabled={saving}
+          disabled={saving || errors.ciclo || errors.periodo}
           style={{ 
             width: '60%', padding: '16px', background: 'var(--primary)', color: 'white', 
             border: 'none', borderRadius: '15px', fontWeight: 'bold', fontSize: '15px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-            cursor: 'pointer', boxShadow: '0 4px 15px rgba(186, 104, 200, 0.2)',
-            opacity: saving ? 0.7 : 1
+            cursor: (saving || errors.ciclo || errors.periodo) ? 'not-allowed' : 'pointer', 
+            boxShadow: '0 4px 15px rgba(186, 104, 200, 0.2)',
+            opacity: (saving || errors.ciclo || errors.periodo) ? 0.6 : 1
           }}
         >
           {saving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
