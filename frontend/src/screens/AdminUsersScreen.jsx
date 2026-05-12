@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { 
-  ChevronLeft, Users, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, Search, Shield, Heart, AlertTriangle 
+import {
+  ChevronLeft, Users, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, Search, Shield, Heart, AlertTriangle,
+  Activity, Lightbulb, Droplets, Lock
 } from 'lucide-react';
 
 export default function AdminUsersScreen() {

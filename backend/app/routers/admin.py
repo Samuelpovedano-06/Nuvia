@@ -5,7 +5,7 @@ from typing import List
 from uuid import UUID
 from datetime import date, datetime, timedelta
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, ConfiguracionSistema
+from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, RegistroDiario, ConfiguracionSistema
 from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut, AdminConfigOut, AdminConfigUpdate
 from app.routers.auth_utils import get_current_user, hash_password
 
