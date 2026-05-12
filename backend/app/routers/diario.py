@@ -9,6 +9,13 @@ from app.routers.auth_utils import get_current_user
 
 router = APIRouter(tags=["Diario"])
 
+@router.get("/registros-diarios", response_model=List[schemas.RegistroDiarioOut])
+def listar_registros_diarios(db: Session = Depends(get_db),
+                              current_user: models.Usuaria = Depends(get_current_user)):
+    return db.query(models.RegistroDiario)\
+             .filter(models.RegistroDiario.id_usuaria == current_user.id_usuaria)\
+             .order_by(models.RegistroDiario.fecha.desc()).all()
+
 @router.get("/registros-diarios/{fecha}", response_model=schemas.RegistroDiarioOut)
 def obtener_registro_diario(fecha: date, db: Session = Depends(get_db),
                            current_user: models.Usuaria = Depends(get_current_user)):
@@ -27,14 +34,6 @@ def obtener_registro_diario(fecha: date, db: Session = Depends(get_db),
             "relaciones": 0
         }
     return registro
-
-@router.get("/registros-diarios", response_model=List[schemas.RegistroDiarioOut])
-@router.get("/registros-diarios/", response_model=List[schemas.RegistroDiarioOut])
-def listar_registros_diarios(db: Session = Depends(get_db),
-                              current_user: models.Usuaria = Depends(get_current_user)):
-    return db.query(models.RegistroDiario)\
-             .filter(models.RegistroDiario.id_usuaria == current_user.id_usuaria)\
-             .order_by(models.RegistroDiario.fecha.desc()).all()
 
 @router.post("/registros-diarios", response_model=schemas.RegistroDiarioOut)
 def registrar_dato_diario(datos: schemas.RegistroDiarioCreate, db: Session = Depends(get_db),
