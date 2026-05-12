@@ -377,35 +377,15 @@ export default function AdminUsersScreen() {
                   </div>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F43F5E' }}>
-                  <Droplets size={16} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>Última regla registrada</div>
-                  <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
-                    {viewingUser.ultima_fecha_periodo ? new Date(viewingUser.ultima_fecha_periodo).toLocaleDateString() : 'Ninguna'}
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={() => { setShowViewModal(false); handleOpenModal(viewingUser); }}
-                className="btn-primary"
-                style={{ flex: 2, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px' }}
-              >
-                <Edit size={16} /> Editar Perfil
-              </button>
-              <button 
-                onClick={() => { setShowViewModal(false); handleOpenModal(viewingUser); }}
-                style={{ flex: 1, padding: '14px', borderRadius: '15px', border: '1px solid #e2e8f0', background: 'white', color: '#64748b', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-              >
-                <Lock size={16} /> Clave
-              </button>
-            </div>
+            <button 
+              onClick={() => { setShowViewModal(false); handleOpenModal(viewingUser); }}
+              className="btn-primary"
+              style={{ width: '100%', padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            >
+              <Edit size={18} /> Editar Perfil Completo
+            </button>
           </div>
         </div>
       )}
