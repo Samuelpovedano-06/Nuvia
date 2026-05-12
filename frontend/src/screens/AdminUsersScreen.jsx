@@ -202,16 +202,19 @@ export default function AdminUsersScreen() {
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }}>
           <div className="card" style={{ width: '100%', maxWidth: '400px', margin: 0, padding: '24px', animation: 'scaleIn 0.3s ease' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0 }}>{editingUser ? 'Editar Usuaria' : 'Nueva Usuaria'}</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}>
+            <div style={{ position: 'relative', marginBottom: '25px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', color: 'var(--primary)', textAlign: 'center' }}>{editingUser ? 'Editar Usuaria' : 'Nueva Usuaria'}</h3>
+              <button 
+                onClick={() => setShowModal(false)} 
+                style={{ position: 'absolute', right: 0, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: '5px' }}
+              >
                 <X size={24} />
               </button>
             </div>
 
             <form onSubmit={handleSaveUser}>
               <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '8px', fontWeight: '600', color: '#444' }}>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px', marginBottom: '8px', fontWeight: '600', color: '#444' }}>
                   <Users size={14} color="var(--primary)" /> Nombre Completo
                 </label>
                 <input 
@@ -221,12 +224,12 @@ export default function AdminUsersScreen() {
                   onChange={(e) => setFormData({...formData, nombre: e.target.value})}
                   className="input-field"
                   placeholder="Ej: Ana García"
-                  style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 15px' }}
+                  style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 15px', textAlign: 'center', width: '100%' }}
                 />
               </div>
 
               <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '8px', fontWeight: '600', color: '#444' }}>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px', marginBottom: '8px', fontWeight: '600', color: '#444' }}>
                   <Save size={14} color="var(--primary)" /> Email de acceso
                 </label>
                 <input 
@@ -236,12 +239,12 @@ export default function AdminUsersScreen() {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   className="input-field"
                   placeholder="ana@ejemplo.com"
-                  style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 15px' }}
+                  style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 15px', textAlign: 'center', width: '100%' }}
                 />
               </div>
 
               <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '8px', fontWeight: '600', color: '#444' }}>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px', marginBottom: '8px', fontWeight: '600', color: '#444' }}>
                   <X size={14} color="var(--primary)" /> {editingUser ? 'Nueva Contraseña' : 'Contraseña'}
                 </label>
                 <input 
@@ -251,13 +254,13 @@ export default function AdminUsersScreen() {
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   className="input-field"
                   placeholder={editingUser ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
-                  style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 15px' }}
+                  style={{ borderRadius: '12px', border: '1px solid #e2e8f0', padding: '12px 15px', textAlign: 'center', width: '100%' }}
                 />
                 {editingUser && <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '5px' }}>Por seguridad, las contraseñas actuales no son visibles.</p>}
               </div>
 
               <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '12px', fontWeight: '600', color: '#444' }}>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px', marginBottom: '12px', fontWeight: '600', color: '#444' }}>
                   <Shield size={14} color="var(--primary)" /> Rol en el sistema
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
