@@ -39,6 +39,7 @@ export default function ProfileScreen() {
     min_dias_periodo: 3,
     max_dias_periodo: 10
   });
+  const [globalNotifsDisabled, setGlobalNotifsDisabled] = useState(false);
 
   useEffect(() => {
     ApiService.getCiclos()
@@ -81,6 +82,7 @@ export default function ProfileScreen() {
               min_dias_periodo: config.min_dias_periodo || 3,
               max_dias_periodo: config.max_dias_periodo || 10
             });
+            setGlobalNotifsDisabled(config.notificaciones_globales === false);
           }
         })
         .catch(console.error);
@@ -95,6 +97,7 @@ export default function ProfileScreen() {
               min_dias_periodo: status.min_dias_periodo || 3,
               max_dias_periodo: status.max_dias_periodo || 10
             });
+            setGlobalNotifsDisabled(status.notificaciones_globales === false);
           }
         })
         .catch(console.error);
@@ -349,28 +352,46 @@ export default function ProfileScreen() {
         </div>
       </div>
 
+      {/* Banner de Notificaciones Desactivadas */}
+      {globalNotifsDisabled && (
+        <div style={{ 
+          background: '#FFF1F2', color: '#F6416C', padding: '12px 20px', borderRadius: '15px',
+          marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px',
+          border: '1px solid #FF9A9E'
+        }}>
+          <Bell size={18} />
+          <span><strong>Aviso:</strong> El administrador ha pausado las notificaciones globales del sistema.</span>
+        </div>
+      )}
+
       {/* Options List */}
       <div className="card" style={{ padding: '10px 0' }}>
         <div 
-          onClick={toggleNotificaciones}
-          style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+          onClick={() => !globalNotifsDisabled && toggleNotificaciones()}
+          style={{ 
+            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+            cursor: globalNotifsDisabled ? 'not-allowed' : 'pointer',
+            opacity: globalNotifsDisabled ? 0.6 : 1
+          }}
         >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: notificaciones ? '#FCE4EC' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: notificaciones ? '#E91E63' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
+            <div style={{ background: (notificaciones && !globalNotifsDisabled) ? '#FCE4EC' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: (notificaciones && !globalNotifsDisabled) ? '#E91E63' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
               <Bell size={18} />
             </div>
             <div>
               <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones y Alertas</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Gestiona avisos y recordatorios</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+                {globalNotifsDisabled ? 'Desactivadas por el administrador' : 'Gestiona avisos y recordatorios'}
+              </div>
             </div>
           </div>
           <div style={{ 
-            width: '42px', height: '22px', background: notificaciones ? 'var(--primary)' : '#ccc', 
+            width: '42px', height: '22px', background: (notificaciones && !globalNotifsDisabled) ? 'var(--primary)' : '#ccc', 
             borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
           }}>
             <div style={{ 
               width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
-              position: 'absolute', left: notificaciones ? '22px' : '2px', top: '2px',
+              position: 'absolute', left: (notificaciones && !globalNotifsDisabled) ? '22px' : '2px', top: '2px',
               transition: 'left 0.3s'
             }}></div>
           </div>
