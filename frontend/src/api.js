@@ -230,7 +230,7 @@ export const ApiService = {
   },
 
   getRegistrosDiarios: async () => {
-    const res = await fetch(`${baseUrl}/registros-diarios/`, { headers: getHeaders() });
+    const res = await fetch(`${baseUrl}/registros-diarios`, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
