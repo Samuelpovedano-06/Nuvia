@@ -179,6 +179,7 @@ def get_public_status(db: Session = Depends(get_db)):
     if not config:
         return {
             "modo_mantenimiento": False,
+            "notificaciones_globales": True,
             "min_dias_ciclo": 21,
             "max_dias_ciclo": 45,
             "min_dias_periodo": 3,
@@ -186,6 +187,7 @@ def get_public_status(db: Session = Depends(get_db)):
         }
     return {
         "modo_mantenimiento": config.modo_mantenimiento,
+        "notificaciones_globales": config.notificaciones_globales,
         "min_dias_ciclo": config.min_dias_ciclo if config.min_dias_ciclo is not None else 21,
         "max_dias_ciclo": config.max_dias_ciclo if config.max_dias_ciclo is not None else 45,
         "min_dias_periodo": config.min_dias_periodo if config.min_dias_periodo is not None else 3,
