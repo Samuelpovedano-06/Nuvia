@@ -106,7 +106,8 @@ export default function AdminUsersScreen() {
 
   const filteredUsers = users.filter(u => 
     u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.rol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading && users.length === 0) {
@@ -325,7 +326,7 @@ export default function AdminUsersScreen() {
                       {viewingUser.estado}
                     </span>
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>ID: {viewingUser.id_usuaria.toString().slice(0, 8)}...</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-light)', textTransform: 'capitalize' }}>Rol: {viewingUser.rol}</div>
                 </div>
               </div>
               <button onClick={() => setShowViewModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}>
