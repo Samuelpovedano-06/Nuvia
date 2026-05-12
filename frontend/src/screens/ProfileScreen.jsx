@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun } from 'lucide-react';
 import { ApiService } from '../api';
 
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 function formatFecha(fecha) {
   if (!fecha) return '—';
@@ -58,7 +58,7 @@ export default function ProfileScreen() {
           if (config.edad) setEdad(String(config.edad));
           setNotificaciones(config.notificaciones ?? 1);
           setPrivacidadEstricta(config.privacidad_estricta ?? 0);
-          
+
           const dark = config.modo_oscuro ?? 0;
           setModoOscuro(dark);
           localStorage.setItem('nuvia_modo_oscuro', dark);
@@ -267,8 +267,8 @@ export default function ProfileScreen() {
           {loadingCiclos
             ? <span style={{ color: 'var(--text-light)' }}>...</span>
             : <span style={{ fontWeight: '600', color: 'var(--primary)' }}>
-                {ciclos.length} {ciclos.length === 1 ? 'ciclo' : 'ciclos'}
-              </span>
+              {ciclos.length} {ciclos.length === 1 ? 'ciclo' : 'ciclos'}
+            </span>
           }
         </div>
       </div>
@@ -279,10 +279,10 @@ export default function ProfileScreen() {
           <h4 style={{ fontSize: '16px', margin: 0, color: 'var(--primary)', fontWeight: '600', opacity: 0.9 }}>
             Configuración del ciclo
           </h4>
-          <button 
+          <button
             onClick={() => setIsCycleEditable(!isCycleEditable)}
-            style={{ 
-              background: isCycleEditable ? 'var(--primary)' : '#f1f5f9', 
+            style={{
+              background: isCycleEditable ? 'var(--primary)' : '#f1f5f9',
               color: isCycleEditable ? 'white' : '#64748b',
               border: 'none', borderRadius: '20px', padding: '6px 12px', fontSize: '12px',
               fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
@@ -293,7 +293,7 @@ export default function ProfileScreen() {
             {isCycleEditable ? 'Bloquear' : 'Editar'}
           </button>
         </div>
-        
+
         {/* Frecuencia Periodo (antes Duración Ciclo) */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', opacity: isCycleEditable ? 1 : 0.6 }}>
           <span style={{ color: 'var(--text-light)' }}>Frecuencia del periodo</span>
@@ -310,7 +310,7 @@ export default function ProfileScreen() {
           value={cycleDuration}
           onChange={handleDurationChange}
           className="custom-range"
-          style={{ 
+          style={{
             '--value': `${((cycleDuration - systemRanges.min_dias_ciclo) / (systemRanges.max_dias_ciclo - systemRanges.min_dias_ciclo)) * 100}%`,
             marginBottom: '6px',
             opacity: isCycleEditable ? 1 : 0.5,
@@ -338,7 +338,7 @@ export default function ProfileScreen() {
           value={periodDuration}
           onChange={handlePeriodChange}
           className="custom-range range-pink"
-          style={{ 
+          style={{
             '--value': `${((periodDuration - systemRanges.min_dias_periodo) / (systemRanges.max_dias_periodo - systemRanges.min_dias_periodo)) * 100}%`,
             '--thumb-color': '#FF9A9E',
             marginBottom: '6px',
@@ -354,22 +354,22 @@ export default function ProfileScreen() {
 
       {/* Banner de Notificaciones Desactivadas */}
       {globalNotifsDisabled && (
-        <div style={{ 
+        <div style={{
           background: '#FFF1F2', color: '#F6416C', padding: '12px 20px', borderRadius: '15px',
           marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px',
           border: '1px solid #FF9A9E'
         }}>
           <Bell size={18} />
-          <span><strong>Aviso:</strong> El administrador ha pausado las notificaciones globales del sistema.</span>
+          <span><strong>Aviso:</strong> El administrador ha pausado las notificaciones del sistema.</span>
         </div>
       )}
 
       {/* Options List */}
       <div className="card" style={{ padding: '10px 0' }}>
-        <div 
+        <div
           onClick={() => !globalNotifsDisabled && toggleNotificaciones()}
-          style={{ 
-            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+          style={{
+            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             cursor: globalNotifsDisabled ? 'not-allowed' : 'pointer',
             opacity: globalNotifsDisabled ? 0.6 : 1
           }}
@@ -385,19 +385,19 @@ export default function ProfileScreen() {
               </div>
             </div>
           </div>
-          <div style={{ 
-            width: '42px', height: '22px', background: (notificaciones && !globalNotifsDisabled) ? 'var(--primary)' : '#ccc', 
-            borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
+          <div style={{
+            width: '42px', height: '22px', background: (notificaciones && !globalNotifsDisabled) ? 'var(--primary)' : '#ccc',
+            borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
           }}>
-            <div style={{ 
-              width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
+            <div style={{
+              width: '18px', height: '18px', background: 'white', borderRadius: '50%',
               position: 'absolute', left: (notificaciones && !globalNotifsDisabled) ? '22px' : '2px', top: '2px',
               transition: 'left 0.3s'
             }}></div>
           </div>
         </div>
 
-        <div 
+        <div
           onClick={togglePrivacidad}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
         >
@@ -410,19 +410,19 @@ export default function ProfileScreen() {
               <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{privacidadEstricta ? 'Máxima protección activa' : 'Gestiona tus datos'}</div>
             </div>
           </div>
-          <div style={{ 
-            width: '42px', height: '22px', background: privacidadEstricta ? 'var(--primary)' : '#ccc', 
-            borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
+          <div style={{
+            width: '42px', height: '22px', background: privacidadEstricta ? 'var(--primary)' : '#ccc',
+            borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
           }}>
-            <div style={{ 
-              width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
+            <div style={{
+              width: '18px', height: '18px', background: 'white', borderRadius: '50%',
               position: 'absolute', left: privacidadEstricta ? '22px' : '2px', top: '2px',
               transition: 'left 0.3s'
             }}></div>
           </div>
         </div>
 
-        <div 
+        <div
           onClick={toggleModoOscuro}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
         >
@@ -435,12 +435,12 @@ export default function ProfileScreen() {
               <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{modoOscuro ? 'Tema noche activo' : 'Tema día activo'}</div>
             </div>
           </div>
-          <div style={{ 
-            width: '42px', height: '22px', background: modoOscuro ? '#444' : '#ccc', 
-            borderRadius: '12px', position: 'relative', transition: 'background 0.3s' 
+          <div style={{
+            width: '42px', height: '22px', background: modoOscuro ? '#444' : '#ccc',
+            borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
           }}>
-            <div style={{ 
-              width: '18px', height: '18px', background: 'white', borderRadius: '50%', 
+            <div style={{
+              width: '18px', height: '18px', background: 'white', borderRadius: '50%',
               position: 'absolute', left: modoOscuro ? '22px' : '2px', top: '2px',
               transition: 'left 0.3s'
             }}></div>
