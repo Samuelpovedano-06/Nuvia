@@ -22,6 +22,10 @@ export default function AdminPanelScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (user && user.rol !== 'admin') {
       navigate('/');
     } else {

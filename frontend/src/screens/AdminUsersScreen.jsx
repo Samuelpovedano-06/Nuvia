@@ -28,6 +28,10 @@ export default function AdminUsersScreen() {
   const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (user && user.rol !== 'admin') {
       navigate('/');
     } else {
