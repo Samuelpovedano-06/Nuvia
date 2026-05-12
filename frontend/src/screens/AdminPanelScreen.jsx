@@ -133,8 +133,8 @@ export default function AdminPanelScreen() {
       <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Configuración del sistema</h3>
       <div className="card" style={{ padding: '8px 0', marginBottom: '30px' }}>
         {[
-          { icon: <Settings size={18} />, label: 'Configuración de notificaciones', path: '/admin/config' },
-          { icon: <Zap size={18} />, label: 'Algoritmos de predicción', path: '/admin/config' },
+          { icon: <Settings size={18} />, label: 'Configuración de notificaciones', path: '/admin/config?tab=notifications' },
+          { icon: <Zap size={18} />, label: 'Algoritmos de predicción', path: '/admin/config?tab=predictions' },
           { icon: <Users size={18} />, label: 'Gestión de usuarios', path: '/admin/users' }
         ].map((item, i) => (
           <div 

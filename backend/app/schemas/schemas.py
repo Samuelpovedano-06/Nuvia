@@ -182,18 +182,20 @@ class AdminStatsOut(BaseModel):
 
 class AdminConfigUpdate(BaseModel):
     modo_mantenimiento: Optional[bool] = None
-    version_algoritmo: Optional[str] = None
     notificaciones_globales: Optional[bool] = None
     max_dias_ciclo: Optional[int] = None
     min_dias_ciclo: Optional[int] = None
+    max_dias_periodo: Optional[int] = None
+    min_dias_periodo: Optional[int] = None
 
 class AdminConfigOut(BaseModel):
     id: int
     modo_mantenimiento: bool
-    version_algoritmo: str
     notificaciones_globales: bool
     max_dias_ciclo: int
     min_dias_ciclo: int
+    max_dias_periodo: int
+    min_dias_periodo: int
     ultima_actualizacion: datetime
 
     class Config:

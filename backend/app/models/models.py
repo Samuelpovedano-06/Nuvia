@@ -113,4 +113,6 @@ class ConfiguracionSistema(Base):
     notificaciones_globales = Column(Boolean, default=True)
     max_dias_ciclo = Column(Integer, default=45)
     min_dias_ciclo = Column(Integer, default=21)
+    max_dias_periodo = Column(Integer, default=10)
+    min_dias_periodo = Column(Integer, default=3)
     ultima_actualizacion = Column(DateTime, default=func.now(), onupdate=func.now())
