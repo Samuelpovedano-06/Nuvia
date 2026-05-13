@@ -31,8 +31,8 @@ def run_migrations():
 
 try:
     run_migrations()
-except Exception:
-    pass
+except Exception as e:
+    print(f"Error en las migraciones: {e}")
 
 app = FastAPI(title="Nuvia API", version="1.2.0")
 

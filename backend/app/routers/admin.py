@@ -130,7 +130,10 @@ def create_user_admin(datos: UsuariaCreate, db: Session = Depends(get_db), _=Dep
     db.add(nueva)
     db.flush()
     
-    config = ConfiguracionUsuaria(id_usuaria=nueva.id_usuaria)
+    config = ConfiguracionUsuaria(
+        id_usuaria=nueva.id_usuaria,
+        fecha_nacimiento=datos.fecha_nacimiento
+    )
     db.add(config)
     db.commit()
     db.refresh(nueva)
