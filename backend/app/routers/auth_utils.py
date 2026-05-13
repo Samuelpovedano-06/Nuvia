@@ -60,11 +60,4 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(Usuaria).filter(Usuaria.id_usuaria == user_uuid).first()
     if user is None:
         raise credentials_exception
-        
-    if user.rol == "pareja" and not user.codigo_pareja:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cuenta de pareja no vinculada."
-        )
-        
     return user

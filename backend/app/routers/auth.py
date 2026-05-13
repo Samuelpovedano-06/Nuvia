@@ -62,12 +62,6 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
             detail="Email o contraseña incorrectos",
         )
 
-    if usuaria.rol == "pareja" and not usuaria.codigo_pareja:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cuenta de pareja no vinculada. Debes estar vinculado a una usuaria para acceder."
-        )
-
     token = create_access_token(data={"sub": str(usuaria.id_usuaria)})
     
     # Actualizar último acceso
