@@ -41,8 +41,11 @@ def registrar_usuaria(datos: UsuariaCreate, db: Session = Depends(get_db)):
     db.add(nueva)
     db.flush()  # obtener id_usuaria antes del commit
 
-    # Crear configuración por defecto
-    config = ConfiguracionUsuaria(id_usuaria=nueva.id_usuaria)
+    # Crear configuración por defecto con la fecha de nacimiento proporcionada
+    config = ConfiguracionUsuaria(
+        id_usuaria=nueva.id_usuaria,
+        fecha_nacimiento=datos.fecha_nacimiento
+    )
     db.add(config)
     db.commit()
     db.refresh(nueva)

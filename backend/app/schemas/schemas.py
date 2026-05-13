@@ -12,6 +12,7 @@ class UsuariaCreate(BaseModel):
     password: str
     rol: Optional[str] = "usuaria"
     codigo_pareja: Optional[str] = None
+    fecha_nacimiento: Optional[date] = None
 
 class UsuariaLogin(BaseModel):
     email: EmailStr
@@ -141,7 +142,7 @@ class ConfiguracionUpdate(BaseModel):
     privacidad_estricta: Optional[int] = None
     duracion_ciclo: Optional[int] = None
     duracion_periodo: Optional[int] = None
-    edad: Optional[int] = None
+    fecha_nacimiento: Optional[date] = None
     modo_oscuro: Optional[int] = None
     codigo_pareja: Optional[str] = None
 
@@ -152,7 +153,7 @@ class ConfiguracionOut(BaseModel):
     privacidad_estricta: int
     duracion_ciclo: int
     duracion_periodo: int
-    edad: Optional[int] = None
+    fecha_nacimiento: Optional[date] = None
     modo_oscuro: int
 
     class Config:

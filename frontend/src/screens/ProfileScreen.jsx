@@ -17,6 +17,18 @@ function formatFecha(fecha) {
   return `${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
+const calcularEdad = (fecha) => {
+  if (!fecha) return null;
+  const hoy = new Date();
+  const cumple = new Date(fecha);
+  let edad = hoy.getFullYear() - cumple.getFullYear();
+  const m = hoy.getMonth() - cumple.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < cumple.getDate())) {
+    edad--;
+  }
+  return edad;
+};
+
 const calcPuntosClave = (duracion) => {
   const ov = Math.max(7, duracion - 14);
   const p2 = Math.round(duracion * 0.18);
@@ -208,9 +220,9 @@ export default function ProfileScreen() {
   const [durationSaved, setDurationSaved] = useState(false);
   const [periodSaved, setPeriodSaved] = useState(false);
 
-  const [edad, setEdad] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [editingEdad, setEditingEdad] = useState(false);
-  const [edadInput, setEdadInput] = useState('');
+  const [fechaNacimientoInput, setFechaNacimientoInput] = useState('');
   const [editingPartnerCode, setEditingPartnerCode] = useState(false);
   const [partnerCodeInput, setPartnerCodeInput] = useState('');
 
@@ -339,7 +351,7 @@ export default function ProfileScreen() {
         if (config) {
           if (config.duracion_ciclo) setCycleDuration(config.duracion_ciclo);
           if (config.duracion_periodo) setPeriodDuration(config.duracion_periodo);
-          if (config.edad) setEdad(String(config.edad));
+          if (config.fecha_nacimiento) setFechaNacimiento(config.fecha_nacimiento);
           setNotificaciones(config.notificaciones ?? 1);
           setPrivacidadEstricta(config.privacidad_estricta ?? 0);
 
@@ -438,14 +450,14 @@ export default function ProfileScreen() {
     }, 600);
   };
 
-  const handleSaveEdad = async () => {
-    const val = edadInput.trim();
-    if (val && Number(val) > 0) {
-      setEdad(val);
+  const handleSaveFechaNacimiento = async () => {
+    const val = fechaNacimientoInput;
+    if (val) {
+      setFechaNacimiento(val);
       try {
-        await ApiService.updateConfig({ edad: Number(val) });
+        await ApiService.updateConfig({ fecha_nacimiento: val });
       } catch (err) {
-        console.error("Error al guardar edad:", err);
+        console.error("Error al guardar fecha nacimiento:", err);
       }
     }
     setEditingEdad(false);
@@ -523,26 +535,27 @@ export default function ProfileScreen() {
           {editingEdad ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
-                type="number"
-                value={edadInput}
-                onChange={e => setEdadInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSaveEdad()}
+                type="date"
+                value={fechaNacimientoInput}
+                onChange={e => setFechaNacimientoInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSaveFechaNacimiento()}
                 autoFocus
-                min={10} max={99}
                 style={{
-                  width: '60px', padding: '4px 8px', border: '1px solid var(--primary)',
-                  borderRadius: '8px', fontSize: '14px', textAlign: 'center', outline: 'none'
+                  width: '130px', padding: '4px 8px', border: '1px solid var(--primary)',
+                  borderRadius: '8px', fontSize: '13px', outline: 'none'
                 }}
               />
-              <button onClick={handleSaveEdad} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex' }}>
+              <button onClick={handleSaveFechaNacimiento} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex' }}>
                 <Check size={18} />
               </button>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{edad ? `${edad} años` : '—'}</span>
+              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
+                {fechaNacimiento ? `${calcularEdad(fechaNacimiento)} años` : '—'}
+              </span>
               <button
-                onClick={() => { setEdadInput(edad); setEditingEdad(true); }}
+                onClick={() => { setFechaNacimientoInput(fechaNacimiento || ''); setEditingEdad(true); }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
               >
                 <Pencil size={14} />

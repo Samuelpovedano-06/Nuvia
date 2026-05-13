@@ -101,7 +101,7 @@ class ConfiguracionUsuaria(Base):
     privacidad_estricta = Column(SmallInteger, server_default="0")
     duracion_ciclo     = Column(SmallInteger, server_default="28")
     duracion_periodo   = Column(SmallInteger, server_default="5")
-    edad               = Column(SmallInteger, nullable=True)
+    fecha_nacimiento   = Column(Date, nullable=True)
     modo_oscuro        = Column(SmallInteger, server_default="0")
 
     usuaria = relationship("Usuaria", back_populates="configuracion")

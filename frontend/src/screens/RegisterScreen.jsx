@@ -14,13 +14,14 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState('usuaria');
   const [codigoPareja, setCodigoPareja] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await register(nombre, email, password, role, role === 'pareja' ? codigoPareja : null);
+      await register(nombre, email, password, role, role === 'pareja' ? codigoPareja : null, fechaNacimiento || null);
       await login(email, password); // Auto login tras registro exitoso
       navigate('/');
     } catch (err) {
@@ -99,6 +100,17 @@ export default function RegisterScreen() {
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="password-toggle" style={{ top: '38px' }}>
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Tu Fecha de Nacimiento</label>
+            <input 
+              type="date" 
+              className="styled-input" 
+              value={fechaNacimiento}
+              onChange={(e) => setFechaNacimiento(e.target.value)}
+              required
+            />
           </div>
           
           {role === 'pareja' && (

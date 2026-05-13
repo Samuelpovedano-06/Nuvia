@@ -14,6 +14,9 @@ def run_migrations():
         conn.execute(text("ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS min_dias_periodo INTEGER DEFAULT 3"))
         conn.execute(text("ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS max_dias_periodo INTEGER DEFAULT 10"))
         
+        # Migraciones para fecha de nacimiento
+        conn.execute(text("ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE"))
+        
         # Migraciones para vinculación de parejas
         conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS mi_codigo VARCHAR(10) UNIQUE"))
         conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS codigo_pareja VARCHAR(10)"))

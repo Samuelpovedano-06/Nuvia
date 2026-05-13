@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets } from 'lucide-react';
+import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const getPhaseInfo = (day, duration = 28) => {
   if (day <= 5) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
@@ -22,6 +22,10 @@ export default function HomeScreen() {
   const [userConfig, setUserConfig] = useState(null);
   const [rawCiclos, setRawCiclos] = useState([]);
   const [customAdvice, setCustomAdvice] = useState(null);
+  const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,6 +84,19 @@ export default function HomeScreen() {
           });
           const abierto = ciclos.find(c => !c.fecha_fin);
           setActiveCycle(abierto);
+        } else {
+          // Caso: Sin ciclos registrados
+          setCycleStatus({
+            day: 0,
+            phase: '¡Bienvenida!',
+            desc: 'Introduce tu primer ciclo para ayudarte a predecir tu ritmo.',
+            color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+            progress: 0
+          });
+          setNextEvents({
+            period: 'Pendiente',
+            fertile: 'Pendiente'
+          });
         }
       } catch (err) {
         console.error(err);
@@ -108,7 +125,7 @@ export default function HomeScreen() {
     setShowConfirm(false);
     try {
       setLoadingData(true);
-      const hoy = new Date().toISOString().split('T')[0];
+      const hoy = logDate;
 
       if (activeCycle) {
         // CERRAR CICLO (Terminó hoy)
@@ -186,7 +203,9 @@ export default function HomeScreen() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <Calendar size={16} />
-          <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '11px' }}>Día {cycleStatus.day || '—'} de tu ciclo</span>
+          <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '11px' }}>
+            {cycleStatus.day > 0 ? `Día ${cycleStatus.day} de tu ciclo` : 'Nuvia te acompaña'}
+          </span>
         </div>
         <h3 style={{ fontSize: '26px', margin: '0 0 5px 0', color: 'white' }}>{cycleStatus.phase}</h3>
         <p style={{ margin: 0, opacity: 0.95, fontSize: '15px', fontWeight: '500' }}>{cycleStatus.desc}</p>
@@ -236,37 +255,139 @@ export default function HomeScreen() {
 
         </div>
 
-        {/* Botón de Registro Inteligente (Dual) */}
-        <button 
-          onClick={() => setShowConfirm(true)}
-          disabled={loadingData}
-          style={{
-            width: '100%',
-            marginTop: '16px',
-            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', // Siempre Nuvia
-            color: 'white',
-            border: 'none',
-            padding: '16px',
-            borderRadius: '20px',
-            fontSize: '15px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            boxShadow: '0 4px 15px rgba(246, 65, 108, 0.2)',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          {activeCycle ? <Calendar size={18} /> : <Heart size={18} fill="white" />}
-          {loadingData 
-            ? 'Procesando...' 
-            : (activeCycle ? 'Mi periodo terminó hoy' : 'Hoy empezó mi periodo')
-          }
-        </button>
+        {/* Contenedor de Acción Dual */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginTop: '20px' }}>
+          {/* Botón de Registro */}
+          <button 
+            onClick={() => setShowConfirm(true)}
+            disabled={loadingData}
+            style={{
+              flex: 1,
+              background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+              color: 'white',
+              border: 'none',
+              padding: '16px 10px',
+              borderRadius: '18px',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(246, 65, 108, 0.2)',
+              transition: 'all 0.3s ease',
+              height: '51px'
+            }}
+          >
+            {activeCycle ? <Calendar size={16} /> : <Heart size={16} fill="white" />}
+            <span style={{ whiteSpace: 'nowrap' }}>{activeCycle ? 'Terminó' : 'Empezó'}</span>
+          </button>
+
+          {/* Selector de Fecha */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase', marginLeft: '4px' }}>
+              {activeCycle ? 'Terminó' : 'Empezó'}
+            </label>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Calendar size={16} style={{ position: 'absolute', left: '14px', color: 'var(--primary)', opacity: 0.7 }} />
+              <div 
+                onClick={() => setShowDatePicker(true)}
+                style={{
+                  width: '100%',
+                  padding: '16px 10px 16px 40px',
+                  borderRadius: '18px',
+                  border: '1.5px solid rgba(176, 91, 181, 0.15)',
+                  background: 'white',
+                  fontSize: '13px',
+                  color: 'var(--text-dark)',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden'
+                }}
+              >
+                {new Date(logDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal de Calendario Custom */}
+        {showDatePicker && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1100, padding: '20px'
+          }}>
+            <div className="card" style={{ maxWidth: '350px', width: '100%', padding: '20px', background: 'white', borderRadius: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <button 
+                  onClick={() => {
+                    if (pickerMonth === 0) { setPickerMonth(11); setPickerYear(pickerYear - 1); }
+                    else setPickerMonth(pickerMonth - 1);
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <span style={{ fontWeight: '700', color: 'var(--primary)', textTransform: 'capitalize' }}>
+                  {new Date(pickerYear, pickerMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                </span>
+                <button 
+                  onClick={() => {
+                    if (pickerMonth === 11) { setPickerMonth(0); setPickerYear(pickerYear + 1); }
+                    else setPickerMonth(pickerMonth + 1);
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
+                {['L','M','X','J','V','S','D'].map(d => <div key={d} style={{ fontSize: '11px', fontWeight: '800', color: '#cbd5e1' }}>{d}</div>)}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                {Array.from({ length: (new Date(pickerYear, pickerMonth, 1).getDay() + 6) % 7 }).map((_, i) => <div key={`e-${i}`}></div>)}
+                {Array.from({ length: new Date(pickerYear, pickerMonth + 1, 0).getDate() }).map((_, i) => {
+                  const d = i + 1;
+                  const dateStr = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                  const isSelected = logDate === dateStr;
+                  const isFuture = new Date(pickerYear, pickerMonth, d) > new Date();
+                  return (
+                    <div 
+                      key={d} 
+                      onClick={() => { if (!isFuture) { setLogDate(dateStr); setShowDatePicker(false); } }}
+                      style={{
+                        aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '13px', fontWeight: isSelected ? '700' : '500', borderRadius: '12px',
+                        cursor: isFuture ? 'default' : 'pointer',
+                        background: isSelected ? 'var(--primary)' : 'transparent',
+                        color: isSelected ? 'white' : (isFuture ? '#e2e8f0' : 'var(--text-dark)'),
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {d}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <button 
+                onClick={() => setShowDatePicker(false)}
+                style={{ width: '100%', marginTop: '20px', padding: '10px', borderRadius: '12px', border: 'none', background: '#f1f5f9', color: '#64748b', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Grid Menu */}
