@@ -24,7 +24,6 @@ const PartnerScreen = () => {
       if (res.error) {
         setError(res.error);
       } else {
-        setSuccess('Solicitud enviada. Esperando a que tu pareja la acepte.');
         await getMe(); // Actualizar estado local
       }
     } catch (err) {
@@ -110,7 +109,6 @@ const PartnerScreen = () => {
               }}
             />
             {error && <p style={{ color: '#F6416C', fontSize: '13px', marginTop: '8px', textAlign: 'center' }}>{error}</p>}
-            {success && <p style={{ color: '#10B981', fontSize: '13px', marginTop: '8px', textAlign: 'center' }}>{success}</p>}
           </div>
 
           <button
