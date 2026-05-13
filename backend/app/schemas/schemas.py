@@ -17,6 +17,7 @@ class UsuariaCreate(BaseModel):
 class UsuariaLogin(BaseModel):
     email: EmailStr
     password: str
+    plataforma: Optional[str] = "usuaria"
 
 class UsuariaOut(BaseModel):
     id_usuaria: UUID

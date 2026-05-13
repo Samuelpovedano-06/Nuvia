@@ -16,7 +16,7 @@ export const ApiService = {
     const res = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, role })
+      body: JSON.stringify({ email, password, plataforma: role })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al iniciar sesión');

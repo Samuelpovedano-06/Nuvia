@@ -62,6 +62,32 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
             detail="Email o contraseña incorrectos",
         )
 
+    # Validaciones de plataforma según el rol
+    plataforma = datos.plataforma or "usuaria"
+
+    if usuaria.rol == "admin":
+        # Admin puede entrar por donde quiera
+        pass
+    elif usuaria.rol == "pareja":
+        if plataforma != "pareja":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Como usuario pareja, solo puedes iniciar sesión desde el panel de Pareja."
+            )
+    elif usuaria.rol == "usuaria":
+        if plataforma == "pareja":
+            # Comprobar si tiene alguna pareja asociada (usuarios con rol pareja que apuntan a su mi_codigo)
+            parejas_vinculadas = db.query(Usuaria).filter(
+                Usuaria.rol == "pareja", 
+                Usuaria.codigo_pareja == usuaria.mi_codigo
+            ).count()
+            
+            if parejas_vinculadas == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No puedes acceder como pareja porque no tienes ninguna pareja vinculada a tu cuenta."
+                )
+    
     token = create_access_token(data={"sub": str(usuaria.id_usuaria)})
     
     # Actualizar último acceso
