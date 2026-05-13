@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { navigate, useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
 import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -27,6 +27,8 @@ export default function HomeScreen() {
   const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
 
+  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.codigo_pareja;
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -44,7 +46,7 @@ export default function HomeScreen() {
         if (ciclos.length > 0) {
           setRawCiclos(ciclos);
           setUserConfig(config);
-          
+
           const ultimoCiclo = ciclos[0];
           const fechaInicio = new Date(ultimoCiclo.fecha_inicio);
           const hoy = new Date();
@@ -52,7 +54,7 @@ export default function HomeScreen() {
           const diffTime = Math.abs(hoy - fechaInicio);
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
           const diaActual = (diffDays % duracion) + 1;
-          
+
           const phase = getPhaseInfo(diaActual, duracion);
           setCycleStatus({
             day: diaActual,
@@ -66,7 +68,6 @@ export default function HomeScreen() {
           const allSymptoms = [...(sToday || []), ...(sYesterday || [])];
           generateDynamicAdvice(allSymptoms, dToday);
 
-          // ... resto de lógica de eventos ...
           const diasParaPeriodo = duracion - diaActual;
           const proximoPeriodo = diasParaPeriodo === 0 ? '¡Hoy!' : `En ${diasParaPeriodo} ${diasParaPeriodo === 1 ? 'día' : 'días'}`;
           let fertileMsg = '—';
@@ -85,7 +86,6 @@ export default function HomeScreen() {
           const abierto = ciclos.find(c => !c.fecha_fin);
           setActiveCycle(abierto);
         } else {
-          // Caso: Sin ciclos registrados
           setCycleStatus({
             day: 0,
             phase: '¡Bienvenida!',
@@ -128,57 +128,57 @@ export default function HomeScreen() {
       const hoy = logDate;
 
       if (activeCycle) {
-        // CERRAR CICLO (Terminó hoy)
         await ApiService.actualizarCiclo(activeCycle.id, { fecha_fin: hoy });
-        
-        // --- MOTOR DE APRENDIZAJE NUVIA ---
         const todosLosCiclos = await ApiService.getCiclos();
         const completados = todosLosCiclos.filter(c => c.fecha_inicio && c.fecha_fin);
-        
         if (completados.length > 0) {
           const updates = {};
-          
-          // 1. Calcular nueva duración promedio del periodo (lo rojo)
           let totalPeriodo = 0;
           completados.forEach(c => {
             const diff = (new Date(c.fecha_fin) - new Date(c.fecha_inicio)) / (86400000);
             totalPeriodo += Math.floor(diff) + 1;
           });
           const nuevaDuracionP = Math.round(totalPeriodo / completados.length);
-          if (nuevaDuracionP !== userConfig.duracion_periodo) {
-            updates.duracion_periodo = nuevaDuracionP;
-          }
+          if (nuevaDuracionP !== userConfig.duracion_periodo) updates.duracion_periodo = nuevaDuracionP;
 
-          // 2. Calcular nueva frecuencia promedio (el ciclo)
           if (todosLosCiclos.length >= 2) {
             let totalCiclo = 0;
             let count = 0;
             for (let i = 0; i < Math.min(3, todosLosCiclos.length - 1); i++) {
-              const diff = Math.abs(new Date(todosLosCiclos[i].fecha_inicio) - new Date(todosLosCiclos[i+1].fecha_inicio)) / 86400000;
+              const diff = Math.abs(new Date(todosLosCiclos[i].fecha_inicio) - new Date(todosLosCiclos[i + 1].fecha_inicio)) / 86400000;
               totalCiclo += Math.floor(diff);
               count++;
             }
             const nuevaFrecuencia = Math.round(totalCiclo / count);
-            if (nuevaFrecuencia !== userConfig.duracion_ciclo) {
-              updates.duracion_ciclo = nuevaFrecuencia;
-            }
+            if (nuevaFrecuencia !== userConfig.duracion_ciclo) updates.duracion_ciclo = nuevaFrecuencia;
           }
-
-          if (Object.keys(updates).length > 0) {
-            await ApiService.updateConfig(updates);
-          }
+          if (Object.keys(updates).length > 0) await ApiService.updateConfig(updates);
         }
       } else {
-        // EMPEZAR NUEVO CICLO
         await ApiService.crearCiclo({ fecha_inicio: hoy });
       }
-      
-      window.location.reload(); 
+      window.location.reload();
     } catch (err) {
       alert('Error al procesar el registro: ' + err.message);
       setLoadingData(false);
     }
   };
+
+  const displayAsEmpty = (rawCiclos.length === 0 || isUnlinkedPareja);
+
+  const statusToDisplay = displayAsEmpty ? {
+    day: 0,
+    phase: '¡Bienvenida!',
+    desc: isUnlinkedPareja ? 'Vincula tu cuenta con tu pareja desde el perfil para empezar.' : 'Introduce tu primer ciclo para ayudarte a predecir tu ritmo.',
+    color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+    progress: 0
+  } : cycleStatus;
+
+  const eventsToDisplay = displayAsEmpty ? {
+    period: 'Pendiente',
+    fertile: 'Pendiente',
+    ovulation: '—'
+  } : nextEvents;
 
   return (
     <div className="screen-container">
@@ -192,9 +192,8 @@ export default function HomeScreen() {
         </button>
       </div>
 
-      {/* Hero Card de Fase (Estilo Premium Flo) */}
-      <div className="card" style={{ 
-        background: cycleStatus.color, color: 'white', padding: '25px', 
+      <div className="card" style={{
+        background: statusToDisplay.color, color: 'white', padding: '25px',
         border: 'none', marginBottom: '20px', position: 'relative', overflow: 'hidden',
         boxShadow: '0 8px 25px rgba(0,0,0,0.1)'
       }}>
@@ -204,17 +203,16 @@ export default function HomeScreen() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <Calendar size={16} />
           <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '11px' }}>
-            {cycleStatus.day > 0 ? `Día ${cycleStatus.day} de tu ciclo` : 'Nuvia te acompaña'}
+            {statusToDisplay.day > 0 ? `Día ${statusToDisplay.day} de tu ciclo` : 'Nuvia te acompaña'}
           </span>
         </div>
-        <h3 style={{ fontSize: '26px', margin: '0 0 5px 0', color: 'white' }}>{cycleStatus.phase}</h3>
-        <p style={{ margin: 0, opacity: 0.95, fontSize: '15px', fontWeight: '500' }}>{cycleStatus.desc}</p>
+        <h3 style={{ fontSize: '26px', margin: '0 0 5px 0', color: 'white' }}>{statusToDisplay.phase}</h3>
+        <p style={{ margin: 0, opacity: 0.95, fontSize: '15px', fontWeight: '500' }}>{statusToDisplay.desc}</p>
       </div>
 
-      {/* Escáner de Bienestar Inteligente */}
-      {customAdvice && (
-        <div className="card" style={{ 
-          background: customAdvice.color, border: `1px solid ${customAdvice.color}`, 
+      {customAdvice && !isUnlinkedPareja && (
+        <div className="card" style={{
+          background: customAdvice.color, border: `1px solid ${customAdvice.color}`,
           padding: '14px 18px', marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center',
           animation: 'scaleIn 0.3s ease', margin: '0 0 20px 0'
         }}>
@@ -228,37 +226,35 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* Caja de Indicadores Rápidos */}
       <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.5)', border: '1px solid #f1f5f9', margin: '0 0 16px 0' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-          
-          {/* Días Fértiles */}
           <div style={{ textAlign: 'center' }}>
             <div style={{ color: '#9C27B0', marginBottom: '4px' }}><Sparkles size={18} style={{ margin: '0 auto' }} /></div>
             <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Fértil</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{nextEvents.fertile}</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.fertile}</div>
           </div>
-
-          {/* Próximo Periodo */}
           <div style={{ textAlign: 'center', borderLeft: '1px solid #eee', borderRight: '1px solid #eee' }}>
             <div style={{ color: '#F6416C', marginBottom: '4px' }}><Heart size={18} fill="#F6416C" style={{ margin: '0 auto' }} /></div>
             <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Periodo</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{nextEvents.period}</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.period}</div>
           </div>
-
-          {/* Ovulación */}
           <div style={{ textAlign: 'center' }}>
             <div style={{ color: '#7C3AED', marginBottom: '4px' }}><Zap size={18} fill="#7C3AED" style={{ margin: '0 auto' }} /></div>
             <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Ovulac.</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{nextEvents.ovulation}</div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.ovulation || nextEvents.ovulation || '—'}</div>
           </div>
-
         </div>
 
-        {/* Contenedor de Acción Dual */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginTop: '20px' }}>
-          {/* Botón de Registro */}
-          <button 
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          alignItems: 'flex-end', 
+          marginTop: '20px', 
+          pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
+          filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
+          opacity: isUnlinkedPareja ? 0.6 : 1
+        }}>
+          <button
             onClick={() => setShowConfirm(true)}
             disabled={loadingData}
             style={{
@@ -284,14 +280,13 @@ export default function HomeScreen() {
             <span style={{ whiteSpace: 'nowrap' }}>{activeCycle ? 'Terminó' : 'Empezó'}</span>
           </button>
 
-          {/* Selector de Fecha */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase', marginLeft: '4px' }}>
               {activeCycle ? 'Terminó' : 'Empezó'}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Calendar size={16} style={{ position: 'absolute', left: '14px', color: 'var(--primary)', opacity: 0.7 }} />
-              <div 
+              <div
                 onClick={() => setShowDatePicker(true)}
                 style={{
                   width: '100%',
@@ -315,94 +310,53 @@ export default function HomeScreen() {
             </div>
           </div>
         </div>
-
-        {/* Modal de Calendario Custom */}
-        {showDatePicker && (
-          <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1100, padding: '20px'
-          }}>
-            <div className="card" style={{ maxWidth: '350px', width: '100%', padding: '20px', background: 'white', borderRadius: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <button 
-                  onClick={() => {
-                    if (pickerMonth === 0) { setPickerMonth(11); setPickerYear(pickerYear - 1); }
-                    else setPickerMonth(pickerMonth - 1);
-                  }}
-                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <span style={{ fontWeight: '700', color: 'var(--primary)', textTransform: 'capitalize' }}>
-                  {new Date(pickerYear, pickerMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                </span>
-                <button 
-                  onClick={() => {
-                    if (pickerMonth === 11) { setPickerMonth(0); setPickerYear(pickerYear + 1); }
-                    else setPickerMonth(pickerMonth + 1);
-                  }}
-                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
-                {['L','M','X','J','V','S','D'].map(d => <div key={d} style={{ fontSize: '11px', fontWeight: '800', color: '#cbd5e1' }}>{d}</div>)}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-                {Array.from({ length: (new Date(pickerYear, pickerMonth, 1).getDay() + 6) % 7 }).map((_, i) => <div key={`e-${i}`}></div>)}
-                {Array.from({ length: new Date(pickerYear, pickerMonth + 1, 0).getDate() }).map((_, i) => {
-                  const d = i + 1;
-                  const dateStr = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                  const isSelected = logDate === dateStr;
-                  const isFuture = new Date(pickerYear, pickerMonth, d) > new Date();
-                  return (
-                    <div 
-                      key={d} 
-                      onClick={() => { if (!isFuture) { setLogDate(dateStr); setShowDatePicker(false); } }}
-                      style={{
-                        aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '13px', fontWeight: isSelected ? '700' : '500', borderRadius: '12px',
-                        cursor: isFuture ? 'default' : 'pointer',
-                        background: isSelected ? 'var(--primary)' : 'transparent',
-                        color: isSelected ? 'white' : (isFuture ? '#e2e8f0' : 'var(--text-dark)'),
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      {d}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              <button 
-                onClick={() => setShowDatePicker(false)}
-                style={{ width: '100%', marginTop: '20px', padding: '10px', borderRadius: '12px', border: 'none', background: '#f1f5f9', color: '#64748b', fontWeight: '600', cursor: 'pointer' }}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Grid Menu */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div className="card" onClick={() => navigate('/sintomas')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
+        <div 
+          className="card" 
+          onClick={() => !isUnlinkedPareja && navigate('/sintomas')} 
+          style={{ 
+            textAlign: 'center', 
+            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
+            margin: 0, 
+            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
+            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
+            opacity: isUnlinkedPareja ? 0.6 : 1
+          }}
+        >
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌸</div>
           <h4 style={{ margin: 0 }}>Registrar Síntoma</h4>
         </div>
-        <div className="card" onClick={() => navigate('/calendar')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
+        <div 
+          className="card" 
+          onClick={() => !isUnlinkedPareja && navigate('/calendar')} 
+          style={{ 
+            textAlign: 'center', 
+            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
+            margin: 0, 
+            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
+            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
+            opacity: isUnlinkedPareja ? 0.6 : 1
+          }}
+        >
           <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
             <Calendar size={32} />
           </div>
           <h4 style={{ margin: 0 }}>Calendario y Ciclo</h4>
         </div>
-        <div className="card" onClick={() => navigate('/wellness')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
+        <div 
+          className="card" 
+          onClick={() => !isUnlinkedPareja && navigate('/wellness')} 
+          style={{ 
+            textAlign: 'center', 
+            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
+            margin: 0, 
+            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
+            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
+            opacity: isUnlinkedPareja ? 0.6 : 1
+          }}
+        >
           <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
             <Sparkles size={32} />
           </div>
@@ -416,56 +370,70 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Modal de Confirmación Estilo Nuvia Adaptado */}
-      {showConfirm && (
+      {showDatePicker && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease'
+          zIndex: 1100, padding: '20px'
         }}>
-          <div className="card" style={{
-            maxWidth: '320px', width: '100%', padding: '25px', textAlign: 'center',
-            background: 'white', borderRadius: '25px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }}>
-            <div style={{ 
-              width: '60px', height: '60px', borderRadius: '50%', 
-              background: '#FFF1F2',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 15px', color: '#F6416C'
-            }}>
+          <div className="card" style={{ maxWidth: '350px', width: '100%', padding: '20px', background: 'white', borderRadius: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <button onClick={() => { if (pickerMonth === 0) { setPickerMonth(11); setPickerYear(pickerYear - 1); } else setPickerMonth(pickerMonth - 1); }} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>
+                <ChevronLeft size={20} />
+              </button>
+              <span style={{ fontWeight: '700', color: 'var(--primary)', textTransform: 'capitalize' }}>
+                {new Date(pickerYear, pickerMonth).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+              </span>
+              <button onClick={() => { if (pickerMonth === 11) { setPickerMonth(0); setPickerYear(pickerYear + 1); } else setPickerMonth(pickerMonth + 1); }} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>
+                <ChevronRight size={20} />
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
+              {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} style={{ fontSize: '11px', fontWeight: '800', color: '#cbd5e1' }}>{d}</div>)}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+              {Array.from({ length: (new Date(pickerYear, pickerMonth, 1).getDay() + 6) % 7 }).map((_, i) => <div key={`e-${i}`}></div>)}
+              {Array.from({ length: new Date(pickerYear, pickerMonth + 1, 0).getDate() }).map((_, i) => {
+                const d = i + 1;
+                const dateStr = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isSelected = logDate === dateStr;
+                const isFuture = new Date(pickerYear, pickerMonth, d) > new Date();
+                return (
+                  <div key={d} onClick={() => { if (!isFuture) { setLogDate(dateStr); setShowDatePicker(false); } }}
+                    style={{
+                      aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '13px', fontWeight: isSelected ? '700' : '500', borderRadius: '12px',
+                      cursor: isFuture ? 'default' : 'pointer',
+                      background: isSelected ? 'var(--primary)' : 'transparent',
+                      color: isSelected ? 'white' : (isFuture ? '#e2e8f0' : 'var(--text-dark)'),
+                      transition: 'all 0.2s'
+                    }}>
+                    {d}
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setShowDatePicker(false)} style={{ width: '100%', marginTop: '20px', padding: '10px', borderRadius: '12px', border: 'none', background: '#f1f5f9', color: '#64748b', fontWeight: '600', cursor: 'pointer' }}>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showConfirm && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px'
+        }}>
+          <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '25px', textAlign: 'center', background: 'white', borderRadius: '25px' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', color: '#F6416C' }}>
               {activeCycle ? <Calendar size={30} /> : <Heart size={30} fill="#F6416C" />}
             </div>
-            <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>
-              {activeCycle ? '¿Terminó tu periodo?' : '¿Empezó tu periodo?'}
-            </h3>
-            <p style={{ margin: '0 0 25px', fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
-              {activeCycle 
-                ? 'Nuvia calculará tu duración real para ajustar tus predicciones automáticamente.'
-                : 'Registraremos hoy como el primer día de tu nuevo ciclo.'}
-            </p>
+            <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>{activeCycle ? '¿Terminó tu periodo?' : '¿Empezó tu periodo?'}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button 
-                onClick={handleLogPeriod}
-                style={{
-                  background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
-                  color: 'white', border: 'none', padding: '12px', borderRadius: '15px',
-                  fontWeight: 'bold', fontSize: '14px', cursor: 'pointer',
-                  boxShadow: '0 4px 10px rgba(246, 65, 108, 0.3)'
-                }}
-              >
-                {activeCycle ? 'Sí, terminó hoy' : 'Sí, empezó hoy'}
-              </button>
-              <button 
-                onClick={() => setShowConfirm(false)}
-                style={{
-                  background: 'transparent', color: '#999', border: 'none',
-                  padding: '10px', fontSize: '14px', cursor: 'pointer'
-                }}
-              >
-                Ahora no
-              </button>
+              <button onClick={handleLogPeriod} style={{ background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', color: 'white', border: 'none', padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Confirmar</button>
+              <button onClick={() => setShowConfirm(false)} style={{ background: 'transparent', color: '#999', border: 'none', padding: '10px', cursor: 'pointer' }}>Cancelar</button>
             </div>
           </div>
         </div>

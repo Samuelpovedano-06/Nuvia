@@ -65,7 +65,7 @@ function App() {
       <Routes>
         <Route path="/login" element={!user ? <LoginScreen /> : <Navigate to="/" />} />
         <Route path="/register" element={!user ? <RegisterScreen /> : <Navigate to="/" />} />
-        
+
         {/* Rutas protegidas */}
         <Route path="/" element={user ? <HomeScreen /> : <Navigate to="/login" />} />
         <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
@@ -75,7 +75,7 @@ function App() {
         <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.rol === 'admin' ? <AdminUsersScreen /> : <Navigate to="/" />} />
         <Route path="/admin/config" element={user?.rol === 'admin' ? <AdminConfigScreen /> : <Navigate to="/" />} />
-        
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
