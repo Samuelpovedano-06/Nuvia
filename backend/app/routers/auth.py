@@ -58,7 +58,7 @@ def registrar_usuaria(datos: UsuariaCreate, db: Session = Depends(get_db)):
     return nueva
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
     """Devuelve un JWT si las credenciales son correctas."""
 
@@ -77,10 +77,7 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
         pass
     elif usuaria.rol == "pareja":
         if plataforma != "pareja":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Como usuaria pareja, solo puedes iniciar sesión desde el panel de Pareja."
-            )
+            return {"error": "Como usuaria pareja, solo puedes iniciar sesión desde el panel de Pareja."}
     elif usuaria.rol == "usuaria":
         if plataforma == "pareja":
             # Comprobar si tiene alguna pareja asociada (usuarios con rol pareja que apuntan a su mi_codigo)
@@ -90,10 +87,7 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
             ).count()
             
             if parejas_vinculadas == 0:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="No puedes acceder como pareja porque no tienes ninguna pareja vinculada a tu cuenta."
-                )
+                return {"error": "No puedes acceder como pareja porque no tienes ninguna pareja vinculada a tu cuenta."}
     
     token = create_access_token(data={"sub": str(usuaria.id_usuaria)})
     

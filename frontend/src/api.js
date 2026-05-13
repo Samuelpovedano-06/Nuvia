@@ -20,6 +20,7 @@ export const ApiService = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al iniciar sesión');
+    if (data.error) throw new Error(data.error);
     localStorage.setItem('token', data.access_token);
     return data;
   },
