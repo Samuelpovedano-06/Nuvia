@@ -22,7 +22,10 @@ export default function HomeScreen() {
   const [userConfig, setUserConfig] = useState(null);
   const [rawCiclos, setRawCiclos] = useState([]);
   const [customAdvice, setCustomAdvice] = useState(null);
-  const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+  const [logDate, setLogDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
