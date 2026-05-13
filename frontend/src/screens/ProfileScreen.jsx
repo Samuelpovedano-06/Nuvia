@@ -209,8 +209,26 @@ const SINTOMA_STYLE = {
 };
 
 export default function ProfileScreen() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, getMe } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const [showRejectionPopup, setShowRejectionPopup] = useState(false);
+
+  useEffect(() => {
+    if (user?.solicitud_estado === 'rechazada') {
+      setShowRejectionPopup(true);
+    }
+  }, [user]);
+
+  const handleCloseRejection = async () => {
+    setShowRejectionPopup(false);
+    try {
+      await ApiService.limpiarRechazo();
+      if (getMe) await getMe();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const [ciclos, setCiclos] = useState([]);
   const [loadingCiclos, setLoadingCiclos] = useState(true);
@@ -1223,6 +1241,30 @@ export default function ProfileScreen() {
           return <>{pages}</>;
         })(),
         document.body
+      )}
+      {showRejectionPopup && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px'
+        }}>
+          <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '30px' }}>
+            <div style={{ color: '#F6416C', marginBottom: '20px' }}><X size={50} strokeWidth={3} /></div>
+            <h2 style={{ fontSize: '22px', margin: '0 0 10px 0' }}>Solicitud no aceptada</h2>
+            <p style={{ color: 'var(--text-light)', marginBottom: '25px', lineHeight: '1.5' }}>
+              Tu pareja no ha aceptado la solicitud de vinculación en este momento. Puedes volver a intentarlo más tarde o con otro código.
+            </p>
+            <button 
+              onClick={handleCloseRejection}
+              style={{ 
+                width: '100%', background: 'var(--primary)', color: 'white', border: 'none', 
+                padding: '15px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer'
+              }}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

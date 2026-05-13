@@ -33,6 +33,9 @@ class UsuariaOut(BaseModel):
     total_notas: Optional[int] = 0
     ultima_fecha_periodo: Optional[date] = None
     estado: Optional[str] = "Activa"
+    solicitud_id: Optional[UUID] = None
+    solicitud_estado: Optional[str] = None
+    nombre_solicitante: Optional[str] = None
 
     class Config:
         from_attributes = True

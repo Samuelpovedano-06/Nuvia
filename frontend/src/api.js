@@ -267,5 +267,34 @@ export const ApiService = {
     if (!res.ok) throw new Error(data.detail || 'Error al actualizar configuración');
     if (data.error) throw new Error(data.error);
     return data;
+  },
+
+  aceptarPareja: async () => {
+    const res = await fetch(`${baseUrl}/configuracion/aceptar-pareja`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+  },
+
+  rechazarPareja: async () => {
+    const res = await fetch(`${baseUrl}/configuracion/rechazar-pareja`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data;
+  },
+
+  limpiarRechazo: async () => {
+    const res = await fetch(`${baseUrl}/configuracion/limpiar-rechazo`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    const data = await res.json();
+    return data;
   }
 };

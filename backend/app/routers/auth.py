@@ -165,4 +165,8 @@ def reset_password(datos: ResetPasswordRequest, db: Session = Depends(get_db)):
 def get_me(db: Session = Depends(get_db),
            current_user: Usuaria = Depends(get_current_user)):
     """Devuelve los datos de la usuaria autenticada."""
+    if current_user.solicitud_id:
+        solicitante = db.query(Usuaria).filter(Usuaria.id_usuaria == current_user.solicitud_id).first()
+        if solicitante:
+            current_user.nombre_solicitante = solicitante.nombre
     return current_user

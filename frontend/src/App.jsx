@@ -12,6 +12,7 @@ import AdminConfigScreen from './screens/AdminConfigScreen';
 import SymptomsScreen from './screens/SymptomsScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import WellnessScreen from './screens/WellnessScreen';
+import PartnerScreen from './screens/PartnerScreen';
 import { Heart, Sparkles, Calendar, User, Home, Flower2 } from 'lucide-react';
 
 const BottomNav = () => {
@@ -20,7 +21,7 @@ const BottomNav = () => {
   const navigate = useNavigate();
 
   if (!user) return null;
-  
+
   // No mostrar en login/register
   const noNavRoutes = ['/login', '/register'];
   if (noNavRoutes.includes(location.pathname)) return null;
@@ -39,7 +40,7 @@ const BottomNav = () => {
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         const isDisabled = item.restricted && isUnlinkedPareja;
-        
+
         return (
           <button
             key={item.path}
@@ -113,6 +114,7 @@ function App() {
         <Route path="/sintomas" element={user ? <SymptomsScreen /> : <Navigate to="/login" />} />
         <Route path="/calendar" element={user ? <CalendarScreen /> : <Navigate to="/login" />} />
         <Route path="/wellness" element={user ? <WellnessScreen /> : <Navigate to="/login" />} />
+        <Route path="/pareja" element={user ? <PartnerScreen /> : <Navigate to="/login" />} />
         <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.rol === 'admin' ? <AdminUsersScreen /> : <Navigate to="/" />} />
         <Route path="/admin/config" element={user?.rol === 'admin' ? <AdminConfigScreen /> : <Navigate to="/" />} />

@@ -13,6 +13,8 @@ class Usuaria(Base):
     rol            = Column(String(20), nullable=False, server_default="usuaria")
     mi_codigo      = Column(String(10), unique=True, nullable=True)
     codigo_pareja  = Column(String(10), ForeignKey("usuarias.mi_codigo"), nullable=True)
+    solicitud_id   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=True)
+    solicitud_estado = Column(String(20), nullable=True) # 'pendiente', 'rechazada'
     otp            = Column(String(10), nullable=True)
     otp_expiry     = Column(DateTime, nullable=True)
     fecha_registro = Column(DateTime, server_default=func.now())
