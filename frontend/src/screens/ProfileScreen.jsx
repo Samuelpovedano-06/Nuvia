@@ -479,6 +479,7 @@ export default function ProfileScreen() {
       window.location.reload(); 
     } catch (err) {
       console.error("Error al guardar código de pareja:", err);
+      alert(err.message);
     }
     setEditingPartnerCode(false);
   };

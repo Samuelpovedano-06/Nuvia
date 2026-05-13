@@ -30,13 +30,20 @@ def registrar_usuaria(datos: UsuariaCreate, db: Session = Depends(get_db)):
             if not db.query(Usuaria).filter(Usuaria.mi_codigo == mi_codigo).first():
                 break
 
+    # Validar codigo_pareja si se proporciona
+    codigo_pareja = datos.codigo_pareja or None
+    if codigo_pareja:
+        existe = db.query(Usuaria).filter(Usuaria.mi_codigo == codigo_pareja).first()
+        if not existe:
+            raise HTTPException(status_code=404, detail="El código de pareja proporcionado no existe.")
+
     nueva = Usuaria(
         nombre         = datos.nombre,
         email          = datos.email,
         password_hash = hash_password(datos.password),
         rol           = datos.rol or "usuaria",
         mi_codigo     = mi_codigo,
-        codigo_pareja = datos.codigo_pareja or None
+        codigo_pareja = codigo_pareja
     )
     db.add(nueva)
     db.flush()  # obtener id_usuaria antes del commit

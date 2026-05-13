@@ -31,6 +31,15 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
 
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         if campo == "codigo_pareja":
+            if valor:
+                # Validar que el código existe y no es el propio
+                if valor == current_user.mi_codigo:
+                    raise HTTPException(status_code=400, detail="No puedes vincularte a tu propio código.")
+                
+                existe = db.query(Usuaria).filter(Usuaria.mi_codigo == valor).first()
+                if not existe:
+                    raise HTTPException(status_code=404, detail="El código de pareja no es válido o no existe.")
+                
             current_user.codigo_pareja = valor
         else:
             setattr(config, campo, valor)
