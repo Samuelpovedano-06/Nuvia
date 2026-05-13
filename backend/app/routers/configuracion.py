@@ -19,7 +19,7 @@ def obtener_configuracion(db: Session = Depends(get_db),
     return config
 
 
-@router.put("/", response_model=ConfiguracionOut)
+@router.put("/")
 def actualizar_configuracion(datos: ConfiguracionUpdate,
                               db: Session = Depends(get_db),
                               current_user: Usuaria = Depends(get_current_user)):
@@ -34,11 +34,11 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
             if valor:
                 # Validar que el código existe y no es el propio
                 if valor == current_user.mi_codigo:
-                    raise HTTPException(status_code=400, detail="No puedes vincularte a tu propio código.")
+                    return {"error": "No puedes vincularte a tu propio código."}
                 
                 existe = db.query(Usuaria).filter(Usuaria.mi_codigo == valor).first()
                 if not existe:
-                    raise HTTPException(status_code=404, detail="El código de pareja no es válido o no existe.")
+                    return {"error": "El código de pareja no es válido o no existe."}
                 
             current_user.codigo_pareja = valor
         else:

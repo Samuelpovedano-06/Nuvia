@@ -264,6 +264,7 @@ export const ApiService = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al actualizar configuración');
+    if (data.error) throw new Error(data.error);
     return data;
   }
 };
