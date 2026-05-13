@@ -319,14 +319,14 @@ export default function HomeScreen() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '85px',
-            padding: '12px'
+            minHeight: '100px',
+            padding: '14px'
           }}
         >
-          <div style={{ color: 'var(--primary)', marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>
-            <MessageSquare size={26} />
+          <div style={{ color: 'var(--primary)', marginBottom: '6px', display: 'flex', justifyContent: 'center' }}>
+            <MessageSquare size={30} />
           </div>
-          <h4 style={{ margin: 0, fontSize: '13px' }}>Chats Secretos</h4>
+          <h4 style={{ margin: 0, fontSize: '14px' }}>Chats Secretos</h4>
         </div>
 
         <div 
@@ -343,14 +343,14 @@ export default function HomeScreen() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '85px',
-            padding: '12px'
+            minHeight: '100px',
+            padding: '14px'
           }}
         >
-          <div style={{ color: 'var(--primary)', marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>
-            <Users size={26} />
+          <div style={{ color: 'var(--primary)', marginBottom: '6px', display: 'flex', justifyContent: 'center' }}>
+            <Users size={30} />
           </div>
-          <h4 style={{ margin: 0, fontSize: '13px' }}>Mi pareja</h4>
+          <h4 style={{ margin: 0, fontSize: '14px' }}>Mi pareja</h4>
         </div>
 
         <div 
@@ -367,14 +367,14 @@ export default function HomeScreen() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '85px',
-            padding: '12px'
+            minHeight: '100px',
+            padding: '14px'
           }}
         >
-          <div style={{ color: 'var(--primary)', marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>
-            <Sparkles size={26} />
+          <div style={{ color: 'var(--primary)', marginBottom: '6px', display: 'flex', justifyContent: 'center' }}>
+            <Sparkles size={30} />
           </div>
-          <h4 style={{ margin: 0, fontSize: '13px' }}>Mi Bienestar</h4>
+          <h4 style={{ margin: 0, fontSize: '14px' }}>Mi Bienestar</h4>
         </div>
       </div>
 
