@@ -24,11 +24,11 @@ export const ApiService = {
     return data;
   },
 
-  register: async (nombre, email, password) => {
+  register: async (nombre, email, password, rol, codigo_pareja) => {
     const res = await fetch(`${baseUrl}/auth/registro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password })
+      body: JSON.stringify({ nombre, email, password, rol, codigo_pareja })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al registrarse');

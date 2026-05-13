@@ -536,6 +536,16 @@ export default function ProfileScreen() {
             </div>
           )}
         </div>
+        
+        {/* Mi Código */}
+        {user?.mi_codigo && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '14px' }}>
+            <span style={{ color: 'var(--text-light)' }}>Mi Código de Nuvia</span>
+            <span style={{ fontWeight: '700', color: 'var(--primary)', letterSpacing: '1px', background: 'rgba(176,91,181,0.05)', padding: '2px 8px', borderRadius: '6px' }}>
+              {user.mi_codigo}
+            </span>
+          </div>
+        )}
 
         {/* Desde */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '14px' }}>

@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }) => {
     await checkAuth();
   };
 
-  const register = async (nombre, email, password) => {
-    await ApiService.register(nombre, email, password);
+  const register = async (nombre, email, password, rol, codigo_pareja) => {
+    await ApiService.register(nombre, email, password, rol, codigo_pareja);
   };
 
   const logout = () => {

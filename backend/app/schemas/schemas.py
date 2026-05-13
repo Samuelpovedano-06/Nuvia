@@ -11,6 +11,7 @@ class UsuariaCreate(BaseModel):
     email: EmailStr
     password: str
     rol: Optional[str] = "usuaria"
+    codigo_pareja: Optional[str] = None
 
 class UsuariaLogin(BaseModel):
     email: EmailStr
@@ -21,6 +22,8 @@ class UsuariaOut(BaseModel):
     nombre: str
     email: str
     rol: str
+    mi_codigo: Optional[str] = None
+    codigo_pareja: Optional[str] = None
     fecha_registro: Optional[datetime]
     ultimo_acceso: Optional[datetime]
     total_ciclos: Optional[int] = 0

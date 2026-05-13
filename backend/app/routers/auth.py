@@ -21,11 +21,22 @@ def registrar_usuaria(datos: UsuariaCreate, db: Session = Depends(get_db)):
     if existente:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
 
+    # Generar mi_codigo si es usuaria o admin
+    mi_codigo = None
+    if (datos.rol or "usuaria") in ["usuaria", "admin"]:
+        while True:
+            # Alfanumérico de 6 caracteres (ej: A1B2C3)
+            mi_codigo = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            if not db.query(Usuaria).filter(Usuaria.mi_codigo == mi_codigo).first():
+                break
+
     nueva = Usuaria(
-        nombre        = datos.nombre,
-        email         = datos.email,
+        nombre         = datos.nombre,
+        email          = datos.email,
         password_hash = hash_password(datos.password),
-        rol           = datos.rol or "usuaria"
+        rol           = datos.rol or "usuaria",
+        mi_codigo     = mi_codigo,
+        codigo_pareja = datos.codigo_pareja
     )
     db.add(nueva)
     db.flush()  # obtener id_usuaria antes del commit
