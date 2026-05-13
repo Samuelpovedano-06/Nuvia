@@ -27,7 +27,7 @@ const calcPuntosClave = (duracion) => {
     .sort((a, b) => a - b);
 };
 
-const getPuntosDetalle = (puntosClave) => {
+const getPuntosDetalle = (puntosClave, selectedPoint) => {
   const [d1, d2, d3, d4, d5, d6, d7] = puntosClave;
   const r = {};
   if (d1) r[d1] = { title: `Día ${d1}: Inicio`, desc: 'Menstruación. Fase de renovación.' };
@@ -37,6 +37,11 @@ const getPuntosDetalle = (puntosClave) => {
   if (d5) r[d5] = { title: `Día ${d5}: Fase Lútea`, desc: 'Progesterona activa.' };
   if (d6) r[d6] = { title: `Día ${d6}: Pico Lúteo`, desc: 'Posibles síntomas pre.' };
   if (d7) r[d7] = { title: `Día ${d7}: Cierre`, desc: 'Fin del ciclo actual.' };
+
+  // Si el punto seleccionado no tiene detalle, devolvemos uno genérico
+  if (selectedPoint && !r[selectedPoint]) {
+    return { ...r, [selectedPoint]: { title: `Día ${selectedPoint}`, desc: 'Progreso de tu ciclo actual.' } };
+  }
   return r;
 };
 
@@ -62,10 +67,13 @@ const getYOnCurve = (x, ovulacionX, width, height) => {
   }
 };
 
-const CycleGraph = ({ duracion = 28, onSelectPoint, selectedPoint }) => {
+const CycleGraph = ({ duracion = 28, onSelectPoint, selectedPoint, diaActual }) => {
   const width = 800;
   const height = 60;
-  const puntosClave = calcPuntosClave(duracion);
+  // Añadimos el día actual a los puntos clave para que siempre sea visible
+  const puntosBase = calcPuntosClave(duracion);
+  const puntosClave = [...new Set([...puntosBase, diaActual])].sort((a, b) => a - b);
+  
   const ovulacion = Math.max(7, duracion - 14);
   const ovulacionX = (ovulacion / duracion) * width;
   const getX = (dia) => (dia / duracion) * width;
@@ -79,9 +87,24 @@ const CycleGraph = ({ duracion = 28, onSelectPoint, selectedPoint }) => {
           const x = getX(dia);
           const y = getYOnCurve(x, ovulacionX, width, height);
           const isSelected = selectedPoint === dia;
+          const isUserDay = diaActual === dia;
+          
           return (
             <g key={dia} onClick={() => onSelectPoint(dia)} style={{ cursor: 'pointer' }}>
-              <circle cx={x} cy={y} r={isSelected ? "6" : "4"} fill={isSelected ? "var(--primary)" : "#fff"} stroke="var(--primary)" strokeWidth="2" />
+              {isUserDay ? (
+                <g transform={`translate(${x - 12}, ${y - 12})`}>
+                  <OvuloIcon size={24} color="var(--primary)" />
+                </g>
+              ) : (
+                <circle 
+                  cx={x} 
+                  cy={y} 
+                  r={isSelected ? "6" : "4"} 
+                  fill={isSelected ? "var(--primary)" : "#fff"} 
+                  stroke="var(--primary)" 
+                  strokeWidth="2" 
+                />
+              )}
             </g>
           );
         })}
@@ -96,7 +119,7 @@ export default function CalendarScreen() {
   const [ciclos, setCiclos] = useState([]);
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPoint, setSelectedPoint] = useState(14);
+  const [selectedPoint, setSelectedPoint] = useState(1);
   const [diaActual, setDiaActual] = useState(1);
 
   useEffect(() => {
@@ -113,9 +136,10 @@ export default function CalendarScreen() {
           const duracion = configData?.duracion_ciclo || 28;
           const hoy = new Date();
           const inicio = new Date(ciclosData[0].fecha_inicio);
-          const d = (Math.floor((hoy - inicio) / 86400000) % duracion) + 1;
+          const diffTime = Math.abs(hoy - inicio);
+          const d = (Math.floor(diffTime / 86400000) % duracion) + 1;
           setDiaActual(d);
-          setSelectedPoint(Math.max(7, duracion - 14));
+          setSelectedPoint(d);
         }
       } catch (err) {
         console.error("Error:", err);
@@ -212,7 +236,7 @@ export default function CalendarScreen() {
   if (loading) return <div className="screen-container"><div className="loader"></div></div>;
 
   const puntosClave = calcPuntosClave(config?.duracion_ciclo || 28);
-  const puntosDetalle = getPuntosDetalle(puntosClave);
+  const puntosDetalle = getPuntosDetalle(puntosClave, selectedPoint);
   const tooltipInfo = puntosDetalle[selectedPoint] || {};
 
   return (
@@ -232,6 +256,7 @@ export default function CalendarScreen() {
           duracion={config?.duracion_ciclo || 28} 
           onSelectPoint={setSelectedPoint} 
           selectedPoint={selectedPoint} 
+          diaActual={diaActual}
         />
         <div style={{
           marginTop: '15px', background: '#FDF2F8', padding: '12px', borderRadius: '15px',
