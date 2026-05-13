@@ -13,6 +13,17 @@ def run_migrations():
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS min_dias_periodo INTEGER DEFAULT 3"))
         conn.execute(text("ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS max_dias_periodo INTEGER DEFAULT 10"))
+        
+        # Migraciones para vinculación de parejas
+        conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS mi_codigo VARCHAR(10) UNIQUE"))
+        conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS codigo_pareja VARCHAR(10)"))
+        
+        # Intentar añadir la FK por separado para evitar fallos si ya existe
+        try:
+            conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_codigo_pareja FOREIGN KEY (codigo_pareja) REFERENCES usuarias(mi_codigo)"))
+        except Exception:
+            pass
+            
         conn.commit()
 
 try:
