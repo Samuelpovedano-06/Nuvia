@@ -72,7 +72,7 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
         if plataforma != "pareja":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Como usuario pareja, solo puedes iniciar sesión desde el panel de Pareja."
+                detail="Como usuaria pareja, solo puedes iniciar sesión desde el panel de Pareja."
             )
     elif usuaria.rol == "usuaria":
         if plataforma == "pareja":
