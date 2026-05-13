@@ -30,7 +30,10 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
         raise HTTPException(status_code=404, detail="Configuración no encontrada")
 
     for campo, valor in datos.model_dump(exclude_unset=True).items():
-        setattr(config, campo, valor)
+        if campo == "codigo_pareja":
+            current_user.codigo_pareja = valor
+        else:
+            setattr(config, campo, valor)
     db.commit()
     db.refresh(config)
     return config

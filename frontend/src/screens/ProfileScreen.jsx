@@ -211,6 +211,8 @@ export default function ProfileScreen() {
   const [edad, setEdad] = useState('');
   const [editingEdad, setEditingEdad] = useState(false);
   const [edadInput, setEdadInput] = useState('');
+  const [editingPartnerCode, setEditingPartnerCode] = useState(false);
+  const [partnerCodeInput, setPartnerCodeInput] = useState('');
 
   // Estados de configuración
   const [notificaciones, setNotificaciones] = useState(1);
@@ -448,6 +450,18 @@ export default function ProfileScreen() {
     }
     setEditingEdad(false);
   };
+  
+  const handleSavePartnerCode = async () => {
+    const val = partnerCodeInput.trim().toUpperCase();
+    try {
+      await ApiService.updateConfig({ codigo_pareja: val || null });
+      // Forzar recarga de datos del usuario para ver el cambio
+      window.location.reload(); 
+    } catch (err) {
+      console.error("Error al guardar código de pareja:", err);
+    }
+    setEditingPartnerCode(false);
+  };
 
   const toggleNotificaciones = () => {
     const newVal = notificaciones === 1 ? 0 : 1;
@@ -547,10 +561,39 @@ export default function ProfileScreen() {
           </div>
         )}
 
-        {/* Desde */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '14px' }}>
-          <span style={{ color: 'var(--text-light)' }}>Usando Nuvia desde</span>
-          <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{formatFecha(user?.fecha_registro)}</span>
+        {/* Código de Pareja */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
+          <span style={{ color: 'var(--text-light)' }}>Código de mi pareja</span>
+          {editingPartnerCode ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="text"
+                value={partnerCodeInput}
+                onChange={e => setPartnerCodeInput(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleSavePartnerCode()}
+                autoFocus
+                maxLength={6}
+                placeholder="EJ: A1B2C3"
+                style={{
+                  width: '90px', padding: '4px 8px', border: '1px solid var(--primary)',
+                  borderRadius: '8px', fontSize: '13px', textAlign: 'center', outline: 'none'
+                }}
+              />
+              <button onClick={handleSavePartnerCode} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex' }}>
+                <Check size={18} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{user?.codigo_pareja || 'No vinculado'}</span>
+              <button
+                onClick={() => { setPartnerCodeInput(user?.codigo_pareja || ''); setEditingPartnerCode(true); }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Ciclos */}

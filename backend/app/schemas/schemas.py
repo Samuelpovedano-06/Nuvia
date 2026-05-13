@@ -143,6 +143,7 @@ class ConfiguracionUpdate(BaseModel):
     duracion_periodo: Optional[int] = None
     edad: Optional[int] = None
     modo_oscuro: Optional[int] = None
+    codigo_pareja: Optional[str] = None
 
 class ConfiguracionOut(BaseModel):
     id_usuaria: UUID
