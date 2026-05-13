@@ -128,7 +128,7 @@ export default function HomeScreen() {
       const hoy = logDate;
 
       if (activeCycle) {
-        await ApiService.actualizarCiclo(activeCycle.id, { fecha_fin: hoy });
+        await ApiService.actualizarCiclo(activeCycle.id_ciclo, { fecha_fin: hoy });
         const todosLosCiclos = await ApiService.getCiclos();
         const completados = todosLosCiclos.filter(c => c.fecha_inicio && c.fecha_fin);
         if (completados.length > 0) {
