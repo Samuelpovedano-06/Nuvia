@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight, MessageSquare, Users } from 'lucide-react';
 
 const getPhaseInfo = (day, duration = 28) => {
   if (day <= 5) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
@@ -361,6 +361,40 @@ export default function HomeScreen() {
             <Sparkles size={32} />
           </div>
           <h4 style={{ margin: 0 }}>Mi Bienestar</h4>
+        </div>
+        <div 
+          className="card" 
+          onClick={() => !isUnlinkedPareja && navigate('/pareja')} 
+          style={{ 
+            textAlign: 'center', 
+            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
+            margin: 0, 
+            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
+            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
+            opacity: isUnlinkedPareja ? 0.6 : 1
+          }}
+        >
+          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+            <Users size={32} />
+          </div>
+          <h4 style={{ margin: 0 }}>Pareja</h4>
+        </div>
+        <div 
+          className="card" 
+          onClick={() => !isUnlinkedPareja && navigate('/chats')} 
+          style={{ 
+            textAlign: 'center', 
+            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
+            margin: 0, 
+            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
+            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
+            opacity: isUnlinkedPareja ? 0.6 : 1
+          }}
+        >
+          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+            <MessageSquare size={32} />
+          </div>
+          <h4 style={{ margin: 0 }}>Chats Secretos</h4>
         </div>
         <div className="card" onClick={() => navigate('/profile')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
           <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
