@@ -77,8 +77,6 @@ class HistorialEstado(Base):
     id_historial   = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     id_usuaria     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
     fecha          = Column(Date, nullable=False)
-    estado_general = Column(String(50))
-    humor          = Column(String(50))
 
     usuaria = relationship("Usuaria", back_populates="historial")
 
