@@ -315,7 +315,7 @@ export default function HomeScreen() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div 
           className="card" 
-          onClick={() => !isUnlinkedPareja && navigate('/sintomas')} 
+          onClick={() => !isUnlinkedPareja && navigate('/chats')} 
           style={{ 
             textAlign: 'center', 
             cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
@@ -330,10 +330,12 @@ export default function HomeScreen() {
             minHeight: '110px'
           }}
         >
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌸</div>
-          <h4 style={{ margin: 0 }}>Registrar Síntoma</h4>
+          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+            <MessageSquare size={32} />
+          </div>
+          <h4 style={{ margin: 0 }}>Chats Secretos</h4>
         </div>
-        
+
         <div 
           className="card" 
           onClick={() => !isUnlinkedPareja && navigate('/pareja')} 
@@ -359,7 +361,7 @@ export default function HomeScreen() {
 
         <div 
           className="card" 
-          onClick={() => !isUnlinkedPareja && navigate('/chats')} 
+          onClick={() => !isUnlinkedPareja && navigate('/wellness')} 
           style={{ 
             textAlign: 'center', 
             cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
@@ -375,9 +377,9 @@ export default function HomeScreen() {
           }}
         >
           <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-            <MessageSquare size={32} />
+            <Sparkles size={32} />
           </div>
-          <h4 style={{ margin: 0 }}>Chats Secretos</h4>
+          <h4 style={{ margin: 0 }}>Mi Bienestar</h4>
         </div>
       </div>
 

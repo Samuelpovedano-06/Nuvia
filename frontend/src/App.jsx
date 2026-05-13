@@ -12,7 +12,7 @@ import AdminConfigScreen from './screens/AdminConfigScreen';
 import SymptomsScreen from './screens/SymptomsScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import WellnessScreen from './screens/WellnessScreen';
-import { Heart, Sparkles, Calendar, User, Home } from 'lucide-react';
+import { Heart, Sparkles, Calendar, User, Home, Flower2 } from 'lucide-react';
 
 const BottomNav = () => {
   const { user } = useContext(AuthContext);
@@ -29,7 +29,7 @@ const BottomNav = () => {
 
   const navItems = [
     { label: 'Inicio', icon: <Home size={22} />, path: '/', restricted: false },
-    { label: 'Bienestar', icon: <Sparkles size={22} />, path: '/wellness', restricted: true },
+    { label: 'Síntomas', icon: <Flower2 size={22} />, path: '/sintomas', restricted: true },
     { label: 'Ciclo', icon: <Calendar size={22} />, path: '/calendar', restricted: true },
     { label: 'Perfil', icon: <User size={22} />, path: '/profile', restricted: false },
   ];
