@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils, Calendar } from 'lucide-react';
 import { ApiService } from '../api';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -223,6 +223,10 @@ export default function ProfileScreen() {
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [editingEdad, setEditingEdad] = useState(false);
   const [fechaNacimientoInput, setFechaNacimientoInput] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear() - 25);
+  const [viewMode, setViewMode] = useState('days'); // 'days', 'years'
   const [editingPartnerCode, setEditingPartnerCode] = useState(false);
   const [partnerCodeInput, setPartnerCodeInput] = useState('');
 
@@ -351,7 +355,12 @@ export default function ProfileScreen() {
         if (config) {
           if (config.duracion_ciclo) setCycleDuration(config.duracion_ciclo);
           if (config.duracion_periodo) setPeriodDuration(config.duracion_periodo);
-          if (config.fecha_nacimiento) setFechaNacimiento(config.fecha_nacimiento);
+          if (config.fecha_nacimiento) {
+            setFechaNacimiento(config.fecha_nacimiento);
+            const d = new Date(config.fecha_nacimiento);
+            setPickerMonth(d.getMonth());
+            setPickerYear(d.getFullYear());
+          }
           setNotificaciones(config.notificaciones ?? 1);
           setPrivacidadEstricta(config.privacidad_estricta ?? 0);
 
@@ -450,8 +459,7 @@ export default function ProfileScreen() {
     }, 600);
   };
 
-  const handleSaveFechaNacimiento = async () => {
-    const val = fechaNacimientoInput;
+  const handleSaveFechaNacimiento = async (val) => {
     if (val) {
       setFechaNacimiento(val);
       try {
@@ -460,7 +468,7 @@ export default function ProfileScreen() {
         console.error("Error al guardar fecha nacimiento:", err);
       }
     }
-    setEditingEdad(false);
+    setShowDatePicker(false);
   };
   
   const handleSavePartnerCode = async () => {
@@ -532,37 +540,129 @@ export default function ProfileScreen() {
         {/* Edad */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-light)' }}>Edad</span>
-          {editingEdad ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="date"
-                value={fechaNacimientoInput}
-                onChange={e => setFechaNacimientoInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSaveFechaNacimiento()}
-                autoFocus
-                style={{
-                  width: '130px', padding: '4px 8px', border: '1px solid var(--primary)',
-                  borderRadius: '8px', fontSize: '13px', outline: 'none'
-                }}
-              />
-              <button onClick={handleSaveFechaNacimiento} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex' }}>
-                <Check size={18} />
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
-                {fechaNacimiento ? `${calcularEdad(fechaNacimiento)} años` : '—'}
-              </span>
-              <button
-                onClick={() => { setFechaNacimientoInput(fechaNacimiento || ''); setEditingEdad(true); }}
-                style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
-              >
-                <Pencil size={14} />
-              </button>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
+              {fechaNacimiento ? `${calcularEdad(fechaNacimiento)} años` : '—'}
+            </span>
+            <button
+              onClick={() => setShowDatePicker(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
+            >
+              <Pencil size={14} />
+            </button>
+          </div>
         </div>
+
+        {/* Modal de Calendario Custom para Perfil */}
+        {showDatePicker && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1100, padding: '20px'
+          }}>
+            <div className="card" style={{ maxWidth: '350px', width: '100%', padding: '20px', background: 'white', borderRadius: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <button 
+                  onClick={() => {
+                    if (viewMode === 'days') {
+                      if (pickerMonth === 0) { setPickerMonth(11); setPickerYear(pickerYear - 1); }
+                      else setPickerMonth(pickerMonth - 1);
+                    } else {
+                      setPickerYear(pickerYear - 12);
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                
+                <div 
+                  onClick={() => setViewMode(viewMode === 'days' ? 'years' : 'days')}
+                  style={{ fontWeight: '700', color: 'var(--primary)', textTransform: 'capitalize', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  {viewMode === 'days' 
+                    ? `${new Date(pickerYear, pickerMonth).toLocaleDateString('es-ES', { month: 'long' })} ${pickerYear}`
+                    : 'Selecciona Año'
+                  }
+                </div>
+
+                <button 
+                  onClick={() => {
+                    if (viewMode === 'days') {
+                      if (pickerMonth === 11) { setPickerMonth(0); setPickerYear(pickerYear + 1); }
+                      else setPickerMonth(pickerMonth + 1);
+                    } else {
+                      setPickerYear(pickerYear + 12);
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+
+              {viewMode === 'days' ? (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
+                    {['L','M','X','J','V','S','D'].map(d => <div key={d} style={{ fontSize: '11px', fontWeight: '800', color: '#cbd5e1' }}>{d}</div>)}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                    {Array.from({ length: (new Date(pickerYear, pickerMonth, 1).getDay() + 6) % 7 }).map((_, i) => <div key={`e-${i}`}></div>)}
+                    {Array.from({ length: new Date(pickerYear, pickerMonth + 1, 0).getDate() }).map((_, i) => {
+                      const d = i + 1;
+                      const dateStr = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                      const isSelected = fechaNacimiento === dateStr;
+                      const isFuture = new Date(pickerYear, pickerMonth, d) > new Date();
+                      return (
+                        <div 
+                          key={d} 
+                          onClick={() => { if (!isFuture) handleSaveFechaNacimiento(dateStr); }}
+                          style={{
+                            aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '13px', fontWeight: isSelected ? '700' : '500', borderRadius: '12px',
+                            cursor: isFuture ? 'default' : 'pointer',
+                            background: isSelected ? 'var(--primary)' : 'transparent',
+                            color: isSelected ? 'white' : (isFuture ? '#e2e8f0' : 'var(--text-dark)'),
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {d}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  {Array.from({ length: 12 }, (_, i) => pickerYear - 5 + i).map(y => (
+                    <div 
+                      key={y}
+                      onClick={() => { setPickerYear(y); setViewMode('days'); }}
+                      style={{
+                        padding: '10px', borderRadius: '12px', textAlign: 'center',
+                        fontSize: '14px', fontWeight: y === pickerYear ? '700' : '500',
+                        background: y === pickerYear ? 'var(--primary)' : '#f8fafc',
+                        color: y === pickerYear ? 'white' : 'var(--text-dark)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {y}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <button 
+                onClick={() => setShowDatePicker(false)}
+                style={{ width: '100%', marginTop: '20px', padding: '12px', borderRadius: '16px', border: 'none', background: '#f1f5f9', color: '#64748b', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
         
         {/* Mi Código */}
         {user?.mi_codigo && (
