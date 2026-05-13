@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
 import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 
