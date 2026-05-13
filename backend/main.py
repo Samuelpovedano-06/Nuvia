@@ -8,31 +8,31 @@ from app.routers import auth, sintomas, diario, ciclos, configuracion, historial
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
 
-# Migraciones incrementales para columnas añadidas después de la creación inicial
+# Migraciones incrementales — cada sentencia es independiente
 def run_migrations():
+    migrations = [
+        "ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS min_dias_periodo INTEGER DEFAULT 3",
+        "ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS max_dias_periodo INTEGER DEFAULT 10",
+        "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS mi_codigo VARCHAR(10) UNIQUE",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS codigo_pareja VARCHAR(10)",
+    ]
     with engine.connect() as conn:
-        conn.execute(text("ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS min_dias_periodo INTEGER DEFAULT 3"))
-        conn.execute(text("ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS max_dias_periodo INTEGER DEFAULT 10"))
-        
-        # Migraciones para fecha de nacimiento
-        conn.execute(text("ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE"))
-        
-        # Migraciones para vinculación de parejas
-        conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS mi_codigo VARCHAR(10) UNIQUE"))
-        conn.execute(text("ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS codigo_pareja VARCHAR(10)"))
-        
-        # Intentar añadir la FK por separado para evitar fallos si ya existe
+        for sql in migrations:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                print(f"[migration skip] {e}")
+        # FK separada — puede ya existir
         try:
             conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_codigo_pareja FOREIGN KEY (codigo_pareja) REFERENCES usuarias(mi_codigo)"))
+            conn.commit()
         except Exception:
-            pass
-            
-        conn.commit()
+            conn.rollback()
 
-try:
-    run_migrations()
-except Exception as e:
-    print(f"Error en las migraciones: {e}")
+run_migrations()
 
 app = FastAPI(title="Nuvia API", version="1.2.0")
 
