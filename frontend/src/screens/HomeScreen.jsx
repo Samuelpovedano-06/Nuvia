@@ -182,74 +182,74 @@ export default function HomeScreen() {
 
   return (
     <div className="screen-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div>
-          <h2 style={{ margin: 0 }}>Hola, {user?.nombre || 'Usuaria'}</h2>
-          <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '14px' }}>¿Cómo te sientes hoy?</p>
+          <h2 style={{ margin: 0, fontSize: '20px' }}>Hola, {user?.nombre || 'Usuaria'}</h2>
+          <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '13px' }}>¿Cómo te sientes hoy?</p>
         </div>
-        <button onClick={logout} style={{ background: 'transparent', border: '1px solid var(--primary-light)', padding: '8px 16px', borderRadius: '20px', color: 'var(--primary)', cursor: 'pointer', marginLeft: '20px' }}>
+        <button onClick={logout} style={{ background: 'transparent', border: '1.5px solid var(--primary-light)', padding: '6px 14px', borderRadius: '14px', color: 'var(--primary)', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
           Salir
         </button>
       </div>
 
       <div className="card" style={{
-        background: statusToDisplay.color, color: 'white', padding: '25px',
-        border: 'none', marginBottom: '20px', position: 'relative', overflow: 'hidden',
-        boxShadow: '0 8px 25px rgba(0,0,0,0.1)'
+        background: statusToDisplay.color, color: 'white', padding: '16px',
+        border: 'none', marginBottom: '12px', position: 'relative', overflow: 'hidden',
+        minHeight: '110px', display: 'flex', flexDirection: 'column', justifyContent: 'center'
       }}>
         <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.15 }}>
           <Sparkles size={160} />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <Calendar size={16} />
-          <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '11px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+          <Calendar size={14} />
+          <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '10px' }}>
             {statusToDisplay.day > 0 ? `Día ${statusToDisplay.day} de tu ciclo` : 'Nuvia te acompaña'}
           </span>
         </div>
-        <h3 style={{ fontSize: '26px', margin: '0 0 5px 0', color: 'white' }}>{statusToDisplay.phase}</h3>
-        <p style={{ margin: 0, opacity: 0.95, fontSize: '15px', fontWeight: '500' }}>{statusToDisplay.desc}</p>
+        <h3 style={{ fontSize: '20px', margin: '0 0 2px 0', color: 'white' }}>{statusToDisplay.phase}</h3>
+        <p style={{ margin: 0, opacity: 0.95, fontSize: '13px', fontWeight: '500' }}>{statusToDisplay.desc}</p>
       </div>
 
       {customAdvice && !isUnlinkedPareja && (
         <div className="card" style={{
           background: customAdvice.color, border: `1px solid ${customAdvice.color}`,
-          padding: '14px 18px', marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center',
-          animation: 'scaleIn 0.3s ease', margin: '0 0 20px 0'
+          padding: '10px 14px', marginBottom: '12px', display: 'flex', gap: '12px', alignItems: 'center',
+          animation: 'scaleIn 0.3s ease'
         }}>
-          <div style={{ background: 'white', padding: '8px', borderRadius: '10px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
+          <div style={{ background: 'white', padding: '6px', borderRadius: '8px' }}>
             {customAdvice.icon}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '1px', color: '#333' }}>{customAdvice.title}</div>
-            <div style={{ fontSize: '12px', color: '#555', lineHeight: '1.3' }}>{customAdvice.desc}</div>
+            <div style={{ fontWeight: '800', fontSize: '12px', marginBottom: '0', color: '#333' }}>{customAdvice.title}</div>
+            <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.2' }}>{customAdvice.desc}</div>
           </div>
         </div>
       )}
 
-      <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.5)', border: '1px solid #f1f5f9', margin: '0 0 16px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+      <div className="card" style={{ padding: '12px', background: 'rgba(255,255,255,0.5)', border: '1px solid #f1f5f9', margin: '0 0 12px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#9C27B0', marginBottom: '4px' }}><Sparkles size={18} style={{ margin: '0 auto' }} /></div>
-            <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Fértil</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.fertile}</div>
+            <div style={{ color: '#9C27B0', marginBottom: '2px' }}><Sparkles size={16} style={{ margin: '0 auto' }} /></div>
+            <div style={{ fontSize: '8px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Fértil</div>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.fertile}</div>
           </div>
           <div style={{ textAlign: 'center', borderLeft: '1px solid #eee', borderRight: '1px solid #eee' }}>
-            <div style={{ color: '#F6416C', marginBottom: '4px' }}><Heart size={18} fill="#F6416C" style={{ margin: '0 auto' }} /></div>
-            <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Periodo</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.period}</div>
+            <div style={{ color: '#F6416C', marginBottom: '2px' }}><Heart size={16} fill="#F6416C" style={{ margin: '0 auto' }} /></div>
+            <div style={{ fontSize: '8px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Periodo</div>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.period}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#7C3AED', marginBottom: '4px' }}><Zap size={18} fill="#7C3AED" style={{ margin: '0 auto' }} /></div>
-            <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Ovulac.</div>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.ovulation || nextEvents.ovulation || '—'}</div>
+            <div style={{ color: '#7C3AED', marginBottom: '2px' }}><Zap size={16} fill="#7C3AED" style={{ margin: '0 auto' }} /></div>
+            <div style={{ fontSize: '8px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase' }}>Ovulac.</div>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#333' }}>{eventsToDisplay.ovulation || nextEvents.ovulation || '—'}</div>
           </div>
         </div>
 
         <div style={{ 
           display: 'flex', 
-          gap: '12px', 
-          alignItems: 'flex-end', 
-          marginTop: '20px', 
+          gap: '10px', 
+          alignItems: 'center', 
+          marginTop: '12px', 
           pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
           filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
           opacity: isUnlinkedPareja ? 0.6 : 1
@@ -262,47 +262,39 @@ export default function HomeScreen() {
               background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
               color: 'white',
               border: 'none',
-              padding: '16px 10px',
-              borderRadius: '18px',
-              fontSize: '13px',
+              padding: '10px 8px',
+              borderRadius: '14px',
+              fontSize: '12px',
               fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 12px rgba(246, 65, 108, 0.2)',
-              transition: 'all 0.3s ease',
-              height: '51px'
+              gap: '6px',
+              height: '42px'
             }}
           >
-            {activeCycle ? <Calendar size={16} /> : <Heart size={16} fill="white" />}
-            <span style={{ whiteSpace: 'nowrap' }}>{activeCycle ? 'Terminó' : 'Empezó'}</span>
+            {activeCycle ? <Calendar size={14} /> : <Heart size={14} fill="white" />}
+            <span>{activeCycle ? 'Terminó' : 'Empezó'}</span>
           </button>
 
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-light)', textTransform: 'uppercase', marginLeft: '4px' }}>
-              {activeCycle ? 'Terminó' : 'Empezó'}
-            </label>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Calendar size={16} style={{ position: 'absolute', left: '14px', color: 'var(--primary)', opacity: 0.7 }} />
+              <Calendar size={14} style={{ position: 'absolute', left: '12px', color: 'var(--primary)', opacity: 0.7 }} />
               <div
                 onClick={() => setShowDatePicker(true)}
                 style={{
                   width: '100%',
-                  padding: '16px 10px 16px 40px',
-                  borderRadius: '18px',
+                  padding: '12px 8px 12px 34px',
+                  borderRadius: '14px',
                   border: '1.5px solid rgba(176, 91, 181, 0.15)',
                   background: 'white',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   color: 'var(--text-dark)',
-                  outline: 'none',
-                  fontFamily: 'inherit',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden'
+                  height: '42px'
                 }}
               >
                 {new Date(logDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
@@ -312,7 +304,7 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div 
           className="card" 
           onClick={() => !isUnlinkedPareja && navigate('/chats')} 
@@ -327,13 +319,14 @@ export default function HomeScreen() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '110px'
+            minHeight: '85px',
+            padding: '12px'
           }}
         >
-          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-            <MessageSquare size={32} />
+          <div style={{ color: 'var(--primary)', marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>
+            <MessageSquare size={26} />
           </div>
-          <h4 style={{ margin: 0 }}>Chats Secretos</h4>
+          <h4 style={{ margin: 0, fontSize: '13px' }}>Chats Secretos</h4>
         </div>
 
         <div 
@@ -350,13 +343,14 @@ export default function HomeScreen() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '110px'
+            minHeight: '85px',
+            padding: '12px'
           }}
         >
-          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-            <Users size={32} />
+          <div style={{ color: 'var(--primary)', marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>
+            <Users size={26} />
           </div>
-          <h4 style={{ margin: 0 }}>Mi pareja</h4>
+          <h4 style={{ margin: 0, fontSize: '13px' }}>Mi pareja</h4>
         </div>
 
         <div 
@@ -373,13 +367,14 @@ export default function HomeScreen() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '110px'
+            minHeight: '85px',
+            padding: '12px'
           }}
         >
-          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-            <Sparkles size={32} />
+          <div style={{ color: 'var(--primary)', marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>
+            <Sparkles size={26} />
           </div>
-          <h4 style={{ margin: 0 }}>Mi Bienestar</h4>
+          <h4 style={{ margin: 0, fontSize: '13px' }}>Mi Bienestar</h4>
         </div>
       </div>
 
