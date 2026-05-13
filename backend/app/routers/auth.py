@@ -36,7 +36,7 @@ def registrar_usuaria(datos: UsuariaCreate, db: Session = Depends(get_db)):
         password_hash = hash_password(datos.password),
         rol           = datos.rol or "usuaria",
         mi_codigo     = mi_codigo,
-        codigo_pareja = datos.codigo_pareja
+        codigo_pareja = datos.codigo_pareja or None
     )
     db.add(nueva)
     db.flush()  # obtener id_usuaria antes del commit
