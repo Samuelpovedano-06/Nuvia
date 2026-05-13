@@ -16,6 +16,8 @@ def run_migrations():
         "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS mi_codigo VARCHAR(10) UNIQUE",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS codigo_pareja VARCHAR(10)",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS solicitud_id UUID",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS solicitud_estado VARCHAR(20)",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -28,6 +30,12 @@ def run_migrations():
         # FK separada — puede ya existir
         try:
             conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_codigo_pareja FOREIGN KEY (codigo_pareja) REFERENCES usuarias(mi_codigo)"))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
+        try:
+            conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_solicitud_id FOREIGN KEY (solicitud_id) REFERENCES usuarias(id_usuaria)"))
             conn.commit()
         except Exception:
             conn.rollback()
