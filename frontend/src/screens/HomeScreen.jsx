@@ -328,40 +328,7 @@ export default function HomeScreen() {
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌸</div>
           <h4 style={{ margin: 0 }}>Registrar Síntoma</h4>
         </div>
-        <div 
-          className="card" 
-          onClick={() => !isUnlinkedPareja && navigate('/calendar')} 
-          style={{ 
-            textAlign: 'center', 
-            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
-            margin: 0, 
-            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
-            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-            opacity: isUnlinkedPareja ? 0.6 : 1
-          }}
-        >
-          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-            <Calendar size={32} />
-          </div>
-          <h4 style={{ margin: 0 }}>Calendario y Ciclo</h4>
-        </div>
-        <div 
-          className="card" 
-          onClick={() => !isUnlinkedPareja && navigate('/wellness')} 
-          style={{ 
-            textAlign: 'center', 
-            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
-            margin: 0, 
-            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
-            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-            opacity: isUnlinkedPareja ? 0.6 : 1
-          }}
-        >
-          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-            <Sparkles size={32} />
-          </div>
-          <h4 style={{ margin: 0 }}>Mi Bienestar</h4>
-        </div>
+        
         <div 
           className="card" 
           onClick={() => !isUnlinkedPareja && navigate('/pareja')} 
@@ -377,8 +344,9 @@ export default function HomeScreen() {
           <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
             <Users size={32} />
           </div>
-          <h4 style={{ margin: 0 }}>Pareja</h4>
+          <h4 style={{ margin: 0 }}>Mi pareja</h4>
         </div>
+
         <div 
           className="card" 
           onClick={() => !isUnlinkedPareja && navigate('/chats')} 
@@ -395,12 +363,6 @@ export default function HomeScreen() {
             <MessageSquare size={32} />
           </div>
           <h4 style={{ margin: 0 }}>Chats Secretos</h4>
-        </div>
-        <div className="card" onClick={() => navigate('/profile')} style={{ textAlign: 'center', cursor: 'pointer', margin: 0 }}>
-          <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
-            <User size={32} />
-          </div>
-          <h4 style={{ margin: 0 }}>Mi Perfil</h4>
         </div>
       </div>
 

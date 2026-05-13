@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import { ApiService } from './api';
 import LoginScreen from './screens/LoginScreen';
@@ -12,7 +12,48 @@ import AdminConfigScreen from './screens/AdminConfigScreen';
 import SymptomsScreen from './screens/SymptomsScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import WellnessScreen from './screens/WellnessScreen';
-import { Heart } from 'lucide-react';
+import { Heart, Sparkles, Calendar, User, Home } from 'lucide-react';
+
+const BottomNav = () => {
+  const { user } = useContext(AuthContext);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  if (!user) return null;
+  
+  // No mostrar en login/register
+  const noNavRoutes = ['/login', '/register'];
+  if (noNavRoutes.includes(location.pathname)) return null;
+
+  const isUnlinkedPareja = user.rol === 'pareja' && !user.codigo_pareja;
+
+  const navItems = [
+    { label: 'Inicio', icon: <Home size={22} />, path: '/', restricted: false },
+    { label: 'Bienestar', icon: <Sparkles size={22} />, path: '/wellness', restricted: true },
+    { label: 'Ciclo', icon: <Calendar size={22} />, path: '/calendar', restricted: true },
+    { label: 'Perfil', icon: <User size={22} />, path: '/profile', restricted: false },
+  ];
+
+  return (
+    <div className="bottom-nav">
+      {navItems.map((item) => {
+        const isActive = location.pathname === item.path;
+        const isDisabled = item.restricted && isUnlinkedPareja;
+        
+        return (
+          <button
+            key={item.path}
+            onClick={() => !isDisabled && navigate(item.path)}
+            className={`bottom-nav-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -61,7 +102,7 @@ function App() {
   }
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${user ? 'has-bottom-nav' : ''}`}>
       <Routes>
         <Route path="/login" element={!user ? <LoginScreen /> : <Navigate to="/" />} />
         <Route path="/register" element={!user ? <RegisterScreen /> : <Navigate to="/" />} />
@@ -78,6 +119,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      <BottomNav />
     </div>
   );
 }
