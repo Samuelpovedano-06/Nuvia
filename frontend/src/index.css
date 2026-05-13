@@ -134,6 +134,51 @@
   color: var(--primary);
 }
 
+/* Role Selector Styles */
+.role-selector-container {
+  background: rgba(176, 91, 181, 0.05);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  display: flex;
+  position: relative;
+  margin-bottom: 30px;
+  border: 1px solid rgba(176, 91, 181, 0.1);
+}
+
+.role-option {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-light);
+  cursor: pointer;
+  z-index: 2;
+  transition: color 0.3s ease;
+  user-select: none;
+}
+
+.role-option.active {
+  color: var(--primary);
+}
+
+.role-marker {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: calc(50% - 6px);
+  height: calc(100% - 12px);
+  background: var(--white);
+  border-radius: calc(var(--radius-md) - 4px);
+  box-shadow: 0 4px 12px rgba(176, 91, 181, 0.15);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.role-marker.pareja {
+  transform: translateX(100%);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -146,13 +191,13 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg-app, #fcf0fa); /* Restored pastel base */
+  background: var(--bg-app, #fcf0fa);
   color: var(--text-dark);
 }
 
 /* Reusable UI Components */
 .app-container {
-  background: var(--bg-app, #fcf0fa); /* Match base exactly to stop clashing */
+  background: var(--bg-app, #fcf0fa);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -172,7 +217,7 @@ body {
 @media (min-width: 768px) {
   .screen-container {
     padding: 60px 10%;
-    align-items: center; /* Center everything on PC */
+    align-items: center;
   }
 }
 
@@ -315,6 +360,7 @@ h4 {
   animation: spin 1s linear infinite;
   display: inline-block;
 }
+
 /* --- Nuvia Sun Icon Style --- */
 .nuvia-sun-container {
   position: relative;
@@ -439,4 +485,13 @@ body.dark-mode .styled-input {
 
 body.dark-mode .custom-range {
   background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--value), #444 var(--value), #444 100%);
+}
+
+body.dark-mode .role-selector-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .role-marker {
+  background: #333;
 }

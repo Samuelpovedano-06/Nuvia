@@ -12,11 +12,11 @@ const getHeaders = () => {
 
 export const ApiService = {
   // Auth
-  login: async (email, password) => {
+  login: async (email, password, role) => {
     const res = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, role })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al iniciar sesión');

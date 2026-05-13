@@ -30,8 +30,8 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email, password) => {
-    await ApiService.login(email, password);
+  const login = async (email, password, role) => {
+    await ApiService.login(email, password, role);
     await checkAuth();
   };
 

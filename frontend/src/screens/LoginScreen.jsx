@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ApiService } from '../api';
 import { Link } from 'react-router-dom';
-import { Sparkles, Mail, Lock, X, KeyRound, Check, Eye, EyeOff } from 'lucide-react';
+import { Sparkles, Mail, Lock, X, KeyRound, Check, Eye, EyeOff, User, Heart } from 'lucide-react';
 
 export default function LoginScreen() {
   const { login } = useContext(AuthContext);
@@ -11,6 +11,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState('usuaria'); // 'usuaria' or 'pareja'
 
   // Modal Forgot Password states
   const [showForgot, setShowForgot] = useState(false);
@@ -27,7 +28,7 @@ export default function LoginScreen() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, role);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -84,6 +85,26 @@ export default function LoginScreen() {
       </div>
 
       <div style={{ maxWidth: '400px', width: '100%', margin: '0 auto' }}>
+        <div className="role-selector-container">
+          <div className={`role-marker ${role}`}></div>
+          <div 
+            className={`role-option ${role === 'usuaria' ? 'active' : ''}`} 
+            onClick={() => setRole('usuaria')}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          >
+            <User size={18} />
+            Usuaria
+          </div>
+          <div 
+            className={`role-option ${role === 'pareja' ? 'active' : ''}`} 
+            onClick={() => setRole('pareja')}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          >
+            <Heart size={18} />
+            Pareja
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           {error && (
             <div style={{ color: '#d32f2f', marginBottom: '20px', fontSize: '14px', background: '#ffebee', padding: '12px', borderRadius: '12px', textAlign: 'center', border: '1px solid #ffcdd2' }}>

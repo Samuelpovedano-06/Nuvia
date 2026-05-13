@@ -232,7 +232,6 @@ export default function ProfileScreen() {
 
   // Cargar datos para el reporte
   const prepareReportData = async (months) => {
-    // Validar el valor de meses
     const numMonths = parseInt(months) || 2;
     setExporting(true);
     setShowExportModal(false);
@@ -258,60 +257,65 @@ export default function ProfileScreen() {
         if (d.notas && new Date(d.fecha) >= startDate)
           logs.push({ ...d, type: 'note', label: d.notas });
       });
-
       logs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
+      // ─── Layout planning ───────────────────────────────────────────
+      // N = numMonths % 4:
+      //   0 → all pages full (4 cals), graph alone + first 5 hist items
+      //   1 → last cal page has 1 cal + graph embedded
+      //   2 → last cal page has 2 cals + graph embedded
+      //   3 → last cal page has 3 cals, graph alone + first 5 hist items
+      const symptoms      = logs.filter(l => l.type === 'symptom');
+      const notes         = logs.filter(l => l.type === 'note');
+      const N             = numMonths % 4;
+      const graphAlone    = N === 0 || N === 3;
+      const graphEmbedded = N === 1 || N === 2;
+      const totalCalDivs  = Math.ceil(numMonths / 4);
+      const GCOLS = 10; // hist items per column on graph page (graphAlone)
+      const HCOLS = 21; // hist items per column on full hist page
+      const histStart     = graphAlone ? GCOLS : 0;
+      const histSymptoms  = symptoms.slice(histStart);
+      const histNotes     = notes.slice(histStart);
+      const numHistPages  = (histSymptoms.length > 0 || histNotes.length > 0)
+        ? Math.max(Math.ceil(histSymptoms.length / HCOLS), Math.ceil(histNotes.length / HCOLS), 1)
+        : 0;
+
       setReportData({
-        ciclos: ciclos.filter(c => new Date(c.fecha_inicio) >= startDate).slice(0, 24),
-        logs: logs,
-        months: numMonths,
-        stats: {
-          totalSintomas: logs.filter(l => l.type === 'symptom').length,
-          totalNotas: logs.filter(l => l.type === 'note').length
-        }
+        logs, months: numMonths,
+        graphAlone, graphEmbedded, totalCalDivs, numHistPages, histStart,
+        stats: { totalSintomas: symptoms.length, totalNotas: notes.length }
       });
 
       setTimeout(async () => {
-        const numCalPages = Math.ceil(numMonths / 4);
         const opts = { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' };
 
-        const calEls = Array.from({ length: numCalPages }, (_, i) => document.getElementById(`nuvia-cal-${i}`));
-        const graphEl = document.getElementById('nuvia-report-pg');
-        const histEl  = document.getElementById('nuvia-report-p2');
-        if (calEls.some(el => !el) || !graphEl || !histEl) { setExporting(false); return; }
+        const calEls  = Array.from({ length: totalCalDivs }, (_, i) => document.getElementById(`nuvia-cal-${i}`));
+        const graphEl = graphAlone ? document.getElementById('nuvia-graph') : null;
+        const histEls = Array.from({ length: numHistPages }, (_, i) => document.getElementById(`nuvia-hist-${i}`));
 
-        const calCanvases   = await Promise.all(calEls.map(el => html2canvas(el, opts)));
-        const graphCanvas   = await html2canvas(graphEl, opts);
-        const histCanvas    = await html2canvas(histEl, opts);
+        if (calEls.some(el => !el) || (graphAlone && !graphEl) || histEls.some(el => !el)) {
+          setExporting(false); return;
+        }
+
+        const calCanvases  = await Promise.all(calEls.map(el => html2canvas(el, opts)));
+        const graphCanvas  = graphEl ? await html2canvas(graphEl, opts) : null;
+        const histCanvases = await Promise.all(histEls.map(el => html2canvas(el, opts)));
 
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pw  = pdf.internal.pageSize.getWidth();
-        const ph  = pdf.internal.pageSize.getHeight();
-
-        // Calendarios: cada div es 1 página — nunca se corta un mes
-        calCanvases.forEach((canvas, i) => {
-          if (i > 0) pdf.addPage();
+        const addPage = (canvas, first = false) => {
+          if (!first) pdf.addPage();
           pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pw, (canvas.height * pw) / canvas.width);
-        });
+        };
 
-        // Gráfica: siempre nueva página, cabe completa
-        pdf.addPage();
-        pdf.addImage(graphCanvas.toDataURL('image/png'), 'PNG', 0, 0, pw, (graphCanvas.height * pw) / graphCanvas.width);
-
-        // Historial: nueva página, se divide si es muy largo
-        const hScale = pw / histCanvas.width;
-        const hTotal = histCanvas.height * hScale;
-        let hSrcY = 0;
-        while (hSrcY < histCanvas.height) {
-          pdf.addPage();
-          pdf.addImage(histCanvas.toDataURL('image/png'), 'PNG', 0, -(hSrcY * hScale), pw, hTotal);
-          hSrcY += ph / hScale;
-        }
+        calCanvases.forEach((c, i) => addPage(c, i === 0));
+        if (graphCanvas) addPage(graphCanvas);
+        histCanvases.forEach(c => addPage(c));
 
         pdf.save(`Informe_Salud_Nuvia_${user?.username || 'Usuario'}.pdf`);
         setExporting(false);
         setReportData(null);
-      }, 1000);
+      }, 1500);
 
     } catch (err) {
       console.error(err);
@@ -863,187 +867,185 @@ export default function ProfileScreen() {
         </button>
         <p style={{ marginTop: '8px', color: 'var(--text-light)', fontSize: '12px' }}>💜 Hecho con amor para tu bienestar</p>
       </div>
-      {/* REPORTE OCULTO — divs dinámicos por página de calendario */}
+      {/* REPORTE OCULTO — divs dinámicos calculados por hoja */}
       {reportData && createPortal(
-        <>
-          {(() => {
-            const numCalPages = Math.ceil(reportData.months / 4);
-            const todayISO = new Date().toISOString().split('T')[0];
-            const renderCalMonth = (offset) => {
-              const d = new Date(); d.setMonth(d.getMonth() - offset);
-              const year = d.getFullYear(), month = d.getMonth();
-              const daysInMonth = new Date(year, month + 1, 0).getDate();
-              const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
-              return (
-                <div key={offset} style={{ background: 'white', padding: '20px', borderRadius: '30px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f0f0f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <span style={{ color: '#9b6c98', fontSize: '18px' }}>‹</span>
-                    <h3 style={{ fontSize: '17px', margin: 0, color: '#9b6c98', fontWeight: 'bold' }}>{MESES[month]} {year}</h3>
-                    <span style={{ color: '#9b6c98', fontSize: '18px' }}>›</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', fontSize: '11px', textAlign: 'center', color: '#9b6c98', marginBottom: '8px' }}>
-                    {DIAS_SEMANA.map(ds => <div key={ds} style={{ fontWeight: '500' }}>{ds}</div>)}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                    {Array.from({ length: firstDay }).map((_, i) => <div key={i} />)}
-                    {Array.from({ length: daysInMonth }).map((_, i) => {
-                      const day = i + 1;
-                      let bg = 'transparent', col = '#555', bdr = 'none', br = '8px', fw = 'normal';
-                      const dObj = new Date(year, month, day);
-                      const dayISO = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                      if (ciclos.length > 0) {
-                        const inicio = new Date(ciclos[0].fecha_inicio); inicio.setHours(0,0,0,0);
-                        const diff = Math.floor((dObj - inicio) / 86400000);
-                        if (diff >= 0) {
-                          const dCiclo = (diff % cycleDuration) + 1;
-                          const isFuture = diff >= cycleDuration;
-                          const ovDia = Math.max(7, cycleDuration - 14);
-                          const fertilS = ovDia - 3, fertilE = ovDia + 1;
-                          if (!isFuture) {
-                            if (dCiclo <= periodDuration)                          { bg='#ff4d4d'; col='white'; br='50%'; }
-                            else if (dCiclo === ovDia)                             { bg='#9b6c98'; col='white'; br='50%'; }
-                            else if (dCiclo >= fertilS && dCiclo <= fertilE)       { bdr='1.5px dashed #F472B6'; col='#F472B6'; br='50%'; }
-                            else if (dCiclo > periodDuration && dCiclo < fertilS)  { bg='rgba(255,183,94,0.2)'; col='#B45309'; br='50%'; }
-                          } else if (dCiclo <= periodDuration) { bdr='1.5px dashed #A855F7'; col='#A855F7'; br='50%'; }
-                        }
+        (() => {
+          const { logs, months: numMonths, graphAlone, graphEmbedded, totalCalDivs, numHistPages, histStart } = reportData;
+          const symptoms = logs.filter(l => l.type === 'symptom');
+          const notes    = logs.filter(l => l.type === 'note');
+          const N        = numMonths % 4;
+          const GCOLS    = 10;
+          const HCOLS    = 21;
+          const todayISO = new Date().toISOString().split('T')[0];
+
+          const pageStyle = { position: 'absolute', left: '-9999px', top: 0, width: '800px', background: 'white', color: '#333', padding: '46px 56px', fontFamily: 'Inter, sans-serif' };
+
+          const renderCalMonth = (offset) => {
+            const d = new Date(); d.setMonth(d.getMonth() - offset);
+            const year = d.getFullYear(), month = d.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+            return (
+              <div key={offset} style={{ background: 'white', padding: '14px', borderRadius: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #f0f0f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ color: '#9b6c98', fontSize: '14px' }}>‹</span>
+                  <h3 style={{ fontSize: '14px', margin: 0, color: '#9b6c98', fontWeight: 'bold' }}>{MESES[month]} {year}</h3>
+                  <span style={{ color: '#9b6c98', fontSize: '14px' }}>›</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', fontSize: '9px', textAlign: 'center', color: '#9b6c98', marginBottom: '5px' }}>
+                  {DIAS_SEMANA.map(ds => <div key={ds} style={{ fontWeight: '600' }}>{ds}</div>)}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                  {Array.from({ length: firstDay }).map((_, i) => <div key={i} />)}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day = i + 1;
+                    let bg = 'transparent', col = '#555', bdr = 'none', br = '6px', fw = 'normal';
+                    const dObj = new Date(year, month, day);
+                    const dayISO = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                    if (ciclos.length > 0) {
+                      const inicio = new Date(ciclos[0].fecha_inicio); inicio.setHours(0,0,0,0);
+                      const diff = Math.floor((dObj - inicio) / 86400000);
+                      if (diff >= 0) {
+                        const dCiclo = (diff % cycleDuration) + 1, isFuture = diff >= cycleDuration;
+                        const ovDia = Math.max(7, cycleDuration - 14), fertilS = ovDia - 3, fertilE = ovDia + 1;
+                        if (!isFuture) {
+                          if (dCiclo <= periodDuration)                        { bg='#ff4d4d'; col='white'; br='50%'; }
+                          else if (dCiclo === ovDia)                           { bg='#9b6c98'; col='white'; br='50%'; }
+                          else if (dCiclo >= fertilS && dCiclo <= fertilE)     { bdr='1.5px dashed #F472B6'; col='#F472B6'; br='50%'; }
+                          else if (dCiclo > periodDuration && dCiclo < fertilS){ bg='rgba(255,183,94,0.2)'; col='#B45309'; br='50%'; }
+                        } else if (dCiclo <= periodDuration) { bdr='1.5px dashed #A855F7'; col='#A855F7'; br='50%'; }
                       }
-                      if (dayISO === todayISO) { fw='bold'; if (bg==='transparent' && bdr==='none') { bdr='2px solid #9b6c98'; col='#9b6c98'; br='50%'; } }
-                      return (
-                        <div key={day} style={{ aspectRatio:'1', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11px', fontWeight:fw, background:bg, color:col, borderRadius:br, border:bdr }}>
-                          {day}
-                        </div>
-                      );
-                    })}
-                  </div>
+                    }
+                    if (dayISO === todayISO) { fw='bold'; if (bg==='transparent'&&bdr==='none'){ bdr='1.5px solid #9b6c98'; col='#9b6c98'; br='50%'; } }
+                    return <div key={day} style={{ aspectRatio:'1', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'9px', fontWeight:fw, background:bg, color:col, borderRadius:br, border:bdr }}>{day}</div>;
+                  })}
                 </div>
-              );
-            };
+              </div>
+            );
+          };
 
-            return Array.from({ length: numCalPages }).map((_, pageIdx) => {
-              const startOffset = reportData.months - 1 - pageIdx * 4;
-              const count = Math.min(4, reportData.months - pageIdx * 4);
-              const isFirst = pageIdx === 0;
-              const isLast  = pageIdx === numCalPages - 1;
-              return (
-                <div key={pageIdx} id={`nuvia-cal-${pageIdx}`} style={{
-                  position: 'absolute', left: '-9999px', top: 0, width: '800px', background: 'white',
-                  color: '#333', padding: '50px 60px', fontFamily: 'Inter, sans-serif'
-                }}>
-                  {isFirst ? (
-                    <header style={{ borderBottom: '3px solid #9b6c98', paddingBottom: '18px', marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                      <div><LogoNuvia size={28} /><p style={{ color: '#666', margin: '8px 0 0', fontSize: '13px' }}>Reporte de Salud Femenina • {user?.nombre_completo || user?.username}</p></div>
-                      <div style={{ textAlign: 'right' }}><p style={{ fontSize: '11px', color: '#999', margin: '0 0 4px' }}>Historial de {reportData.months} meses</p><p style={{ fontSize: '11px', color: '#999', margin: 0 }}>Generado el {new Date().toLocaleDateString()}</p></div>
-                    </header>
-                  ) : (
-                    <header style={{ borderBottom: '2px solid #9b6c98', paddingBottom: '10px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h2 style={{ color: '#9b6c98', margin: 0, fontSize: '18px' }}>Informe Nuvia — Calendarios</h2>
-                      <p style={{ fontSize: '11px', color: '#999', margin: 0 }}>{user?.nombre_completo || user?.username}</p>
-                    </header>
-                  )}
-
-                  <h2 style={{ fontSize: '18px', color: '#9b6c98', borderBottom: '1.5px solid #e8d5f0', paddingBottom: '8px', marginBottom: '20px' }}>Calendarios de Seguimiento</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                    {Array.from({ length: count }).map((_, j) => renderCalMonth(startOffset - j))}
-                  </div>
-
-                  {isLast && (
-                    <div style={{ marginTop: '28px' }}>
-                      <h3 style={{ fontSize: '15px', color: '#333', marginBottom: '12px' }}>Leyenda del Ciclo</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
-                        {[
-                          { bg: '#ff4d4d',               border: 'none',                 label: 'Periodo' },
-                          { bg: 'rgba(168,85,247,0.06)', border: '1.5px dashed #A855F7', label: 'Predicción Regla' },
-                          { bg: 'rgba(255,183,94,0.25)', border: 'none',                 label: 'Fase Folicular' },
-                          { bg: 'transparent',           border: '1.5px dashed #F472B6', label: 'Ventana Fértil' },
-                          { bg: '#9b6c98',               border: 'none',                 label: 'Ovulación' },
-                        ].map(({ bg, border, label }) => (
-                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: bg, border, flexShrink: 0 }} />
-                            <span>{label}</span>
-                          </div>
-                        ))}
-                      </div>
+          const legend = (
+            <div style={{ marginTop: '18px' }}>
+              <h3 style={{ fontSize: '12px', color: '#555', marginBottom: '8px' }}>Leyenda del Ciclo</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px' }}>
+                {[{ bg:'#ff4d4d', border:'none', label:'Periodo' }, { bg:'rgba(168,85,247,0.06)', border:'1.5px dashed #A855F7', label:'Predicción Regla' }, { bg:'rgba(255,183,94,0.25)', border:'none', label:'Fase Folicular' }, { bg:'transparent', border:'1.5px dashed #F472B6', label:'Ventana Fértil' }, { bg:'#9b6c98', border:'none', label:'Ovulación' }]
+                  .map(({ bg, border, label }) => (
+                    <div key={label} style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+                      <div style={{ width:'11px', height:'11px', borderRadius:'50%', background:bg, border, flexShrink:0 }} />
+                      <span>{label}</span>
                     </div>
-                  )}
-
-                  <footer style={{ marginTop: '30px', paddingTop: '16px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '10px', color: '#ccc' }}>
-                    Este informe es una recopilación de datos de Nuvia. No sustituye el consejo médico profesional.
-                  </footer>
-                </div>
-              );
-            });
-          })()}
-
-          {/* PÁGINA GRÁFICA: siempre en hoja nueva */}
-          <div id="nuvia-report-pg" style={{
-            position: 'absolute', left: '-9999px', top: 0, width: '800px', background: 'white', color: '#333',
-            padding: '60px', fontFamily: 'Inter, sans-serif'
-          }}>
-            <header style={{ borderBottom: '2px solid #9b6c98', paddingBottom: '12px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h1 style={{ color: '#9b6c98', margin: 0, fontSize: '22px' }}>Informe Nuvia — Curva Hormonal</h1>
-              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{user?.nombre_completo || user?.username}</p>
-            </header>
-            <h2 style={{ fontSize: '20px', color: '#9b6c98', borderBottom: '2px solid #9b6c98', paddingBottom: '8px', marginBottom: '20px' }}>Curva Hormonal y Puntos Clave</h2>
-            <div style={{ padding: '0 10px' }}>
-              <ReportGraph duracion={cycleDuration} />
+                  ))}
+              </div>
             </div>
-            <footer style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '11px', color: '#bbb' }}>
-              Este informe es una recopilación de datos registrados por la usuaria en Nuvia. No sustituye el consejo médico profesional.
-            </footer>
-          </div>
+          );
 
-          {/* PÁGINA 2+: Historial Detallado */}
-          <div id="nuvia-report-p2" style={{
-            position: 'absolute', left: '-9999px', top: 0, width: '800px', background: 'white', color: '#333',
-            padding: '60px', fontFamily: 'Inter, sans-serif'
-          }}>
-            <header style={{ borderBottom: '2px solid #9b6c98', paddingBottom: '12px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h1 style={{ color: '#9b6c98', margin: 0, fontSize: '22px' }}>Informe Nuvia — Historial Detallado</h1>
-              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{user?.nombre_completo || user?.username}</p>
-            </header>
+          const graph = (
+            <div style={{ marginTop: '30px' }}>
+              <h2 style={{ fontSize: '16px', color: '#9b6c98', borderBottom: '1px solid #e8d5f0', paddingBottom: '6px', marginBottom: '14px' }}>Curva Hormonal y Puntos Clave</h2>
+              <div style={{ padding: '0 8px' }}><ReportGraph duracion={cycleDuration} /></div>
+            </div>
+          );
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
+          const histColumns = (symSlice, noteSlice) => (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'28px', alignItems:'start', marginTop:'14px' }}>
               <div>
-                <h3 style={{ fontSize: '14px', color: '#9b6c98', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Activity size={14} /> Síntomas
-                </h3>
-                {reportData.logs.filter(l => l.type === 'symptom').map((log, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <span style={{ fontSize: '11px', color: '#aaa', minWidth: '55px', flexShrink: 0 }}>
-                      {new Date(log.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                    </span>
-                    <div style={{ width: '40px', height: '40px', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div className="nuvia-sun-container" style={{ margin: 0, transform: 'scale(0.57)', color: '#9b6c98' }}>
-                        <div className="nuvia-sun-rays"></div>
-                        <div className="nuvia-sun-bg">
-                          <NuviaFace type={SINTOMA_STYLE[log.label]?.face || 'feliz'} color="#9b6c98" />
-                        </div>
+                <h3 style={{ fontSize:'12px', color:'#9b6c98', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'6px', display:'flex', alignItems:'center', gap:'5px' }}><Activity size={12} /> Síntomas</h3>
+                {symSlice.map((log, i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:'7px', padding:'3px 0', borderBottom:'1px solid #f5f5f5' }}>
+                    <span style={{ fontSize:'9px', color:'#aaa', minWidth:'40px', flexShrink:0 }}>{new Date(log.fecha).toLocaleDateString('es-ES', { day:'numeric', month:'short' })}</span>
+                    <div style={{ width:'28px', height:'28px', flexShrink:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <div className="nuvia-sun-container" style={{ margin:0, transform:'scale(0.40)', color:'#9b6c98' }}>
+                        <div className="nuvia-sun-rays" /><div className="nuvia-sun-bg"><NuviaFace type={SINTOMA_STYLE[log.label]?.face || 'feliz'} color="#9b6c98" /></div>
                       </div>
                     </div>
-                    <span style={{ fontSize: '13px', color: '#9b6c98', fontWeight: '500' }}>{log.label}</span>
+                    <span style={{ fontSize:'10px', color:'#9b6c98', fontWeight:'500' }}>{log.label}</span>
                   </div>
                 ))}
               </div>
               <div>
-                <h3 style={{ fontSize: '14px', color: '#9b6c98', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <FileText size={14} /> Registros Diarios
-                </h3>
-                {reportData.logs.filter(l => l.type === 'note').map((log, i) => (
-                  <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '3px' }}>
-                      {new Date(log.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                    </div>
-                    <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.5' }}>{log.label}</div>
+                <h3 style={{ fontSize:'12px', color:'#9b6c98', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'6px', display:'flex', alignItems:'center', gap:'5px' }}><FileText size={12} /> Registros Diarios</h3>
+                {noteSlice.map((log, i) => (
+                  <div key={i} style={{ padding:'3px 0', borderBottom:'1px solid #f5f5f5' }}>
+                    <div style={{ fontSize:'9px', color:'#aaa', marginBottom:'1px' }}>{new Date(log.fecha).toLocaleDateString('es-ES', { day:'numeric', month:'short' })}</div>
+                    <div style={{ fontSize:'10px', color:'#555', lineHeight:'1.3' }}>{log.label}</div>
                   </div>
                 ))}
               </div>
             </div>
+          );
 
-            <footer style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '11px', color: '#bbb' }}>
-              Este informe es una recopilación de datos registrados por la usuaria en Nuvia Wellness App. No sustituye el consejo médico profesional.
-            </footer>
-          </div>
-        </>,
+          const footer = <footer style={{ marginTop:'20px', paddingTop:'12px', borderTop:'1px solid #eee', textAlign:'center', fontSize:'9px', color:'#ccc' }}>Este informe es una recopilación de datos de Nuvia. No sustituye el consejo médico profesional.</footer>;
+
+          const miniHeader = (title) => (
+            <header style={{ borderBottom:'2px solid #9b6c98', paddingBottom:'8px', marginBottom:'16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <h2 style={{ color:'#9b6c98', margin:0, fontSize:'16px' }}>Informe Nuvia — {title}</h2>
+              <p style={{ fontSize:'10px', color:'#999', margin:0 }}>{user?.nombre_completo || user?.username}</p>
+            </header>
+          );
+
+          const pages = [];
+
+          // ── Páginas de calendarios ──────────────────────────────────
+          for (let pi = 0; pi < totalCalDivs; pi++) {
+            const isFirst   = pi === 0;
+            const isLastCal = pi === totalCalDivs - 1;
+            const count     = isLastCal && N !== 0 ? N : 4;
+            const startOff  = numMonths - 1 - pi * 4;
+            const embedGraph = isLastCal && graphEmbedded;
+            pages.push(
+              <div key={`cal-${pi}`} id={`nuvia-cal-${pi}`} style={pageStyle}>
+                {isFirst ? (
+                  <header style={{ borderBottom:'3px solid #9b6c98', paddingBottom:'14px', marginBottom:'20px', display:'flex', justifyContent:'space-between', alignItems:'flex-end' }}>
+                    <div><LogoNuvia size={24} /><p style={{ color:'#666', margin:'6px 0 0', fontSize:'11px' }}>Reporte de Salud Femenina • {user?.nombre_completo || user?.username}</p></div>
+                    <div style={{ textAlign:'right' }}><p style={{ fontSize:'10px', color:'#999', margin:'0 0 2px' }}>Historial de {numMonths} meses</p><p style={{ fontSize:'10px', color:'#999', margin:0 }}>Generado el {new Date().toLocaleDateString()}</p></div>
+                  </header>
+                ) : miniHeader('Calendarios')}
+                <h2 style={{ fontSize:'15px', color:'#9b6c98', borderBottom:'1px solid #e8d5f0', paddingBottom:'5px', marginBottom:'14px' }}>Calendarios de Seguimiento</h2>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px' }}>
+                  {Array.from({ length: count }).map((_, j) => renderCalMonth(startOff - j))}
+                </div>
+                {isLastCal && legend}
+                {embedGraph && graph}
+                {footer}
+              </div>
+            );
+          }
+
+          // ── Página gráfica standalone (N=0 ó N=3) ──────────────────
+          if (graphAlone) {
+            const sym0  = symptoms.slice(0, histStart);
+            const note0 = notes.slice(0, histStart);
+            pages.push(
+              <div key="graph" id="nuvia-graph" style={pageStyle}>
+                {miniHeader('Gráfica e Historial')}
+                {graph}
+                {(sym0.length > 0 || note0.length > 0) && (
+                  <>
+                    <h2 style={{ fontSize:'15px', color:'#9b6c98', borderBottom:'1px solid #e8d5f0', paddingBottom:'5px', marginBottom:'8px', marginTop:'20px' }}>Historial Detallado</h2>
+                    {histColumns(sym0, note0)}
+                  </>
+                )}
+                {footer}
+              </div>
+            );
+          }
+
+          // ── Páginas de historial ────────────────────────────────────
+          for (let hi = 0; hi < numHistPages; hi++) {
+            const sym  = symptoms.slice(histStart + hi * HCOLS, histStart + (hi + 1) * HCOLS);
+            const note = notes.slice(histStart + hi * HCOLS, histStart + (hi + 1) * HCOLS);
+            pages.push(
+              <div key={`hist-${hi}`} id={`nuvia-hist-${hi}`} style={pageStyle}>
+                {miniHeader('Historial Detallado')}
+                <h2 style={{ fontSize:'15px', color:'#9b6c98', borderBottom:'1px solid #e8d5f0', paddingBottom:'5px', marginBottom:'8px' }}>Historial Detallado</h2>
+                {histColumns(sym, note)}
+                {footer}
+              </div>
+            );
+          }
+
+          return <>{pages}</>;
+        })(),
         document.body
       )}
     </div>
