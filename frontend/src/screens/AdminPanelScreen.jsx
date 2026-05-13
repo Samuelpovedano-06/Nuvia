@@ -120,13 +120,13 @@ export default function AdminPanelScreen() {
           { label: 'Motor de IA operativo', time: 'Sistema estable', color: '#9C27B0', bg: 'rgba(156, 39, 176, 0.05)' }
         ].map((item, i) => (
           <div key={i} style={{ 
-            padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px',
-            background: item.bg, borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none'
+            padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px',
+            background: item.bg, borderBottom: i < 2 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none'
           }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color }}></div>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color, boxShadow: `0 0 6px ${item.color}44` }}></div>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: '500' }}>{item.label}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>{item.time}</div>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)' }}>{item.label}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: '500' }}>{item.time}</div>
             </div>
           </div>
         ))}
@@ -145,11 +145,12 @@ export default function AdminPanelScreen() {
             onClick={() => navigate(item.path)}
             style={{ 
               padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-              borderBottom: i < 2 ? '1px solid rgba(0,0,0,0.03)' : 'none'
+              borderBottom: i === 0 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none',
+              transition: 'background 0.2s'
             }}
           >
-            <div style={{ color: 'var(--primary)' }}>{item.icon}</div>
-            <div style={{ fontSize: '14px' }}>{item.label}</div>
+            <div style={{ color: 'var(--primary)', display: 'flex' }}>{item.icon}</div>
+            <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-dark)' }}>{item.label}</div>
           </div>
         ))}
       </div>
