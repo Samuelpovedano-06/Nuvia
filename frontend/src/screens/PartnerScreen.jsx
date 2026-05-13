@@ -69,57 +69,7 @@ const PartnerScreen = () => {
 
       <h1 style={{ fontSize: '28px', color: 'var(--primary)', marginBottom: '20px' }}>Mi Pareja</h1>
 
-      {/* Solicitud Pendiente (Para Usuaria) */}
-      {isUsuaria && user?.solicitud_estado === 'pendiente' && (
-        <div className="card" style={{
-          background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
-          color: 'white',
-          padding: '25px',
-          marginBottom: '25px',
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: '24px',
-          boxShadow: '0 10px 20px rgba(246, 65, 108, 0.2)'
-        }}>
-          <div style={{ position: 'absolute', right: '-10px', top: '-10px', opacity: 0.2 }}>
-            <Heart size={120} fill="white" />
-          </div>
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <Users size={20} />
-              <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '12px' }}>Solicitud de Vinculación</span>
-            </div>
-            <h2 style={{ fontSize: '22px', margin: '0 0 10px 0' }}>¿{user.nombre_solicitante} es tu pareja?</h2>
-            <p style={{ margin: '0 0 20px 0', opacity: 0.9, fontSize: '14px', lineHeight: '1.4' }}>
-              Si aceptas, podrá ver tu ciclo y acompañarte en tu proceso. Siempre podrás revocar este acceso.
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={handleAccept}
-                disabled={loading}
-                style={{
-                  flex: 1, background: 'white', color: '#F6416C', border: 'none',
-                  padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                }}
-              >
-                <Check size={18} /> Aceptar
-              </button>
-              <button
-                onClick={handleReject}
-                disabled={loading}
-                style={{
-                  flex: 1, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none',
-                  padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                }}
-              >
-                <X size={18} /> Rechazar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* El modal de solicitud ahora es GLOBAL en App.jsx para tiempo real */}
 
       {/* Estado para Pareja que ha enviado solicitud */}
       {user?.rol === 'pareja' && user?.solicitud_estado === 'enviada' && (
@@ -138,7 +88,7 @@ const PartnerScreen = () => {
       )}
 
       {/* Formulario de Vinculación (Si no está vinculado ni tiene solicitud) */}
-      {isUnlinkedPareja && user?.solicitud_estado !== 'enviada' && (
+      {!user?.codigo_pareja && user?.solicitud_estado !== 'enviada' && (
         <div className="card" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
             <Shield size={24} color="var(--primary)" />

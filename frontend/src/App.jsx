@@ -13,7 +13,13 @@ import SymptomsScreen from './screens/SymptomsScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import WellnessScreen from './screens/WellnessScreen';
 import PartnerScreen from './screens/PartnerScreen';
-import { Heart, Sparkles, Calendar, User, Home, Flower2 } from 'lucide-react';
+import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users } from 'lucide-react';
+
+const LogoIcon = ({ size = 22, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill={color} />
+  </svg>
+);
 
 const BottomNav = () => {
   const { user } = useContext(AuthContext);
@@ -57,8 +63,62 @@ const BottomNav = () => {
 };
 
 function App() {
-  const { user, loading } = useContext(AuthContext);
-  const [maintenance, setMaintenance] = React.useState(false);
+  const { user, loading, getMe } = useContext(AuthContext);
+  const [maintenance, setMaintenance] = useState(false);
+  const [showRejectionPopup, setShowRejectionPopup] = useState(false);
+
+  // Polling para actualizaciones en tiempo real (cada 10 segundos)
+  useEffect(() => {
+    if (user) {
+      const interval = setInterval(() => {
+        getMe();
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  // Vigilar rechazos
+  useEffect(() => {
+    if (user?.solicitud_estado === 'rechazada') {
+      setShowRejectionPopup(true);
+    }
+  }, [user?.solicitud_estado]);
+
+  const handleCloseRejection = async () => {
+    setShowRejectionPopup(false);
+    try {
+      await ApiService.limpiarRechazo();
+      getMe();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const [requestLoading, setRequestLoading] = useState(false);
+
+  const handleAcceptRequest = async () => {
+    setRequestLoading(true);
+    try {
+      await ApiService.aceptarPareja();
+      await getMe();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
+  const handleRejectRequest = async () => {
+    setRequestLoading(true);
+    try {
+      await ApiService.rechazarPareja();
+      await getMe();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRequestLoading(false);
+    }
+  };
 
   // Aplicar modo oscuro globalmente al cargar la app
   useEffect(() => {
@@ -122,6 +182,89 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <BottomNav />
+      {showRejectionPopup && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px'
+        }}>
+          <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '30px' }}>
+            <div style={{ color: '#F6416C', marginBottom: '20px' }}><X size={50} strokeWidth={3} /></div>
+            <h2 style={{ fontSize: '22px', margin: '0 0 10px 0' }}>Solicitud no aceptada</h2>
+            <p style={{ color: 'var(--text-light)', marginBottom: '25px', lineHeight: '1.5' }}>
+              Tu pareja no ha aceptado la solicitud de vinculación en este momento. Puedes volver a intentarlo más tarde o con otro código.
+            </p>
+            <button 
+              onClick={handleCloseRejection}
+              style={{ 
+                width: '100%', background: 'var(--primary)', color: 'white', border: 'none', 
+                padding: '15px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer'
+              }}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GLOBAL DE SOLICITUD ENTRANTE */}
+      {user?.solicitud_estado === 'pendiente' && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1001, padding: '20px'
+        }}>
+          <div className="card" style={{ 
+            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', 
+            color: 'white', 
+            padding: '25px', 
+            maxWidth: '400px',
+            width: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: '24px',
+            boxShadow: '0 10px 25px rgba(246, 65, 108, 0.3)'
+          }}>
+            <div style={{ position: 'absolute', right: '-10px', top: '-10px', opacity: 0.2 }}>
+               <Heart size={120} fill="white" />
+            </div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Users size={20} />
+                <span style={{ fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '12px' }}>Solicitud de Vinculación</span>
+              </div>
+              <h2 style={{ fontSize: '22px', margin: '0 0 10px 0' }}>¿{user.nombre_solicitante} es tu pareja?</h2>
+              <p style={{ margin: '0 0 20px 0', opacity: 0.9, fontSize: '14px', lineHeight: '1.4' }}>
+                Si aceptas, podrá ver tu ciclo y acompañarte en tu proceso. Siempre podrás revocar este acceso.
+              </p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  onClick={handleAcceptRequest}
+                  disabled={requestLoading}
+                  style={{ 
+                    flex: 1, background: 'white', color: '#F6416C', border: 'none', 
+                    padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}
+                >
+                  <Check size={18} /> Aceptar
+                </button>
+                <button 
+                  onClick={handleRejectRequest}
+                  disabled={requestLoading}
+                  style={{ 
+                    flex: 1, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', 
+                    padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}
+                >
+                  <X size={18} /> Rechazar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

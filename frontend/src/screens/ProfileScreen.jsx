@@ -212,24 +212,6 @@ export default function ProfileScreen() {
   const { user, logout, getMe } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [showRejectionPopup, setShowRejectionPopup] = useState(false);
-
-  useEffect(() => {
-    if (user?.solicitud_estado === 'rechazada') {
-      setShowRejectionPopup(true);
-    }
-  }, [user]);
-
-  const handleCloseRejection = async () => {
-    setShowRejectionPopup(false);
-    try {
-      await ApiService.limpiarRechazo();
-      if (getMe) await getMe();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const [ciclos, setCiclos] = useState([]);
   const [loadingCiclos, setLoadingCiclos] = useState(true);
 
@@ -245,9 +227,6 @@ export default function ProfileScreen() {
   const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear() - 25);
   const [viewMode, setViewMode] = useState('days'); // 'days', 'years'
-  const [editingPartnerCode, setEditingPartnerCode] = useState(false);
-  const [partnerCodeInput, setPartnerCodeInput] = useState('');
-  const [partnerCodeError, setPartnerCodeError] = useState('');
 
   // Estados de configuración
   const [notificaciones, setNotificaciones] = useState(1);
@@ -489,20 +468,6 @@ export default function ProfileScreen() {
     }
     setShowDatePicker(false);
   };
-  
-  const handleSavePartnerCode = async () => {
-    const val = partnerCodeInput.trim().toUpperCase();
-    setPartnerCodeError('');
-    try {
-      await ApiService.updateConfig({ codigo_pareja: val || null });
-      // Forzar recarga de datos del usuario para ver el cambio
-      window.location.reload(); 
-    } catch (err) {
-      setPartnerCodeError(err.message);
-      return; // No cerramos el modo edición si hay error
-    }
-    setEditingPartnerCode(false);
-  };
 
   const toggleNotificaciones = () => {
     const newVal = notificaciones === 1 ? 0 : 1;
@@ -699,42 +664,8 @@ export default function ProfileScreen() {
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
             <span style={{ color: 'var(--text-light)' }}>Código de mi pareja</span>
-            {editingPartnerCode ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="text"
-                  value={partnerCodeInput}
-                  onChange={e => { setPartnerCodeInput(e.target.value.toUpperCase()); setPartnerCodeError(''); }}
-                  onKeyDown={e => e.key === 'Enter' && handleSavePartnerCode()}
-                  autoFocus
-                  maxLength={6}
-                  placeholder="EJ: A1B2C3"
-                  style={{
-                    width: '90px', padding: '4px 8px', border: `1px solid ${partnerCodeError ? '#f6416c' : 'var(--primary)'}`,
-                    borderRadius: '8px', fontSize: '13px', textAlign: 'center', outline: 'none'
-                  }}
-                />
-                <button onClick={handleSavePartnerCode} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex' }}>
-                  <Check size={18} />
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{user?.codigo_pareja || 'Soltera'}</span>
-                <button
-                  onClick={() => { setPartnerCodeInput(user?.codigo_pareja || ''); setEditingPartnerCode(true); setPartnerCodeError(''); }}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
-                >
-                  <Pencil size={14} />
-                </button>
-              </div>
-            )}
+            <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{user?.codigo_pareja || 'Soltera'}</span>
           </div>
-          {partnerCodeError && (
-            <div style={{ color: '#f6416c', fontSize: '11px', marginTop: '4px', textAlign: 'right', fontWeight: '500' }}>
-              {partnerCodeError}
-            </div>
-          )}
         </div>
 
         {/* Ciclos */}
@@ -1241,30 +1172,6 @@ export default function ProfileScreen() {
           return <>{pages}</>;
         })(),
         document.body
-      )}
-      {showRejectionPopup && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '20px'
-        }}>
-          <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '30px' }}>
-            <div style={{ color: '#F6416C', marginBottom: '20px' }}><X size={50} strokeWidth={3} /></div>
-            <h2 style={{ fontSize: '22px', margin: '0 0 10px 0' }}>Solicitud no aceptada</h2>
-            <p style={{ color: 'var(--text-light)', marginBottom: '25px', lineHeight: '1.5' }}>
-              Tu pareja no ha aceptado la solicitud de vinculación en este momento. Puedes volver a intentarlo más tarde o con otro código.
-            </p>
-            <button 
-              onClick={handleCloseRejection}
-              style={{ 
-                width: '100%', background: 'var(--primary)', color: 'white', border: 'none', 
-                padding: '15px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer'
-              }}
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );
