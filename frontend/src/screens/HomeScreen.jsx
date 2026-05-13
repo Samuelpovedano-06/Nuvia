@@ -322,7 +322,12 @@ export default function HomeScreen() {
             margin: 0, 
             pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
             filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-            opacity: isUnlinkedPareja ? 0.6 : 1
+            opacity: isUnlinkedPareja ? 0.6 : 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '110px'
           }}
         >
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🌸</div>
@@ -338,7 +343,12 @@ export default function HomeScreen() {
             margin: 0, 
             pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
             filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-            opacity: isUnlinkedPareja ? 0.6 : 1
+            opacity: isUnlinkedPareja ? 0.6 : 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '110px'
           }}
         >
           <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
@@ -356,7 +366,12 @@ export default function HomeScreen() {
             margin: 0, 
             pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
             filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-            opacity: isUnlinkedPareja ? 0.6 : 1
+            opacity: isUnlinkedPareja ? 0.6 : 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '110px'
           }}
         >
           <div style={{ color: 'var(--primary)', marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
