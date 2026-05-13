@@ -585,7 +585,7 @@ export default function ProfileScreen() {
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{user?.codigo_pareja || 'No vinculado'}</span>
+              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{user?.codigo_pareja || 'Soltera'}</span>
               <button
                 onClick={() => { setPartnerCodeInput(user?.codigo_pareja || ''); setEditingPartnerCode(true); }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
