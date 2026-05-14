@@ -12,7 +12,6 @@ class Usuaria(Base):
     password_hash  = Column(String(255), nullable=False)
     rol            = Column(String(20), nullable=False, server_default="usuaria")
     mi_codigo      = Column(String(10), unique=True, nullable=True)
-    codigo_pareja  = Column(String(10), nullable=True)
     solicitud_id   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=True)
     solicitud_estado = Column(String(20), nullable=True) # 'pendiente', 'rechazada'
     otp            = Column(String(10), nullable=True)
