@@ -257,7 +257,7 @@ const PartnerScreen = () => {
               <button
                 onClick={() => handleDesvincular(vinculos[0].id)}
                 style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '8px' }}
-                title="Desvincular"
+                title="Cortar con tu pareja"
               >
                 <X size={18} />
               </button>
@@ -281,7 +281,7 @@ const PartnerScreen = () => {
                   <button
                     onClick={() => handleDesvincular(v.id)}
                     style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px' }}
-                    title="Desvincular"
+                    title="Cortar con tu pareja"
                   >
                     <X size={16} />
                   </button>
@@ -343,9 +343,9 @@ const PartnerScreen = () => {
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#ef4444' }}>
               <X size={32} strokeWidth={2.5} />
             </div>
-            <h3 style={{ fontSize: '20px', margin: '0 0 12px', color: 'var(--text-dark)', fontWeight: '700' }}>¿Desvincular pareja?</h3>
+            <h3 style={{ fontSize: '20px', margin: '0 0 12px', color: 'var(--text-dark)', fontWeight: '700' }}>¿Cortar con tu pareja?</h3>
             <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '28px', lineHeight: '1.6' }}>
-              Dejarás de compartir información y ver el ciclo de esta persona. Esta acción es inmediata.
+              Dejarás de compartir información y esta persona no podra ver el progreso de tu ciclo. Esta acción es inmediata.
             </p>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button 
