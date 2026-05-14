@@ -263,7 +263,7 @@ export default function WellnessScreen() {
   const currentAdvice = ADVICE_DATABASE[phase];
 
   return (
-    <div className="screen-container" style={{ paddingBottom: '40px' }}>
+    <div className="screen-container">
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
           <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Atrás</span>
