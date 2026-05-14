@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria
+from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja
 from app.schemas.schemas import ConfiguracionUpdate, ConfiguracionOut
 from app.routers.auth_utils import get_current_user
 
@@ -31,25 +31,15 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
 
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         if campo == "codigo_pareja":
-            if valor:
-                # Validar que el código existe y no es el propio
+            if valor and current_user.rol == "pareja":
                 if valor == current_user.mi_codigo:
                     return {"error": "No puedes vincularte a tu propio código."}
-                
                 objetivo = db.query(Usuaria).filter(Usuaria.mi_codigo == valor).first()
                 if not objetivo:
                     return {"error": "El código de pareja no es válido o no existe."}
-                
-                # Si es un usuario con rol 'pareja', creamos una solicitud en el objetivo
-                if current_user.rol == "pareja":
-                    objetivo.solicitud_id = current_user.id_usuaria
-                    objetivo.solicitud_estado = "pendiente"
-                    # No vinculamos todavía, solo guardamos el estado en el solicitante si fuera necesario
-                    # Pero el requerimiento dice que al de la pareja le salga en "pendiente"
-                    current_user.solicitud_estado = "enviada"
-                else:
-                    # Si es admin o usuaria normal, vinculación directa (o según lógica)
-                    current_user.codigo_pareja = valor
+                objetivo.solicitud_id = current_user.id_usuaria
+                objetivo.solicitud_estado = "pendiente"
+                current_user.solicitud_estado = "enviada"
         else:
             setattr(config, campo, valor)
     db.commit()
@@ -66,15 +56,15 @@ def aceptar_pareja(db: Session = Depends(get_db),
     if not solicitante:
         return {"error": "El usuario solicitante ya no existe."}
     
-    # Vincular ambos
-    current_user.codigo_pareja = solicitante.mi_codigo
-    solicitante.codigo_pareja = current_user.mi_codigo
-    
+    # Crear vínculo en tabla parejas (usuaria acepta → ella es id_usuaria, solicitante es id_pareja)
+    vinculo = Pareja(id_usuaria=current_user.id_usuaria, id_pareja=solicitante.id_usuaria)
+    db.add(vinculo)
+
     # Limpiar estados de solicitud
     current_user.solicitud_id = None
     current_user.solicitud_estado = None
     solicitante.solicitud_estado = None
-    
+
     db.commit()
     return {"message": "Pareja vinculada con éxito."}
 
@@ -88,7 +78,6 @@ def rechazar_pareja(db: Session = Depends(get_db),
     if solicitante:
         # Marcar como rechazada para que el solicitante vea el popup
         solicitante.solicitud_estado = "rechazada"
-        solicitante.codigo_pareja = None # Limpiar cualquier intento
     
     # Limpiar en el que rechaza
     current_user.solicitud_id = None

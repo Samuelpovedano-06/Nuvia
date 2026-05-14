@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -15,9 +15,17 @@ def run_migrations():
         "ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS max_dias_periodo INTEGER DEFAULT 10",
         "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS mi_codigo VARCHAR(10) UNIQUE",
-        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS codigo_pareja VARCHAR(10)",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS solicitud_id UUID",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS solicitud_estado VARCHAR(20)",
+        # Tabla de vínculos pareja ↔ usuaria (muchos a muchos)
+        """CREATE TABLE IF NOT EXISTS parejas (
+            id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_usuaria UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            id_pareja  UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            UNIQUE(id_usuaria, id_pareja)
+        )""",
+        # Eliminar columna codigo_pareja si existe (ya no se usa)
+        "ALTER TABLE usuarias DROP COLUMN IF EXISTS codigo_pareja",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -27,13 +35,6 @@ def run_migrations():
             except Exception as e:
                 conn.rollback()
                 print(f"[migration skip] {e}")
-        # FK separada — puede ya existir
-        try:
-            conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_codigo_pareja FOREIGN KEY (codigo_pareja) REFERENCES usuarias(mi_codigo)"))
-            conn.commit()
-        except Exception:
-            conn.rollback()
-
         try:
             conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_solicitud_id FOREIGN KEY (solicitud_id) REFERENCES usuarias(id_usuaria)"))
             conn.commit()
@@ -61,6 +62,7 @@ app.include_router(configuracion.router)
 app.include_router(historial.router)
 app.include_router(predicciones.router)
 app.include_router(admin.router)
+app.include_router(parejas.router)
 
 @app.get("/")
 def read_root():

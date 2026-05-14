@@ -11,7 +11,6 @@ class UsuariaCreate(BaseModel):
     email: EmailStr
     password: str
     rol: Optional[str] = "usuaria"
-    codigo_pareja: Optional[str] = None
     fecha_nacimiento: Optional[date] = None
 
 class UsuariaLogin(BaseModel):
@@ -25,7 +24,6 @@ class UsuariaOut(BaseModel):
     email: str
     rol: str
     mi_codigo: Optional[str] = None
-    codigo_pareja: Optional[str] = None
     fecha_registro: Optional[datetime]
     ultimo_acceso: Optional[datetime]
     total_ciclos: Optional[int] = 0
@@ -148,7 +146,7 @@ class ConfiguracionUpdate(BaseModel):
     duracion_periodo: Optional[int] = None
     fecha_nacimiento: Optional[date] = None
     modo_oscuro: Optional[int] = None
-    codigo_pareja: Optional[str] = None
+    codigo_pareja: Optional[str] = None  # usado solo para enviar solicitud de vinculación
 
 class ConfiguracionOut(BaseModel):
     id_usuaria: UUID

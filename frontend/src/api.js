@@ -25,11 +25,11 @@ export const ApiService = {
     return data;
   },
 
-  register: async (nombre, email, password, role, codigo_pareja, fecha_nacimiento) => {
+  register: async (nombre, email, password, role, fecha_nacimiento) => {
     const res = await fetch(`${baseUrl}/auth/registro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password, rol: role, codigo_pareja, fecha_nacimiento })
+      body: JSON.stringify({ nombre, email, password, rol: role, fecha_nacimiento })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al registrarse');
@@ -267,6 +267,20 @@ export const ApiService = {
     if (!res.ok) throw new Error(data.detail || 'Error al actualizar configuración');
     if (data.error) throw new Error(data.error);
     return data;
+  },
+
+  getParejas: async () => {
+    const res = await fetch(`${baseUrl}/parejas/`, { headers: getHeaders() });
+    if (!res.ok) throw new Error('Error al obtener parejas');
+    return await res.json();
+  },
+
+  desvincularPareja: async (vinculoId) => {
+    const res = await fetch(`${baseUrl}/parejas/${vinculoId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Error al desvincular');
   },
 
   aceptarPareja: async () => {

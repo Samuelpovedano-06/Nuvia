@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Heart, Users, Check, X, Shield, Info, Calendar } from 'lucide-react';
+import { ChevronLeft, Heart, Users, Shield, Calendar, X } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -10,10 +10,28 @@ const PartnerScreen = () => {
   const [loading, setLoading] = useState(false);
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [vinculos, setVinculos] = useState([]);
+  const [selectedId, setSelectedId] = useState(null); // id_usuaria seleccionada (para rol pareja)
 
-  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.codigo_pareja;
-  const isUsuariaOrAdmin = user?.rol === 'usuaria' || user?.rol === 'admin';
+  const isPareja = user?.rol === 'pareja';
+  const isUsuaria = user?.rol === 'usuaria' || user?.rol === 'admin';
+
+  useEffect(() => {
+    fetchVinculos();
+  }, []);
+
+  const fetchVinculos = async () => {
+    try {
+      const data = await ApiService.getParejas();
+      setVinculos(data);
+      // Preseleccionar la primera si no hay selección
+      if (data.length > 0 && !selectedId) {
+        setSelectedId(isPareja ? data[0].id_usuaria : data[0].id_pareja);
+      }
+    } catch {
+      // sin vínculos
+    }
+  };
 
   const handleSendRequest = async () => {
     if (!partnerCode) return;
@@ -21,11 +39,8 @@ const PartnerScreen = () => {
     setError('');
     try {
       const res = await ApiService.updateConfig({ codigo_pareja: partnerCode });
-      if (res.error) {
-        setError(res.error);
-      } else {
-        await getMe(); // Actualizar estado local
-      }
+      if (res.error) { setError(res.error); return; }
+      await getMe();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -38,7 +53,7 @@ const PartnerScreen = () => {
     try {
       await ApiService.aceptarPareja();
       await getMe();
-      setSuccess('¡Pareja vinculada correctamente!');
+      await fetchVinculos();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -58,6 +73,16 @@ const PartnerScreen = () => {
     }
   };
 
+  const handleDesvincular = async (vinculoId) => {
+    if (!window.confirm('¿Seguro que quieres desvincular?')) return;
+    try {
+      await ApiService.desvincularPareja(vinculoId);
+      await fetchVinculos();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="screen-container">
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
@@ -68,15 +93,37 @@ const PartnerScreen = () => {
 
       <h1 style={{ fontSize: '28px', color: 'var(--primary)', marginBottom: '20px' }}>Mi Pareja</h1>
 
-      {/* El modal de solicitud ahora es GLOBAL en App.jsx para tiempo real */}
+      {/* ── Dropdown de selección (solo si hay más de un vínculo) ── */}
+      {vinculos.length > 1 && (
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+            {isPareja ? 'Viendo el ciclo de:' : 'Pareja seleccionada:'}
+          </label>
+          <select
+            value={selectedId || ''}
+            onChange={e => setSelectedId(e.target.value)}
+            style={{
+              width: '100%', padding: '14px 16px', borderRadius: '14px',
+              border: '1.5px solid rgba(155,108,152,0.3)', background: 'var(--white)',
+              color: 'var(--text-dark)', fontSize: '15px', fontWeight: '600',
+              outline: 'none', cursor: 'pointer', appearance: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239b6c98' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center'
+            }}
+          >
+            {vinculos.map(v => (
+              <option key={v.id} value={isPareja ? v.id_usuaria : v.id_pareja}>
+                {v.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
-      {/* Estado para Pareja que ha enviado solicitud */}
-      {user?.rol === 'pareja' && user?.solicitud_estado === 'enviada' && (
+      {/* ── Solicitud pendiente (pareja que ya envió y espera) ── */}
+      {isPareja && user?.solicitud_estado === 'enviada' && (
         <div className="card" style={{ textAlign: 'center', padding: '30px' }}>
-          <div style={{
-            width: '60px', height: '60px', borderRadius: '50%', background: '#FDF2F8',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', color: 'var(--primary)'
-          }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#FDF2F8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', color: 'var(--primary)' }}>
             <Calendar size={30} />
           </div>
           <h3 style={{ margin: '0 0 10px 0' }}>Solicitud Pendiente</h3>
@@ -86,8 +133,27 @@ const PartnerScreen = () => {
         </div>
       )}
 
-      {/* Formulario de Vinculación (Si no está vinculado ni tiene solicitud) */}
-      {!user?.codigo_pareja && user?.solicitud_estado !== 'enviada' && (
+      {/* ── Solicitud de vinculación (usuaria recibe notificación) ── */}
+      {isUsuaria && user?.solicitud_estado === 'pendiente' && (
+        <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
+          <Heart size={30} color="var(--primary)" style={{ marginBottom: '10px' }} />
+          <h3 style={{ margin: '0 0 8px' }}>Nueva solicitud de pareja</h3>
+          <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '20px' }}>
+            {user?.nombre_solicitante || 'Alguien'} quiere vincularse contigo.
+          </p>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={handleReject} disabled={loading} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#fee2e2', color: '#ef4444', fontWeight: '700', cursor: 'pointer' }}>
+              Rechazar
+            </button>
+            <button onClick={handleAccept} disabled={loading} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer' }}>
+              {loading ? 'Aceptando...' : 'Aceptar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Formulario para introducir código (pareja sin solicitud ni vínculos) ── */}
+      {isPareja && user?.solicitud_estado !== 'enviada' && vinculos.length === 0 && (
         <div className="card" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
             <Shield size={24} color="var(--primary)" />
@@ -96,71 +162,123 @@ const PartnerScreen = () => {
           <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '20px' }}>
             Introduce el código de tu pareja para solicitar la vinculación.
           </p>
-
-          <div style={{ marginBottom: '15px' }}>
-            <input
-              type="text"
-              placeholder="Código de tu pareja (ej: X1Y2Z3)"
-              value={partnerCode}
-              onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
-              style={{
-                width: '100%', padding: '15px', borderRadius: '15px', border: error ? '2px solid #F6416C' : '1.5px solid #eee',
-                fontSize: '12px', outline: 'none', textAlign: 'center', fontWeight: 'bold', letterSpacing: '2px'
-              }}
-            />
-            {error && <p style={{ color: '#F6416C', fontSize: '13px', marginTop: '8px', textAlign: 'center' }}>{error}</p>}
-          </div>
-
+          <input
+            type="text"
+            placeholder="Código (ej: X1Y2Z3)"
+            value={partnerCode}
+            onChange={e => setPartnerCode(e.target.value.toUpperCase())}
+            style={{
+              width: '100%', padding: '15px', borderRadius: '15px',
+              border: error ? '2px solid #F6416C' : '1.5px solid #eee',
+              fontSize: '14px', outline: 'none', textAlign: 'center',
+              fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px'
+            }}
+          />
+          {error && <p style={{ color: '#F6416C', fontSize: '13px', textAlign: 'center', marginBottom: '10px' }}>{error}</p>}
           <button
             onClick={handleSendRequest}
             disabled={loading || !partnerCode}
-            style={{
-              width: '100%', background: 'var(--primary)', color: 'white', border: 'none',
-              padding: '15px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer',
-              opacity: loading || !partnerCode ? 0.7 : 1
-            }}
+            style={{ width: '100%', background: 'var(--primary)', color: 'white', border: 'none', padding: '15px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer', opacity: loading || !partnerCode ? 0.7 : 1 }}
           >
             {loading ? 'Enviando...' : 'Enviar Solicitud'}
           </button>
         </div>
       )}
 
-      {/* Vista Vinculada */}
-      {user?.codigo_pareja && (
-        <div className="card" style={{ padding: '25px', textAlign: 'center' }}>
-          <div style={{
-            width: '80px', height: '80px', borderRadius: '50%', background: '#FDF2F8',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: 'var(--primary)'
-          }}>
-            <Users size={40} />
-          </div>
-          <h2 style={{ margin: '0 0 10px 0' }}>Estás vinculado</h2>
-          <p style={{ color: 'var(--text-light)', fontSize: '15px', marginBottom: '25px' }}>
-            Ahora puedes compartir y ver la información del ciclo.
-          </p>
-          <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '15px', fontSize: '14px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' }}>
-            <Info size={18} />
-            <span>Código vinculado: <strong>{user.codigo_pareja}</strong></span>
-          </div>
+      {/* ── Lista de vínculos activos ── */}
+      {vinculos.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          {/* Si solo hay uno, mostrar nombre como título en vez de dropdown */}
+          {vinculos.length === 1 && (
+            <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#FDF2F8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                  <Users size={24} />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>{vinculos[0].nombre}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)' }}>
+                    {isPareja ? 'Viendo su ciclo' : 'Vinculado/a contigo'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDesvincular(vinculos[0].id)}
+                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '8px' }}
+                title="Desvincular"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
+
+          {/* Si hay varios, mostrar la lista completa con botón de desvincular */}
+          {vinculos.length > 1 && (
+            <div className="card" style={{ padding: '16px' }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {isPareja ? 'Parejas vinculadas' : 'Mis parejas'}
+              </h3>
+              {vinculos.map(v => (
+                <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FDF2F8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                      <Users size={18} />
+                    </div>
+                    <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{v.nombre}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDesvincular(v.id)}
+                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px' }}
+                    title="Desvincular"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Si es Usuaria/Admin y no tiene solicitud ni pareja (Solo mostrar su código) */}
-      {isUsuariaOrAdmin && !user?.solicitud_estado && !user?.codigo_pareja && (
+      {/* ── Código propio (usuaria para compartir) ── */}
+      {isUsuaria && (
         <div className="card" style={{ padding: '25px', textAlign: 'center' }}>
-          <h3 style={{ margin: '0 0 15px 0' }}>Invita a tu pareja</h3>
-          <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '20px' }}>
-            Comparte este código con tu pareja para que pueda solicitar seguir tu ciclo.
+          <h3 style={{ margin: '0 0 10px 0' }}>Tu código para parejas</h3>
+          <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '16px' }}>
+            Comparte este código con tu pareja para que se pueda vincular contigo.
           </p>
           <div style={{
             background: 'var(--primary-light)', color: 'var(--primary)', padding: '20px', borderRadius: '20px',
             fontSize: '24px', fontWeight: '900', letterSpacing: '4px', border: '2px dashed var(--primary)'
           }}>
-            {user.mi_codigo}
+            {user?.mi_codigo || '—'}
           </div>
         </div>
       )}
 
+      {/* Botón para añadir otra vinculación (pareja con al menos un vínculo y sin solicitud pendiente) */}
+      {isPareja && vinculos.length > 0 && user?.solicitud_estado !== 'enviada' && (
+        <div className="card" style={{ padding: '16px', marginTop: '12px' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '14px', color: 'var(--text-light)' }}>Vincular con otra pareja</p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input
+              type="text"
+              placeholder="Código (ej: X1Y2Z3)"
+              value={partnerCode}
+              onChange={e => setPartnerCode(e.target.value.toUpperCase())}
+              style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #eee', fontSize: '13px', outline: 'none', fontWeight: 'bold', letterSpacing: '2px' }}
+            />
+            <button
+              onClick={handleSendRequest}
+              disabled={loading || !partnerCode}
+              style={{ padding: '12px 18px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: loading || !partnerCode ? 0.7 : 1 }}
+            >
+              {loading ? '...' : 'Enviar'}
+            </button>
+          </div>
+          {error && <p style={{ color: '#F6416C', fontSize: '13px', marginTop: '8px' }}>{error}</p>}
+        </div>
+      )}
     </div>
   );
 };

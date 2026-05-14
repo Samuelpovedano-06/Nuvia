@@ -12,7 +12,6 @@ class Usuaria(Base):
     password_hash  = Column(String(255), nullable=False)
     rol            = Column(String(20), nullable=False, server_default="usuaria")
     mi_codigo      = Column(String(10), unique=True, nullable=True)
-    codigo_pareja  = Column(String(10), ForeignKey("usuarias.mi_codigo"), nullable=True)
     solicitud_id   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=True)
     solicitud_estado = Column(String(20), nullable=True) # 'pendiente', 'rechazada'
     otp            = Column(String(10), nullable=True)
@@ -30,6 +29,8 @@ class Usuaria(Base):
     historial         = relationship("HistorialEstado",      back_populates="usuaria", cascade="all, delete")
     predicciones      = relationship("Prediccion",           back_populates="usuaria", cascade="all, delete")
     configuracion     = relationship("ConfiguracionUsuaria", back_populates="usuaria", uselist=False, cascade="all, delete")
+    parejas_como_usuaria = relationship("Pareja", foreign_keys="Pareja.id_usuaria", back_populates="usuaria", cascade="all, delete")
+    parejas_como_pareja  = relationship("Pareja", foreign_keys="Pareja.id_pareja",  back_populates="pareja",  cascade="all, delete")
 
 class Ciclo(Base):
     __tablename__ = "ciclos"
@@ -122,3 +123,13 @@ class ConfiguracionSistema(Base):
     max_dias_periodo = Column(Integer, default=10)
     min_dias_periodo = Column(Integer, default=3)
     ultima_actualizacion = Column(DateTime, default=func.now(), onupdate=func.now())
+
+class Pareja(Base):
+    __tablename__ = "parejas"
+
+    id         = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    id_pareja  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+
+    usuaria = relationship("Usuaria", foreign_keys=[id_usuaria], back_populates="parejas_como_usuaria")
+    pareja  = relationship("Usuaria", foreign_keys=[id_pareja],  back_populates="parejas_como_pareja")
