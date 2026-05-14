@@ -22,6 +22,7 @@ export const ApiService = {
     if (!res.ok) throw new Error(data.detail || 'Error al iniciar sesión');
     if (data.error) throw new Error(data.error);
     localStorage.setItem('token', data.access_token);
+    localStorage.setItem('plataforma', role || 'usuaria');
     return data;
   },
 
@@ -270,7 +271,8 @@ export const ApiService = {
   },
 
   getParejas: async () => {
-    const res = await fetch(`${baseUrl}/parejas/`, { headers: getHeaders() });
+    const vista = localStorage.getItem('plataforma') || 'usuaria';
+    const res = await fetch(`${baseUrl}/parejas/?vista=${vista}`, { headers: getHeaders() });
     if (!res.ok) throw new Error('Error al obtener parejas');
     return await res.json();
   },

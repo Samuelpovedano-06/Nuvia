@@ -16,8 +16,9 @@ const PartnerScreen = () => {
   const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
 
-  const isPareja = user?.rol === 'pareja';
-  const isUsuaria = user?.rol === 'usuaria' || user?.rol === 'admin';
+  const plataforma = localStorage.getItem('plataforma') || 'usuaria';
+  const isPareja = plataforma === 'pareja';
+  const isUsuaria = !isPareja;
 
   useEffect(() => {
     fetchVinculos();

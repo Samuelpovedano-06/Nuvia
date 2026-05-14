@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
+from typing import Optional
 from app.database.connection import get_db
 from app.models.models import Usuaria, Pareja
 from app.routers.auth_utils import get_current_user
@@ -9,21 +10,28 @@ router = APIRouter(prefix="/parejas", tags=["Parejas"])
 
 
 @router.get("/")
-def listar_vinculos(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+def listar_vinculos(
+    vista: Optional[str] = Query(None),  # "pareja" o "usuaria"
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
     """
-    Usuaria  → devuelve todas las parejas vinculadas a ella.
-    Pareja   → devuelve todas las usuarias a las que está vinculada.
+    vista=pareja  → soy id_pareja, veo a las usuarias a las que estoy vinculada.
+    vista=usuaria → soy id_usuaria, veo a las parejas vinculadas a mí.
+    Sin vista      → se decide por rol.
     """
-    if current_user.rol in ("usuaria", "admin"):
-        rows = db.query(Pareja).filter(Pareja.id_usuaria == current_user.id_usuaria).all()
-        return [
-            {"id": str(r.id), "id_pareja": str(r.id_pareja), "nombre": r.pareja.nombre}
-            for r in rows
-        ]
-    else:
+    como_pareja = vista == "pareja" or (vista is None and current_user.rol == "pareja")
+
+    if como_pareja:
         rows = db.query(Pareja).filter(Pareja.id_pareja == current_user.id_usuaria).all()
         return [
             {"id": str(r.id), "id_usuaria": str(r.id_usuaria), "nombre": r.usuaria.nombre}
+            for r in rows
+        ]
+    else:
+        rows = db.query(Pareja).filter(Pareja.id_usuaria == current_user.id_usuaria).all()
+        return [
+            {"id": str(r.id), "id_pareja": str(r.id_pareja), "nombre": r.pareja.nombre}
             for r in rows
         ]
 
