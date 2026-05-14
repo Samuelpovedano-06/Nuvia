@@ -11,14 +11,19 @@ const PartnerScreen = () => {
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [vinculos, setVinculos] = useState([]);
-  const [selectedId, setSelectedId] = useState(null); // id_usuaria seleccionada (para rol pareja)
+  const [selectedId, setSelectedId] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
   const isPareja = user?.rol === 'pareja';
   const isUsuaria = user?.rol === 'usuaria' || user?.rol === 'admin';
 
   useEffect(() => {
     fetchVinculos();
-  }, []);
+    const interval = setInterval(fetchVinculos, 10000); // Polling local cada 10s para asegurar tiempo real
+    return () => clearInterval(interval);
+  }, [user]);
 
   const fetchVinculos = async () => {
     try {
@@ -41,6 +46,7 @@ const PartnerScreen = () => {
       const res = await ApiService.updateConfig({ codigo_pareja: partnerCode });
       if (res.error) { setError(res.error); return; }
       await getMe();
+      setPartnerCode('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,13 +79,21 @@ const PartnerScreen = () => {
     }
   };
 
-  const handleDesvincular = async (vinculoId) => {
-    if (!window.confirm('¿Seguro que quieres desvincular?')) return;
+  const handleDesvincular = (id) => {
+    setVinculoToDesvincular(id);
+    setShowConfirm(true);
+  };
+
+  const confirmDesvincular = async () => {
+    if (!vinculoToDesvincular) return;
     try {
-      await ApiService.desvincularPareja(vinculoId);
+      await ApiService.desvincularPareja(vinculoToDesvincular);
       await fetchVinculos();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setShowConfirm(false);
+      setVinculoToDesvincular(null);
     }
   };
 
@@ -93,30 +107,67 @@ const PartnerScreen = () => {
 
       <h1 style={{ fontSize: '28px', color: 'var(--primary)', marginBottom: '20px' }}>Mi Pareja</h1>
 
-      {/* ── Dropdown de selección (solo si hay más de un vínculo) ── */}
+      {/* ── Selector de pareja personalizado (Dropdown) ── */}
       {vinculos.length > 1 && (
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+        <div style={{ marginBottom: '25px', position: 'relative' }}>
+          <label style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '10px', paddingLeft: '4px' }}>
             {isPareja ? 'Viendo el ciclo de:' : 'Pareja seleccionada:'}
           </label>
-          <select
-            value={selectedId || ''}
-            onChange={e => setSelectedId(e.target.value)}
+          <div 
+            onClick={() => setIsSelectOpen(!isSelectOpen)}
             style={{
-              width: '100%', padding: '14px 16px', borderRadius: '14px',
-              border: '1.5px solid rgba(155,108,152,0.3)', background: 'var(--white)',
-              color: 'var(--text-dark)', fontSize: '15px', fontWeight: '600',
-              outline: 'none', cursor: 'pointer', appearance: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239b6c98' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center'
+              padding: '16px', borderRadius: '18px',
+              border: '1.5px solid rgba(176,91,181,0.15)', background: 'var(--white)',
+              color: 'var(--text-dark)', fontSize: '16px', fontWeight: '600',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              boxShadow: 'var(--shadow-sm)', transition: 'all 0.3s ease'
             }}
           >
-            {vinculos.map(v => (
-              <option key={v.id} value={isPareja ? v.id_usuaria : v.id_pareja}>
-                {v.nombre}
-              </option>
-            ))}
-          </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(176,91,181,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                <Users size={16} />
+              </div>
+              <span>{vinculos.find(v => (isPareja ? v.id_usuaria : v.id_pareja) === selectedId)?.nombre || 'Seleccionar...'}</span>
+            </div>
+            <ChevronLeft size={20} style={{ transform: isSelectOpen ? 'rotate(90deg)' : 'rotate(-90deg)', transition: 'transform 0.3s', color: 'var(--primary)' }} />
+          </div>
+
+          {isSelectOpen && (
+            <>
+              <div 
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 }} 
+                onClick={() => setIsSelectOpen(false)} 
+              />
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
+                background: 'var(--white)', borderRadius: '18px', boxShadow: 'var(--shadow-md)',
+                zIndex: 101, overflow: 'hidden', border: '1.5px solid rgba(176,91,181,0.1)',
+                animation: 'fadeIn 0.2s ease-out'
+              }}>
+                {vinculos.map(v => {
+                  const val = isPareja ? v.id_usuaria : v.id_pareja;
+                  const isSelected = val === selectedId;
+                  return (
+                    <div 
+                      key={v.id}
+                      onClick={() => { setSelectedId(val); setIsSelectOpen(false); }}
+                      style={{
+                        padding: '16px', cursor: 'pointer',
+                        background: isSelected ? 'rgba(176,91,181,0.05)' : 'transparent',
+                        color: isSelected ? 'var(--primary)' : 'var(--text-dark)',
+                        fontWeight: isSelected ? '700' : '500',
+                        borderBottom: '1px solid #f8f8f8',
+                        display: 'flex', alignItems: 'center', gap: '12px'
+                      }}
+                    >
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isSelected ? 'var(--primary)' : 'transparent', border: isSelected ? 'none' : '1px solid #ddd' }} />
+                      {v.nombre}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -277,6 +328,39 @@ const PartnerScreen = () => {
             </button>
           </div>
           {error && <p style={{ color: '#F6416C', fontSize: '13px', marginTop: '8px' }}>{error}</p>}
+        </div>
+      )}
+      {/* ── Modal de Confirmación Custom ── */}
+      {showConfirm && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2000, padding: '20px', animation: 'fadeIn 0.3s ease'
+        }}>
+          <div className="card" style={{ maxWidth: '340px', width: '100%', padding: '25px', textAlign: 'center', margin: 0, border: 'none' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#ef4444' }}>
+              <X size={32} strokeWidth={2.5} />
+            </div>
+            <h3 style={{ fontSize: '20px', margin: '0 0 12px', color: 'var(--text-dark)', fontWeight: '700' }}>¿Desvincular pareja?</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '28px', lineHeight: '1.6' }}>
+              Dejarás de compartir información y ver el ciclo de esta persona. Esta acción es inmediata.
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setShowConfirm(false)}
+                style={{ flex: 1, padding: '14px', borderRadius: '16px', border: '1.5px solid #eee', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmDesvincular}
+                style={{ flex: 1, padding: '14px', borderRadius: '16px', border: 'none', background: '#ef4444', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
