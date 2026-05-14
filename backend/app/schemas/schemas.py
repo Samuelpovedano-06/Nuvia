@@ -35,6 +35,7 @@ class UsuariaOut(BaseModel):
     solicitud_id: Optional[UUID] = None
     solicitud_estado: Optional[str] = None
     nombre_solicitante: Optional[str] = None
+    tiene_vinculos: Optional[bool] = False
 
     class Config:
         from_attributes = True

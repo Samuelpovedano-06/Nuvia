@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 import random
 import string
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria
+from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja
+from sqlalchemy import or_
 from app.schemas.schemas import UsuariaCreate, UsuariaLogin, UsuariaOut, Token, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest
 from app.routers.auth_utils import hash_password, verify_password, create_access_token, get_current_user
 from app.utils.email import enviar_otp_email
@@ -60,25 +61,18 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
             detail="Email o contraseña incorrectos",
         )
 
-    # Validaciones de plataforma según el rol
+    # Validaciones de plataforma
     plataforma = datos.plataforma or "usuaria"
 
-    if usuaria.rol == "admin":
-        # Admin puede entrar por donde quiera
-        pass
-    elif usuaria.rol == "pareja":
-        if plataforma != "pareja":
-            return {"error": "Como usuaria pareja, solo puedes iniciar sesión desde el panel de Pareja."}
-    elif usuaria.rol == "usuaria":
-        if plataforma == "pareja":
-            # Comprobar si tiene alguna pareja asociada (usuarios con rol pareja que apuntan a su mi_codigo)
-            parejas_vinculadas = db.query(Usuaria).filter(
-                Usuaria.rol == "pareja", 
-                Usuaria.codigo_pareja == usuaria.mi_codigo
-            ).count()
-            
-            if parejas_vinculadas == 0:
-                return {"error": "No puedes acceder como pareja porque no tienes ninguna pareja vinculada a tu cuenta."}
+    if plataforma == "pareja" and usuaria.rol != "admin":
+        # Puede entrar como pareja si tiene al menos un vínculo donde es id_pareja
+        es_pareja = db.query(Pareja).filter(Pareja.id_pareja == usuaria.id_usuaria).first()
+        if not es_pareja:
+            return {"error": "No tienes ninguna pareja vinculada para acceder a esta vista."}
+
+    if plataforma == "usuaria" and usuaria.rol == "pareja":
+        # Pareja pura no tiene vista de usuaria
+        return {"error": "Como pareja, accede desde el panel de Pareja."}
     
     token = create_access_token(data={"sub": str(usuaria.id_usuaria)})
     
@@ -160,4 +154,11 @@ def get_me(db: Session = Depends(get_db),
         solicitante = db.query(Usuaria).filter(Usuaria.id_usuaria == current_user.solicitud_id).first()
         if solicitante:
             current_user.nombre_solicitante = solicitante.nombre
+
+    tiene_vinculos = db.query(Pareja).filter(
+        or_(Pareja.id_usuaria == current_user.id_usuaria,
+            Pareja.id_pareja  == current_user.id_usuaria)
+    ).first() is not None
+    current_user.tiene_vinculos = tiene_vinculos
+
     return current_user

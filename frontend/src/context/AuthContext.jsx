@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }) => {
     await getMe();
   };
 
-  const register = async (nombre, email, password, role, codigo_pareja, fecha_nacimiento) => {
-    await ApiService.register(nombre, email, password, role, codigo_pareja, fecha_nacimiento);
+  const register = async (nombre, email, password, role, fecha_nacimiento) => {
+    await ApiService.register(nombre, email, password, role, fecha_nacimiento);
     await login(email, password, role);
   };
 

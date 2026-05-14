@@ -32,7 +32,7 @@ const BottomNav = () => {
   const noNavRoutes = ['/login', '/register'];
   if (noNavRoutes.includes(location.pathname)) return null;
 
-  const isUnlinkedPareja = user.rol === 'pareja' && !user.codigo_pareja && user.solicitud_estado !== 'aceptada';
+  const isUnlinkedPareja = user.rol === 'pareja' && !user.tiene_vinculos;
 
   const navItems = [
     { label: 'Inicio', icon: <Home size={22} />, path: '/', restricted: false },
