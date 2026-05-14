@@ -21,11 +21,10 @@ def registrar_usuaria(datos: UsuariaCreate, db: Session = Depends(get_db)):
     if existente:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
 
-    # Generar mi_codigo si es usuaria o admin
+    # Solo usuaria/admin generan mi_codigo para compartir con parejas
     mi_codigo = None
     if (datos.rol or "usuaria") in ["usuaria", "admin"]:
         while True:
-            # Alfanumérico de 6 caracteres (ej: A1B2C3)
             mi_codigo = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
             if not db.query(Usuaria).filter(Usuaria.mi_codigo == mi_codigo).first():
                 break

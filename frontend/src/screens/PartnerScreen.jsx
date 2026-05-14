@@ -152,8 +152,8 @@ const PartnerScreen = () => {
         </div>
       )}
 
-      {/* ── Formulario para introducir código (pareja sin solicitud ni vínculos) ── */}
-      {isPareja && user?.solicitud_estado !== 'enviada' && vinculos.length === 0 && (
+      {/* ── Formulario para introducir código (sin solicitud pendiente ni vínculos) ── */}
+      {user?.solicitud_estado !== 'enviada' && vinculos.length === 0 && (
         <div className="card" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
             <Shield size={24} color="var(--primary)" />
@@ -256,8 +256,8 @@ const PartnerScreen = () => {
         </div>
       )}
 
-      {/* Botón para añadir otra vinculación (pareja con al menos un vínculo y sin solicitud pendiente) */}
-      {isPareja && vinculos.length > 0 && user?.solicitud_estado !== 'enviada' && (
+      {/* Botón para añadir otra vinculación (al menos un vínculo y sin solicitud pendiente) */}
+      {vinculos.length > 0 && user?.solicitud_estado !== 'enviada' && (
         <div className="card" style={{ padding: '16px', marginTop: '12px' }}>
           <p style={{ margin: '0 0 10px', fontSize: '14px', color: 'var(--text-light)' }}>Vincular con otra pareja</p>
           <div style={{ display: 'flex', gap: '10px' }}>

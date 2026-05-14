@@ -31,12 +31,12 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
 
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         if campo == "codigo_pareja":
-            if valor and current_user.rol == "pareja":
+            if valor:
                 if valor == current_user.mi_codigo:
                     return {"error": "No puedes vincularte a tu propio código."}
                 objetivo = db.query(Usuaria).filter(Usuaria.mi_codigo == valor).first()
                 if not objetivo:
-                    return {"error": "El código de pareja no es válido o no existe."}
+                    return {"error": "El código no es válido o no existe."}
                 objetivo.solicitud_id = current_user.id_usuaria
                 objetivo.solicitud_estado = "pendiente"
                 current_user.solicitud_estado = "enviada"
