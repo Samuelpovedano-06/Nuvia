@@ -213,3 +213,20 @@ class AdminConfigOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ─────────────────────── CHAT ───────────────────────
+
+class MensajeCreate(BaseModel):
+    id_receptor: UUID
+    contenido: str
+
+class MensajeOut(BaseModel):
+    id: UUID
+    id_remitente: UUID
+    id_receptor: UUID
+    contenido: str
+    leido: bool
+    fecha: datetime
+
+    class Config:
+        from_attributes = True

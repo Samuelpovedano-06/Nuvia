@@ -321,5 +321,22 @@ export const ApiService = {
     });
     const data = await res.json();
     return data;
+  },
+
+  // Chat
+  getMensajes: async (idPareja) => {
+    const res = await fetch(`${baseUrl}/chat/${idPareja}`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  enviarMensaje: async (idReceptor, contenido) => {
+    const res = await fetch(`${baseUrl}/chat/`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ id_receptor: idReceptor, contenido })
+    });
+    if (!res.ok) throw new Error('Error al enviar mensaje');
+    return await res.json();
   }
 };

@@ -133,3 +133,16 @@ class Pareja(Base):
 
     usuaria = relationship("Usuaria", foreign_keys=[id_usuaria], back_populates="parejas_como_usuaria")
     pareja  = relationship("Usuaria", foreign_keys=[id_pareja],  back_populates="parejas_como_pareja")
+
+class Mensaje(Base):
+    __tablename__ = "mensajes"
+
+    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_remitente = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    id_receptor  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    contenido    = Column(Text, nullable=False)
+    leido        = Column(Boolean, server_default=text("false"))
+    fecha        = Column(DateTime, server_default=func.now())
+
+    remitente = relationship("Usuaria", foreign_keys=[id_remitente])
+    receptor  = relationship("Usuaria", foreign_keys=[id_receptor])

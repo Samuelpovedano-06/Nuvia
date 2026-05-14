@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -63,6 +63,7 @@ app.include_router(historial.router)
 app.include_router(predicciones.router)
 app.include_router(admin.router)
 app.include_router(parejas.router)
+app.include_router(chat.router)
 
 @app.get("/")
 def read_root():

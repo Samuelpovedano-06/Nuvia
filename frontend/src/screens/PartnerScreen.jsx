@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Heart, Users, Shield, Calendar, X } from 'lucide-react';
+import { ChevronLeft, Heart, Users, Shield, Calendar, X, Send, MessageCircle } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -14,6 +14,9 @@ const PartnerScreen = () => {
   const [selectedId, setSelectedId] = useState(localStorage.getItem('selectedPartnerId'));
   const [showConfirm, setShowConfirm] = useState(false);
   const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
+  const [mensajes, setMensajes] = useState([]);
+  const [nuevoMensaje, setNuevoMensaje] = useState('');
+  const chatEndRef = React.useRef(null);
 
   const plataforma = localStorage.getItem('plataforma') || 'usuaria';
   const isPareja = plataforma === 'pareja';
@@ -21,9 +24,46 @@ const PartnerScreen = () => {
 
   useEffect(() => {
     fetchVinculos();
-    const interval = setInterval(fetchVinculos, 10000); // Polling local cada 10s para asegurar tiempo real
+    const interval = setInterval(fetchVinculos, 10000); 
     return () => clearInterval(interval);
   }, [user]);
+
+  useEffect(() => {
+    if (selectedId) {
+      fetchMensajes();
+      const interval = setInterval(fetchMensajes, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedId]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [mensajes]);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const fetchMensajes = async () => {
+    try {
+      const data = await ApiService.getMensajes(selectedId);
+      setMensajes(data);
+    } catch (err) {
+      console.error('Error fetching mensajes:', err);
+    }
+  };
+
+  const handleEnviarMensaje = async (e) => {
+    e.preventDefault();
+    if (!nuevoMensaje.trim() || !selectedId) return;
+    try {
+      await ApiService.enviarMensaje(selectedId, nuevoMensaje);
+      setNuevoMensaje('');
+      fetchMensajes();
+    } catch (err) {
+      console.error('Error sending message:', err);
+    }
+  };
 
   const fetchVinculos = async () => {
     try {
@@ -201,21 +241,23 @@ const PartnerScreen = () => {
                   </div>
                   <div>
                     <span style={{ fontWeight: '700', color: 'var(--text-dark)', display: 'block' }}>{v.nombre}</span>
-                    {isViewing && <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>Viendo ahora</span>}
+                    {isPareja && isViewing && <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>Viendo ahora</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button
-                    onClick={() => handleSelect(vid)}
-                    style={{
-                      padding: '6px 14px', borderRadius: '10px', border: '1.5px solid var(--primary)',
-                      background: isViewing ? 'var(--primary)' : 'transparent',
-                      color: isViewing ? 'white' : 'var(--primary)',
-                      cursor: 'pointer', fontSize: '13px', fontWeight: '700'
-                    }}
-                  >
-                    {isViewing ? 'Viendo' : 'Ver'}
-                  </button>
+                  {isPareja && (
+                    <button
+                      onClick={() => handleSelect(vid)}
+                      style={{
+                        padding: '6px 14px', borderRadius: '10px', border: '1.5px solid var(--primary)',
+                        background: isViewing ? 'var(--primary)' : 'transparent',
+                        color: isViewing ? 'white' : 'var(--primary)',
+                        cursor: 'pointer', fontSize: '13px', fontWeight: '700'
+                      }}
+                    >
+                      {isViewing ? 'Viendo' : 'Ver'}
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDesvincular(v.id)}
                     style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px' }}
@@ -227,6 +269,69 @@ const PartnerScreen = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── UsChat ── */}
+      {selectedId && vinculos.length > 0 && (
+        <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: '400px', overflow: 'hidden', marginBottom: '20px' }}>
+          <div style={{ padding: '16px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(176,91,181,0.02)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '10px', color: 'white' }}>
+                <MessageCircle size={18} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>UsChat</h3>
+                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-light)' }}>Chat privado con {vinculos.find(v => (isPareja ? v.id_usuaria : v.id_pareja) === selectedId)?.nombre || 'tu pareja'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#fafafa' }}>
+            {mensajes.length === 0 ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+                <MessageCircle size={40} style={{ marginBottom: '10px' }} />
+                <p style={{ fontSize: '13px' }}>Di algo bonito...</p>
+              </div>
+            ) : mensajes.map(m => {
+              const isMe = m.id_remitente === user.id_usuaria;
+              return (
+                <div key={m.id} style={{
+                  alignSelf: isMe ? 'flex-end' : 'flex-start',
+                  maxWidth: '80%',
+                  padding: '10px 14px',
+                  borderRadius: isMe ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
+                  background: isMe ? 'var(--primary)' : 'white',
+                  color: isMe ? 'white' : 'var(--text-dark)',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                  position: 'relative'
+                }}>
+                  <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4' }}>{m.contenido}</p>
+                  <span style={{ fontSize: '9px', opacity: 0.7, marginTop: '4px', display: 'block', textAlign: isMe ? 'right' : 'left' }}>
+                    {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              );
+            })}
+            <div ref={chatEndRef} />
+          </div>
+
+          <form onSubmit={handleEnviarMensaje} style={{ padding: '12px', borderTop: '1px solid #f5f5f5', display: 'flex', gap: '8px', background: 'white' }}>
+            <input
+              type="text"
+              placeholder="Escribe un mensaje..."
+              value={nuevoMensaje}
+              onChange={e => setNuevoMensaje(e.target.value)}
+              style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #f1f5f9', fontSize: '14px', outline: 'none' }}
+            />
+            <button
+              type="submit"
+              disabled={!nuevoMensaje.trim()}
+              style={{ background: 'var(--primary)', color: 'white', border: 'none', width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: !nuevoMensaje.trim() ? 0.6 : 1 }}
+            >
+              <Send size={18} />
+            </button>
+          </form>
         </div>
       )}
 
