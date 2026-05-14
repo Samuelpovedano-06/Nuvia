@@ -35,5 +35,13 @@ def desvincular(vinculo_id: UUID, db: Session = Depends(get_db), current_user: U
         raise HTTPException(status_code=404, detail="Vínculo no encontrado")
     if row.id_usuaria != current_user.id_usuaria and row.id_pareja != current_user.id_usuaria:
         raise HTTPException(status_code=403, detail="Sin permiso")
+    # Limpiar códigos de pareja si coinciden
+    usuaria = db.query(Usuaria).filter(Usuaria.id_usuaria == row.id_usuaria).first()
+    pareja = db.query(Usuaria).filter(Usuaria.id_usuaria == row.id_pareja).first()
+    if usuaria and usuaria.codigo_pareja == pareja.mi_codigo:
+        usuaria.codigo_pareja = None
+    if pareja and pareja.codigo_pareja == usuaria.mi_codigo:
+        pareja.codigo_pareja = None
+
     db.delete(row)
     db.commit()

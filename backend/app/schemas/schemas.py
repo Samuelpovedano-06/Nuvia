@@ -24,6 +24,7 @@ class UsuariaOut(BaseModel):
     email: str
     rol: str
     mi_codigo: Optional[str] = None
+    codigo_pareja: Optional[str] = None
     fecha_registro: Optional[datetime]
     ultimo_acceso: Optional[datetime]
     total_ciclos: Optional[int] = 0

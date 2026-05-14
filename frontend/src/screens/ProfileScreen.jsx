@@ -660,13 +660,7 @@ export default function ProfileScreen() {
           </div>
         )}
 
-        {/* Código de Pareja */}
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px' }}>
-            <span style={{ color: 'var(--text-light)' }}>Código de mi pareja</span>
-            <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{user?.codigo_pareja || 'Soltera'}</span>
-          </div>
-        </div>
+
 
         {/* Ciclos */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>

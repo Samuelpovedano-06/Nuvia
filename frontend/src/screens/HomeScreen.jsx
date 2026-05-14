@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
 
-  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.codigo_pareja;
+  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.codigo_pareja && user?.solicitud_estado !== 'aceptada';
 
   useEffect(() => {
     const fetchData = async () => {
