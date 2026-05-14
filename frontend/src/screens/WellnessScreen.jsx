@@ -185,6 +185,10 @@ const ADVICE_DATABASE = {
 
 export default function WellnessScreen() {
   const navigate = useNavigate();
+  const isPareja = localStorage.getItem('plataforma') === 'pareja';
+  const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
+  const partnerName = isPareja ? (localStorage.getItem('selectedPartnerName') || 'tu pareja') : null;
+
   const [activeTab, setActiveTab] = useState('guide');
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState('folicular');
@@ -195,10 +199,10 @@ export default function WellnessScreen() {
     const fetchWellness = async () => {
       try {
         const [ciclos, config, s7, d7, sintomas] = await Promise.all([
-          ApiService.getCiclos(),
-          ApiService.getConfig(),
-          ApiService.getRegistrosSintomas(),
-          ApiService.getRegistrosDiarios(),
+          ApiService.getCiclos(targetId),
+          ApiService.getConfig(targetId),
+          ApiService.getRegistrosSintomas(null, targetId),
+          ApiService.getRegistrosDiarios(targetId),
           ApiService.getSintomas()
         ]);
 
@@ -265,7 +269,16 @@ export default function WellnessScreen() {
       </div>
 
       <h2 style={{ fontSize: '28px', color: 'var(--primary)', marginBottom: '5px' }}>Bienestar</h2>
-      <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '25px' }}>Día {day} • {currentAdvice.title}</p>
+      <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: isPareja ? '12px' : '25px' }}>Día {day} • {currentAdvice.title}</p>
+
+      {isPareja && (
+        <div style={{ background: 'rgba(176,91,181,0.08)', border: '1px solid rgba(176,91,181,0.2)', borderRadius: '14px', padding: '10px 16px', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Info size={15} color="var(--primary)" />
+          <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>
+            Viendo el bienestar de {partnerName} — solo lectura
+          </span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.5)', padding: '4px', borderRadius: '15px', marginBottom: '25px', border: '1px solid #f1f5f9' }}>

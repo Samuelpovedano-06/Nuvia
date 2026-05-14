@@ -27,10 +27,22 @@ def registrar_sintoma(datos: RegistroSintomaCreate, db: Session = Depends(get_db
     return registro
 
 @router.get("/registros-sintomas", response_model=List[RegistroSintomaOut])
-def listar_registros_sintomas(db: Session = Depends(get_db),
+def listar_registros_sintomas(id_usuaria: UUID = None, db: Session = Depends(get_db),
                               current_user: Usuaria = Depends(get_current_user)):
+    target_id = current_user.id_usuaria
+    if id_usuaria:
+        if current_user.rol == "admin":
+            target_id = id_usuaria
+        else:
+            link = db.query(Pareja).filter(
+                Pareja.id_usuaria == id_usuaria,
+                Pareja.id_pareja == current_user.id_usuaria
+            ).first()
+            if not link:
+                raise HTTPException(status_code=403, detail="No tienes acceso a los datos de esta usuaria")
+            target_id = id_usuaria
     return db.query(RegistroSintoma)\
-             .filter(RegistroSintoma.id_usuaria == current_user.id_usuaria)\
+             .filter(RegistroSintoma.id_usuaria == target_id)\
              .order_by(RegistroSintoma.fecha.desc()).all()
 
 @router.get("/registros-sintomas/{fecha}", response_model=List[RegistroSintomaOut])

@@ -115,6 +115,10 @@ const CycleGraph = ({ duracion = 28, onSelectPoint, selectedPoint, diaActual }) 
 
 export default function CalendarScreen() {
   const navigate = useNavigate();
+  const isPareja = localStorage.getItem('plataforma') === 'pareja';
+  const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
+  const partnerName = isPareja ? (localStorage.getItem('selectedPartnerName') || 'tu pareja') : null;
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [ciclos, setCiclos] = useState([]);
   const [config, setConfig] = useState(null);
@@ -126,8 +130,8 @@ export default function CalendarScreen() {
     const fetchData = async () => {
       try {
         const [ciclosData, configData] = await Promise.all([
-          ApiService.getCiclos(),
-          ApiService.getConfig()
+          ApiService.getCiclos(targetId),
+          ApiService.getConfig(targetId)
         ]);
         setCiclos(ciclosData);
         setConfig(configData);
@@ -246,6 +250,15 @@ export default function CalendarScreen() {
           <ChevronLeft size={20} /> <span>Volver</span>
         </button>
       </div>
+
+      {isPareja && (
+        <div style={{ background: 'rgba(176,91,181,0.08)', border: '1px solid rgba(176,91,181,0.2)', borderRadius: '14px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Info size={15} color="var(--primary)" />
+          <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>
+            Viendo el ciclo de {partnerName} — solo lectura
+          </span>
+        </div>
+      )}
 
       {/* Sección Superior: Evolución del Ciclo (Fusión de Predicciones) */}
       <div className="card" style={{ padding: '20px', marginBottom: '25px', background: 'white' }}>

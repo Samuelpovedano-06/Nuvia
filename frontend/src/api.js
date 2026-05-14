@@ -238,8 +238,9 @@ export const ApiService = {
     return arr[0] || { notas: '', flujo: '', relaciones: 0 };
   },
 
-  getRegistrosDiarios: async () => {
-    const res = await fetch(`${baseUrl}/registros-diarios`, { headers: getHeaders() });
+  getRegistrosDiarios: async (targetId = null) => {
+    const url = targetId ? `${baseUrl}/registros-diarios?id_usuaria=${targetId}` : `${baseUrl}/registros-diarios`;
+    const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
