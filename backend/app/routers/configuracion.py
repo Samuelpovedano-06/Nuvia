@@ -1,4 +1,6 @@
 from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja
 from app.schemas.schemas import ConfiguracionUpdate, ConfiguracionOut
@@ -54,7 +56,6 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
                 objetivo.solicitud_id = current_user.id_usuaria
                 objetivo.solicitud_estado = "pendiente"
                 current_user.solicitud_estado = "enviada"
-                current_user.codigo_pareja = valor
         else:
             setattr(config, campo, valor)
     db.commit()
@@ -80,10 +81,6 @@ def aceptar_pareja(db: Session = Depends(get_db),
     current_user.solicitud_estado = None
     solicitante.solicitud_estado = None
     
-    # Establecer códigos mutuos para referencia rápida
-    current_user.codigo_pareja = solicitante.mi_codigo
-    solicitante.codigo_pareja = current_user.mi_codigo
-
     db.commit()
     return {"message": "Pareja vinculada con éxito."}
 
