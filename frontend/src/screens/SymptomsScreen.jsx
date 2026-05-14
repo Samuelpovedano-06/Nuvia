@@ -146,32 +146,44 @@ const DISCHARGE_CARDS = [
 
 export default function SymptomsScreen() {
   const navigate = useNavigate();
+  const isPareja = localStorage.getItem('plataforma') === 'pareja';
+  const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
+  const partnerName = isPareja ? (localStorage.getItem('selectedPartnerName') || 'tu pareja') : null;
+
   const today = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   })();
-  
+
   const [sintomasCatalogo, setSintomasCatalogo] = useState([]);
   const [selected, setSelected] = useState([]);
   const [intensities, setIntensities] = useState({});
   const [notas, setNotas] = useState('');
   const [flujo, setFlujo] = useState('');
-  const [relaciones, setRelaciones] = useState(0); // 0: No, 1: Con, 2: Sin
+  const [relaciones, setRelaciones] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     const init = async () => {
       try {
-        const [catalogo, diario] = await Promise.all([
+        const [catalogo, diario, registros] = await Promise.all([
           ApiService.getSintomas(),
-          ApiService.getRegistroDiario(today)
+          ApiService.getRegistroDiario(today, targetId),
+          isPareja ? ApiService.getRegistrosSintomas(today, targetId) : Promise.resolve([])
         ]);
         setSintomasCatalogo(catalogo);
         if (diario) {
           setNotas(diario.notas || '');
           setFlujo(diario.flujo || '');
           setRelaciones(diario.relaciones || 0);
+        }
+        if (isPareja && registros.length > 0) {
+          const ids = registros.map(r => r.id_sintoma);
+          const intMap = {};
+          registros.forEach(r => { intMap[r.id_sintoma] = r.intensidad; });
+          setSelected(ids);
+          setIntensities(intMap);
         }
       } catch (err) {
         console.error(err);
@@ -251,8 +263,17 @@ export default function SymptomsScreen() {
 
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h2>Diario de Nuvia</h2>
-        <p className="subtitle">Tu salud, bajo control y con estilo</p>
+        <p className="subtitle">{isPareja ? `Registro de ${partnerName}` : 'Tu salud, bajo control y con estilo'}</p>
       </div>
+
+      {isPareja && (
+        <div style={{ background: 'rgba(176,91,181,0.08)', border: '1px solid rgba(176,91,181,0.2)', borderRadius: '14px', padding: '10px 16px', marginBottom: '20px', maxWidth: '800px', width: '100%', margin: '0 auto 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Sparkles size={15} color="var(--primary)" />
+          <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>
+            Viendo los síntomas de {partnerName}
+          </span>
+        </div>
+      )}
 
       {message && (
         <div style={{ 
@@ -287,15 +308,15 @@ export default function SymptomsScreen() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
             
             {/* Tarjeta Relaciones */}
-            <div 
+            <div
               className="card"
               style={{
                 margin: 0, padding: '16px 12px', minHeight: relaciones > 0 ? '160px' : '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 border: relaciones > 0 ? '2px solid var(--primary)' : '2px solid transparent',
                 background: relaciones > 0 ? 'var(--primary-light)' : 'var(--white)',
-                transition: '0.3s', cursor: 'pointer'
+                transition: '0.3s', cursor: isPareja ? 'default' : 'pointer'
               }}
-              onClick={() => setRelaciones(relaciones > 0 ? 0 : 1)}
+              onClick={() => !isPareja && setRelaciones(relaciones > 0 ? 0 : 1)}
             >
               <div className="nuvia-sun-container" style={{ color: 'var(--primary)', marginBottom: '8px' }}>
                 <div className="nuvia-sun-rays"></div>
@@ -342,9 +363,9 @@ export default function SymptomsScreen() {
                   margin: 0, padding: '16px 12px', minHeight: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   border: flujo === type.id ? '2px solid var(--primary)' : '2px solid transparent',
                   background: flujo === type.id ? 'var(--primary-light)' : 'var(--white)',
-                  transition: '0.3s', cursor: 'pointer'
+                  transition: '0.3s', cursor: isPareja ? 'default' : 'pointer'
                 }}
-                onClick={() => setFlujo(flujo === type.id ? '' : type.id)}
+                onClick={() => !isPareja && setFlujo(flujo === type.id ? '' : type.id)}
               >
                 <div className="nuvia-sun-container" style={{ color: 'var(--primary)', marginBottom: '8px' }}>
                   <div className="nuvia-sun-rays"></div>
@@ -378,7 +399,7 @@ export default function SymptomsScreen() {
                         background: isSelected ? 'var(--primary-light)' : 'var(--white)',
                         transition: 'all 0.3s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center'
                       }}
-                      onClick={() => toggleSintoma(s.id_sintoma)}
+                      onClick={() => !isPareja && toggleSintoma(s.id_sintoma)}
                     >
                       <div className="nuvia-sun-container" style={{ color: style.color, marginBottom: '8px' }}>
                         <div className="nuvia-sun-rays"></div>
@@ -391,7 +412,7 @@ export default function SymptomsScreen() {
                         <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', paddingTop: '8px', borderTop: '1px dashed rgba(155, 108, 152, 0.2)', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                             {[1, 2, 3, 4, 5].map(v => (
-                              <button key={v} onClick={() => updateIntensity(s.id_sintoma, v)} style={{ width: '24px', height: '24px', borderRadius: '6px', border: 'none', background: intensities[s.id_sintoma] === v ? 'var(--primary)' : 'rgba(155, 108, 152, 0.1)', color: intensities[s.id_sintoma] === v ? 'white' : 'var(--primary)', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>{v}</button>
+                              <button key={v} onClick={() => !isPareja && updateIntensity(s.id_sintoma, v)} style={{ width: '24px', height: '24px', borderRadius: '6px', border: 'none', background: intensities[s.id_sintoma] === v ? 'var(--primary)' : 'rgba(155, 108, 152, 0.1)', color: intensities[s.id_sintoma] === v ? 'white' : 'var(--primary)', cursor: isPareja ? 'default' : 'pointer', fontWeight: 'bold', fontSize: '11px' }}>{v}</button>
                             ))}
                           </div>
                         </div>
@@ -408,28 +429,32 @@ export default function SymptomsScreen() {
           <h4 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
             <FileText size={20} color="var(--primary)" /> Notas personales
           </h4>
-          <textarea 
+          <textarea
             value={notas}
-            onChange={(e) => setNotas(e.target.value)}
-            placeholder="Escribe algo importante de hoy..."
+            onChange={(e) => !isPareja && setNotas(e.target.value)}
+            readOnly={isPareja}
+            placeholder={isPareja ? (notas ? '' : 'Sin notas hoy') : 'Escribe algo importante de hoy...'}
             style={{
               width: '100%', height: '100px', border: '1px solid #eee', borderRadius: '12px', padding: '12px',
-              fontSize: '14px', fontFamily: 'inherit', resize: 'none', background: 'var(--white)', color: 'var(--text-dark)', outline: 'none'
+              fontSize: '14px', fontFamily: 'inherit', resize: 'none', background: isPareja ? '#fafafa' : 'var(--white)', color: 'var(--text-dark)', outline: 'none',
+              cursor: isPareja ? 'default' : 'text'
             }}
           />
         </div>
       </div>
 
-      <div style={{ marginTop: '40px', textAlign: 'center', paddingBottom: '40px' }}>
-        <button 
-          onClick={handleSave}
-          disabled={loading}
-          className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '200px', margin: '0 auto' }}
-        >
-          {loading ? 'Guardando...' : <><Save size={20} /> Guardar Todo</>}
-        </button>
-      </div>
+      {!isPareja && (
+        <div style={{ marginTop: '40px', textAlign: 'center', paddingBottom: '40px' }}>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="btn-primary"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '200px', margin: '0 auto' }}
+          >
+            {loading ? 'Guardando...' : <><Save size={20} /> Guardar Todo</>}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

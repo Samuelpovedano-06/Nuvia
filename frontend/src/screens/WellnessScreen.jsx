@@ -194,6 +194,7 @@ export default function WellnessScreen() {
   const [phase, setPhase] = useState('folicular');
   const [day, setDay] = useState(1);
   const [stats, setStats] = useState({ symptomsCount: 0, notesCount: 0, recent: [] });
+  const [activeFilter, setActiveFilter] = useState(null);
 
   useEffect(() => {
     const fetchWellness = async () => {
@@ -241,10 +242,11 @@ export default function WellnessScreen() {
 
         merged.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
+        const sliced = merged.slice(0, 15);
         setStats({
-          symptomsCount: s7?.length || 0,
-          notesCount: d7?.filter(d => d.notas || d.flujo || d.relaciones > 0)?.length || 0,
-          recent: merged.slice(0, 15) // Show up to 15 recent items
+          symptomsCount: sliced.filter(i => i.type === 'symptom').length,
+          notesCount: sliced.filter(i => i.type === 'note' || i.type === 'body').length,
+          recent: sliced
         });
 
       } catch (err) {
@@ -275,7 +277,7 @@ export default function WellnessScreen() {
         <div style={{ background: 'rgba(176,91,181,0.08)', border: '1px solid rgba(176,91,181,0.2)', borderRadius: '14px', padding: '10px 16px', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Info size={15} color="var(--primary)" />
           <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>
-            Viendo el bienestar de {partnerName} — solo lectura
+            Viendo el bienestar de {partnerName}
           </span>
         </div>
       )}
@@ -330,26 +332,38 @@ export default function WellnessScreen() {
           <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
             <h4 style={{ fontSize: '13px', color: '#64748b', textTransform: 'uppercase', marginBottom: '15px' }}>Resumen Reciente</h4>
             <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-              <div>
+              <div
+                onClick={() => setActiveFilter(activeFilter === 'symptom' ? null : 'symptom')}
+                style={{ cursor: 'pointer', padding: '8px 20px', borderRadius: '12px', background: activeFilter === 'symptom' ? 'var(--primary-light)' : 'transparent', border: activeFilter === 'symptom' ? '1.5px solid var(--primary)' : '1.5px solid transparent', transition: '0.2s' }}
+              >
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary)' }}>{stats.symptomsCount}</div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>Síntomas</div>
+                <div style={{ fontSize: '11px', color: activeFilter === 'symptom' ? 'var(--primary)' : '#64748b', fontWeight: activeFilter === 'symptom' ? '700' : '400' }}>Síntomas</div>
               </div>
               <div style={{ width: '1px', background: '#eee' }}></div>
-              <div>
+              <div
+                onClick={() => setActiveFilter(activeFilter === 'note' ? null : 'note')}
+                style={{ cursor: 'pointer', padding: '8px 20px', borderRadius: '12px', background: activeFilter === 'note' ? 'var(--primary-light)' : 'transparent', border: activeFilter === 'note' ? '1.5px solid var(--primary)' : '1.5px solid transparent', transition: '0.2s' }}
+              >
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary)' }}>{stats.notesCount}</div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>Notas</div>
+                <div style={{ fontSize: '11px', color: activeFilter === 'note' ? 'var(--primary)' : '#64748b', fontWeight: activeFilter === 'note' ? '700' : '400' }}>Notas</div>
               </div>
             </div>
           </div>
 
           <h4 style={{ fontSize: '15px', margin: '10px 0 5px 0' }}>Línea de Vida</h4>
-          {stats.recent.length > 0 ? stats.recent.map((item, i) => (
+          {(() => {
+            const filtered = activeFilter === 'symptom'
+              ? stats.recent.filter(i => i.type === 'symptom')
+              : activeFilter === 'note'
+              ? stats.recent.filter(i => i.type === 'note' || i.type === 'body')
+              : stats.recent;
+            return filtered.length > 0 ? filtered.map((item, i) => (
             <div key={i} className="card" style={{ 
               padding: '15px', display: 'flex', gap: '15px', alignItems: 'flex-start', margin: 0,
               background: item.type === 'note' ? '#FDF4FF' : 'white',
               border: item.type === 'note' ? '1px solid #F5D0FE' : '1px solid #f1f5f9'
             }}>
-              <div style={{ width: '40px', height: '40px', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {item.type === 'note' ? (
                   <div style={{ background: '#E879F9', padding: '8px', borderRadius: '10px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <FileText size={18} />
@@ -370,12 +384,14 @@ export default function WellnessScreen() {
                   );
                 })()}
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase' }}>
                     {new Date(item.fecha).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                   </span>
-                  <span style={{ fontSize: '10px', color: '#cbd5e1' }}>{item.type === 'note' ? 'NOTA' : 'SÍNTOMA'}</span>
+                  <span style={{ fontSize: '10px', color: '#cbd5e1' }}>
+                    {item.type === 'note' ? 'NOTA' : item.type === 'body' ? 'REGISTRO' : 'SÍNTOMA'}
+                  </span>
                 </div>
                 <p style={{ margin: 0, fontSize: '14px', color: '#334155', fontWeight: item.type === 'note' ? '500' : '400', lineHeight: '1.4' }}>
                   {item.label}
@@ -387,7 +403,8 @@ export default function WellnessScreen() {
               <LayoutGrid size={48} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
               <p>No hay actividad registrada</p>
             </div>
-          )}
+          );
+          })()}
         </div>
       )}
     </div>

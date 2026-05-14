@@ -14,7 +14,6 @@ const PartnerScreen = () => {
   const [selectedId, setSelectedId] = useState(localStorage.getItem('selectedPartnerId'));
   const [showConfirm, setShowConfirm] = useState(false);
   const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
   const plataforma = localStorage.getItem('plataforma') || 'usuaria';
   const isPareja = plataforma === 'pareja';
@@ -119,69 +118,6 @@ const PartnerScreen = () => {
 
       <h1 style={{ fontSize: '28px', color: 'var(--primary)', marginBottom: '20px' }}>Mi Pareja</h1>
 
-      {/* ── Selector de pareja personalizado (Dropdown) ── */}
-      {vinculos.length > 1 && (
-        <div style={{ marginBottom: '25px', position: 'relative' }}>
-          <label style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: '10px', paddingLeft: '4px' }}>
-            {isPareja ? 'Viendo el ciclo de:' : 'Pareja seleccionada:'}
-          </label>
-          <div 
-            onClick={() => setIsSelectOpen(!isSelectOpen)}
-            style={{
-              padding: '16px', borderRadius: '18px',
-              border: '1.5px solid rgba(176,91,181,0.15)', background: 'var(--white)',
-              color: 'var(--text-dark)', fontSize: '16px', fontWeight: '600',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              boxShadow: 'var(--shadow-sm)', transition: 'all 0.3s ease'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(176,91,181,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                <Users size={16} />
-              </div>
-              <span>{vinculos.find(v => (isPareja ? v.id_usuaria : v.id_pareja) === selectedId)?.nombre || 'Seleccionar...'}</span>
-            </div>
-            <ChevronLeft size={20} style={{ transform: isSelectOpen ? 'rotate(90deg)' : 'rotate(-90deg)', transition: 'transform 0.3s', color: 'var(--primary)' }} />
-          </div>
-
-          {isSelectOpen && (
-            <>
-              <div 
-                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 }} 
-                onClick={() => setIsSelectOpen(false)} 
-              />
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
-                background: 'var(--white)', borderRadius: '18px', boxShadow: 'var(--shadow-md)',
-                zIndex: 101, overflow: 'hidden', border: '1.5px solid rgba(176,91,181,0.1)',
-                animation: 'fadeIn 0.2s ease-out'
-              }}>
-                {vinculos.map(v => {
-                  const val = isPareja ? v.id_usuaria : v.id_pareja;
-                  const isSelected = val === selectedId;
-                  return (
-                    <div 
-                      key={v.id}
-                      onClick={() => handleSelect(val)}
-                      style={{
-                        padding: '16px', cursor: 'pointer',
-                        background: isSelected ? 'rgba(176,91,181,0.05)' : 'transparent',
-                        color: isSelected ? 'var(--primary)' : 'var(--text-dark)',
-                        fontWeight: isSelected ? '700' : '500',
-                        borderBottom: '1px solid #f8f8f8',
-                        display: 'flex', alignItems: 'center', gap: '12px'
-                      }}
-                    >
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isSelected ? 'var(--primary)' : 'transparent', border: isSelected ? 'none' : '1px solid #ddd' }} />
-                      {v.nombre}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {/* ── Solicitud pendiente (pareja que ya envió y espera) ── */}
       {isPareja && user?.solicitud_estado === 'enviada' && (
@@ -250,56 +186,47 @@ const PartnerScreen = () => {
 
       {/* ── Lista de vínculos activos ── */}
       {vinculos.length > 0 && (
-        <div style={{ marginBottom: '20px' }}>
-          {/* Si solo hay uno, mostrar nombre como título en vez de dropdown */}
-          {vinculos.length === 1 && (
-            <div className="card" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#FDF2F8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                  <Users size={24} />
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>{vinculos[0].nombre}</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)' }}>
-                    {isPareja ? 'Viendo su ciclo' : 'Vinculado/a contigo'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => handleDesvincular(vinculos[0].id)}
-                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '8px' }}
-                title="Cortar con tu pareja"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          )}
-
-          {/* Si hay varios, mostrar la lista completa con botón de desvincular */}
-          {vinculos.length > 1 && (
-            <div className="card" style={{ padding: '16px' }}>
-              <h3 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                {isPareja ? 'Parejas vinculadas' : 'Mis parejas'}
-              </h3>
-              {vinculos.map(v => (
-                <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#FDF2F8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                      <Users size={18} />
-                    </div>
-                    <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>{v.nombre}</span>
+        <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: '14px', color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {isPareja ? 'Parejas vinculadas' : 'Mis parejas'}
+          </h3>
+          {vinculos.map((v, idx) => {
+            const vid = isPareja ? v.id_usuaria : v.id_pareja;
+            const isViewing = vid === selectedId;
+            return (
+              <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: idx < vinculos.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: isViewing ? 'rgba(176,91,181,0.12)' : '#FDF2F8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                    <Users size={18} />
                   </div>
+                  <div>
+                    <span style={{ fontWeight: '700', color: 'var(--text-dark)', display: 'block' }}>{v.nombre}</span>
+                    {isViewing && <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600' }}>Viendo ahora</span>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    onClick={() => handleSelect(vid)}
+                    style={{
+                      padding: '6px 14px', borderRadius: '10px', border: '1.5px solid var(--primary)',
+                      background: isViewing ? 'var(--primary)' : 'transparent',
+                      color: isViewing ? 'white' : 'var(--primary)',
+                      cursor: 'pointer', fontSize: '13px', fontWeight: '700'
+                    }}
+                  >
+                    {isViewing ? 'Viendo' : 'Ver'}
+                  </button>
                   <button
                     onClick={() => handleDesvincular(v.id)}
                     style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px' }}
-                    title="Cortar con tu pareja"
+                    title="Cortar vínculo"
                   >
                     <X size={16} />
                   </button>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            );
+          })}
         </div>
       )}
 

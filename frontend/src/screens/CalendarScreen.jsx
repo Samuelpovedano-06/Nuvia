@@ -255,7 +255,7 @@ export default function CalendarScreen() {
         <div style={{ background: 'rgba(176,91,181,0.08)', border: '1px solid rgba(176,91,181,0.2)', borderRadius: '14px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Info size={15} color="var(--primary)" />
           <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>
-            Viendo el ciclo de {partnerName} — solo lectura
+            Viendo el ciclo de {partnerName}
           </span>
         </div>
       )}
