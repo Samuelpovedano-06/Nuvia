@@ -16,6 +16,7 @@ const PartnerScreen = () => {
   const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState('');
+  const [showChat, setShowChat] = useState(false);
   const chatEndRef = React.useRef(null);
 
   const plataforma = localStorage.getItem('plataforma') || 'usuaria';
@@ -272,66 +273,101 @@ const PartnerScreen = () => {
         </div>
       )}
 
-      {/* ── UsChat ── */}
-      {selectedId && vinculos.length > 0 && (
-        <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: '400px', overflow: 'hidden', marginBottom: '20px' }}>
-          <div style={{ padding: '16px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(176,91,181,0.02)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '10px', color: 'white' }}>
-                <MessageCircle size={18} />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '15px' }}>UsChat</h3>
-                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-light)' }}>Chat privado con {vinculos.find(v => (isPareja ? v.id_usuaria : v.id_pareja) === selectedId)?.nombre || 'tu pareja'}</p>
-              </div>
-            </div>
-          </div>
+      {/* ── UsChat (Botón para abrir) ── */}
+      {selectedId && vinculos.length > 0 && !showChat && (
+        <button 
+          onClick={() => setShowChat(true)}
+          style={{
+            width: 'fit-content', minWidth: '200px', margin: '0 auto 20px', 
+            padding: '12px 24px', borderRadius: '16px', border: 'none',
+            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+            color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            boxShadow: '0 4px 15px rgba(246, 65, 108, 0.15)',
+            animation: 'fadeIn 0.3s ease'
+          }}
+        >
+          <MessageCircle size={20} />
+          <span>Abrir UsChat</span>
+        </button>
+      )}
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#fafafa' }}>
-            {mensajes.length === 0 ? (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
-                <MessageCircle size={40} style={{ marginBottom: '10px' }} />
-                <p style={{ fontSize: '13px' }}>Di algo bonito...</p>
-              </div>
-            ) : mensajes.map(m => {
-              const isMe = m.id_remitente === user.id_usuaria;
-              return (
-                <div key={m.id} style={{
-                  alignSelf: isMe ? 'flex-end' : 'flex-start',
-                  maxWidth: '80%',
-                  padding: '10px 14px',
-                  borderRadius: isMe ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
-                  background: isMe ? 'var(--primary)' : 'white',
-                  color: isMe ? 'white' : 'var(--text-dark)',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-                  position: 'relative'
-                }}>
-                  <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4' }}>{m.contenido}</p>
-                  <span style={{ fontSize: '9px', opacity: 0.7, marginTop: '4px', display: 'block', textAlign: isMe ? 'right' : 'left' }}>
-                    {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+      {/* ── UsChat (Ventana Modal / Overlay) ── */}
+      {showChat && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.6)', zIndex: 2000, display: 'flex', 
+          alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div className="card" style={{ 
+            padding: '0', display: 'flex', flexDirection: 'column', 
+            width: '100%', maxWidth: '500px', height: '80vh', 
+            maxHeight: '700px', overflow: 'hidden', position: 'relative'
+          }}>
+            <div style={{ padding: '16px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(176,91,181,0.02)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '10px', color: 'white' }}>
+                  <MessageCircle size={18} />
                 </div>
-              );
-            })}
-            <div ref={chatEndRef} />
-          </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px' }}>UsChat</h3>
+                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-light)' }}>Chat privado con {vinculos.find(v => (isPareja ? v.id_usuaria : v.id_pareja) === selectedId)?.nombre || 'tu pareja'}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowChat(false)}
+                style={{ background: '#f8f9fa', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-          <form onSubmit={handleEnviarMensaje} style={{ padding: '12px', borderTop: '1px solid #f5f5f5', display: 'flex', gap: '8px', background: 'white' }}>
-            <input
-              type="text"
-              placeholder="Escribe un mensaje..."
-              value={nuevoMensaje}
-              onChange={e => setNuevoMensaje(e.target.value)}
-              style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #f1f5f9', fontSize: '14px', outline: 'none' }}
-            />
-            <button
-              type="submit"
-              disabled={!nuevoMensaje.trim()}
-              style={{ background: 'var(--primary)', color: 'white', border: 'none', width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: !nuevoMensaje.trim() ? 0.6 : 1 }}
-            >
-              <Send size={18} />
-            </button>
-          </form>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#fafafa' }}>
+              {mensajes.length === 0 ? (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+                  <MessageCircle size={40} style={{ marginBottom: '10px' }} />
+                  <p style={{ fontSize: '13px' }}>Di algo bonito...</p>
+                </div>
+              ) : mensajes.map(m => {
+                const isMe = m.id_remitente === user.id_usuaria;
+                return (
+                  <div key={m.id} style={{
+                    alignSelf: isMe ? 'flex-end' : 'flex-start',
+                    maxWidth: '80%',
+                    padding: '10px 14px',
+                    borderRadius: isMe ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
+                    background: isMe ? 'var(--primary)' : 'white',
+                    color: isMe ? 'white' : 'var(--text-dark)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                    position: 'relative'
+                  }}>
+                    <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4' }}>{m.contenido}</p>
+                    <span style={{ fontSize: '9px', opacity: 0.7, marginTop: '4px', display: 'block', textAlign: isMe ? 'right' : 'left' }}>
+                      {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form onSubmit={handleEnviarMensaje} style={{ padding: '12px', borderTop: '1px solid #f5f5f5', display: 'flex', gap: '8px', background: 'white' }}>
+              <input
+                type="text"
+                placeholder="Escribe un mensaje..."
+                value={nuevoMensaje}
+                onChange={e => setNuevoMensaje(e.target.value)}
+                style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #f1f5f9', fontSize: '14px', outline: 'none' }}
+              />
+              <button
+                type="submit"
+                disabled={!nuevoMensaje.trim()}
+                style={{ background: 'var(--primary)', color: 'white', border: 'none', width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: !nuevoMensaje.trim() ? 0.6 : 1 }}
+              >
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
