@@ -70,12 +70,16 @@ const PartnerScreen = () => {
     try {
       const data = await ApiService.getParejas();
       setVinculos(data);
-      if (data.length > 0 && !selectedId) {
-        const first = data[0];
-        const firstId = isPareja ? first.id_usuaria : first.id_pareja;
-        setSelectedId(firstId);
-        localStorage.setItem('selectedPartnerId', firstId);
-        localStorage.setItem('selectedPartnerName', first.nombre);
+      if (data.length > 0) {
+        const validIds = data.map(v => isPareja ? v.id_usuaria : v.id_pareja);
+        const currentId = localStorage.getItem('selectedPartnerId');
+        if (!currentId || !validIds.includes(currentId)) {
+          const first = data[0];
+          const firstId = isPareja ? first.id_usuaria : first.id_pareja;
+          setSelectedId(firstId);
+          localStorage.setItem('selectedPartnerId', firstId);
+          localStorage.setItem('selectedPartnerName', first.nombre);
+        }
       }
     } catch (err) {
       console.error('Error fetching vinculos:', err);
@@ -87,7 +91,6 @@ const PartnerScreen = () => {
     setSelectedId(id);
     localStorage.setItem('selectedPartnerId', id);
     if (vinculo) localStorage.setItem('selectedPartnerName', vinculo.nombre);
-    setIsSelectOpen(false);
   };
 
   const handleSendRequest = async () => {
