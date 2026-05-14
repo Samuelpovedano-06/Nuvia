@@ -13,7 +13,7 @@ const PartnerScreen = () => {
   const [success, setSuccess] = useState('');
 
   const isUnlinkedPareja = user?.rol === 'pareja' && !user?.codigo_pareja;
-  const isUsuaria = user?.rol === 'usuaria';
+  const isUsuariaOrAdmin = user?.rol === 'usuaria' || user?.rol === 'admin';
 
   const handleSendRequest = async () => {
     if (!partnerCode) return;
@@ -145,8 +145,8 @@ const PartnerScreen = () => {
         </div>
       )}
 
-      {/* Si es Usuaria y no tiene solicitud ni pareja (Solo mostrar su código) */}
-      {isUsuaria && !user?.solicitud_estado && !user?.codigo_pareja && (
+      {/* Si es Usuaria/Admin y no tiene solicitud ni pareja (Solo mostrar su código) */}
+      {isUsuariaOrAdmin && !user?.solicitud_estado && !user?.codigo_pareja && (
         <div className="card" style={{ padding: '25px', textAlign: 'center' }}>
           <h3 style={{ margin: '0 0 15px 0' }}>Invita a tu pareja</h3>
           <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '20px' }}>
