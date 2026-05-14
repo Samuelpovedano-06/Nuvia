@@ -16,8 +16,18 @@ const PartnerScreen = () => {
   const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState('');
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(localStorage.getItem('showUsChat') === 'true');
   const chatEndRef = React.useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem('showUsChat', showChat);
+  }, [showChat]);
+
+  // Función para obtener el ID de la "otra persona" en un vínculo
+  const getOtherId = (v) => {
+    if (!user || !v) return null;
+    return (v.id_usuaria === user.id_usuaria) ? v.id_pareja : v.id_usuaria;
+  };
 
   const plataforma = localStorage.getItem('plataforma') || 'usuaria';
   const isPareja = plataforma === 'pareja';
@@ -157,10 +167,10 @@ const PartnerScreen = () => {
   // Filtrar vínculos según el rol para el chat
   const chatPartners = vinculos.filter(v => {
     if (isPareja) {
-      // Si soy rol pareja, solo puedo hablar con las usuarias que monitoreo (donde soy id_pareja)
+      // En el rol "Pareja", solo hablas con las usuarias que monitoreas
       return v.id_pareja === user.id_usuaria;
     }
-    // Usuaria y Admin pueden hablar con todos sus vínculos
+    // Usuaria y Admin pueden hablar con todos: los que invitaron y los que las invitaron
     return true;
   });
 
@@ -409,7 +419,7 @@ const PartnerScreen = () => {
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
                   {chatPartners.map(v => {
-                    const vvid = isPareja ? v.id_usuaria : v.id_pareja;
+                    const vvid = getOtherId(v);
                     const isActive = selectedId === vvid;
                     return (
                       <div 
@@ -456,7 +466,7 @@ const PartnerScreen = () => {
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--text-dark)', fontWeight: '700' }}>
-                    {vinculos.find(v => (isPareja ? v.id_usuaria : v.id_pareja) === selectedId)?.nombre || 'UsChat'}
+                    {vinculos.find(v => getOtherId(v) === selectedId)?.nombre || 'UsChat'}
                   </h3>
                   <p style={{ margin: 0, fontSize: '10px', color: 'var(--primary)', fontWeight: '600' }}>Toca para cambiar pareja</p>
                 </div>

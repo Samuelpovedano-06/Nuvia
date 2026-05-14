@@ -16,22 +16,51 @@ def listar_vinculos(
     current_user: Usuaria = Depends(get_current_user)
 ):
     """
-    vista=pareja  → soy id_pareja, veo a las usuarias a las que estoy vinculada.
-    vista=usuaria → soy id_usuaria, veo a las parejas vinculadas a mí.
-    Sin vista      → se decide por rol.
+    Si se especifica vista, se filtra por esa posición.
+    Si no se especifica y el usuario es usuaria/admin, se devuelven TODOS los vínculos
+    donde participe (como usuaria o como pareja).
     """
-    como_pareja = vista == "pareja" or (vista is None and current_user.rol == "pareja")
-
-    if como_pareja:
+    if vista == "pareja":
         rows = db.query(Pareja).filter(Pareja.id_pareja == current_user.id_usuaria).all()
         return [
-            {"id": str(r.id), "id_usuaria": str(r.id_usuaria), "nombre": r.usuaria.nombre}
+            {"id": str(r.id), "id_usuaria": str(r.id_usuaria), "id_pareja": str(r.id_pareja), "nombre": r.usuaria.nombre}
             for r in rows
         ]
-    else:
+    elif vista == "usuaria":
         rows = db.query(Pareja).filter(Pareja.id_usuaria == current_user.id_usuaria).all()
         return [
-            {"id": str(r.id), "id_pareja": str(r.id_pareja), "nombre": r.pareja.nombre}
+            {"id": str(r.id), "id_usuaria": str(r.id_usuaria), "id_pareja": str(r.id_pareja), "nombre": r.pareja.nombre}
+            for r in rows
+        ]
+    
+    # Comportamiento por defecto (sin vista)
+    if current_user.rol in ["usuaria", "admin"]:
+        # Devolver todos donde participe
+        from sqlalchemy import or_
+        rows = db.query(Pareja).filter(or_(Pareja.id_usuaria == current_user.id_usuaria, Pareja.id_pareja == current_user.id_usuaria)).all()
+        result = []
+        for r in rows:
+            # Determinar quién es el "otro"
+            if r.id_usuaria == current_user.id_usuaria:
+                other_id = r.id_pareja
+                other_name = r.pareja.nombre
+            else:
+                other_id = r.id_usuaria
+                other_name = r.usuaria.nombre
+            
+            result.append({
+                "id": str(r.id),
+                "id_usuaria": str(r.id_usuaria),
+                "id_pareja": str(r.id_pareja),
+                "other_id": str(other_id),
+                "nombre": other_name
+            })
+        return result
+    else:
+        # Rol pareja por defecto
+        rows = db.query(Pareja).filter(Pareja.id_pareja == current_user.id_usuaria).all()
+        return [
+            {"id": str(r.id), "id_usuaria": str(r.id_usuaria), "id_pareja": str(r.id_pareja), "nombre": r.usuaria.nombre}
             for r in rows
         ]
 
