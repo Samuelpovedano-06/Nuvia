@@ -29,8 +29,10 @@ export default function HomeScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(new Date().getMonth());
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+  const [customAlert, setCustomAlert] = useState({ show: false, message: '' });
 
-  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.tiene_vinculos;
+  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.codigo_pareja && user?.solicitud_estado !== 'aceptada';
+  const isPareja = user?.rol === 'pareja';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,8 +131,29 @@ export default function HomeScreen() {
     try {
       setLoadingData(true);
       const hoy = logDate;
+      
+      // Validar solapamientos
+      const overlap = rawCiclos.find(c => {
+        const dInicio = new Date(c.fecha_inicio).toISOString().split('T')[0];
+        if (c.fecha_fin) {
+          const dFin = new Date(c.fecha_fin).toISOString().split('T')[0];
+          return hoy >= dInicio && hoy <= dFin;
+        }
+        return hoy === dInicio;
+      });
+
+      if (overlap && (!activeCycle || activeCycle.id_ciclo !== overlap.id_ciclo)) {
+        setCustomAlert({ show: true, message: 'Esta fecha ya está dentro de un ciclo registrado. Por favor, selecciona una fecha diferente.' });
+        setLoadingData(false);
+        return;
+      }
 
       if (activeCycle) {
+        if (hoy < new Date(activeCycle.fecha_inicio).toISOString().split('T')[0]) {
+          setCustomAlert({ show: true, message: 'La fecha de fin no puede ser anterior a la de inicio.' });
+          setLoadingData(false);
+          return;
+        }
         await ApiService.actualizarCiclo(activeCycle.id_ciclo, { fecha_fin: hoy });
         const todosLosCiclos = await ApiService.getCiclos();
         const completados = todosLosCiclos.filter(c => c.fecha_inicio && c.fecha_fin);
@@ -158,11 +181,18 @@ export default function HomeScreen() {
           if (Object.keys(updates).length > 0) await ApiService.updateConfig(updates);
         }
       } else {
+        // Al crear uno nuevo, asegurar que es posterior al último fin
+        const ultimoFin = rawCiclos.length > 0 ? rawCiclos[0].fecha_fin : null;
+        if (ultimoFin && hoy <= new Date(ultimoFin).toISOString().split('T')[0]) {
+          setCustomAlert({ show: true, message: 'El nuevo ciclo debe comenzar después del fin del ciclo anterior.' });
+          setLoadingData(false);
+          return;
+        }
         await ApiService.crearCiclo({ fecha_inicio: hoy });
       }
       window.location.reload();
     } catch (err) {
-      alert('Error al procesar el registro: ' + err.message);
+      setCustomAlert({ show: true, message: 'Error al procesar el registro: ' + err.message });
       setLoadingData(false);
     }
   };
@@ -248,63 +278,65 @@ export default function HomeScreen() {
           </div>
         </div>
 
-        <div style={{ 
-          display: 'flex', 
-          gap: '10px', 
-          alignItems: 'center', 
-          marginTop: '12px', 
-          pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
-          filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-          opacity: isUnlinkedPareja ? 0.6 : 1
-        }}>
-          <button
-            onClick={() => setShowConfirm(true)}
-            disabled={loadingData}
-            style={{
-              flex: 1,
-              background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '10px 8px',
-              borderRadius: '14px',
-              fontSize: '12px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              height: '42px'
-            }}
-          >
-            {activeCycle ? <Calendar size={14} /> : <Heart size={14} fill="white" />}
-            <span>{activeCycle ? 'Terminó' : 'Empezó'}</span>
-          </button>
+        {!isPareja && (
+          <div style={{ 
+            display: 'flex', 
+            gap: '10px', 
+            alignItems: 'center', 
+            marginTop: '12px', 
+            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
+            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
+            opacity: isUnlinkedPareja ? 0.6 : 1
+          }}>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={loadingData}
+              style={{
+                flex: 1,
+                background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+                color: 'white',
+                border: 'none',
+                padding: '10px 8px',
+                borderRadius: '14px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                height: '42px'
+              }}
+            >
+              {activeCycle ? <Calendar size={14} /> : <Heart size={14} fill="white" />}
+              <span>{activeCycle ? 'Terminó' : 'Empezó'}</span>
+            </button>
 
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Calendar size={14} style={{ position: 'absolute', left: '12px', color: 'var(--primary)', opacity: 0.7 }} />
-              <div
-                onClick={() => setShowDatePicker(true)}
-                style={{
-                  width: '100%',
-                  padding: '12px 8px 12px 34px',
-                  borderRadius: '14px',
-                  border: '1.5px solid rgba(176, 91, 181, 0.15)',
-                  background: 'white',
-                  fontSize: '12px',
-                  color: 'var(--text-dark)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  height: '42px'
-                }}
-              >
-                {new Date(logDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Calendar size={14} style={{ position: 'absolute', left: '12px', color: 'var(--primary)', opacity: 0.7 }} />
+                <div
+                  onClick={() => setShowDatePicker(true)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 8px 12px 34px',
+                    borderRadius: '14px',
+                    border: '1.5px solid rgba(176, 91, 181, 0.15)',
+                    background: 'white',
+                    fontSize: '12px',
+                    color: 'var(--text-dark)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    height: '42px'
+                  }}
+                >
+                  {new Date(logDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -434,18 +466,46 @@ export default function HomeScreen() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px'
         }}>
-          <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '25px', textAlign: 'center', background: 'white', borderRadius: '25px' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', color: '#F6416C' }}>
-              {activeCycle ? <Calendar size={30} /> : <Heart size={30} fill="#F6416C" />}
-            </div>
-            <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>{activeCycle ? '¿Terminó tu periodo?' : '¿Empezó tu periodo?'}</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={handleLogPeriod} style={{ background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', color: 'white', border: 'none', padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Confirmar</button>
-              <button onClick={() => setShowConfirm(false)} style={{ background: 'transparent', color: '#999', border: 'none', padding: '10px', cursor: 'pointer' }}>Cancelar</button>
-            </div>
+        <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '25px', textAlign: 'center', background: 'white', borderRadius: '25px' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', color: '#F6416C' }}>
+            {activeCycle ? <Calendar size={30} /> : <Heart size={30} fill="#F6416C" />}
+          </div>
+          <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>{activeCycle ? '¿Terminó tu periodo?' : '¿Empezó tu periodo?'}</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button onClick={handleLogPeriod} style={{ background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', color: 'white', border: 'none', padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Confirmar</button>
+            <button onClick={() => setShowConfirm(false)} style={{ background: 'transparent', color: '#999', border: 'none', padding: '10px', cursor: 'pointer' }}>Cancelar</button>
           </div>
         </div>
-      )}
+      </div>
+    )}
+
+    {customAlert.show && (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px',
+        animation: 'fadeIn 0.2s ease'
+      }}>
+        <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '30px', textAlign: 'center', borderRadius: '28px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#EF4444' }}>
+            <Info size={28} />
+          </div>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', color: '#1e293b' }}>Aviso de Nuvia</h3>
+          <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '25px' }}>
+            {customAlert.message}
+          </p>
+          <button 
+            onClick={() => setCustomAlert({ show: false, message: '' })}
+            style={{ 
+              width: '100%', padding: '14px', borderRadius: '16px', border: 'none', 
+              background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(155, 108, 152, 0.25)'
+            }}
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    )}
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
