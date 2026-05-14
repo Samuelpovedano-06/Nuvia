@@ -31,7 +31,7 @@ export default function HomeScreen() {
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
   const [customAlert, setCustomAlert] = useState({ show: false, message: '' });
 
-  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.codigo_pareja && user?.solicitud_estado !== 'aceptada';
+  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.tiene_vinculos && !localStorage.getItem('selectedPartnerId');
   const isPareja = user?.rol === 'pareja';
 
   useEffect(() => {
@@ -40,12 +40,14 @@ export default function HomeScreen() {
         const today = new Date().toISOString().split('T')[0];
         const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
+        const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
+        
         const [ciclos, config, sToday, sYesterday, dToday] = await Promise.all([
-          ApiService.getCiclos(),
-          ApiService.getConfig(),
-          ApiService.getRegistrosSintomas(today),
-          ApiService.getRegistrosSintomas(yesterday),
-          ApiService.getRegistroDiario(today)
+          ApiService.getCiclos(targetId),
+          ApiService.getConfig(targetId),
+          ApiService.getRegistrosSintomas(today, targetId),
+          ApiService.getRegistrosSintomas(yesterday, targetId),
+          ApiService.getRegistroDiario(today, targetId)
         ]);
 
         if (ciclos.length > 0) {
@@ -127,19 +129,15 @@ export default function HomeScreen() {
   }, []);
 
   const handleLogPeriod = async () => {
-    setShowConfirm(false);
+    setLoadingData(true);
     try {
-      setLoadingData(true);
       const hoy = logDate;
+      const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
       
-      // Validar solapamientos
       const overlap = rawCiclos.find(c => {
-        const dInicio = new Date(c.fecha_inicio).toISOString().split('T')[0];
-        if (c.fecha_fin) {
-          const dFin = new Date(c.fecha_fin).toISOString().split('T')[0];
-          return hoy >= dInicio && hoy <= dFin;
-        }
-        return hoy === dInicio;
+        const inicio = new Date(c.fecha_inicio).toISOString().split('T')[0];
+        const fin = c.fecha_fin ? new Date(c.fecha_fin).toISOString().split('T')[0] : '9999-12-31';
+        return hoy >= inicio && hoy <= fin;
       });
 
       if (overlap && (!activeCycle || activeCycle.id_ciclo !== overlap.id_ciclo)) {
@@ -155,7 +153,7 @@ export default function HomeScreen() {
           return;
         }
         await ApiService.actualizarCiclo(activeCycle.id_ciclo, { fecha_fin: hoy });
-        const todosLosCiclos = await ApiService.getCiclos();
+        const todosLosCiclos = await ApiService.getCiclos(targetId);
         const completados = todosLosCiclos.filter(c => c.fecha_inicio && c.fecha_fin);
         if (completados.length > 0) {
           const updates = {};
@@ -188,7 +186,7 @@ export default function HomeScreen() {
           setLoadingData(false);
           return;
         }
-        await ApiService.crearCiclo({ fecha_inicio: hoy });
+        await ApiService.crearCiclo({ fecha_inicio: hoy }, targetId);
       }
       window.location.reload();
     } catch (err) {
@@ -284,9 +282,9 @@ export default function HomeScreen() {
             gap: '10px', 
             alignItems: 'center', 
             marginTop: '12px', 
-            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
-            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-            opacity: isUnlinkedPareja ? 0.6 : 1
+            pointerEvents: (isUnlinkedPareja && !localStorage.getItem('selectedPartnerId')) ? 'none' : 'auto',
+            filter: (isUnlinkedPareja && !localStorage.getItem('selectedPartnerId')) ? 'grayscale(0.8)' : 'none',
+            opacity: (isUnlinkedPareja && !localStorage.getItem('selectedPartnerId')) ? 0.6 : 1
           }}>
             <button
               onClick={() => setShowConfirm(true)}

@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from uuid import UUID
 from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja
 from app.schemas.schemas import ConfiguracionUpdate, ConfiguracionOut
@@ -9,10 +8,25 @@ router = APIRouter(prefix="/configuracion", tags=["Configuración"])
 
 
 @router.get("/", response_model=ConfiguracionOut)
-def obtener_configuracion(db: Session = Depends(get_db),
+def obtener_configuracion(id_usuaria: UUID = None, db: Session = Depends(get_db),
                           current_user: Usuaria = Depends(get_current_user)):
+    """Obtiene la configuración de la usuaria o vinculada."""
+    target_id = current_user.id_usuaria
+    if id_usuaria:
+        if current_user.rol == "admin":
+            target_id = id_usuaria
+        else:
+            # Verificar vínculo
+            link = db.query(Pareja).filter(
+                Pareja.id_usuaria == id_usuaria,
+                Pareja.id_pareja == current_user.id_usuaria
+            ).first()
+            if not link:
+                raise HTTPException(status_code=403, detail="No tienes acceso a los datos de esta usuaria")
+            target_id = id_usuaria
+
     config = db.query(ConfiguracionUsuaria)\
-               .filter(ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria)\
+               .filter(ConfiguracionUsuaria.id_usuaria == target_id)\
                .first()
     if not config:
         raise HTTPException(status_code=404, detail="Configuración no encontrada")

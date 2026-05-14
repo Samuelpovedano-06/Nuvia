@@ -11,7 +11,7 @@ const PartnerScreen = () => {
   const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState('');
   const [vinculos, setVinculos] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(localStorage.getItem('selectedPartnerId'));
   const [showConfirm, setShowConfirm] = useState(false);
   const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
@@ -30,13 +30,20 @@ const PartnerScreen = () => {
     try {
       const data = await ApiService.getParejas();
       setVinculos(data);
-      // Preseleccionar la primera si no hay selección
       if (data.length > 0 && !selectedId) {
-        setSelectedId(isPareja ? data[0].id_usuaria : data[0].id_pareja);
+        const firstId = isPareja ? data[0].id_usuaria : data[0].id_pareja;
+        setSelectedId(firstId);
+        localStorage.setItem('selectedPartnerId', firstId);
       }
-    } catch {
-      // sin vínculos
+    } catch (err) {
+      console.error('Error fetching vinculos:', err);
     }
+  };
+
+  const handleSelect = (id) => {
+    setSelectedId(id);
+    localStorage.setItem('selectedPartnerId', id);
+    setIsSelectOpen(false);
   };
 
   const handleSendRequest = async () => {
@@ -151,7 +158,7 @@ const PartnerScreen = () => {
                   return (
                     <div 
                       key={v.id}
-                      onClick={() => { setSelectedId(val); setIsSelectOpen(false); }}
+                      onClick={() => handleSelect(val)}
                       style={{
                         padding: '16px', cursor: 'pointer',
                         background: isSelected ? 'rgba(176,91,181,0.05)' : 'transparent',

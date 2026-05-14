@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import timedelta
+from uuid import UUID
 from app.database.connection import get_db
-from app.models.models import Usuaria, Ciclo, Prediccion
+from app.models.models import Usuaria, Ciclo, Prediccion, Pareja
 from app.schemas.schemas import PrediccionOut
 from app.routers.auth_utils import get_current_user
 
@@ -65,11 +66,25 @@ def calcular_prediccion(db: Session = Depends(get_db),
 
 
 @router.get("/", response_model=PrediccionOut)
-def obtener_prediccion(db: Session = Depends(get_db),
+def obtener_prediccion(id_usuaria: UUID = None, db: Session = Depends(get_db),
                        current_user: Usuaria = Depends(get_current_user)):
-    """Devuelve la última predicción calculada para la usuaria."""
+    """Devuelve la última predicción calculada para la usuaria o vinculada."""
+    target_id = current_user.id_usuaria
+    if id_usuaria:
+        if current_user.rol == "admin":
+            target_id = id_usuaria
+        else:
+            # Verificar vínculo
+            link = db.query(Pareja).filter(
+                Pareja.id_usuaria == id_usuaria,
+                Pareja.id_pareja == current_user.id_usuaria
+            ).first()
+            if not link:
+                raise HTTPException(status_code=403, detail="No tienes acceso a los datos de esta usuaria")
+            target_id = id_usuaria
+
     prediccion = db.query(Prediccion)\
-                   .filter(Prediccion.id_usuaria == current_user.id_usuaria)\
+                   .filter(Prediccion.id_usuaria == target_id)\
                    .first()
     if not prediccion:
         raise HTTPException(status_code=404, detail="No hay predicciones generadas todavía")

@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 from datetime import date
 from app.database.connection import get_db
-from app.models.models import Usuaria, Sintoma, RegistroSintoma
+from app.models.models import Usuaria, Sintoma, RegistroSintoma, Pareja
 from app.schemas.schemas import SintomaOut, RegistroSintomaCreate, RegistroSintomaOut
 from app.routers.auth_utils import get_current_user
 
@@ -34,10 +34,25 @@ def listar_registros_sintomas(db: Session = Depends(get_db),
              .order_by(RegistroSintoma.fecha.desc()).all()
 
 @router.get("/registros-sintomas/{fecha}", response_model=List[RegistroSintomaOut])
-def listar_registros_por_fecha(fecha: date, db: Session = Depends(get_db),
+def listar_registros_por_fecha(fecha: date, id_usuaria: UUID = None, db: Session = Depends(get_db),
                                current_user: Usuaria = Depends(get_current_user)):
+    """Lista los registros de síntomas de una fecha para la usuaria o vinculada."""
+    target_id = current_user.id_usuaria
+    if id_usuaria:
+        if current_user.rol == "admin":
+            target_id = id_usuaria
+        else:
+            # Verificar vínculo
+            link = db.query(Pareja).filter(
+                Pareja.id_usuaria == id_usuaria,
+                Pareja.id_pareja == current_user.id_usuaria
+            ).first()
+            if not link:
+                raise HTTPException(status_code=403, detail="No tienes acceso a los datos de esta usuaria")
+            target_id = id_usuaria
+
     return db.query(RegistroSintoma).filter(
-        RegistroSintoma.id_usuaria == current_user.id_usuaria,
+        RegistroSintoma.id_usuaria == target_id,
         RegistroSintoma.fecha == fecha
     ).all()
 

@@ -163,14 +163,16 @@ export const ApiService = {
   },
 
   // Ciclos
-  getCiclos: async () => {
-    const res = await fetch(`${baseUrl}/ciclos/`, { headers: getHeaders() });
+  getCiclos: async (targetId = null) => {
+    const url = targetId ? `${baseUrl}/ciclos/?id_usuaria=${targetId}` : `${baseUrl}/ciclos/`;
+    const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) throw new Error('Error al obtener ciclos');
     return await res.json();
   },
 
-  crearCiclo: async (datos) => {
-    const res = await fetch(`${baseUrl}/ciclos/`, {
+  crearCiclo: async (datos, targetId = null) => {
+    const url = targetId ? `${baseUrl}/ciclos/?id_usuaria=${targetId}` : `${baseUrl}/ciclos/`;
+    const res = await fetch(url, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(datos)
@@ -181,6 +183,7 @@ export const ApiService = {
   },
 
   actualizarCiclo: async (id, datos) => {
+    // Nota: El backend ya maneja el permiso de pareja por el id del ciclo
     const res = await fetch(`${baseUrl}/ciclos/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
@@ -198,8 +201,9 @@ export const ApiService = {
     return await res.json();
   },
 
-  getRegistrosSintomas: async (fecha = null) => {
-    const url = fecha ? `${baseUrl}/registros-sintomas/${fecha}` : `${baseUrl}/registros-sintomas`;
+  getRegistrosSintomas: async (fecha = null, targetId = null) => {
+    let url = fecha ? `${baseUrl}/registros-sintomas/${fecha}` : `${baseUrl}/registros-sintomas`;
+    if (targetId) url += `${url.includes('?') ? '&' : '?'}id_usuaria=${targetId}`;
     const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
@@ -217,15 +221,18 @@ export const ApiService = {
   },
 
   // Predicciones
-  getPrediccion: async () => {
-    const res = await fetch(`${baseUrl}/predicciones/`, { headers: getHeaders() });
+  getPrediccion: async (targetId = null) => {
+    const url = targetId ? `${baseUrl}/predicciones/?id_usuaria=${targetId}` : `${baseUrl}/predicciones/`;
+    const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) throw new Error('No hay predicciones disponibles');
     return await res.json();
   },
 
   // Registros Diarios (Notas, Flujo, Relaciones)
-  getRegistroDiario: async (fecha) => {
-    const res = await fetch(`${baseUrl}/registros-diarios?fecha=${fecha}`, { headers: getHeaders() });
+  getRegistroDiario: async (fecha, targetId = null) => {
+    let url = `${baseUrl}/registros-diarios?fecha=${fecha}`;
+    if (targetId) url += `&id_usuaria=${targetId}`;
+    const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) return { notas: '', flujo: '', relaciones: 0 };
     const arr = await res.json();
     return arr[0] || { notas: '', flujo: '', relaciones: 0 };
@@ -252,8 +259,9 @@ export const ApiService = {
   },
 
   // Configuración
-  getConfig: async () => {
-    const res = await fetch(`${baseUrl}/configuracion/`, { headers: getHeaders() });
+  getConfig: async (targetId = null) => {
+    const url = targetId ? `${baseUrl}/configuracion/?id_usuaria=${targetId}` : `${baseUrl}/configuracion/`;
+    const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) throw new Error('Error al obtener configuración');
     return await res.json();
   },
