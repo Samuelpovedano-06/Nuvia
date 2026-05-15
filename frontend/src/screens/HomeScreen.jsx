@@ -340,14 +340,11 @@ export default function HomeScreen() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div
           className="card"
-          onClick={() => !isUnlinkedPareja && navigate('/chats')}
+          onClick={() => navigate('/comunidad')}
           style={{
             textAlign: 'center',
-            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer',
+            cursor: 'pointer',
             margin: 0,
-            pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
-            filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
-            opacity: isUnlinkedPareja ? 0.6 : 1,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',

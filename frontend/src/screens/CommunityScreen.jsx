@@ -1,35 +1,36 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2, ChevronLeft } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 
 const CATEGORIAS = [
-  { id: null,            label: 'Todo',           emoji: '✨' },
-  { id: 'general',       label: 'General',         emoji: '💬' },
-  { id: 'salud',         label: 'Salud',           emoji: '🩺' },
-  { id: 'menstruacion',  label: 'Menstruación',    emoji: '🌊' },
-  { id: 'sexo_placer',   label: 'Sexo y placer',  emoji: '🌸' },
-  { id: 'embarazo',      label: 'Embarazo',        emoji: '🤱' },
-  { id: 'anticoncepcion',label: 'Anticoncepción', emoji: '💊' },
-  { id: 'fertilidad',    label: 'Fertilidad',      emoji: '🌱' },
-  { id: 'salud_mental',  label: 'Salud mental',   emoji: '🧠' },
-  { id: 'relaciones',    label: 'Relaciones',      emoji: '💕' },
-  { id: 'nutricion',     label: 'Nutrición',       emoji: '🥗' },
-  { id: 'ejercicio',     label: 'Ejercicio',       emoji: '🏃‍♀️' },
-  { id: 'adolescencia',  label: 'Adolescencia',    emoji: '🌟' },
-  { id: 'menopausia',    label: 'Menopausia',      emoji: '🌙' },
+  { id: null, label: 'Todo', emoji: '✨' },
+  { id: 'general', label: 'General', emoji: '💬' },
+  { id: 'salud', label: 'Salud', emoji: '🩺' },
+  { id: 'menstruacion', label: 'Menstruación', emoji: '🌊' },
+  { id: 'sexo_placer', label: 'Sexo y placer', emoji: '🌸' },
+  { id: 'embarazo', label: 'Embarazo', emoji: '🤱' },
+  { id: 'anticoncepcion', label: 'Anticoncepción', emoji: '💊' },
+  { id: 'fertilidad', label: 'Fertilidad', emoji: '🌱' },
+  { id: 'salud_mental', label: 'Salud mental', emoji: '🧠' },
+  { id: 'relaciones', label: 'Relaciones', emoji: '💕' },
+  { id: 'nutricion', label: 'Nutrición', emoji: '🥗' },
+  { id: 'ejercicio', label: 'Ejercicio', emoji: '🏃‍♀️' },
+  { id: 'adolescencia', label: 'Adolescencia', emoji: '🌟' },
+  { id: 'menopausia', label: 'Menopausia', emoji: '🌙' },
 ];
 
 const TABS = [
-  { id: 'popular',   label: 'Popular' },
-  { id: 'mis',       label: 'Mis publicaciones' },
+  { id: 'popular', label: 'Popular' },
+  { id: 'mis', label: 'Mis publicaciones' },
   { id: 'siguiendo', label: 'Siguiendo' },
 ];
 
 const REACCIONES = ['❤️', '🔥', '💪', '🤗', '😢'];
 
-const AVATARS   = ['🐱','🦊','🐰','🦋','🐝','🦚','🦜','🐸','🐨','🦁','🐯','🦄','🐙','🌸','🌺'];
-const AV_COLORS = ['#FF9A9E','#B05BB5','#F6416C','#9B6C98','#4ECDC4','#E87D3E','#5B8EC4','#9C6ADE','#6DB33F','#E74C3C'];
+const AVATARS = ['🐱', '🦊', '🐰', '🦋', '🐝', '🦚', '🦜', '🐸', '🐨', '🦁', '🐯', '🦄', '🐙', '🌸', '🌺'];
+const AV_COLORS = ['#FF9A9E', '#B05BB5', '#F6416C', '#9B6C98', '#4ECDC4', '#E87D3E', '#5B8EC4', '#9C6ADE', '#6DB33F', '#E74C3C'];
 
 function getAvatar(seed) {
   if (!seed) return { emoji: '🐱', bg: '#B05BB5' };
@@ -68,27 +69,27 @@ const CatLabel = ({ id }) => {
 };
 
 export default function CommunityScreen() {
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const [tab, setTab]             = useState('popular');
+  const [tab, setTab] = useState('popular');
   const [categoria, setCategoria] = useState(null);
-  const [posts, setPosts]         = useState([]);
-  const [loading, setLoading]     = useState(false);
-  const [page, setPage]           = useState(1);
-  const [hasMore, setHasMore]     = useState(true);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   // Detail view
-  const [activePost, setActivePost]   = useState(null);
-  const [replies, setReplies]         = useState([]);
-  const [replyText, setReplyText]     = useState('');
+  const [activePost, setActivePost] = useState(null);
+  const [replies, setReplies] = useState([]);
+  const [replyText, setReplyText] = useState('');
   const [loadingReply, setLoadingReply] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const replyEndRef = useRef(null);
 
   // Create modal
-  const [showCreate, setShowCreate]   = useState(false);
-  const [newContent, setNewContent]   = useState('');
-  const [newCat, setNewCat]           = useState('general');
-  const [publishing, setPublishing]   = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newContent, setNewContent] = useState('');
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -189,7 +190,7 @@ export default function CommunityScreen() {
     if (!newContent.trim()) return;
     setPublishing(true);
     try {
-      const pub = await ApiService.crearPublicacion(newContent, newCat);
+      const pub = await ApiService.crearPublicacion(newContent);
       setPosts(prev => [pub, ...prev]);
       setShowCreate(false);
       setNewContent('');
@@ -204,90 +205,100 @@ export default function CommunityScreen() {
   const handleShare = (post, e) => {
     e?.stopPropagation();
     if (navigator.share) {
-      navigator.share({ title: 'Nuvia Comunidad', text: post.contenido.slice(0, 100) + '…' }).catch(() => {});
+      navigator.share({ title: 'Nuvia Comunidad', text: post.contenido.slice(0, 100) + '…' }).catch(() => { });
     }
   };
 
   return (
     <>
-    <div className="screen-container" style={{ paddingBottom: '100px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '16px' }}>
-        <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', color: 'var(--text-dark)' }}>Comunidad</h1>
-        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>Un espacio seguro y anónimo para compartir</p>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding: '8px 18px', borderRadius: '25px', border: 'none', cursor: 'pointer',
-            background: tab === t.id ? 'var(--primary)' : '#f0f0f5',
-            color: tab === t.id ? 'white' : 'var(--text-light)',
-            fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap', transition: 'all 0.2s'
-          }}>{t.label}</button>
-        ))}
-      </div>
-
-      {/* Categorías */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '4px' }}>
-        {CATEGORIAS.map(c => (
-          <button key={String(c.id)} onClick={() => setCategoria(prev => prev === c.id ? null : c.id)} style={{
-            padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-            background: categoria === c.id ? 'var(--primary)' : '#f5f5fa',
-            color: categoria === c.id ? 'white' : 'var(--text-dark)',
-            fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.2s',
-            display: 'flex', alignItems: 'center', gap: '4px'
-          }}>
-            {c.emoji} {c.label}
+      <div className="screen-container" style={{ paddingBottom: '100px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '16px' }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px', marginTop: '2px' }}
+          >
+            <ChevronLeft size={26} />
           </button>
-        ))}
+          <div>
+            <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', color: 'var(--text-dark)' }}>Comunidad</h1>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>Un espacio seguro y anónimo para compartir</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              flex: 1, padding: '8px 4px', borderRadius: '25px', border: 'none', cursor: 'pointer',
+              background: tab === t.id ? 'var(--primary)' : '#f0f0f5',
+              color: tab === t.id ? 'white' : 'var(--text-light)',
+              fontWeight: '700', fontSize: '12px', whiteSpace: 'nowrap', transition: 'all 0.2s'
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Categorías */}
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '4px' }}>
+          {CATEGORIAS.map(c => (
+            <button key={String(c.id)} onClick={() => setCategoria(prev => prev === c.id ? null : c.id)} style={{
+              padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+              background: categoria === c.id ? 'var(--primary)' : '#f5f5fa',
+              color: categoria === c.id ? 'white' : 'var(--text-dark)',
+              fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap', transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', gap: '4px'
+            }}>
+              {c.emoji} {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Feed */}
+        {posts.length === 0 && !loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', opacity: 0.5 }}>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>
+              {tab === 'siguiendo' ? '👥' : tab === 'mis' ? '✍️' : '💬'}
+            </div>
+            <p style={{ fontSize: '14px', color: 'var(--text-light)' }}>
+              {tab === 'siguiendo' ? 'Sigue a otras usuarias para ver sus publicaciones aquí.'
+                : tab === 'mis' ? 'Aún no has publicado nada. ¡Comparte algo!'
+                  : 'No hay publicaciones en esta categoría aún.'}
+            </p>
+          </div>
+        ) : (
+          posts.map(post => <PostCard key={post.id} post={post}
+            onOpen={() => openPost(post)}
+            onLike={e => handleLike(post.id, e)}
+            onFav={e => handleFav(post.id, e)}
+            onDelete={e => handleDeletePost(post.id, e)}
+            onShare={e => handleShare(post, e)}
+            isMine={post.es_mia}
+          />)
+        )}
+
+        {loading && <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontSize: '13px' }}>Cargando...</div>}
+
+        {hasMore && !loading && posts.length > 0 && (
+          <button onClick={loadMore} style={{
+            width: '100%', padding: '12px', borderRadius: '14px', border: '1.5px solid #eee',
+            background: 'white', color: 'var(--text-light)', fontSize: '13px', cursor: 'pointer', marginTop: '8px'
+          }}>Ver más</button>
+        )}
       </div>
 
-      {/* Feed */}
-      {posts.length === 0 && !loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', opacity: 0.5 }}>
-          <div style={{ fontSize: '40px', marginBottom: '12px' }}>
-            {tab === 'siguiendo' ? '👥' : tab === 'mis' ? '✍️' : '💬'}
-          </div>
-          <p style={{ fontSize: '14px', color: 'var(--text-light)' }}>
-            {tab === 'siguiendo' ? 'Sigue a otras usuarias para ver sus publicaciones aquí.'
-              : tab === 'mis' ? 'Aún no has publicado nada. ¡Comparte algo!'
-              : 'No hay publicaciones en esta categoría aún.'}
-          </p>
-        </div>
-      ) : (
-        posts.map(post => <PostCard key={post.id} post={post}
-          onOpen={() => openPost(post)}
-          onLike={e => handleLike(post.id, e)}
-          onFav={e => handleFav(post.id, e)}
-          onDelete={e => handleDeletePost(post.id, e)}
-          onShare={e => handleShare(post, e)}
-          isMine={post.es_mia}
-        />)
+      {/* FAB — fuera del screen-container para evitar problemas de stacking context */}
+      {!showCreate && !activePost && (
+      <button onClick={() => setShowCreate(true)} style={{
+        position: 'fixed', bottom: '90px', right: '20px', zIndex: 1200,
+        background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
+        color: 'white', border: 'none', borderRadius: '20px',
+        padding: '12px 20px', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: '8px',
+        boxShadow: '0 4px 20px rgba(176,91,181,0.4)'
+      }}>
+        <span style={{ fontSize: '18px' }}></span> Nueva publicación
+      </button>
       )}
-
-      {loading && <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontSize: '13px' }}>Cargando...</div>}
-
-      {hasMore && !loading && posts.length > 0 && (
-        <button onClick={loadMore} style={{
-          width: '100%', padding: '12px', borderRadius: '14px', border: '1.5px solid #eee',
-          background: 'white', color: 'var(--text-light)', fontSize: '13px', cursor: 'pointer', marginTop: '8px'
-        }}>Ver más</button>
-      )}
-    </div>
-
-    {/* FAB — fuera del screen-container para evitar problemas de stacking context */}
-    <button onClick={() => setShowCreate(true)} style={{
-      position: 'fixed', bottom: '90px', right: '20px', zIndex: 1200,
-      background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
-      color: 'white', border: 'none', borderRadius: '20px',
-      padding: '12px 20px', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
-      display: 'flex', alignItems: 'center', gap: '8px',
-      boxShadow: '0 4px 20px rgba(176,91,181,0.4)'
-    }}>
-      <span style={{ fontSize: '18px' }}>✏️</span> Nueva publicación
-    </button>
 
       {/* Post Detail Overlay */}
       {activePost && (
@@ -399,44 +410,41 @@ export default function CommunityScreen() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 900, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div
+          onClick={() => setShowCreate(false)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1300, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'white', borderRadius: '24px 24px 0 0',
+              padding: '24px',
+              width: '100%', height: '85vh',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Nueva publicación</h3>
               <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="#666" /></button>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-light)', margin: '0 0 16px', lineHeight: '1.4' }}>
-              🔒 Tu publicación es completamente anónima. Nadie sabrá que eres tú.
+              🔒 Tu publicación es completamente anónima. La categoría se asignará automáticamente.
             </p>
             <textarea
               placeholder="¿Qué quieres compartir con la comunidad?"
               value={newContent}
               onChange={e => setNewContent(e.target.value)}
-              rows={5}
               style={{
-                width: '100%', padding: '14px', borderRadius: '14px', border: '1.5px solid #eee',
+                width: '100%', flex: 1, minHeight: 0, padding: '14px', borderRadius: '14px', border: '1.5px solid #eee',
                 fontSize: '14px', resize: 'none', outline: 'none', lineHeight: '1.5',
-                fontFamily: 'inherit', boxSizing: 'border-box'
+                fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: '16px'
               }}
             />
-            <p style={{ fontSize: '12px', color: 'var(--text-light)', margin: '12px 0 8px', fontWeight: '600' }}>Categoría</p>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
-              {CATEGORIAS.filter(c => c.id).map(c => (
-                <button key={c.id} onClick={() => setNewCat(c.id)} style={{
-                  padding: '6px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-                  background: newCat === c.id ? 'var(--primary)' : '#f5f5fa',
-                  color: newCat === c.id ? 'white' : 'var(--text-dark)',
-                  fontSize: '12px', fontWeight: '600'
-                }}>
-                  {c.emoji} {c.label}
-                </button>
-              ))}
-            </div>
             <button onClick={handlePublish} disabled={!newContent.trim() || publishing} style={{
               width: '100%', padding: '15px', borderRadius: '16px', border: 'none',
               background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
               color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
-              opacity: !newContent.trim() ? 0.6 : 1
+              opacity: !newContent.trim() ? 0.6 : 1, flexShrink: 0
             }}>
               {publishing ? 'Publicando...' : 'Publicar de forma anónima'}
             </button>
@@ -538,11 +546,13 @@ function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, isMine }) {
 function ReplyCard({ reply, onDelete, onLike }) {
   return (
     <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-      {(() => { const av = getAvatar(reply.avatar_seed); return (
-        <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
-          {av.emoji}
-        </div>
-      ); })()}
+      {(() => {
+        const av = getAvatar(reply.avatar_seed); return (
+          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+            {av.emoji}
+          </div>
+        );
+      })()}
       <div style={{ flex: 1 }}>
         <div style={{ background: '#f8f8fc', borderRadius: '14px', padding: '10px 14px', marginBottom: '6px' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '4px' }}>Anónima · {timeAgo(reply.created_at)}</div>

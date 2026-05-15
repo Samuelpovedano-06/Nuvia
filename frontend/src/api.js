@@ -355,11 +355,11 @@ export const ApiService = {
     return await res.json();
   },
 
-  crearPublicacion: async (contenido, categoria) => {
+  crearPublicacion: async (contenido) => {
     const res = await fetch(`${baseUrl}/foro/`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ contenido, categoria })
+      body: JSON.stringify({ contenido })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al publicar');

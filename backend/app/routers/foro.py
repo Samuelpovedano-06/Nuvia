@@ -15,6 +15,45 @@ router = APIRouter(prefix="/foro", tags=["Foro"])
 
 REACCIONES_VALIDAS = {'❤️', '🔥', '💪', '🤗', '😢'}
 
+# Diccionario de palabras clave por categoría (en minúsculas, sin tildes para tolerar errores)
+import unicodedata
+import re
+
+CATEGORIA_KEYWORDS = {
+    "menstruacion": ["regla", "periodo", "menstruac", "sangrado", "menstrual", "compresa", "tampon", "copa menstrual", "dismenorrea", "manchad"],
+    "sexo_placer": ["sexo", "masturbac", "orgasmo", "placer", "libido", "deseo sexual", "sexual", "intimidad", "vibrador", "juguete", "clitor", "vagin", "lubric"],
+    "embarazo": ["embaraz", "gestac", "trimestre", "feto", "ecograf", "parto", "cesarea", "lactanc", "matern", "preconcep", "test de embarazo", "prueba de embarazo"],
+    "anticoncepcion": ["anticoncep", "pildora", "condon", "preservativo", "diu", "implant", "metodo barrera", "mac", "ligadura", "vasectom", "parche anticonc", "anillo vaginal"],
+    "fertilidad": ["fertilidad", "ovulac", "concebir", "concepc", "fertil", "esteril", "tratamiento de fert", "fiv ", "inseminac"],
+    "salud_mental": ["ansiedad", "depres", "estres", "terapia", "psicol", "psiquia", "animo", "tristeza", "panic", "mental", "autoestima", "burnout", "trauma"],
+    "relaciones": ["pareja", "novio", "novia", "relacion", "ruptura", "celos", "infidel", "discusion", "matrimonio", "boda", "ex ", "amor"],
+    "nutricion": ["comida", "dieta", "alimentac", "comer", "nutric", "antojo", "ayuno", "vegan", "vegetar", "calor", "azucar", "proteina"],
+    "ejercicio": ["ejercicio", "deporte", "gimnasio", "gym", "correr", "yoga", "pilates", "entrenam", "rutina", "cardio", "pesas", "caminar"],
+    "adolescencia": ["adolescen", "primera regla", "menarquia", "primera vez", "pubertad", "instituto", "secundaria", "joven"],
+    "menopausia": ["menopaus", "climater", "sofoco", "perimenop", "postmenop"],
+    "salud": ["doctor", "medico", "doctora", "ginecol", "hospital", "clinica", "analitica", "analisis", "infeccion", "candidiasis", "cistitis", "ovario poliquist", "endometriosis", "mioma", "quiste", "dolor", "sintoma", "enfermedad"],
+}
+
+
+def _normalize(text: str) -> str:
+    t = text.lower()
+    t = unicodedata.normalize("NFD", t)
+    t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+    return t
+
+
+def clasificar_categoria(contenido: str) -> str:
+    """Devuelve la categoría con más coincidencias de keywords. 'general' si ninguna."""
+    texto = _normalize(contenido)
+    mejor_cat = "general"
+    mejor_score = 0
+    for cat, kws in CATEGORIA_KEYWORDS.items():
+        score = sum(len(re.findall(re.escape(kw), texto)) for kw in kws)
+        if score > mejor_score:
+            mejor_score = score
+            mejor_cat = cat
+    return mejor_cat
+
 
 def _build_posts(posts, db, current_user_id):
     if not posts:
@@ -126,12 +165,15 @@ def crear_publicacion(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
-    if not datos.contenido.strip():
+    contenido = datos.contenido.strip()
+    if not contenido:
         raise HTTPException(status_code=400, detail="El contenido no puede estar vacío")
+    # La categoría se asigna automáticamente analizando el contenido
+    categoria_auto = clasificar_categoria(contenido)
     pub = PublicacionForo(
         id_usuaria=current_user.id_usuaria,
-        contenido=datos.contenido.strip(),
-        categoria=datos.categoria
+        contenido=contenido,
+        categoria=categoria_auto
     )
     db.add(pub)
     db.commit()
