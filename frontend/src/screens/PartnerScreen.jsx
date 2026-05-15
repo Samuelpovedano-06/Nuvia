@@ -81,13 +81,13 @@ const PartnerScreen = () => {
       const data = await ApiService.getParejas();
       setVinculos(data);
       if (data.length > 0) {
-        const validIds = data.map(v => isPareja ? v.id_usuaria : v.id_pareja);
+        const getVid = v => isPareja ? v.id_usuaria : (v.other_id || v.id_pareja);
+        const validIds = data.map(getVid);
         const currentId = localStorage.getItem('selectedPartnerId');
         if (!currentId || !validIds.includes(currentId)) {
           const first = data[0];
-          const firstId = isPareja ? first.id_usuaria : first.id_pareja;
-          setSelectedId(firstId);
-          localStorage.setItem('selectedPartnerId', firstId);
+          setSelectedId(getVid(first));
+          localStorage.setItem('selectedPartnerId', getVid(first));
           localStorage.setItem('selectedPartnerName', first.nombre);
         }
       }
@@ -97,7 +97,8 @@ const PartnerScreen = () => {
   };
 
   const handleSelect = (id) => {
-    const vinculo = vinculos.find(v => (isPareja ? v.id_usuaria : v.id_pareja) === id);
+    const getVid = v => isPareja ? v.id_usuaria : (v.other_id || v.id_pareja);
+    const vinculo = vinculos.find(v => getVid(v) === id);
     setSelectedId(id);
     localStorage.setItem('selectedPartnerId', id);
     if (vinculo) localStorage.setItem('selectedPartnerName', vinculo.nombre);
@@ -164,15 +165,13 @@ const PartnerScreen = () => {
 
   const [showSidebar, setShowSidebar] = useState(false);
 
-  // Filtrar vínculos según el rol para el chat
-  const chatPartners = vinculos.filter(v => {
-    if (isPareja) {
-      // En el rol "Pareja", solo hablas con las usuarias que monitoreas
-      return v.id_pareja === user.id_usuaria;
-    }
-    // Usuaria y Admin pueden hablar con todos: los que invitaron y los que las invitaron
-    return true;
-  });
+  // Panel: para usuaria solo muestra vínculos donde ella recibió (es id_usuaria)
+  const panelVinculos = isPareja
+    ? vinculos
+    : vinculos.filter(v => v.id_usuaria === user?.id_usuaria);
+
+  // UsChat: todos los vínculos (enviados y recibidos)
+  const chatPartners = vinculos;
 
   return (
     <div className="screen-container">
@@ -252,11 +251,11 @@ const PartnerScreen = () => {
           )}
 
           {/* ── Lista de Vínculos Activos ── */}
-          {vinculos.length > 0 && (
+          {panelVinculos.length > 0 && (
             <div style={{ marginTop: '20px' }}>
               <h3 style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '12px', paddingLeft: '5px' }}>Vínculos Activos</h3>
-              {vinculos.map(v => {
-                const vid = isPareja ? v.id_usuaria : v.id_pareja;
+              {panelVinculos.map(v => {
+                const vid = isPareja ? v.id_usuaria : (v.other_id || v.id_pareja);
                 const isViewing = selectedId === vid;
                 return (
                   <div key={v.id} className="card" style={{ padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', border: isViewing ? '1.5px solid var(--primary)' : '1.5px solid transparent' }}>

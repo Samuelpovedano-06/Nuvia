@@ -27,11 +27,26 @@ def listar_vinculos(
             for r in rows
         ]
     elif vista == "usuaria":
-        rows = db.query(Pareja).filter(Pareja.id_usuaria == current_user.id_usuaria).all()
-        return [
-            {"id": str(r.id), "id_usuaria": str(r.id_usuaria), "id_pareja": str(r.id_pareja), "nombre": r.pareja.nombre}
-            for r in rows
-        ]
+        from sqlalchemy import or_
+        rows = db.query(Pareja).filter(
+            or_(Pareja.id_usuaria == current_user.id_usuaria, Pareja.id_pareja == current_user.id_usuaria)
+        ).all()
+        result = []
+        for r in rows:
+            if r.id_usuaria == current_user.id_usuaria:
+                other_id = r.id_pareja
+                other_name = r.pareja.nombre
+            else:
+                other_id = r.id_usuaria
+                other_name = r.usuaria.nombre
+            result.append({
+                "id": str(r.id),
+                "id_usuaria": str(r.id_usuaria),
+                "id_pareja": str(r.id_pareja),
+                "other_id": str(other_id),
+                "nombre": other_name
+            })
+        return result
     
     # Comportamiento por defecto (sin vista)
     if current_user.rol in ["usuaria", "admin"]:
