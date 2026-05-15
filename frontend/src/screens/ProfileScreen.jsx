@@ -359,7 +359,6 @@ export default function ProfileScreen() {
             setPickerYear(d.getFullYear());
           }
           setNotificaciones(config.notificaciones ?? 1);
-          setIsGoogleLinked(!!config.google_token);
 
           const dark = config.modo_oscuro ?? 0;
           setModoOscuro(dark);
@@ -762,6 +761,37 @@ export default function ProfileScreen() {
 
       {/* Options List */}
       <div className="card" style={{ padding: '10px 0' }}>
+        <div
+          onClick={() => !globalNotifsDisabled && toggleNotificaciones()}
+          style={{
+            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: globalNotifsDisabled ? 'not-allowed' : 'pointer',
+            opacity: globalNotifsDisabled ? 0.6 : 1
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ background: (notificaciones && !globalNotifsDisabled) ? '#FFF1F2' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: (notificaciones && !globalNotifsDisabled) ? '#F6416C' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
+              <Bell size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+                {globalNotifsDisabled ? 'Pausado por el administrador' : notificaciones ? 'Activadas' : 'Desactivadas'}
+              </div>
+            </div>
+          </div>
+          <div style={{
+            width: '42px', height: '22px', background: (notificaciones && !globalNotifsDisabled) ? '#F6416C' : '#ccc',
+            borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
+          }}>
+            <div style={{
+              width: '18px', height: '18px', background: 'white', borderRadius: '50%',
+              position: 'absolute', left: (notificaciones && !globalNotifsDisabled) ? '22px' : '2px', top: '2px',
+              transition: 'left 0.3s'
+            }}></div>
+          </div>
+        </div>
+
         <div
           onClick={toggleModoOscuro}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
