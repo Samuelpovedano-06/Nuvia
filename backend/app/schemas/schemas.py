@@ -218,13 +218,15 @@ class AdminConfigOut(BaseModel):
 
 class MensajeCreate(BaseModel):
     id_receptor: UUID
-    contenido: str
+    contenido: Optional[str] = ""
+    imagen_data: Optional[str] = None  # data URL base64 (data:image/png;base64,...)
 
 class MensajeOut(BaseModel):
     id: UUID
     id_remitente: UUID
     id_receptor: UUID
-    contenido: str
+    contenido: Optional[str] = ""
+    tiene_imagen: bool = False
     leido: bool
     fecha: datetime
 
@@ -234,11 +236,13 @@ class MensajeOut(BaseModel):
 # ─────────────────────── FORO ───────────────────────
 
 class PublicacionForoCreate(BaseModel):
-    contenido: str
+    contenido: Optional[str] = ""
     categoria: str = "general"
+    imagen_data: Optional[str] = None
 
 class RespuestaForoCreate(BaseModel):
-    contenido: str
+    contenido: Optional[str] = ""
+    imagen_data: Optional[str] = None
 
 class ReaccionForoCreate(BaseModel):
     emoji: str

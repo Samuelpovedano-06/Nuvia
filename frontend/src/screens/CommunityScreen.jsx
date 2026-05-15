@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2, ChevronLeft } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2, ChevronLeft, ImagePlus } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
+import AuthImage from '../components/AuthImage';
+
+const MAX_IMG_BYTES = 5 * 1024 * 1024;
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
 
 const CATEGORIAS = [
   { id: null, label: 'Todo', emoji: '✨' },
@@ -23,7 +35,8 @@ const CATEGORIAS = [
 
 const TABS = [
   { id: 'popular', label: 'Popular' },
-  { id: 'mis', label: 'Mis publicaciones' },
+  { id: 'mis', label: 'Mías' },
+  { id: 'guardados', label: 'Guardados' },
   { id: 'siguiendo', label: 'Siguiendo' },
 ];
 
@@ -85,6 +98,24 @@ export default function CommunityScreen() {
   const [activePost, setActivePost] = useState(null);
   const [replies, setReplies] = useState([]);
   const [replyText, setReplyText] = useState('');
+  const [replyImage, setReplyImage] = useState(null); // { dataUrl }
+  const replyFileInputRef = useRef(null);
+
+  const handlePickReplyImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+      alert('Solo imágenes JPG, PNG, WEBP o GIF');
+      return;
+    }
+    if (file.size > MAX_IMG_BYTES) {
+      alert('La imagen es demasiado grande (máx 5MB)');
+      return;
+    }
+    const dataUrl = await fileToDataURL(file);
+    setReplyImage({ dataUrl });
+  };
   const [loadingReply, setLoadingReply] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const replyEndRef = useRef(null);
@@ -92,7 +123,25 @@ export default function CommunityScreen() {
   // Create modal
   const [showCreate, setShowCreate] = useState(false);
   const [newContent, setNewContent] = useState('');
+  const [newImage, setNewImage] = useState(null); // { dataUrl, file }
   const [publishing, setPublishing] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handlePickImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+      alert('Solo se permiten imágenes JPG, PNG, WEBP o GIF');
+      return;
+    }
+    if (file.size > MAX_IMG_BYTES) {
+      alert('La imagen es demasiado grande (máx 5MB)');
+      return;
+    }
+    const dataUrl = await fileToDataURL(file);
+    setNewImage({ dataUrl, file });
+  };
 
   useEffect(() => {
     setPage(1);
@@ -189,8 +238,8 @@ export default function CommunityScreen() {
   const handleFav = async (postId, e) => {
     e?.stopPropagation();
     const res = await ApiService.toggleFavoritoForo(postId);
-    updatePost({ id: postId, is_guardado: res.guardado });
-    if (activePost?.id === postId) setActivePost(p => ({ ...p, is_guardado: res.guardado }));
+    updatePost({ id: postId, is_guardado: res.guardado, favs_count: res.favs_count });
+    if (activePost?.id === postId) setActivePost(p => ({ ...p, is_guardado: res.guardado, favs_count: res.favs_count }));
   };
 
   const handleReaccion = async (emoji) => {
@@ -201,11 +250,21 @@ export default function CommunityScreen() {
     setShowReactions(false);
   };
 
-  const handleSeguir = async (avatarSeed, e) => {
+  const handleSeguir = async (idAutor, e) => {
     e?.stopPropagation();
-    const res = await ApiService.toggleSeguirForo(avatarSeed);
-    updatePost({ id: activePost?.id || '', es_seguido: res.siguiendo });
-    if (activePost) setActivePost(p => ({ ...p, es_seguido: res.siguiendo }));
+    if (!idAutor) {
+      alert('No se pudo identificar al autor. Reinicia el backend para aplicar la actualización.');
+      return;
+    }
+    try {
+      const res = await ApiService.toggleSeguirForo(idAutor);
+      // Actualiza es_seguido en TODOS los posts del mismo autor (no solo el abierto)
+      setPosts(prev => prev.map(p => p.id_autor === idAutor ? { ...p, es_seguido: res.siguiendo } : p));
+      if (activePost) setActivePost(p => ({ ...p, es_seguido: res.siguiendo }));
+    } catch (err) {
+      console.error('Error seguir:', err);
+      alert('No se pudo seguir al usuario');
+    }
   };
 
   const openPost = async (post) => {
@@ -218,12 +277,13 @@ export default function CommunityScreen() {
 
   const handleReply = async (e) => {
     e.preventDefault();
-    if (!replyText.trim() || !activePost) return;
+    if ((!replyText.trim() && !replyImage) || !activePost) return;
     setLoadingReply(true);
     try {
-      const r = await ApiService.crearRespuesta(activePost.id, replyText);
+      const r = await ApiService.crearRespuesta(activePost.id, replyText, replyImage?.dataUrl || null);
       setReplies(prev => [...prev, r]);
       setReplyText('');
+      setReplyImage(null);
       updatePost({ id: activePost.id, comments_count: (activePost.comments_count || 0) + 1 });
       setActivePost(p => ({ ...p, comments_count: (p.comments_count || 0) + 1 }));
       setTimeout(() => replyEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -247,13 +307,14 @@ export default function CommunityScreen() {
   };
 
   const handlePublish = async () => {
-    if (!newContent.trim()) return;
+    if (!newContent.trim() && !newImage) return;
     setPublishing(true);
     try {
-      const pub = await ApiService.crearPublicacion(newContent);
+      const pub = await ApiService.crearPublicacion(newContent, newImage?.dataUrl || null);
       setPosts(prev => [pub, ...prev]);
       setShowCreate(false);
       setNewContent('');
+      setNewImage(null);
     } catch (err) {
       alert(err.message);
     } finally {
@@ -261,10 +322,46 @@ export default function CommunityScreen() {
     }
   };
 
-  const handleShare = (post, e) => {
+  // Share = compartir con pareja
+  const [sharePost, setSharePost] = useState(null);     // post a compartir
+  const [shareParejas, setShareParejas] = useState([]); // lista de parejas
+  const [sharing, setSharing] = useState(false);
+
+  const handleShare = async (post, e) => {
     e?.stopPropagation();
-    if (navigator.share) {
-      navigator.share({ title: 'Nuvia Comunidad', text: post.contenido.slice(0, 100) + '…' }).catch(() => { });
+    try {
+      const parejas = await ApiService.getParejas();
+      if (!parejas || parejas.length === 0) {
+        alert('No tienes ninguna pareja vinculada para compartir.');
+        return;
+      }
+      if (parejas.length === 1) {
+        // Pareja única → enviar directamente
+        await ApiService.compartirPublicacion(parejas[0].other_id || parejas[0].id_pareja, post.id);
+        alert('Publicación enviada a tu pareja');
+        return;
+      }
+      // Varias parejas → modal de elección
+      setShareParejas(parejas);
+      setSharePost(post);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Error al compartir');
+    }
+  };
+
+  const handleShareTo = async (idPareja) => {
+    if (!sharePost) return;
+    setSharing(true);
+    try {
+      await ApiService.compartirPublicacion(idPareja, sharePost.id);
+      setSharePost(null);
+      setShareParejas([]);
+      alert('Publicación enviada');
+    } catch (err) {
+      alert(err.message || 'Error al compartir');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -316,12 +413,13 @@ export default function CommunityScreen() {
         {posts.length === 0 && !loading ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', opacity: 0.5 }}>
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>
-              {tab === 'siguiendo' ? '👥' : tab === 'mis' ? '✍️' : '💬'}
+              {tab === 'siguiendo' ? '👥' : tab === 'mis' ? '✍️' : tab === 'guardados' ? '🔖' : '💬'}
             </div>
             <p style={{ fontSize: '14px', color: 'var(--text-light)' }}>
               {tab === 'siguiendo' ? 'Sigue a otras usuarias para ver sus publicaciones aquí.'
                 : tab === 'mis' ? 'Aún no has publicado nada. ¡Comparte algo!'
-                  : 'No hay publicaciones en esta categoría aún.'}
+                  : tab === 'guardados' ? 'Aún no has guardado ninguna publicación.'
+                    : 'No hay publicaciones en esta categoría aún.'}
             </p>
           </div>
         ) : (
@@ -380,7 +478,7 @@ export default function CommunityScreen() {
                 <AvatarRow seed={activePost.avatar_seed} time={activePost.created_at} />
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   {!activePost.es_mia && (
-                    <button onClick={e => handleSeguir(activePost.avatar_seed, e)} style={{
+                    <button onClick={e => handleSeguir(activePost.id_autor, e)} style={{
                       display: 'flex', alignItems: 'center', gap: '4px',
                       padding: '6px 12px', borderRadius: '12px', border: '1.5px solid var(--primary)',
                       background: activePost.es_seguido ? 'var(--primary)' : 'transparent',
@@ -397,7 +495,15 @@ export default function CommunityScreen() {
                   )}
                 </div>
               </div>
-              <p style={{ margin: '0 0 12px', fontSize: '15px', lineHeight: '1.6', color: 'var(--text-dark)' }}>{activePost.contenido}</p>
+              {activePost.contenido && (
+                <p style={{ margin: '0 0 12px', fontSize: '15px', lineHeight: '1.6', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{activePost.contenido}</p>
+              )}
+              {activePost.tiene_imagen && (
+                <AuthImage
+                  src={ApiService.imagenForoUrl(activePost.id)}
+                  style={{ width: '100%', maxHeight: '480px', objectFit: 'contain', borderRadius: '12px', marginBottom: '12px', background: '#f5f5fa' }}
+                />
+              )}
               <CatLabel id={activePost.categoria} />
 
               {/* Actions */}
@@ -406,7 +512,7 @@ export default function CommunityScreen() {
                   label={fmtNum(activePost.likes_count)} onClick={() => handleLike(activePost.id)} />
                 <ActionBtn icon={<MessageCircle size={18} color="#999" />} label={fmtNum(activePost.comments_count)} />
                 <ActionBtn icon={<Bookmark size={18} fill={activePost.is_guardado ? 'var(--primary)' : 'none'} color={activePost.is_guardado ? 'var(--primary)' : '#999'} />}
-                  label={activePost.is_guardado ? 'Guardado' : 'Guardar'} onClick={() => handleFav(activePost.id)} />
+                  label={fmtNum(activePost.favs_count || 0)} onClick={() => handleFav(activePost.id)} />
                 <ActionBtn icon={<Share2 size={18} color="#999" />} label="Compartir" onClick={e => handleShare(activePost, e)} />
               </div>
 
@@ -448,22 +554,45 @@ export default function CommunityScreen() {
           </div>
 
           {/* Reply input */}
-          <form onSubmit={handleReply} style={{ padding: '12px', borderTop: '1px solid #f0f0f5', display: 'flex', gap: '8px', background: 'white' }}>
-            <input
-              placeholder="Escribe una respuesta anónima..."
-              value={replyText}
-              onChange={e => setReplyText(e.target.value)}
-              style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #eee', fontSize: '14px', outline: 'none' }}
-            />
-            <button type="submit" disabled={!replyText.trim() || loadingReply} style={{
-              background: 'var(--primary)', color: 'white', border: 'none',
-              width: '42px', height: '42px', borderRadius: '14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', opacity: !replyText.trim() ? 0.5 : 1
-            }}>
-              <Send size={18} />
-            </button>
-          </form>
+          <div style={{ borderTop: '1px solid #f0f0f5', background: 'white' }}>
+            {replyImage && (
+              <div style={{ padding: '8px 12px 0', position: 'relative', display: 'inline-block' }}>
+                <img src={replyImage.dataUrl} alt="" style={{ maxHeight: '80px', borderRadius: '10px', display: 'block' }} />
+                <button onClick={() => setReplyImage(null)} style={{
+                  position: 'absolute', top: '4px', right: '4px',
+                  background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none',
+                  width: '22px', height: '22px', borderRadius: '50%', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+            <form onSubmit={handleReply} style={{ padding: '12px', display: 'flex', gap: '8px' }}>
+              <input ref={replyFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePickReplyImage} style={{ display: 'none' }} />
+              <button type="button" onClick={() => replyFileInputRef.current?.click()} style={{
+                background: '#f5f5fa', color: 'var(--primary)', border: 'none',
+                width: '42px', height: '42px', borderRadius: '14px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0
+              }}>
+                <ImagePlus size={18} />
+              </button>
+              <input
+                placeholder="Escribe una respuesta anónima..."
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #eee', fontSize: '14px', outline: 'none', minWidth: 0 }}
+              />
+              <button type="submit" disabled={(!replyText.trim() && !replyImage) || loadingReply} style={{
+                background: 'var(--primary)', color: 'white', border: 'none',
+                width: '42px', height: '42px', borderRadius: '14px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', opacity: (!replyText.trim() && !replyImage) ? 0.5 : 1, flexShrink: 0
+              }}>
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -496,17 +625,79 @@ export default function CommunityScreen() {
               style={{
                 width: '100%', flex: 1, minHeight: 0, padding: '14px', borderRadius: '14px', border: '1.5px solid #eee',
                 fontSize: '14px', resize: 'none', outline: 'none', lineHeight: '1.5',
-                fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: '16px'
+                fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: '12px'
               }}
             />
-            <button onClick={handlePublish} disabled={!newContent.trim() || publishing} style={{
-              width: '100%', padding: '15px', borderRadius: '16px', border: 'none',
-              background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
-              color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
-              opacity: !newContent.trim() ? 0.6 : 1, flexShrink: 0
-            }}>
-              {publishing ? 'Publicando...' : 'Publicar de forma anónima'}
-            </button>
+            {newImage && (
+              <div style={{ position: 'relative', marginBottom: '12px', flexShrink: 0 }}>
+                <img src={newImage.dataUrl} alt="" style={{ maxHeight: '160px', borderRadius: '14px', display: 'block' }} />
+                <button onClick={() => setNewImage(null)} style={{
+                  position: 'absolute', top: '6px', right: '6px',
+                  background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none',
+                  width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePickImage} style={{ display: 'none' }} />
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <button onClick={() => fileInputRef.current?.click()} disabled={publishing} style={{
+                padding: '0 16px', borderRadius: '16px', border: '1.5px solid #eee',
+                background: 'white', color: 'var(--primary)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700'
+              }}>
+                <ImagePlus size={18} /> Imagen
+              </button>
+              <button onClick={handlePublish} disabled={(!newContent.trim() && !newImage) || publishing} style={{
+                flex: 1, padding: '15px', borderRadius: '16px', border: 'none',
+                background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
+                color: 'white', fontWeight: '700', fontSize: '15px', cursor: 'pointer',
+                opacity: (!newContent.trim() && !newImage) ? 0.6 : 1
+              }}>
+                {publishing ? 'Publicando...' : 'Publicar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: elegir pareja para compartir */}
+      {sharePost && (
+        <div
+          onClick={() => !sharing && setSharePost(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '380px', maxHeight: '80vh', overflowY: 'auto' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Compartir con…</h3>
+              <button onClick={() => !sharing && setSharePost(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} color="#666" /></button>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-light)', margin: '0 0 16px' }}>Selecciona a quién enviarle esta publicación:</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {shareParejas.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => handleShareTo(p.other_id || p.id_pareja)}
+                  disabled={sharing}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #eee',
+                    background: 'white', cursor: sharing ? 'wait' : 'pointer',
+                    textAlign: 'left', fontSize: '14px', fontWeight: '600', color: 'var(--text-dark)'
+                  }}
+                >
+                  <div style={{ background: 'var(--primary)', color: 'white', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>
+                    {(p.nombre || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <span>{p.nombre || 'Sin nombre'}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -555,12 +746,21 @@ function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, isMine }) {
         )}
       </div>
 
-      <p style={{ margin: '0 0 8px', fontSize: '14px', lineHeight: '1.6', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-        {preview}
-        {truncated && (
-          <span style={{ color: '#38bdf8', fontWeight: '600' }}> Seguir leyendo</span>
-        )}
-      </p>
+      {post.contenido && (
+        <p style={{ margin: '0 0 8px', fontSize: '14px', lineHeight: '1.6', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+          {preview}
+          {truncated && (
+            <span style={{ color: '#38bdf8', fontWeight: '600' }}> Seguir leyendo</span>
+          )}
+        </p>
+      )}
+
+      {post.tiene_imagen && (
+        <AuthImage
+          src={ApiService.imagenForoUrl(post.id)}
+          style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', borderRadius: '12px', marginBottom: '10px', cursor: 'pointer' }}
+        />
+      )}
 
       <div style={{ marginBottom: '12px' }}>
         <CatLabel id={post.categoria} />
@@ -586,8 +786,9 @@ function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, isMine }) {
           <ActionBtn icon={<MessageCircle size={16} color="#aaa" />} label={fmtNum(post.comments_count)} onClick={onOpen} />
           <ActionBtn icon={<Share2 size={16} color="#aaa" />} onClick={onShare} />
         </div>
-        <button onClick={onFav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+        <button onClick={onFav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: post.is_guardado ? 'var(--primary)' : '#aaa', fontWeight: '600' }}>
           <Bookmark size={16} fill={post.is_guardado ? 'var(--primary)' : 'none'} color={post.is_guardado ? 'var(--primary)' : '#aaa'} />
+          {post.favs_count > 0 && fmtNum(post.favs_count)}
         </button>
       </div>
 
@@ -615,7 +816,15 @@ function ReplyCard({ reply, onDelete, onLike }) {
       <div style={{ flex: 1 }}>
         <div style={{ background: '#f8f8fc', borderRadius: '14px', padding: '10px 14px', marginBottom: '6px' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '4px' }}>Anónima · {timeAgo(reply.created_at)}</div>
-          <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{reply.contenido}</p>
+          {reply.contenido && (
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{reply.contenido}</p>
+          )}
+          {reply.tiene_imagen && (
+            <AuthImage
+              src={ApiService.imagenRespuestaForoUrl(reply.id)}
+              style={{ width: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: '10px', marginTop: reply.contenido ? '8px' : 0, background: '#f0f0f5' }}
+            />
+          )}
         </div>
         <div style={{ display: 'flex', gap: '12px', paddingLeft: '4px' }}>
           <button onClick={onLike} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: reply.is_liked ? '#F6416C' : '#aaa' }}>

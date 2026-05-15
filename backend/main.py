@@ -63,6 +63,16 @@ def run_migrations():
             id_seguido UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
             PRIMARY KEY (id_seguidor, id_seguido)
         )""",
+        # Adjuntos de imagen (foro y chat)
+        "ALTER TABLE foro_publicaciones ADD COLUMN IF NOT EXISTS imagen BYTEA",
+        "ALTER TABLE foro_publicaciones ADD COLUMN IF NOT EXISTS imagen_mime VARCHAR(50)",
+        "ALTER TABLE foro_publicaciones ALTER COLUMN contenido DROP NOT NULL",
+        "ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS imagen BYTEA",
+        "ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS imagen_mime VARCHAR(50)",
+        "ALTER TABLE mensajes ALTER COLUMN contenido DROP NOT NULL",
+        "ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS imagen BYTEA",
+        "ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS imagen_mime VARCHAR(50)",
+        "ALTER TABLE foro_respuestas ALTER COLUMN contenido DROP NOT NULL",
     ]
     with engine.connect() as conn:
         for sql in migrations:

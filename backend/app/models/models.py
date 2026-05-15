@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text, Boolean
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text, Boolean, LargeBinary
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
 import uuid
@@ -139,18 +139,22 @@ class Pareja(Base):
 
 class PublicacionForo(Base):
     __tablename__ = "foro_publicaciones"
-    id         = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_usuaria = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
-    contenido  = Column(Text, nullable=False)
-    categoria  = Column(String(50), nullable=False, server_default="general")
-    created_at = Column(DateTime, server_default=func.now())
+    id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    contenido    = Column(Text, nullable=True)
+    categoria    = Column(String(50), nullable=False, server_default="general")
+    imagen       = Column(LargeBinary, nullable=True)
+    imagen_mime  = Column(String(50), nullable=True)
+    created_at   = Column(DateTime, server_default=func.now())
 
 class RespuestaForo(Base):
     __tablename__ = "foro_respuestas"
     id             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     id_publicacion = Column(UUID(as_uuid=True), ForeignKey("foro_publicaciones.id", ondelete="CASCADE"), nullable=False)
     id_usuaria     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
-    contenido      = Column(Text, nullable=False)
+    contenido      = Column(Text, nullable=True)
+    imagen         = Column(LargeBinary, nullable=True)
+    imagen_mime    = Column(String(50), nullable=True)
     created_at     = Column(DateTime, server_default=func.now())
 
 class LikeForo(Base):
@@ -180,7 +184,9 @@ class Mensaje(Base):
     id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     id_remitente = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
     id_receptor  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    contenido    = Column(Text, nullable=False)
+    contenido    = Column(Text, nullable=True)
+    imagen       = Column(LargeBinary, nullable=True)
+    imagen_mime  = Column(String(50), nullable=True)
     leido        = Column(Boolean, server_default=text("false"))
     fecha        = Column(DateTime, server_default=func.now())
 

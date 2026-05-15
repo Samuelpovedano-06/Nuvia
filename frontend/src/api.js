@@ -336,13 +336,34 @@ export const ApiService = {
     return await res.json();
   },
 
-  enviarMensaje: async (idReceptor, contenido) => {
+  enviarMensaje: async (idReceptor, contenido, imagenData = null) => {
     const res = await fetch(`${baseUrl}/chat/`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ id_receptor: idReceptor, contenido })
+      body: JSON.stringify({ id_receptor: idReceptor, contenido, imagen_data: imagenData })
     });
-    if (!res.ok) throw new Error('Error al enviar mensaje');
+    if (!res.ok) {
+      let detail = 'Error al enviar mensaje';
+      try { const j = await res.json(); detail = j.detail || detail; } catch {}
+      throw new Error(detail);
+    }
+    return await res.json();
+  },
+
+  imagenChatUrl: (id) => `${baseUrl}/chat/imagen/${id}`,
+  imagenForoUrl: (id) => `${baseUrl}/foro/${id}/imagen`,
+
+  compartirPublicacion: async (idReceptor, idPublicacion) => {
+    const res = await fetch(`${baseUrl}/chat/compartir-publicacion`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ id_receptor: idReceptor, id_publicacion: idPublicacion })
+    });
+    if (!res.ok) {
+      let detail = 'Error al compartir';
+      try { const j = await res.json(); detail = j.detail || detail; } catch {}
+      throw new Error(detail);
+    }
     return await res.json();
   },
 
@@ -355,11 +376,11 @@ export const ApiService = {
     return await res.json();
   },
 
-  crearPublicacion: async (contenido) => {
+  crearPublicacion: async (contenido, imagenData = null) => {
     const res = await fetch(`${baseUrl}/foro/`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ contenido })
+      body: JSON.stringify({ contenido, imagen_data: imagenData })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al publicar');
@@ -396,16 +417,18 @@ export const ApiService = {
     return await res.json();
   },
 
-  crearRespuesta: async (id, contenido) => {
+  crearRespuesta: async (id, contenido, imagenData = null) => {
     const res = await fetch(`${baseUrl}/foro/${id}/respuestas`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ contenido })
+      body: JSON.stringify({ contenido, imagen_data: imagenData })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error al responder');
     return data;
   },
+
+  imagenRespuestaForoUrl: (id) => `${baseUrl}/foro/respuestas/${id}/imagen`,
 
   eliminarRespuesta: async (id) => {
     await fetch(`${baseUrl}/foro/respuestas/${id}`, { method: 'DELETE', headers: getHeaders() });
@@ -413,6 +436,11 @@ export const ApiService = {
 
   toggleSeguirForo: async (idUsuaria) => {
     const res = await fetch(`${baseUrl}/foro/seguir/${idUsuaria}`, { method: 'POST', headers: getHeaders() });
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try { const j = await res.json(); detail = j.detail || detail; } catch {}
+      throw new Error(detail);
+    }
     return await res.json();
   },
 };

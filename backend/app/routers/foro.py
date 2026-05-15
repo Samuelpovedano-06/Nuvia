@@ -1,12 +1,34 @@
+import base64
 import unicodedata
 import re
 from datetime import timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
+
+MIMES_VALIDOS = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_BYTES = 5 * 1024 * 1024  # 5MB
+
+
+def _decode_data_url(data_url: str):
+    """Convierte 'data:image/png;base64,xxx' en (mime, bytes)."""
+    try:
+        header, b64 = data_url.split(",", 1)
+        mime = header.split(";")[0].replace("data:", "").strip().lower()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Imagen mal formada")
+    if mime not in MIMES_VALIDOS:
+        raise HTTPException(status_code=400, detail="Tipo de imagen no permitido")
+    try:
+        data = base64.b64decode(b64, validate=True)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Imagen no decodificable")
+    if len(data) > MAX_BYTES:
+        raise HTTPException(status_code=400, detail="Imagen demasiado grande (máx 5MB)")
+    return mime, data
 
 from app.database.connection import get_db
 from app.models.models import (
@@ -96,6 +118,10 @@ def _build_posts(posts, db, current_user_id):
             liked_set.add(pid)
 
     favs_set = {str(f.id_publicacion) for f in all_favs if f.id_usuaria == current_user_id}
+    favs_map = {}
+    for f in all_favs:
+        pid = str(f.id_publicacion)
+        favs_map[pid] = favs_map.get(pid, 0) + 1
 
     reac_map     = {}
     mi_reac_map  = {}
@@ -113,11 +139,14 @@ def _build_posts(posts, db, current_user_id):
         pid = str(p.id)
         result.append({
             "id": pid,
+            "id_autor": str(p.id_usuaria),
             "avatar_seed": str(p.id_usuaria)[:12],
-            "contenido": p.contenido,
+            "contenido": p.contenido or "",
             "categoria": p.categoria,
             "created_at": _iso_utc(p.created_at),
+            "tiene_imagen": p.imagen is not None,
             "likes_count": likes_map.get(pid, 0),
+            "favs_count": favs_map.get(pid, 0),
             "comments_count": comments_map.get(pid, 0),
             "is_liked": pid in liked_set,
             "is_guardado": pid in favs_set,
@@ -176,16 +205,22 @@ def crear_publicacion(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
-    contenido = datos.contenido.strip()
-    if not contenido:
-        raise HTTPException(status_code=400, detail="El contenido no puede estar vacío")
-    # La categoría se asigna automáticamente analizando el contenido
-    categoria_auto = clasificar_categoria(contenido)
+    contenido = (datos.contenido or "").strip()
+    imagen_bytes = None
+    imagen_mime = None
+    if datos.imagen_data:
+        imagen_mime, imagen_bytes = _decode_data_url(datos.imagen_data)
+    if not contenido and not imagen_bytes:
+        raise HTTPException(status_code=400, detail="La publicación debe tener texto o imagen")
+    # La categoría se asigna automáticamente analizando el contenido (si lo hay)
+    categoria_auto = clasificar_categoria(contenido) if contenido else "general"
     print(f"[Foro] Nueva publicación → categoría detectada: '{categoria_auto}' | texto: {contenido[:80]!r}")
     pub = PublicacionForo(
         id_usuaria=current_user.id_usuaria,
         contenido=contenido,
-        categoria=categoria_auto
+        categoria=categoria_auto,
+        imagen=imagen_bytes,
+        imagen_mime=imagen_mime,
     )
     db.add(pub)
     db.commit()
@@ -258,7 +293,8 @@ def toggle_favorito(
         db.add(FavoritoForo(id_publicacion=id, id_usuaria=current_user.id_usuaria))
         guardado = True
     db.commit()
-    return {"guardado": guardado}
+    favs_count = db.query(FavoritoForo).filter(FavoritoForo.id_publicacion == id).count()
+    return {"guardado": guardado, "favs_count": favs_count}
 
 
 @router.post("/{id}/reaccion")
@@ -319,7 +355,8 @@ def listar_respuestas(
         {
             "id": str(r.id),
             "avatar_seed": str(r.id_usuaria)[:12],
-            "contenido": r.contenido,
+            "contenido": r.contenido or "",
+            "tiene_imagen": r.imagen is not None,
             "created_at": _iso_utc(r.created_at),
             "likes_count": likes_map.get(str(r.id), 0),
             "is_liked": str(r.id) in liked_set,
@@ -339,10 +376,19 @@ def crear_respuesta(
     pub = db.query(PublicacionForo).filter(PublicacionForo.id == id).first()
     if not pub:
         raise HTTPException(status_code=404, detail="Publicación no encontrada")
+    contenido = (datos.contenido or "").strip()
+    imagen_bytes = None
+    imagen_mime = None
+    if datos.imagen_data:
+        imagen_mime, imagen_bytes = _decode_data_url(datos.imagen_data)
+    if not contenido and not imagen_bytes:
+        raise HTTPException(status_code=400, detail="La respuesta debe tener texto o imagen")
     r = RespuestaForo(
         id_publicacion=id,
         id_usuaria=current_user.id_usuaria,
-        contenido=datos.contenido.strip()
+        contenido=contenido,
+        imagen=imagen_bytes,
+        imagen_mime=imagen_mime,
     )
     db.add(r)
     db.commit()
@@ -350,12 +396,21 @@ def crear_respuesta(
     return {
         "id": str(r.id),
         "avatar_seed": str(r.id_usuaria)[:12],
-        "contenido": r.contenido,
+        "contenido": r.contenido or "",
+        "tiene_imagen": r.imagen is not None,
         "created_at": _iso_utc(r.created_at),
         "likes_count": 0,
         "is_liked": False,
         "es_mia": True,
     }
+
+
+@router.get("/respuestas/{id}/imagen")
+def obtener_imagen_respuesta(id: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    r = db.query(RespuestaForo).filter(RespuestaForo.id == id).first()
+    if not r or not r.imagen:
+        raise HTTPException(status_code=404, detail="Imagen no encontrada")
+    return Response(content=bytes(r.imagen), media_type=r.imagen_mime or "image/jpeg")
 
 
 @router.delete("/respuestas/{id}", status_code=204)
@@ -393,3 +448,11 @@ def seguir_usuario(
         siguiendo = True
     db.commit()
     return {"siguiendo": siguiendo}
+
+
+@router.get("/{id}/imagen")
+def obtener_imagen_publicacion(id: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    p = db.query(PublicacionForo).filter(PublicacionForo.id == id).first()
+    if not p or not p.imagen:
+        raise HTTPException(status_code=404, detail="Imagen no encontrada")
+    return Response(content=bytes(p.imagen), media_type=p.imagen_mime or "image/jpeg")

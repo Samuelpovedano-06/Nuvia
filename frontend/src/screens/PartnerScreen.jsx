@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Heart, Users, Shield, Calendar, X, Send, MessageCircle } from 'lucide-react';
+import { ChevronLeft, Heart, Users, Shield, Calendar, X, Send, MessageCircle, ImagePlus } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
+import AuthImage from '../components/AuthImage';
+
+const MAX_IMG_BYTES = 5 * 1024 * 1024;
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
 
 const PartnerScreen = () => {
   const navigate = useNavigate();
@@ -16,8 +28,28 @@ const PartnerScreen = () => {
   const [vinculoToDesvincular, setVinculoToDesvincular] = useState(null);
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState('');
+  const [imagenAdjunta, setImagenAdjunta] = useState(null); // { dataUrl }
+  const [enviandoMensaje, setEnviandoMensaje] = useState(false);
   const [showChat, setShowChat] = useState(localStorage.getItem('showUsChat') === 'true');
+  const [imagenPreview, setImagenPreview] = useState(null); // url para overlay
   const chatEndRef = React.useRef(null);
+  const fileInputRef = React.useRef(null);
+
+  const handlePickImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+      alert('Solo imágenes JPG, PNG, WEBP o GIF');
+      return;
+    }
+    if (file.size > MAX_IMG_BYTES) {
+      alert('La imagen es demasiado grande (máx 5MB)');
+      return;
+    }
+    const dataUrl = await fileToDataURL(file);
+    setImagenAdjunta({ dataUrl });
+  };
 
   useEffect(() => {
     localStorage.setItem('showUsChat', showChat);
@@ -66,13 +98,18 @@ const PartnerScreen = () => {
 
   const handleEnviarMensaje = async (e) => {
     e.preventDefault();
-    if (!nuevoMensaje.trim() || !selectedId) return;
+    if ((!nuevoMensaje.trim() && !imagenAdjunta) || !selectedId || enviandoMensaje) return;
+    setEnviandoMensaje(true);
     try {
-      await ApiService.enviarMensaje(selectedId, nuevoMensaje);
+      await ApiService.enviarMensaje(selectedId, nuevoMensaje, imagenAdjunta?.dataUrl || null);
       setNuevoMensaje('');
+      setImagenAdjunta(null);
       fetchMensajes();
     } catch (err) {
       console.error('Error sending message:', err);
+      alert(err.message || 'Error al enviar mensaje');
+    } finally {
+      setEnviandoMensaje(false);
     }
   };
 
@@ -487,19 +524,31 @@ const PartnerScreen = () => {
               </div>
             ) : mensajes.map(m => {
               const isMe = m.id_remitente === user.id_usuaria;
+              const tieneImagen = m.tiene_imagen;
+              const tieneTexto = !!(m.contenido && m.contenido.trim());
               return (
                 <div key={m.id} style={{
                   alignSelf: isMe ? 'flex-end' : 'flex-start',
                   maxWidth: '80%',
-                  padding: '10px 14px',
+                  padding: tieneImagen && !tieneTexto ? '4px' : '10px 14px',
                   borderRadius: isMe ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
                   background: isMe ? 'var(--primary)' : 'white',
                   color: isMe ? 'white' : 'var(--text-dark)',
                   boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-                  position: 'relative'
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}>
-                  <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4' }}>{m.contenido}</p>
-                  <span style={{ fontSize: '9px', opacity: 0.7, marginTop: '4px', display: 'block', textAlign: isMe ? 'right' : 'left' }}>
+                  {tieneImagen && (
+                    <AuthImage
+                      src={ApiService.imagenChatUrl(m.id)}
+                      onClick={() => setImagenPreview(ApiService.imagenChatUrl(m.id))}
+                      style={{ maxWidth: '260px', maxHeight: '320px', borderRadius: '14px', display: 'block', cursor: 'pointer', marginBottom: tieneTexto ? '6px' : 0 }}
+                    />
+                  )}
+                  {tieneTexto && (
+                    <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4', overflowWrap: 'break-word', wordBreak: 'break-word', padding: tieneImagen ? '0 8px' : 0 }}>{m.contenido}</p>
+                  )}
+                  <span style={{ fontSize: '9px', opacity: 0.7, marginTop: '4px', display: 'block', textAlign: isMe ? 'right' : 'left', padding: tieneImagen && !tieneTexto ? '0 8px 4px' : 0 }}>
                     {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -508,22 +557,63 @@ const PartnerScreen = () => {
             <div ref={chatEndRef} />
           </div>
 
-          <form onSubmit={handleEnviarMensaje} style={{ padding: '12px', borderTop: '1px solid #f5f5f5', display: 'flex', gap: '8px', background: 'white' }}>
-            <input
-              type="text"
-              placeholder="Escribe un mensaje..."
-              value={nuevoMensaje}
-              onChange={e => setNuevoMensaje(e.target.value)}
-              style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #f1f5f9', fontSize: '14px', outline: 'none' }}
-            />
-            <button
-              type="submit"
-              disabled={!nuevoMensaje.trim()}
-              style={{ background: 'var(--primary)', color: 'white', border: 'none', width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: !nuevoMensaje.trim() ? 0.6 : 1 }}
-            >
-              <Send size={18} />
-            </button>
-          </form>
+          <div style={{ borderTop: '1px solid #f5f5f5', background: 'white' }}>
+            {imagenAdjunta && (
+              <div style={{ padding: '8px 12px 0', position: 'relative', display: 'inline-block' }}>
+                <img src={imagenAdjunta.dataUrl} alt="" style={{ maxHeight: '80px', borderRadius: '10px', display: 'block' }} />
+                <button onClick={() => setImagenAdjunta(null)} style={{
+                  position: 'absolute', top: '4px', right: '4px',
+                  background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none',
+                  width: '22px', height: '22px', borderRadius: '50%', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+            <form onSubmit={handleEnviarMensaje} style={{ padding: '12px', display: 'flex', gap: '8px' }}>
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePickImage} style={{ display: 'none' }} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} style={{
+                background: '#f5f5fa', color: 'var(--primary)', border: 'none',
+                width: '42px', height: '42px', borderRadius: '14px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0
+              }}>
+                <ImagePlus size={18} />
+              </button>
+              <input
+                type="text"
+                placeholder="Escribe un mensaje..."
+                value={nuevoMensaje}
+                onChange={e => setNuevoMensaje(e.target.value)}
+                style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #f1f5f9', fontSize: '14px', outline: 'none', minWidth: 0 }}
+              />
+              <button
+                type="submit"
+                disabled={(!nuevoMensaje.trim() && !imagenAdjunta) || enviandoMensaje}
+                style={{ background: 'var(--primary)', color: 'white', border: 'none', width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: (!nuevoMensaje.trim() && !imagenAdjunta) ? 0.6 : 1, flexShrink: 0 }}
+              >
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
+
+          {imagenPreview && (
+            <div onClick={() => setImagenPreview(null)} style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.9)', zIndex: 2000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', cursor: 'pointer'
+            }}>
+              <AuthImage src={imagenPreview} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '10px' }} />
+              <button onClick={() => setImagenPreview(null)} style={{
+                position: 'absolute', top: '20px', right: '20px',
+                background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none',
+                width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <X size={20} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
