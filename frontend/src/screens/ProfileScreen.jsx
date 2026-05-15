@@ -230,7 +230,6 @@ export default function ProfileScreen() {
 
   // Estados de configuración
   const [notificaciones, setNotificaciones] = useState(1);
-  const [privacidadEstricta, setPrivacidadEstricta] = useState(0);
   const [modoOscuro, setModoOscuro] = useState(0);
   const [isCycleEditable, setIsCycleEditable] = useState(false);
   const [systemRanges, setSystemRanges] = useState({
@@ -360,7 +359,6 @@ export default function ProfileScreen() {
             setPickerYear(d.getFullYear());
           }
           setNotificaciones(config.notificaciones ?? 1);
-          setPrivacidadEstricta(config.privacidad_estricta ?? 0);
 
           const dark = config.modo_oscuro ?? 0;
           setModoOscuro(dark);
@@ -477,11 +475,7 @@ export default function ProfileScreen() {
     handleUpdateConfig('recordatorio_ciclo', newVal);
   };
 
-  const togglePrivacidad = () => {
-    const newVal = privacidadEstricta === 1 ? 0 : 1;
-    setPrivacidadEstricta(newVal);
-    handleUpdateConfig('privacidad_estricta', newVal);
-  };
+
 
   const toggleModoOscuro = () => {
     const newVal = modoOscuro === 1 ? 0 : 1;
@@ -793,31 +787,6 @@ export default function ProfileScreen() {
             <div style={{
               width: '18px', height: '18px', background: 'white', borderRadius: '50%',
               position: 'absolute', left: (notificaciones && !globalNotifsDisabled) ? '22px' : '2px', top: '2px',
-              transition: 'left 0.3s'
-            }}></div>
-          </div>
-        </div>
-
-        <div
-          onClick={togglePrivacidad}
-          style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: privacidadEstricta ? '#F3E5F5' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: privacidadEstricta ? 'var(--primary)' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
-              <Lock size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Privacidad</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{privacidadEstricta ? 'Máxima protección activa' : 'Gestiona tus datos'}</div>
-            </div>
-          </div>
-          <div style={{
-            width: '42px', height: '22px', background: privacidadEstricta ? 'var(--primary)' : '#ccc',
-            borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
-          }}>
-            <div style={{
-              width: '18px', height: '18px', background: 'white', borderRadius: '50%',
-              position: 'absolute', left: privacidadEstricta ? '22px' : '2px', top: '2px',
               transition: 'left 0.3s'
             }}></div>
           </div>
