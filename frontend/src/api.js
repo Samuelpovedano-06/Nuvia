@@ -168,6 +168,27 @@ export const ApiService = {
     return await res.json();
   },
 
+  // Calendar
+  getGoogleAuthUrl: async () => {
+    const res = await fetch(`${baseUrl}/calendar/google/auth`, { headers: getHeaders() });
+    return await res.json();
+  },
+  googleCallback: async (code, state) => {
+    const res = await fetch(`${baseUrl}/calendar/google/callback`, {
+      method: 'POST',
+      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, state })
+    });
+    return await res.json();
+  },
+  syncCalendar: async () => {
+    const res = await fetch(`${baseUrl}/calendar/sync`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    return await res.json();
+  },
+
   // Ciclos
   getCiclos: async (targetId = null) => {
     const url = targetId ? `${baseUrl}/ciclos/?id_usuaria=${targetId}` : `${baseUrl}/ciclos/`;
@@ -344,5 +365,74 @@ export const ApiService = {
     });
     if (!res.ok) throw new Error('Error al enviar mensaje');
     return await res.json();
-  }
+  },
+
+  // Foro
+  getPublicaciones: async ({ tab = 'popular', categoria = null, page = 1 } = {}) => {
+    let url = `${baseUrl}/foro/?tab=${tab}&page=${page}`;
+    if (categoria) url += `&categoria=${categoria}`;
+    const res = await fetch(url, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  crearPublicacion: async (contenido, categoria) => {
+    const res = await fetch(`${baseUrl}/foro/`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ contenido, categoria })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al publicar');
+    return data;
+  },
+
+  eliminarPublicacion: async (id) => {
+    await fetch(`${baseUrl}/foro/${id}`, { method: 'DELETE', headers: getHeaders() });
+  },
+
+  toggleLikeForo: async (id) => {
+    const res = await fetch(`${baseUrl}/foro/${id}/like`, { method: 'POST', headers: getHeaders() });
+    return await res.json();
+  },
+
+  toggleFavoritoForo: async (id) => {
+    const res = await fetch(`${baseUrl}/foro/${id}/favorito`, { method: 'POST', headers: getHeaders() });
+    return await res.json();
+  },
+
+  toggleReaccionForo: async (id, emoji) => {
+    const res = await fetch(`${baseUrl}/foro/${id}/reaccion`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ emoji })
+    });
+    return await res.json();
+  },
+
+  getRespuestas: async (id) => {
+    const res = await fetch(`${baseUrl}/foro/${id}/respuestas`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  crearRespuesta: async (id, contenido) => {
+    const res = await fetch(`${baseUrl}/foro/${id}/respuestas`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ contenido })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al responder');
+    return data;
+  },
+
+  eliminarRespuesta: async (id) => {
+    await fetch(`${baseUrl}/foro/respuestas/${id}`, { method: 'DELETE', headers: getHeaders() });
+  },
+
+  toggleSeguirForo: async (idUsuaria) => {
+    const res = await fetch(`${baseUrl}/foro/seguir/${idUsuaria}`, { method: 'POST', headers: getHeaders() });
+    return await res.json();
+  },
 };

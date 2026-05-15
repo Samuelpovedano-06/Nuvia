@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, calendar
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -27,6 +27,42 @@ def run_migrations():
         )""",
         # Eliminar columna codigo_pareja si existe (ya no se usa)
         "ALTER TABLE usuarias DROP COLUMN IF EXISTS codigo_pareja",
+        # Foro comunitario
+        """CREATE TABLE IF NOT EXISTS foro_publicaciones (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_usuaria UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            contenido TEXT NOT NULL,
+            categoria VARCHAR(50) NOT NULL DEFAULT 'general',
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_respuestas (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_publicacion UUID NOT NULL REFERENCES foro_publicaciones(id) ON DELETE CASCADE,
+            id_usuaria UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            contenido TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_likes (
+            id_publicacion UUID NOT NULL REFERENCES foro_publicaciones(id) ON DELETE CASCADE,
+            id_usuaria UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            PRIMARY KEY (id_publicacion, id_usuaria)
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_favoritos (
+            id_publicacion UUID NOT NULL REFERENCES foro_publicaciones(id) ON DELETE CASCADE,
+            id_usuaria UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            PRIMARY KEY (id_publicacion, id_usuaria)
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_reacciones (
+            id_publicacion UUID NOT NULL REFERENCES foro_publicaciones(id) ON DELETE CASCADE,
+            id_usuaria UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            emoji VARCHAR(10) NOT NULL,
+            PRIMARY KEY (id_publicacion, id_usuaria)
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_seguimientos (
+            id_seguidor UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            id_seguido UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            PRIMARY KEY (id_seguidor, id_seguido)
+        )""",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -89,6 +125,8 @@ app.include_router(predicciones.router)
 app.include_router(admin.router)
 app.include_router(parejas.router)
 app.include_router(chat.router)
+app.include_router(foro.router)
+app.include_router(calendar.router)
 
 @app.get("/")
 def read_root():

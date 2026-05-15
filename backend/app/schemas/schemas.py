@@ -230,3 +230,39 @@ class MensajeOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ─────────────────────── FORO ───────────────────────
+
+class PublicacionForoCreate(BaseModel):
+    contenido: str
+    categoria: str = "general"
+
+class RespuestaForoCreate(BaseModel):
+    contenido: str
+
+class ReaccionForoCreate(BaseModel):
+    emoji: str
+
+class RespuestaForoOut(BaseModel):
+    id: str
+    avatar_seed: str
+    contenido: str
+    created_at: str
+    likes_count: int
+    is_liked: bool
+    es_mia: bool
+
+class PublicacionForoOut(BaseModel):
+    id: str
+    avatar_seed: str
+    contenido: str
+    categoria: str
+    created_at: str
+    likes_count: int
+    comments_count: int
+    is_liked: bool
+    is_guardado: bool
+    reacciones: dict
+    mi_reaccion: Optional[str] = None
+    es_mia: bool
+    es_seguido: bool

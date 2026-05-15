@@ -109,6 +109,9 @@ class ConfiguracionUsuaria(Base):
     duracion_periodo   = Column(SmallInteger, server_default="5")
     fecha_nacimiento   = Column(Date, nullable=True)
     modo_oscuro        = Column(SmallInteger, server_default="0")
+    google_token       = Column(Text, nullable=True)
+    google_refresh_token = Column(Text, nullable=True)
+    google_token_expiry = Column(DateTime, nullable=True)
 
     usuaria = relationship("Usuaria", back_populates="configuracion")
 
@@ -133,6 +136,43 @@ class Pareja(Base):
 
     usuaria = relationship("Usuaria", foreign_keys=[id_usuaria], back_populates="parejas_como_usuaria")
     pareja  = relationship("Usuaria", foreign_keys=[id_pareja],  back_populates="parejas_como_pareja")
+
+class PublicacionForo(Base):
+    __tablename__ = "foro_publicaciones"
+    id         = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    contenido  = Column(Text, nullable=False)
+    categoria  = Column(String(50), nullable=False, server_default="general")
+    created_at = Column(DateTime, server_default=func.now())
+
+class RespuestaForo(Base):
+    __tablename__ = "foro_respuestas"
+    id             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_publicacion = Column(UUID(as_uuid=True), ForeignKey("foro_publicaciones.id", ondelete="CASCADE"), nullable=False)
+    id_usuaria     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    contenido      = Column(Text, nullable=False)
+    created_at     = Column(DateTime, server_default=func.now())
+
+class LikeForo(Base):
+    __tablename__ = "foro_likes"
+    id_publicacion = Column(UUID(as_uuid=True), ForeignKey("foro_publicaciones.id", ondelete="CASCADE"), primary_key=True)
+    id_usuaria     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+
+class FavoritoForo(Base):
+    __tablename__ = "foro_favoritos"
+    id_publicacion = Column(UUID(as_uuid=True), ForeignKey("foro_publicaciones.id", ondelete="CASCADE"), primary_key=True)
+    id_usuaria     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+
+class ReaccionForo(Base):
+    __tablename__ = "foro_reacciones"
+    id_publicacion = Column(UUID(as_uuid=True), ForeignKey("foro_publicaciones.id", ondelete="CASCADE"), primary_key=True)
+    id_usuaria     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+    emoji          = Column(String(10), nullable=False)
+
+class SeguimientoForo(Base):
+    __tablename__ = "foro_seguimientos"
+    id_seguidor = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+    id_seguido  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
 
 class Mensaje(Base):
     __tablename__ = "mensajes"
