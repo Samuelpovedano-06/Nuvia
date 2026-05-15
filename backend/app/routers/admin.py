@@ -9,6 +9,8 @@ from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSint
 from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut, AdminConfigOut, AdminConfigUpdate
 from app.routers.auth_utils import get_current_user, hash_password
 
+from app.utils.logs import get_logs
+
 router = APIRouter(prefix="/admin", tags=["Administración"])
 
 def require_admin(current_user: Usuaria = Depends(get_current_user)):
@@ -18,6 +20,11 @@ def require_admin(current_user: Usuaria = Depends(get_current_user)):
             detail="Acceso denegado: Se requieren privilegios de administrador"
         )
     return current_user
+
+@router.get("/logs")
+def list_system_logs(_=Depends(require_admin)):
+    """Obtiene los últimos logs del servidor."""
+    return get_logs()
 
 @router.get("/stats", response_model=AdminStatsOut)
 def get_admin_stats(db: Session = Depends(get_db), _=Depends(require_admin)):

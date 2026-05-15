@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+import time
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
@@ -44,6 +45,30 @@ def run_migrations():
 run_migrations()
 
 app = FastAPI(title="Nuvia API", version="1.2.0")
+
+from app.utils.logs import add_log
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = (time.time() - start_time) * 1000
+    
+    # Formatear log estilo Uvicorn
+    client_host = request.client.host if request.client else "127.0.0.1"
+    client_port = request.client.port if request.client else "0"
+    
+    log_entry = f"INFO:     {client_host}:{client_port} - \"{request.method} {request.url.path} HTTP/1.1\" {response.status_code} OK"
+    
+    # Guardar en la lista global (máximo 100)
+    add_log({
+        "id": time.time(),
+        "content": log_entry,
+        "type": "INFO",
+        "color": "#64748b" if response.status_code == 200 else "#facc15"
+    })
+        
+    return response
 
 app.add_middleware(
     CORSMiddleware,

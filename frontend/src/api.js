@@ -162,6 +162,12 @@ export const ApiService = {
     return data;
   },
 
+  getLogs: async () => {
+    const res = await fetch(`${baseUrl}/admin/logs`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
   // Ciclos
   getCiclos: async (targetId = null) => {
     const url = targetId ? `${baseUrl}/ciclos/?id_usuaria=${targetId}` : `${baseUrl}/ciclos/`;

@@ -20,6 +20,54 @@ export default function AdminPanelScreen() {
   const [formData, setFormData] = useState({ nombre: '', email: '', password: '', rol: 'usuaria' });
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [logTab, setLogTab] = useState('rass');
+  const [showLogs, setShowLogs] = useState(false);
+  const [serverLogs, setServerLogs] = useState([]);
+  const [clientLogs, setClientLogs] = useState([
+    { id: 1, type: 'APP', content: '[Nuvia-App] Monitor de Sistema iniciado', color: '#64748b' }
+  ]);
+
+  const logEndRef = React.useRef(null);
+
+  // Efecto para scroll automático
+  useEffect(() => {
+    if (showLogs) {
+      logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [serverLogs, clientLogs, showLogs, logTab]);
+
+  // Efecto para logs REALES del servidor
+  useEffect(() => {
+    if (!showLogs || logTab !== 'rass') return;
+
+    const fetchServerLogs = async () => {
+      try {
+        const logs = await ApiService.getLogs();
+        setServerLogs(logs);
+      } catch (err) {
+        console.error("Error al obtener logs:", err);
+      }
+    };
+
+    fetchServerLogs(); // Carga inicial
+    const interval = setInterval(fetchServerLogs, 2000); // Polling cada 2s
+
+    return () => clearInterval(interval);
+  }, [showLogs, logTab]);
+
+  // Efecto para logs de UI (Front)
+  useEffect(() => {
+    if (!showLogs || logTab !== 'front') return;
+    
+    // Aquí podrías interceptar eventos reales, por ahora añadimos uno al entrar
+    const newEntry = { 
+      id: Date.now(), 
+      content: `[UI] Inspeccionando logs - Vista: ${logTab.toUpperCase()} - ${new Date().toLocaleTimeString()}`,
+      color: 'var(--primary)' 
+    };
+    setClientLogs(prev => [...prev.slice(-49), newEntry]);
+
+  }, [showLogs, logTab]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -111,25 +159,78 @@ export default function AdminPanelScreen() {
         </div>
       </div>
 
-      {/* Actividad Reciente */}
-      <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Actividad reciente</h3>
-      <div className="card" style={{ padding: '0', marginBottom: '24px', overflow: 'hidden' }}>
-        {[
-          { label: 'Sistema Nuvia activo', time: 'Ahora mismo', color: '#4CAF50', bg: 'rgba(76, 175, 80, 0.05)' },
-          { label: 'Servidor estable', time: 'Hace 1 minuto', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.03)' }
-        ].map((item, i) => (
-          <div key={i} style={{ 
-            padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px',
-            background: item.bg, borderBottom: i === 0 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none'
-          }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color, boxShadow: `0 0 6px ${item.color}44` }}></div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)' }}>{item.label}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: '500' }}>{item.time}</div>
+
+
+      {/* Full Screen Log Modal */}
+      {showLogs && (
+        <div style={{ 
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'linear-gradient(180deg, #fdf2f8 0%, #ffffff 100%)', zIndex: 5000,
+          display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.3s ease'
+        }}>
+          {/* Header del Modal */}
+          <div style={{ padding: '20px 25px', borderBottom: '1px solid rgba(155, 108, 152, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button 
+                onClick={() => setShowLogs(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '5px' }}
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <h2 style={{ color: 'var(--text-dark)', margin: 0, fontSize: '24px', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>Logs</h2>
+            </div>
+            <div style={{ display: 'flex', background: 'rgba(155, 108, 152, 0.05)', padding: '5px', borderRadius: '14px', gap: '5px' }}>
+              {['RASS', 'FRONT'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setLogTab(tab.toLowerCase())}
+                  style={{
+                    padding: '8px 24px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: '800',
+                    background: logTab === tab.toLowerCase() ? 'var(--primary)' : 'transparent',
+                    color: logTab === tab.toLowerCase() ? 'white' : 'var(--text-light)', 
+                    cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: logTab === tab.toLowerCase() ? '0 4px 15px rgba(186, 104, 200, 0.25)' : 'none'
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+
+          {/* Consola de Logs (Light) */}
+          <div style={{ 
+            flex: 1, overflowY: 'auto', padding: '25px', fontFamily: '"Fira Code", monospace', fontSize: '13px', 
+            background: 'transparent', color: 'var(--text-dark)', lineHeight: '1.8' 
+          }}>
+            <div style={{ background: 'white', borderRadius: '20px', padding: '20px', border: '1px solid rgba(155, 108, 152, 0.08)', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+              {(logTab === 'rass' ? serverLogs : clientLogs).map((log) => (
+                <div key={log.id} style={{ 
+                  color: log.color === '#94a3b8' ? '#64748b' : (log.color === '#f8fafc' ? '#334155' : log.color), 
+                  marginBottom: '6px', animation: 'fadeIn 0.2s ease', borderBottom: '1px solid #f8fafc', paddingBottom: '4px'
+                }}>
+                  {log.content}
+                </div>
+              ))}
+              <div ref={logEndRef} />
+            </div>
+          </div>
+
+          {/* Footer del Modal */}
+          <div style={{ padding: '20px 25px', borderTop: '1px solid rgba(155, 108, 152, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.5)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#4CAF50', fontSize: '12px', fontWeight: '700' }}>
+              <div className="pulse" style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#4CAF50', boxShadow: '0 0 10px rgba(76, 175, 80, 0.4)' }}></div>
+              Monitorización en tiempo real activa
+            </div>
+            <button style={{ 
+              background: 'rgba(186, 104, 200, 0.1)', border: 'none', color: 'var(--primary)', 
+              fontWeight: '800', fontSize: '12px', cursor: 'pointer', padding: '8px 16px', borderRadius: '10px' 
+            }}>
+              Exportar Historial
+            </button>
+          </div>
+        </div>
+      )}
 
 
       {/* Configuración del Sistema */}
@@ -137,14 +238,15 @@ export default function AdminPanelScreen() {
       <div className="card" style={{ padding: '8px 0', marginBottom: '30px' }}>
         {[
           { icon: <Settings size={18} />, label: 'Configuración del sistema', path: '/admin/config' },
-          { icon: <Users size={18} />, label: 'Gestión de usuarios', path: '/admin/users' }
+          { icon: <Users size={18} />, label: 'Gestión de usuarios', path: '/admin/users' },
+          { icon: <Activity size={18} />, label: 'Monitor de Sistema (Logs)', action: () => setShowLogs(true) }
         ].map((item, i) => (
           <div 
             key={i} 
-            onClick={() => navigate(item.path)}
+            onClick={() => item.path ? navigate(item.path) : item.action()}
             style={{ 
               padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-              borderBottom: i === 0 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none',
+              borderBottom: i < 2 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none',
               transition: 'background 0.2s'
             }}
           >
