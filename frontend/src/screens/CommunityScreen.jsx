@@ -194,7 +194,6 @@ export default function CommunityScreen() {
       setPosts(prev => [pub, ...prev]);
       setShowCreate(false);
       setNewContent('');
-      setNewCat('general');
     } catch (err) {
       alert(err.message);
     } finally {
@@ -211,7 +210,7 @@ export default function CommunityScreen() {
 
   return (
     <>
-      <div className="screen-container" style={{ paddingBottom: '100px' }}>
+      <div className="screen-container" style={{ paddingBottom: '100px', overflowX: 'hidden' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '16px' }}>
           <button
@@ -496,7 +495,7 @@ function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, isMine }) {
         )}
       </div>
 
-      <p style={{ margin: '0 0 8px', fontSize: '14px', lineHeight: '1.6', color: 'var(--text-dark)' }}>
+      <p style={{ margin: '0 0 8px', fontSize: '14px', lineHeight: '1.6', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
         {preview}
         {truncated && (
           <span style={{ color: '#38bdf8', fontWeight: '600' }}> Seguir leyendo</span>
@@ -556,7 +555,7 @@ function ReplyCard({ reply, onDelete, onLike }) {
       <div style={{ flex: 1 }}>
         <div style={{ background: '#f8f8fc', borderRadius: '14px', padding: '10px 14px', marginBottom: '6px' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '4px' }}>Anónima · {timeAgo(reply.created_at)}</div>
-          <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: 'var(--text-dark)' }}>{reply.contenido}</p>
+          <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{reply.contenido}</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', paddingLeft: '4px' }}>
           <button onClick={onLike} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: reply.is_liked ? '#F6416C' : '#aaa' }}>
