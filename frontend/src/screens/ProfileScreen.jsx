@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils } from 'lucide-react';
 import { ApiService } from '../api';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -244,8 +244,6 @@ export default function ProfileScreen() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportMonths, setExportMonths] = useState(2);
   const [customMonths, setCustomMonths] = useState('');
-  const [isGoogleLinked, setIsGoogleLinked] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   // Cargar datos para el reporte
   const prepareReportData = async (months) => {
@@ -341,23 +339,6 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-    // Detectar callback de Google
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-
-    if (code && state) {
-      ApiService.googleCallback(code, state)
-        .then(res => {
-          if (res.status === 'success') {
-            alert('¡Google Calendar vinculado con éxito!');
-            window.history.replaceState({}, document.title, window.location.pathname);
-            getMe(); // Recargar datos
-          }
-        })
-        .catch(err => console.error('Error en el callback:', err));
-    }
-
     ApiService.getCiclos()
       .then(data => {
         setCiclos(data);
@@ -485,29 +466,6 @@ export default function ProfileScreen() {
       }
     }
     setShowDatePicker(false);
-  };
-
-  const handleGoogleConnect = async () => {
-    try {
-      const { url } = await ApiService.getGoogleAuthUrl();
-      if (url) window.location.href = url;
-    } catch (err) {
-      console.error("Error al conectar con Google:", err);
-      alert("No se pudo iniciar la conexión con Google.");
-    }
-  };
-
-  const handleSyncCalendar = async () => {
-    setSyncing(true);
-    try {
-      const res = await ApiService.syncCalendar();
-      alert(res.message);
-    } catch (err) {
-      console.error("Error al sincronizar:", err);
-      alert("Hubo un error al sincronizar el calendario.");
-    } finally {
-      setSyncing(false);
-    }
   };
 
   const toggleNotificaciones = () => {
@@ -804,53 +762,6 @@ export default function ProfileScreen() {
 
       {/* Options List */}
       <div className="card" style={{ padding: '10px 0' }}>
-        <div
-          onClick={() => !globalNotifsDisabled && toggleNotificaciones()}
-          style={{
-            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            cursor: globalNotifsDisabled ? 'not-allowed' : 'pointer',
-            opacity: globalNotifsDisabled ? 0.6 : 1
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: (notificaciones && !globalNotifsDisabled) ? '#F3E5F5' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: (notificaciones && !globalNotifsDisabled) ? 'var(--primary)' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
-              <Calendar size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Sincronización con Google Calendar</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
-                {globalNotifsDisabled ? 'Pausado por el administrador' : 'Alertas en tu calendario y el de tu pareja'}
-              </div>
-            </div>
-          </div>
-          {isGoogleLinked ? (
-            <button 
-              onClick={(e) => { e.stopPropagation(); handleSyncCalendar(); }}
-              disabled={syncing || globalNotifsDisabled}
-              style={{
-                background: 'var(--primary)', color: 'white', border: 'none',
-                padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700',
-                cursor: (syncing || globalNotifsDisabled) ? 'not-allowed' : 'pointer',
-                opacity: (syncing || globalNotifsDisabled) ? 0.6 : 1
-              }}
-            >
-              {syncing ? '...' : 'Sincronizar'}
-            </button>
-          ) : (
-            <button 
-              onClick={(e) => { e.stopPropagation(); handleGoogleConnect(); }}
-              disabled={globalNotifsDisabled}
-              style={{
-                background: '#f1f5f9', color: '#64748b', border: 'none',
-                padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700',
-                cursor: globalNotifsDisabled ? 'not-allowed' : 'pointer'
-              }}
-            >
-              Vincular
-            </button>
-          )}
-        </div>
-
         <div
           onClick={toggleModoOscuro}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}

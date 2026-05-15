@@ -168,27 +168,6 @@ export const ApiService = {
     return await res.json();
   },
 
-  // Calendar
-  getGoogleAuthUrl: async () => {
-    const res = await fetch(`${baseUrl}/calendar/google/auth`, { headers: getHeaders() });
-    return await res.json();
-  },
-  googleCallback: async (code, state) => {
-    const res = await fetch(`${baseUrl}/calendar/google/callback`, {
-      method: 'POST',
-      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, state })
-    });
-    return await res.json();
-  },
-  syncCalendar: async () => {
-    const res = await fetch(`${baseUrl}/calendar/sync`, {
-      method: 'POST',
-      headers: getHeaders()
-    });
-    return await res.json();
-  },
-
   // Ciclos
   getCiclos: async (targetId = null) => {
     const url = targetId ? `${baseUrl}/ciclos/?id_usuaria=${targetId}` : `${baseUrl}/ciclos/`;
