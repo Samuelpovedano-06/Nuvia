@@ -42,12 +42,15 @@ function getAvatar(seed) {
 
 function timeAgo(iso) {
   if (!iso) return '';
-  const diff = (Date.now() - new Date(iso)) / 1000;
+  // Si el ISO no trae zona horaria, asumir UTC para evitar desfase con la hora local
+  const hasTZ = /Z$|[+-]\d{2}:?\d{2}$/.test(iso);
+  const date = new Date(hasTZ ? iso : iso + 'Z');
+  const diff = Math.max(0, (Date.now() - date.getTime()) / 1000);
   if (diff < 60) return 'Ahora';
   if (diff < 3600) return `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-  return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
 function fmtNum(n) {
@@ -97,6 +100,63 @@ export default function CommunityScreen() {
     setHasMore(true);
     fetchPosts(1, true);
   }, [tab, categoria]);
+
+  // Re-render cada 30s para que los "Ahora / 1m / 2m..." se actualicen solos
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Polling de publicaciones en tiempo real (cada 6s) — sin spinner, fusiona por id
+  useEffect(() => {
+    const id = setInterval(() => refreshFirstPage(), 6000);
+    return () => clearInterval(id);
+  }, [tab, categoria]);
+
+  const refreshFirstPage = async () => {
+    try {
+      const data = await ApiService.getPublicaciones({ tab, categoria, page: 1 });
+      const serverIds = new Set(data.map(p => p.id));
+      setPosts(prev => {
+        const byId = new Map(data.map(p => [p.id, p]));
+        // Reemplaza los de la primera página, conserva los más viejos, elimina los que el server ya no tiene si están en page 1
+        const firstPageIds = new Set(prev.slice(0, 20).map(p => p.id));
+        const conservados = prev.filter(p => !firstPageIds.has(p.id) || serverIds.has(p.id));
+        const merged = conservados.map(p => byId.get(p.id) || p);
+        const knownIds = new Set(merged.map(p => p.id));
+        const nuevos = data.filter(p => !knownIds.has(p.id));
+        return [...nuevos, ...merged];
+      });
+      // Si el post abierto fue eliminado por otro usuario, cierra el detalle
+      setActivePost(prev => {
+        if (!prev) return prev;
+        const updated = data.find(p => p.id === prev.id);
+        if (updated) return updated;
+        // No está en page 1 → puede que sea más antiguo o haya sido borrado.
+        // Si estaba en page 1 antes y ya no aparece, lo cerramos
+        return prev;
+      });
+    } catch {}
+  };
+
+  // Polling de respuestas mientras hay un post abierto (cada 4s).
+  // Si la publicación ya no existe (eliminada por otra persona), cierra el overlay.
+  useEffect(() => {
+    if (!activePost) return;
+    const id = setInterval(async () => {
+      try {
+        const data = await ApiService.getRespuestas(activePost.id);
+        setReplies(data);
+      } catch (e) {
+        if (String(e?.message || '').includes('404')) {
+          setActivePost(null);
+          setPosts(prev => prev.filter(p => p.id !== activePost.id));
+        }
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, [activePost?.id]);
 
   const fetchPosts = async (p = page, reset = false) => {
     if (loading) return;

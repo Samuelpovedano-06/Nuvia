@@ -1,8 +1,13 @@
+import unicodedata
+import re
+from datetime import timezone
+from typing import Optional
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
-from typing import Optional
-from uuid import UUID
+
 from app.database.connection import get_db
 from app.models.models import (
     PublicacionForo, RespuestaForo, LikeForo, FavoritoForo,
@@ -11,13 +16,19 @@ from app.models.models import (
 from app.schemas.schemas import PublicacionForoCreate, RespuestaForoCreate, ReaccionForoCreate
 from app.routers.auth_utils import get_current_user
 
+
+def _iso_utc(dt):
+    """Devuelve siempre un ISO en UTC con 'Z' para que el frontend lo interprete bien."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 router = APIRouter(prefix="/foro", tags=["Foro"])
 
 REACCIONES_VALIDAS = {'❤️', '🔥', '💪', '🤗', '😢'}
-
-# Diccionario de palabras clave por categoría (en minúsculas, sin tildes para tolerar errores)
-import unicodedata
-import re
 
 CATEGORIA_KEYWORDS = {
     "menstruacion": ["regla", "periodo", "menstruac", "sangrado", "menstrual", "compresa", "tampon", "copa menstrual", "dismenorrea", "manchad"],
@@ -105,7 +116,7 @@ def _build_posts(posts, db, current_user_id):
             "avatar_seed": str(p.id_usuaria)[:12],
             "contenido": p.contenido,
             "categoria": p.categoria,
-            "created_at": p.created_at.isoformat(),
+            "created_at": _iso_utc(p.created_at),
             "likes_count": likes_map.get(pid, 0),
             "comments_count": comments_map.get(pid, 0),
             "is_liked": pid in liked_set,
@@ -170,6 +181,7 @@ def crear_publicacion(
         raise HTTPException(status_code=400, detail="El contenido no puede estar vacío")
     # La categoría se asigna automáticamente analizando el contenido
     categoria_auto = clasificar_categoria(contenido)
+    print(f"[Foro] Nueva publicación → categoría detectada: '{categoria_auto}' | texto: {contenido[:80]!r}")
     pub = PublicacionForo(
         id_usuaria=current_user.id_usuaria,
         contenido=contenido,
@@ -286,6 +298,10 @@ def listar_respuestas(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
+    # Si la publicación ya no existe (borrada por otra persona), devolvemos 404
+    existe = db.query(PublicacionForo.id).filter(PublicacionForo.id == id).first()
+    if not existe:
+        raise HTTPException(status_code=404, detail="Publicación no encontrada")
     respuestas = db.query(RespuestaForo)\
                    .filter(RespuestaForo.id_publicacion == id)\
                    .order_by(RespuestaForo.created_at)\
@@ -304,7 +320,7 @@ def listar_respuestas(
             "id": str(r.id),
             "avatar_seed": str(r.id_usuaria)[:12],
             "contenido": r.contenido,
-            "created_at": r.created_at.isoformat(),
+            "created_at": _iso_utc(r.created_at),
             "likes_count": likes_map.get(str(r.id), 0),
             "is_liked": str(r.id) in liked_set,
             "es_mia": r.id_usuaria == current_user.id_usuaria,
@@ -335,7 +351,7 @@ def crear_respuesta(
         "id": str(r.id),
         "avatar_seed": str(r.id_usuaria)[:12],
         "contenido": r.contenido,
-        "created_at": r.created_at.isoformat(),
+        "created_at": _iso_utc(r.created_at),
         "likes_count": 0,
         "is_liked": False,
         "es_mia": True,

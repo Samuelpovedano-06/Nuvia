@@ -391,6 +391,7 @@ export const ApiService = {
 
   getRespuestas: async (id) => {
     const res = await fetch(`${baseUrl}/foro/${id}/respuestas`, { headers: getHeaders() });
+    if (res.status === 404) throw new Error('404');
     if (!res.ok) return [];
     return await res.json();
   },
