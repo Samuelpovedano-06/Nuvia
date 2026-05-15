@@ -116,12 +116,11 @@ export default function AdminPanelScreen() {
       <div className="card" style={{ padding: '0', marginBottom: '24px', overflow: 'hidden' }}>
         {[
           { label: 'Sistema Nuvia activo', time: 'Ahora mismo', color: '#4CAF50', bg: 'rgba(76, 175, 80, 0.05)' },
-          { label: 'Servidor estable', time: 'Hace 1 minuto', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.03)' },
-          { label: 'Motor de IA operativo', time: 'Sistema estable', color: '#9C27B0', bg: 'rgba(156, 39, 176, 0.05)' }
+          { label: 'Servidor estable', time: 'Hace 1 minuto', color: '#BA68C8', bg: 'rgba(186, 104, 200, 0.03)' }
         ].map((item, i) => (
           <div key={i} style={{ 
             padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px',
-            background: item.bg, borderBottom: i < 2 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none'
+            background: item.bg, borderBottom: i === 0 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none'
           }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color, boxShadow: `0 0 6px ${item.color}44` }}></div>
             <div>
