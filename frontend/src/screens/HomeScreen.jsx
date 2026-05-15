@@ -41,7 +41,7 @@ export default function HomeScreen() {
         const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
         const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
-        
+
         const [ciclos, config, sToday, sYesterday, dToday] = await Promise.all([
           ApiService.getCiclos(targetId),
           ApiService.getConfig(targetId),
@@ -133,7 +133,7 @@ export default function HomeScreen() {
     try {
       const hoy = logDate;
       const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
-      
+
       const overlap = rawCiclos.find(c => {
         const inicio = new Date(c.fecha_inicio).toISOString().split('T')[0];
         const fin = c.fecha_fin ? new Date(c.fecha_fin).toISOString().split('T')[0] : '9999-12-31';
@@ -277,11 +277,11 @@ export default function HomeScreen() {
         </div>
 
         {!isPareja && (
-          <div style={{ 
-            display: 'flex', 
-            gap: '10px', 
-            alignItems: 'center', 
-            marginTop: '12px', 
+          <div style={{
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center',
+            marginTop: '12px',
             pointerEvents: (isUnlinkedPareja && !localStorage.getItem('selectedPartnerId')) ? 'none' : 'auto',
             filter: (isUnlinkedPareja && !localStorage.getItem('selectedPartnerId')) ? 'grayscale(0.8)' : 'none',
             opacity: (isUnlinkedPareja && !localStorage.getItem('selectedPartnerId')) ? 0.6 : 1
@@ -338,13 +338,13 @@ export default function HomeScreen() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <div 
-          className="card" 
-          onClick={() => !isUnlinkedPareja && navigate('/chats')} 
-          style={{ 
-            textAlign: 'center', 
-            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
-            margin: 0, 
+        <div
+          className="card"
+          onClick={() => !isUnlinkedPareja && navigate('/chats')}
+          style={{
+            textAlign: 'center',
+            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer',
+            margin: 0,
             pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
             filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
             opacity: isUnlinkedPareja ? 0.6 : 1,
@@ -362,13 +362,13 @@ export default function HomeScreen() {
           <h4 style={{ margin: 0, fontSize: '14px' }}>Chats Secretos</h4>
         </div>
 
-        <div 
-          className="card" 
-          onClick={() => navigate('/pareja')} 
-          style={{ 
-            textAlign: 'center', 
-            cursor: 'pointer', 
-            margin: 0, 
+        <div
+          className="card"
+          onClick={() => navigate('/pareja')}
+          style={{
+            textAlign: 'center',
+            cursor: 'pointer',
+            margin: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -383,13 +383,13 @@ export default function HomeScreen() {
           <h4 style={{ margin: 0, fontSize: '14px' }}>Mi pareja</h4>
         </div>
 
-        <div 
-          className="card" 
-          onClick={() => !isUnlinkedPareja && navigate('/wellness')} 
-          style={{ 
-            textAlign: 'center', 
-            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer', 
-            margin: 0, 
+        <div
+          className="card"
+          onClick={() => !isUnlinkedPareja && navigate('/wellness')}
+          style={{
+            textAlign: 'center',
+            cursor: isUnlinkedPareja ? 'not-allowed' : 'pointer',
+            margin: 0,
             pointerEvents: isUnlinkedPareja ? 'none' : 'auto',
             filter: isUnlinkedPareja ? 'grayscale(0.8)' : 'none',
             opacity: isUnlinkedPareja ? 0.6 : 1,
@@ -407,13 +407,13 @@ export default function HomeScreen() {
           <h4 style={{ margin: 0, fontSize: '14px' }}>Mi Bienestar</h4>
         </div>
 
-        <div 
-          className="card" 
-          onClick={() => navigate('/wellness')} 
-          style={{ 
-            textAlign: 'center', 
-            cursor: 'pointer', 
-            margin: 0, 
+        <div
+          className="card"
+          onClick={() => navigate('/wellness')}
+          style={{
+            textAlign: 'center',
+            cursor: 'pointer',
+            margin: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -485,46 +485,46 @@ export default function HomeScreen() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px'
         }}>
-        <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '25px', textAlign: 'center', background: 'white', borderRadius: '25px' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', color: '#F6416C' }}>
-            {activeCycle ? <Calendar size={30} /> : <Heart size={30} fill="#F6416C" />}
-          </div>
-          <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>{activeCycle ? '¿Terminó tu periodo?' : '¿Empezó tu periodo?'}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button onClick={handleLogPeriod} style={{ background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', color: 'white', border: 'none', padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Confirmar</button>
-            <button onClick={() => setShowConfirm(false)} style={{ background: 'transparent', color: '#999', border: 'none', padding: '10px', cursor: 'pointer' }}>Cancelar</button>
+          <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '25px', textAlign: 'center', background: 'white', borderRadius: '25px' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', color: '#F6416C' }}>
+              {activeCycle ? <Calendar size={30} /> : <Heart size={30} fill="#F6416C" />}
+            </div>
+            <h3 style={{ margin: '0 0 10px', fontSize: '18px', color: '#333' }}>{activeCycle ? '¿Terminó tu periodo?' : '¿Empezó tu periodo?'}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button onClick={handleLogPeriod} style={{ background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', color: 'white', border: 'none', padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Confirmar</button>
+              <button onClick={() => setShowConfirm(false)} style={{ background: 'transparent', color: '#999', border: 'none', padding: '10px', cursor: 'pointer' }}>Cancelar</button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {customAlert.show && (
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px',
-        animation: 'fadeIn 0.2s ease'
-      }}>
-        <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '30px', textAlign: 'center', borderRadius: '28px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#EF4444' }}>
-            <Info size={28} />
+      {customAlert.show && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px',
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          <div className="card" style={{ maxWidth: '320px', width: '100%', padding: '30px', textAlign: 'center', borderRadius: '28px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#EF4444' }}>
+              <Info size={28} />
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', color: '#1e293b' }}>Aviso de Nuvia</h3>
+            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '25px' }}>
+              {customAlert.message}
+            </p>
+            <button
+              onClick={() => setCustomAlert({ show: false, message: '' })}
+              style={{
+                width: '100%', padding: '14px', borderRadius: '16px', border: 'none',
+                background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(155, 108, 152, 0.25)'
+              }}
+            >
+              Entendido
+            </button>
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '12px', color: '#1e293b' }}>Aviso de Nuvia</h3>
-          <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '25px' }}>
-            {customAlert.message}
-          </p>
-          <button 
-            onClick={() => setCustomAlert({ show: false, message: '' })}
-            style={{ 
-              width: '100%', padding: '14px', borderRadius: '16px', border: 'none', 
-              background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(155, 108, 152, 0.25)'
-            }}
-          >
-            Entendido
-          </button>
         </div>
-      </div>
-    )}
+      )}
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
