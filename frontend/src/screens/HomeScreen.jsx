@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight, MessageSquare, Users } from 'lucide-react';
+import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight, MessageSquare, Users, Lightbulb } from 'lucide-react';
 
 const getPhaseInfo = (day, duration = 28) => {
   if (day <= 5) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
@@ -405,6 +405,27 @@ export default function HomeScreen() {
             <Sparkles size={30} />
           </div>
           <h4 style={{ margin: 0, fontSize: '14px' }}>Mi Bienestar</h4>
+        </div>
+
+        <div 
+          className="card" 
+          onClick={() => navigate('/wellness')} 
+          style={{ 
+            textAlign: 'center', 
+            cursor: 'pointer', 
+            margin: 0, 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100px',
+            padding: '14px'
+          }}
+        >
+          <div style={{ color: 'var(--primary)', marginBottom: '6px', display: 'flex', justifyContent: 'center' }}>
+            <Lightbulb size={30} />
+          </div>
+          <h4 style={{ margin: 0, fontSize: '14px' }}>Consejos</h4>
         </div>
       </div>
 

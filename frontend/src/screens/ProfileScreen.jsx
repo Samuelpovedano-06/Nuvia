@@ -770,13 +770,13 @@ export default function ProfileScreen() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: (notificaciones && !globalNotifsDisabled) ? '#FCE4EC' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: (notificaciones && !globalNotifsDisabled) ? '#E91E63' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
-              <Bell size={18} />
+            <div style={{ background: (notificaciones && !globalNotifsDisabled) ? '#F3E5F5' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: (notificaciones && !globalNotifsDisabled) ? 'var(--primary)' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
+              <Calendar size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones y Alertas</div>
+              <div style={{ fontSize: '15px', fontWeight: '500' }}>Sincronización con Google Calendar</div>
               <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
-                {globalNotifsDisabled ? 'Desactivadas por el administrador' : 'Gestiona avisos y recordatorios'}
+                {globalNotifsDisabled ? 'Pausado por el administrador' : 'Alertas en tu calendario y el de tu pareja'}
               </div>
             </div>
           </div>
