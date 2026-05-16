@@ -256,6 +256,28 @@ export default function CommunityScreen() {
   const [reportSending, setReportSending] = useState(false);
   const [reportesPendientes, setReportesPendientes] = useState(0);
   const [avisos, setAvisos] = useState([]);               // avisos pendientes para la usuaria
+  const [showBloqueados, setShowBloqueados] = useState(false);
+  const [bloqueadosList, setBloqueadosList] = useState([]);
+  const [bloqueadosLoading, setBloqueadosLoading] = useState(false);
+
+  const abrirBloqueados = async () => {
+    setShowBloqueados(true);
+    setBloqueadosLoading(true);
+    try {
+      const list = await ApiService.getBloqueadosForo();
+      setBloqueadosList(list);
+    } finally { setBloqueadosLoading(false); }
+  };
+
+  const desbloquearUsuaria = async (idAutor) => {
+    try {
+      await ApiService.toggleBloqueoForo(idAutor);
+      setBloqueadosList(prev => prev.filter(b => b.id_autor !== idAutor));
+      mostrarToast('Usuaria desbloqueada. Refresca para ver sus publicaciones.');
+    } catch (err) {
+      mostrarToast(err.message || 'Error al desbloquear', 'error');
+    }
+  };
 
   // Polling badge admin
   useEffect(() => {
@@ -510,6 +532,18 @@ export default function CommunityScreen() {
             <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', color: 'var(--text-dark)' }}>Comunidad</h1>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>Un espacio seguro y anónimo para compartir</p>
           </div>
+          <button
+            onClick={abrirBloqueados}
+            title="Ver bloqueadas"
+            style={{
+              background: 'white', border: '1.5px solid #eee',
+              borderRadius: '14px', padding: '8px 10px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', color: '#666',
+              marginTop: '2px'
+            }}
+          >
+            <Ban size={16} />
+          </button>
           {user?.rol === 'admin' && (
             <button
               onClick={() => navigate('/admin/reportes')}
@@ -1021,6 +1055,81 @@ export default function CommunityScreen() {
       {/* Modal de avisos para la usuaria (eliminaciones / banes) */}
       {avisos.length > 0 && (
         <AvisoUsuariaModal aviso={avisos[0]} onClose={() => cerrarAviso(avisos[0])} />
+      )}
+
+      {/* Modal: usuarias bloqueadas */}
+      {showBloqueados && (
+        <div onClick={() => setShowBloqueados(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 2400,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400,
+            maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 12px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', background: '#FEE2E2', color: '#DC2626',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Ban size={18} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>Usuarias bloqueadas</h3>
+              </div>
+              <button onClick={() => setShowBloqueados(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+
+            {bloqueadosLoading ? (
+              <p style={{ textAlign: 'center', padding: 20, color: 'var(--text-light)' }}>Cargando…</p>
+            ) : bloqueadosList.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 10px' }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>🌸</div>
+                <p style={{ color: 'var(--text-light)', fontSize: 14, margin: 0 }}>
+                  No tienes a nadie bloqueada.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {bloqueadosList.map(b => {
+                  const av = getAvatar(b.avatar_seed);
+                  return (
+                    <div key={b.id_autor} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', borderRadius: 12, background: '#f9f9fc',
+                      border: '1.5px solid transparent'
+                    }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: '50%', background: av.bg,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 18, flexShrink: 0
+                      }}>
+                        {av.emoji}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dark)' }}>Anónima</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {b.avatar_seed}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => desbloquearUsuaria(b.id_autor)}
+                        style={{
+                          background: 'white', color: 'var(--primary)',
+                          border: '1.5px solid var(--primary)', borderRadius: 12,
+                          padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0
+                        }}
+                      >
+                        <Check size={13} /> Desbloquear
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Toast: notificación tipo "Publicación enviada" */}
