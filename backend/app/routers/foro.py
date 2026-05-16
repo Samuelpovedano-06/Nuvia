@@ -55,6 +55,9 @@ router = APIRouter(prefix="/foro", tags=["Foro"])
 
 REACCIONES_VALIDAS = {'❤️', '🔥', '💪', '🤗', '😢'}
 
+MAX_LEN_PUBLICACION = 1000
+MAX_LEN_RESPUESTA   = 600
+
 # Cada entrada: [(palabra_clave, peso)]. Pesos altos = palabra muy específica.
 CATEGORIA_KEYWORDS = {
     "menstruacion": [
@@ -297,6 +300,8 @@ def crear_publicacion(
         imagen_mime, imagen_bytes = _decode_data_url(datos.imagen_data)
     if not contenido and not imagen_bytes:
         raise HTTPException(status_code=400, detail="La publicación debe tener texto o imagen")
+    if len(contenido) > MAX_LEN_PUBLICACION:
+        raise HTTPException(status_code=400, detail=f"Máximo {MAX_LEN_PUBLICACION} caracteres")
     # 1) Intenta el clasificador de keywords; 2) si falla (resultado 'general' y hay texto), intenta Gemini
     categoria_auto = clasificar_categoria(contenido) if contenido else "general"
     if categoria_auto == "general" and contenido and len(contenido) > 8:
@@ -481,6 +486,8 @@ def crear_respuesta(
         imagen_mime, imagen_bytes = _decode_data_url(datos.imagen_data)
     if not contenido and not imagen_bytes:
         raise HTTPException(status_code=400, detail="La respuesta debe tener texto o imagen")
+    if len(contenido) > MAX_LEN_RESPUESTA:
+        raise HTTPException(status_code=400, detail=f"Máximo {MAX_LEN_RESPUESTA} caracteres")
     r = RespuestaForo(
         id_publicacion=id,
         id_usuaria=current_user.id_usuaria,

@@ -6,6 +6,25 @@ import { AuthContext } from '../context/AuthContext';
 import AuthImage from '../components/AuthImage';
 
 const MAX_IMG_BYTES = 5 * 1024 * 1024;
+const MAX_PUBLICACION = 1000;
+const MAX_RESPUESTA = 600;
+
+function CharCounter({ value, max }) {
+  const len = (value || '').length;
+  const ratio = len / max;
+  let color = 'var(--text-light)';
+  if (ratio >= 1) color = '#DC2626';
+  else if (ratio >= 0.8) color = '#D97706';
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 700, color,
+      textAlign: 'right', marginTop: 4,
+      transition: 'color 0.2s'
+    }}>
+      {len} / {max}
+    </div>
+  );
+}
 
 function fileToDataURL(file) {
   return new Promise((resolve, reject) => {
@@ -793,12 +812,25 @@ export default function CommunityScreen() {
               }}>
                 <ImagePlus size={18} />
               </button>
-              <input
-                placeholder="Escribe una respuesta anónima..."
-                value={replyText}
-                onChange={e => setReplyText(e.target.value)}
-                style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #eee', fontSize: '14px', outline: 'none', minWidth: 0 }}
-              />
+              <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+                <input
+                  placeholder="Escribe una respuesta anónima..."
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value.slice(0, MAX_RESPUESTA))}
+                  maxLength={MAX_RESPUESTA}
+                  style={{ width: '100%', padding: '12px', paddingRight: '64px', borderRadius: '14px', border: '1.5px solid #eee', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                />
+                {replyText.length > MAX_RESPUESTA * 0.7 && (
+                  <span style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    fontSize: 10, fontWeight: 700,
+                    color: replyText.length >= MAX_RESPUESTA ? '#DC2626'
+                         : replyText.length >= MAX_RESPUESTA * 0.9 ? '#D97706'
+                         : 'var(--text-light)',
+                    pointerEvents: 'none'
+                  }}>{replyText.length}/{MAX_RESPUESTA}</span>
+                )}
+              </div>
               <button type="submit" disabled={(!replyText.trim() && !replyImage) || loadingReply} style={{
                 background: 'var(--primary)', color: 'white', border: 'none',
                 width: '42px', height: '42px', borderRadius: '14px',
@@ -837,13 +869,16 @@ export default function CommunityScreen() {
             <textarea
               placeholder="¿Qué quieres compartir con la comunidad?"
               value={newContent}
-              onChange={e => setNewContent(e.target.value)}
+              onChange={e => setNewContent(e.target.value.slice(0, MAX_PUBLICACION))}
+              maxLength={MAX_PUBLICACION}
               style={{
                 width: '100%', flex: 1, minHeight: 0, padding: '14px', borderRadius: '14px', border: '1.5px solid #eee',
                 fontSize: '14px', resize: 'none', outline: 'none', lineHeight: '1.5',
-                fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: '12px'
+                fontFamily: 'inherit', boxSizing: 'border-box'
               }}
             />
+            <CharCounter value={newContent} max={MAX_PUBLICACION} />
+            <div style={{ marginBottom: 12 }} />
             {newImage && (
               <div style={{ position: 'relative', marginBottom: '12px', flexShrink: 0 }}>
                 <img src={newImage.dataUrl} alt="" style={{ maxHeight: '160px', borderRadius: '14px', display: 'block' }} />

@@ -1,3 +1,9 @@
+/* Safe area para iPhones con notch / barra inferior cuando se instala como app */
+html, body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* En navegador normal estas variables valen 0 — solo aplican en modo standalone */
+}
+
 /* Modern Premium CSS Reset and Variables */
 :root {
   --primary: #b05bb5;

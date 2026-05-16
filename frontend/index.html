@@ -4,7 +4,20 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/logo.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+
+  <!-- PWA / pantalla completa -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#B05BB5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- iOS: que se abra a pantalla completa sin barra del navegador -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Nuvia" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+
   <title>Nuvia - Tu Rastreador de Bienestar</title>
   <!-- Google Fonts for modern typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

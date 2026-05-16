@@ -1,0 +1,26 @@
+{
+  "name": "Nuvia - Tu Rastreador de Bienestar",
+  "short_name": "Nuvia",
+  "description": "Tu compañera de bienestar y ciclo menstrual",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF1F2",
+  "theme_color": "#B05BB5",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
