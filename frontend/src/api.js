@@ -528,6 +528,16 @@ export const ApiService = {
   },
   imagenArticuloConsejoUrl: (id) => `${baseUrl}/consejos/articulos/${id}/imagen`,
 
+  seedConsejosDemo: async ({ generar_imagenes = false, sobreescribir = false } = {}) => {
+    const params = new URLSearchParams();
+    if (generar_imagenes) params.append('generar_imagenes', 'true');
+    if (sobreescribir) params.append('sobreescribir', 'true');
+    const res = await fetch(`${baseUrl}/consejos/seed-demo?${params}`, { method: 'POST', headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al sembrar');
+    return data;
+  },
+
   toggleSeguirForo: async (idUsuaria) => {
     const res = await fetch(`${baseUrl}/foro/seguir/${idUsuaria}`, { method: 'POST', headers: getHeaders() });
     if (!res.ok) {

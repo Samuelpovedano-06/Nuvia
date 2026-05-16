@@ -424,3 +424,131 @@ def toggle_favorito(id: UUID, db: Session = Depends(get_db), current_user: Usuar
         es_favorito = True
     db.commit()
     return {"es_favorito": es_favorito}
+
+
+# ─────────────────────── SEED DEMO (admin) ───────────────────────
+
+@router.post("/seed-demo")
+def cargar_contenido_demo(
+    generar_imagenes: bool = False,
+    sobreescribir: bool = False,
+    db: Session = Depends(get_db),
+    _admin: Usuaria = Depends(require_admin)
+):
+    """Carga un lote completo de clasificaciones, etiquetas y artículos.
+
+    - sobreescribir=False (recomendado): se saltan los que ya existan por nombre/título.
+    - sobreescribir=True: actualiza los existentes con el contenido del seed.
+    - generar_imagenes=True: pide a Gemini una portada para cada artículo nuevo.
+      Atención: puede tardar 1-2 minutos si hay ~20 artículos.
+    """
+    from app.data.consejos_seed import CLASIFICACIONES, ETIQUETAS, ARTICULOS
+    from app.utils.gemini import generar_imagen_consejo
+
+    creadas_cla = 0
+    creadas_et  = 0
+    creados_art = 0
+    actualizados = 0
+    sin_imagen   = 0
+
+    # 1) Clasificaciones
+    cla_por_nombre = {}
+    for c in CLASIFICACIONES:
+        existing = db.query(ConsejoClasificacion).filter(
+            func.lower(ConsejoClasificacion.nombre) == c["nombre"].lower()
+        ).first()
+        if existing:
+            if sobreescribir:
+                existing.descripcion = c.get("descripcion") or None
+                existing.orden = c.get("orden", 0)
+                actualizados += 1
+            cla_por_nombre[c["nombre"]] = existing
+        else:
+            nuevo = ConsejoClasificacion(
+                nombre=c["nombre"],
+                descripcion=c.get("descripcion") or None,
+                orden=c.get("orden", 0),
+            )
+            db.add(nuevo)
+            db.flush()
+            cla_por_nombre[c["nombre"]] = nuevo
+            creadas_cla += 1
+    db.commit()
+
+    # 2) Etiquetas
+    et_por_nombre = {}
+    for nombre in ETIQUETAS:
+        existing = db.query(ConsejoEtiqueta).filter(
+            func.lower(ConsejoEtiqueta.nombre) == nombre.lower()
+        ).first()
+        if existing:
+            et_por_nombre[nombre] = existing
+        else:
+            nueva = ConsejoEtiqueta(nombre=nombre)
+            db.add(nueva)
+            db.flush()
+            et_por_nombre[nombre] = nueva
+            creadas_et += 1
+    db.commit()
+
+    # 3) Artículos
+    for art in ARTICULOS:
+        cla = cla_por_nombre.get(art["clasificacion"])
+        if not cla:
+            continue
+        existing = db.query(ConsejoArticulo).filter(
+            ConsejoArticulo.id_clasificacion == cla.id,
+            func.lower(ConsejoArticulo.titulo) == art["titulo"].lower()
+        ).first()
+        if existing and not sobreescribir:
+            continue
+
+        imagen_bytes = None
+        imagen_mime  = None
+        if generar_imagenes and (not existing or not existing.imagen):
+            gen = generar_imagen_consejo(art["titulo"], art.get("resumen") or "")
+            if gen:
+                imagen_mime, imagen_bytes = gen
+            else:
+                sin_imagen += 1
+
+        if existing:
+            existing.resumen = art.get("resumen") or None
+            existing.cuerpo  = art.get("cuerpo") or None
+            if imagen_bytes:
+                existing.imagen = imagen_bytes
+                existing.imagen_mime = imagen_mime
+            obj = existing
+            actualizados += 1
+        else:
+            obj = ConsejoArticulo(
+                id_clasificacion=cla.id,
+                titulo=art["titulo"],
+                resumen=art.get("resumen") or None,
+                cuerpo=art.get("cuerpo") or None,
+                imagen=imagen_bytes,
+                imagen_mime=imagen_mime,
+            )
+            db.add(obj)
+            db.flush()
+            creados_art += 1
+
+        # Etiquetas del artículo: limpiar y reasignar
+        db.query(ConsejoArticuloEtiqueta).filter(
+            ConsejoArticuloEtiqueta.id_articulo == obj.id
+        ).delete()
+        for et_nombre in art.get("etiquetas", []):
+            et = et_por_nombre.get(et_nombre)
+            if et:
+                db.add(ConsejoArticuloEtiqueta(id_articulo=obj.id, id_etiqueta=et.id))
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "clasificaciones_creadas": creadas_cla,
+        "etiquetas_creadas": creadas_et,
+        "articulos_creados": creados_art,
+        "actualizados": actualizados,
+        "sin_imagen_ia": sin_imagen,
+    }

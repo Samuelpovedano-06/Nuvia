@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, Edit2, Trash2, Eye, EyeOff, Sparkles, ImagePlus, X, Save } from 'lucide-react';
+import { ChevronLeft, Plus, Edit2, Trash2, Eye, EyeOff, Sparkles, ImagePlus, X, Save, Database } from 'lucide-react';
 import { ApiService } from '../api';
 import AuthImage from '../components/AuthImage';
 
@@ -22,6 +22,33 @@ export default function AdminConsejosScreen() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('articulos');
   const [editor, setEditor] = useState(null); // { tipo: 'articulo'|'clasif'|'etiqueta', data: {} }
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeed = async () => {
+    const conImagen = window.confirm(
+      '¿Generar también las imágenes de portada con IA?\n\n' +
+      'Aceptar = SÍ (puede tardar 1-2 minutos)\n' +
+      'Cancelar = NO (más rápido, sin imágenes)'
+    );
+    if (!window.confirm('Esto añadirá el lote completo de consejos a la base de datos.\n¿Continuar?')) return;
+    setSeeding(true);
+    try {
+      const res = await ApiService.seedConsejosDemo({ generar_imagenes: conImagen });
+      alert(
+        `Hecho.\n` +
+        `Clasificaciones creadas: ${res.clasificaciones_creadas}\n` +
+        `Etiquetas creadas: ${res.etiquetas_creadas}\n` +
+        `Artículos creados: ${res.articulos_creados}\n` +
+        (res.sin_imagen_ia ? `Sin imagen IA: ${res.sin_imagen_ia}\n` : '')
+      );
+      setRefreshKey(k => k + 1);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   return (
     <div className="screen-container" style={{ paddingBottom: '100px', overflowX: 'hidden' }}>
@@ -29,7 +56,19 @@ export default function AdminConsejosScreen() {
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px' }}>
           <ChevronLeft size={26} />
         </button>
-        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800' }}>Gestionar consejos</h1>
+        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800', flex: 1 }}>Gestionar consejos</h1>
+        <button
+          onClick={handleSeed}
+          disabled={seeding}
+          title="Cargar lote completo de consejos predefinidos"
+          style={{
+            background: '#fef3c7', color: '#92400e', border: '1.5px solid #fbbf24',
+            borderRadius: '12px', padding: '8px 12px', cursor: seeding ? 'wait' : 'pointer',
+            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700'
+          }}
+        >
+          <Database size={14} /> {seeding ? 'Cargando…' : 'Cargar lote'}
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
@@ -43,9 +82,9 @@ export default function AdminConsejosScreen() {
         ))}
       </div>
 
-      {tab === 'articulos' && <ArticulosTab onEdit={a => setEditor({ tipo: 'articulo', data: a })} onNew={() => setEditor({ tipo: 'articulo', data: null })} />}
-      {tab === 'clasificaciones' && <ClasificacionesTab onEdit={c => setEditor({ tipo: 'clasif', data: c })} onNew={() => setEditor({ tipo: 'clasif', data: null })} />}
-      {tab === 'etiquetas' && <EtiquetasTab onEdit={e => setEditor({ tipo: 'etiqueta', data: e })} onNew={() => setEditor({ tipo: 'etiqueta', data: null })} />}
+      {tab === 'articulos' && <ArticulosTab key={`a${refreshKey}`} onEdit={a => setEditor({ tipo: 'articulo', data: a })} onNew={() => setEditor({ tipo: 'articulo', data: null })} />}
+      {tab === 'clasificaciones' && <ClasificacionesTab key={`c${refreshKey}`} onEdit={c => setEditor({ tipo: 'clasif', data: c })} onNew={() => setEditor({ tipo: 'clasif', data: null })} />}
+      {tab === 'etiquetas' && <EtiquetasTab key={`e${refreshKey}`} onEdit={e => setEditor({ tipo: 'etiqueta', data: e })} onNew={() => setEditor({ tipo: 'etiqueta', data: null })} />}
 
       {editor?.tipo === 'articulo' && <ArticuloEditor data={editor.data} onClose={() => setEditor(null)} />}
       {editor?.tipo === 'clasif' && <ClasificacionEditor data={editor.data} onClose={() => setEditor(null)} />}
