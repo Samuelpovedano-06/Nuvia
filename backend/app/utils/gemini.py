@@ -11,10 +11,24 @@ Funciones:
 import os
 import base64
 import json
+from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+# Buscar .env desde rutas habituales (raíz repo, backend/, dir del archivo)
+_THIS_FILE = Path(__file__).resolve()
+_POSIBLES_ENV = [
+    _THIS_FILE.parents[2] / ".env",   # backend/.env
+    _THIS_FILE.parents[3] / ".env",   # raíz del repo
+    Path.cwd() / ".env",
+    Path("/app/.env"),                # típico en Docker
+]
+for _p in _POSIBLES_ENV:
+    if _p.exists():
+        load_dotenv(_p, override=False)
+        break
+else:
+    load_dotenv(override=False)  # fallback al comportamiento por defecto
 
 # Modelo de generación de imágenes (Gemini 2.5 Flash Image, free tier)
 IMAGEN_MODEL = "gemini-2.5-flash-image"
@@ -22,6 +36,13 @@ IMAGEN_MODEL = "gemini-2.5-flash-image"
 TEXTO_MODEL = "gemini-2.0-flash"
 
 _BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+
+# Último error capturado (para mostrar al admin). Se actualiza en cada llamada.
+_ULTIMO_ERROR: str | None = None
+
+
+def ultimo_error() -> str | None:
+    return _ULTIMO_ERROR
 
 
 def _get_key() -> str:
@@ -31,6 +52,18 @@ def _get_key() -> str:
 
 def _has_key() -> bool:
     return bool(_get_key())
+
+
+def diagnostico() -> dict:
+    """Devuelve info útil para diagnosticar por qué Gemini no funciona."""
+    key = _get_key()
+    return {
+        "tiene_key": bool(key),
+        "longitud_key": len(key) if key else 0,
+        "prefijo_key": key[:6] + "…" if key else None,
+        "cwd": str(Path.cwd()),
+        "envs_buscados": [str(p) + (" ✓" if p.exists() else "") for p in _POSIBLES_ENV],
+    }
 
 
 def generar_imagen_consejo(titulo: str, resumen: str = "", prompt_extra: str = ""):
@@ -59,10 +92,17 @@ def generar_imagen_consejo(titulo: str, resumen: str = "", prompt_extra: str = "
         }
     }
 
+    global _ULTIMO_ERROR
+    _ULTIMO_ERROR = None
     try:
         r = requests.post(url, json=body, timeout=60)
+        if r.status_code == 429:
+            print(f"[Gemini imagen] 429 cuota: {r.text[:200]}")
+            _ULTIMO_ERROR = "Has agotado la cuota gratuita diaria de Gemini para imágenes. Espera ~24h o sube de plan."
+            return None
         if r.status_code != 200:
             print(f"[Gemini imagen] HTTP {r.status_code}: {r.text[:300]}")
+            _ULTIMO_ERROR = f"Gemini devolvió HTTP {r.status_code}"
             return None
         data = r.json()
         candidates = data.get("candidates", [])
@@ -74,9 +114,11 @@ def generar_imagen_consejo(titulo: str, resumen: str = "", prompt_extra: str = "
                     mime = inline.get("mimeType") or inline.get("mime_type") or "image/png"
                     return mime, base64.b64decode(inline["data"])
         print(f"[Gemini imagen] Sin parte de imagen en respuesta: {json.dumps(data)[:400]}")
+        _ULTIMO_ERROR = "Gemini respondió sin contenido de imagen (posible filtro de seguridad)"
         return None
     except Exception as e:
         print(f"[Gemini imagen] Excepción: {e}")
+        _ULTIMO_ERROR = f"Excepción: {e}"
         return None
 
 

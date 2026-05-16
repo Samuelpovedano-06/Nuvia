@@ -284,33 +284,35 @@ export default function CalendarScreen() {
       </div>
 
       {/* Sección Inferior: Calendario */}
-      <div className="card" style={{ padding: '20px', maxWidth: '400px', margin: '0 auto 30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <button onClick={prevMonth} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><ChevronLeft /></button>
-          <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--primary)' }}>{MESES[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
-          <button onClick={nextMonth} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><ChevronRight /></button>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', textAlign: 'center', marginBottom: '10px' }}>
-          {DIAS_SEMANA.map(d => <div key={d} style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-light)' }}>{d}</div>)}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
-          {Array.from({ length: getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth()) }).map((_, i) => <div key={`e-${i}`} className="calendar-day empty"></div>)}
-          {Array.from({ length: getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) }).map((_, i) => {
-            const d = i + 1;
-            const status = getDayStatus(d);
-            const future = isFuture(d);
-            return (
-              <div key={d} className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''} ${future ? 'future' : ''}`} onClick={() => !future && navigate('/sintomas')}>
-                <span className="day-number">{d}</span>
-                {status === 'ovulacion' && <Sparkles size={10} className="ovulacion-icon" />}
-              </div>
-            );
-          })}
+      <div className="card" style={{ padding: '20px', marginBottom: '25px' }}>
+        <div style={{ maxWidth: '440px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <button onClick={prevMonth} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><ChevronLeft /></button>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--primary)' }}>{MESES[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+            <button onClick={nextMonth} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><ChevronRight /></button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', textAlign: 'center', marginBottom: '10px' }}>
+            {DIAS_SEMANA.map(d => <div key={d} style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-light)' }}>{d}</div>)}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
+            {Array.from({ length: getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth()) }).map((_, i) => <div key={`e-${i}`} className="calendar-day empty"></div>)}
+            {Array.from({ length: getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) }).map((_, i) => {
+              const d = i + 1;
+              const status = getDayStatus(d);
+              const future = isFuture(d);
+              return (
+                <div key={d} className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''} ${future ? 'future' : ''}`} onClick={() => !future && navigate('/sintomas')}>
+                  <span className="day-number">{d}</span>
+                  {status === 'ovulacion' && <Sparkles size={10} className="ovulacion-icon" />}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Leyenda */}
-      <div className="card" style={{ padding: '16px', maxWidth: '400px', margin: '0 auto 40px' }}>
+      <div className="card" style={{ padding: '16px', marginBottom: '40px' }}>
         <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-dark)' }}>Leyenda del Ciclo</h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '11px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -379,12 +379,15 @@ def actualizar_articulo(id: UUID, datos: ConsejoArticuloUpdate, db: Session = De
 
 @router.post("/articulos/{id}/regenerar-imagen")
 def regenerar_imagen(id: UUID, db: Session = Depends(get_db), prompt: Optional[str] = None, _admin: Usuaria = Depends(require_admin)):
+    from app.utils.gemini import ultimo_error
     a = db.query(ConsejoArticulo).filter(ConsejoArticulo.id == id).first()
     if not a:
         raise HTTPException(status_code=404, detail="No existe")
     gen = generar_imagen_consejo(a.titulo, a.resumen or "", prompt or "")
     if not gen:
-        raise HTTPException(status_code=502, detail="No se pudo generar la imagen (configura GEMINI_API_KEY o revisa logs)")
+        err = ultimo_error() or "No se pudo generar la imagen. Revisa GEMINI_API_KEY y los logs."
+        codigo = 429 if "cuota" in err.lower() else 502
+        raise HTTPException(status_code=codigo, detail=err)
     mime, b = gen
     a.imagen = b
     a.imagen_mime = mime
@@ -552,3 +555,10 @@ def cargar_contenido_demo(
         "actualizados": actualizados,
         "sin_imagen_ia": sin_imagen,
     }
+
+
+@router.get("/diagnostico-ia")
+def diagnostico_ia(_admin: Usuaria = Depends(require_admin)):
+    """Útil para depurar si Gemini está bien configurado."""
+    from app.utils.gemini import diagnostico
+    return diagnostico()

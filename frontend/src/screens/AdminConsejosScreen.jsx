@@ -210,33 +210,36 @@ function ArticuloEditor({ data, onClose }) {
     })();
   }, [editing]);
 
+  const [aviso, setAviso] = useState(null); // {titulo, mensaje, tipo:'ok'|'error'|'info'}
+
   const handlePickImage = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) { alert('Solo JPG/PNG/WEBP/GIF'); return; }
-    if (file.size > MAX_IMG_BYTES) { alert('Máx 5MB'); return; }
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) { setAviso({ titulo: 'Formato no válido', mensaje: 'Solo JPG, PNG, WEBP o GIF.', tipo: 'error' }); return; }
+    if (file.size > MAX_IMG_BYTES) { setAviso({ titulo: 'Imagen demasiado grande', mensaje: 'Máximo 5 MB.', tipo: 'error' }); return; }
     setImgPreview(await fileToDataURL(file));
   };
 
   const handleGenerar = async () => {
-    if (!titulo.trim()) { alert('Pon un título primero'); return; }
+    if (!titulo.trim()) { setAviso({ titulo: 'Falta el título', mensaje: 'Escribe primero un título para que la IA pueda generar una portada acorde.', tipo: 'info' }); return; }
     if (editing) {
       setGenerando(true);
       try {
         await ApiService.regenerarImagenArticuloConsejo(data.id, promptImg || null);
-        alert('Imagen regenerada');
-        onClose();
-      } catch (e) { alert(e.message); }
-      finally { setGenerando(false); }
+        setAviso({ titulo: 'Imagen generada', mensaje: 'La portada se ha regenerado correctamente.', tipo: 'ok', cerrar: onClose });
+      } catch (e) {
+        console.error('[Gemini]', e);
+        setAviso({ titulo: 'Error en Gemini', mensaje: 'No se pudo generar la imagen. Revise los logs del backend para más detalles.', tipo: 'error' });
+      } finally { setGenerando(false); }
     } else {
-      alert('Guarda el artículo primero con la opción "Generar imagen con IA" marcada al crear.');
+      setAviso({ titulo: 'Guarda el artículo primero', mensaje: 'Crea el artículo con la opción "Generar imagen con IA" para que la portada se cree al guardar.', tipo: 'info' });
     }
   };
 
   const handleGuardar = async () => {
-    if (!titulo.trim()) { alert('Título requerido'); return; }
-    if (!idCla) { alert('Selecciona una clasificación'); return; }
+    if (!titulo.trim()) { setAviso({ titulo: 'Falta el título', mensaje: 'El título es obligatorio.', tipo: 'info' }); return; }
+    if (!idCla) { setAviso({ titulo: 'Falta clasificación', mensaje: 'Selecciona una clasificación para el artículo.', tipo: 'info' }); return; }
     setGuardando(true);
     try {
       const payload = {
@@ -262,7 +265,8 @@ function ArticuloEditor({ data, onClose }) {
       }
       onClose();
     } catch (e) {
-      alert(e.message);
+      console.error('[Guardar artículo]', e);
+      setAviso({ titulo: 'No se pudo guardar', mensaje: e.message || 'Error desconocido. Revise los logs del backend.', tipo: 'error' });
     } finally {
       setGuardando(false);
     }
@@ -343,6 +347,19 @@ function ArticuloEditor({ data, onClose }) {
       <button onClick={handleGuardar} disabled={guardando} style={{ ...btnPrimario, width: '100%', justifyContent: 'center' }}>
         <Save size={16} /> {guardando ? 'Guardando…' : 'Guardar'}
       </button>
+
+      {aviso && (
+        <AvisoModal
+          titulo={aviso.titulo}
+          mensaje={aviso.mensaje}
+          tipo={aviso.tipo}
+          onClose={() => {
+            const cb = aviso.cerrar;
+            setAviso(null);
+            if (cb) cb();
+          }}
+        />
+      )}
     </Modal>
   );
 }
@@ -487,6 +504,40 @@ function Modal({ titulo, children, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
         </div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+function AvisoModal({ titulo, mensaje, tipo = 'info', onClose }) {
+  const colores = {
+    ok:    { borde: '#10b981', icono: '✓', fondo: '#ecfdf5' },
+    error: { borde: '#F6416C', icono: '!', fondo: '#fef2f2' },
+    info:  { borde: 'var(--primary)', icono: 'i', fondo: 'rgba(176,91,181,0.08)' },
+  };
+  const c = colores[tipo] || colores.info;
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1800,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 18, padding: 22, width: '100%', maxWidth: 360,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.2)', borderTop: `4px solid ${c.borde}`
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', background: c.fondo, color: c.borde,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 16
+          }}>{c.icono}</div>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-dark)' }}>{titulo}</h3>
+        </div>
+        <p style={{ margin: '4px 0 18px', fontSize: 14, color: 'var(--text-dark)', lineHeight: 1.5 }}>{mensaje}</p>
+        <button onClick={onClose} style={{
+          width: '100%', padding: '11px 14px', borderRadius: 12, border: 'none',
+          background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
+          color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer'
+        }}>Aceptar</button>
       </div>
     </div>
   );
