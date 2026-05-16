@@ -12,8 +12,9 @@ import os
 import base64
 import json
 import requests
+from dotenv import load_dotenv
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+load_dotenv()
 
 # Modelo de generación de imágenes (Gemini 2.5 Flash Image, free tier)
 IMAGEN_MODEL = "gemini-2.5-flash-image"
@@ -23,8 +24,13 @@ TEXTO_MODEL = "gemini-2.0-flash"
 _BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
+def _get_key() -> str:
+    # Leer en cada llamada para soportar reinicios y cambios en .env sin reimportar
+    return os.getenv("GEMINI_API_KEY", "").strip()
+
+
 def _has_key() -> bool:
-    return bool(GEMINI_API_KEY)
+    return bool(_get_key())
 
 
 def generar_imagen_consejo(titulo: str, resumen: str = "", prompt_extra: str = ""):
@@ -42,7 +48,7 @@ def generar_imagen_consejo(titulo: str, resumen: str = "", prompt_extra: str = "
         f"sin texto, fondo limpio. Tema: {titulo}. {resumen}"
     )
 
-    url = f"{_BASE}/{IMAGEN_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    url = f"{_BASE}/{IMAGEN_MODEL}:generateContent?key={_get_key()}"
     body = {
         "contents": [{
             "role": "user",
@@ -87,7 +93,7 @@ def clasificar_texto_foro(texto: str, categorias: list) -> str | None:
         f"Responde SOLO con el nombre exacto de la categoría, sin explicación.\n\n"
         f"Texto: {texto[:1500]}"
     )
-    url = f"{_BASE}/{TEXTO_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    url = f"{_BASE}/{TEXTO_MODEL}:generateContent?key={_get_key()}"
     body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}]}
     try:
         r = requests.post(url, json=body, timeout=30)

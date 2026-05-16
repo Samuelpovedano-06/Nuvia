@@ -110,11 +110,6 @@ export default function ConsejosScreen() {
         <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-light)' }}>
           <Bell size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
           <p>Aún no hay consejos disponibles.</p>
-          {user?.rol === 'admin' && (
-            <button onClick={() => navigate('/admin/consejos')} style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '14px', fontWeight: '700', cursor: 'pointer', marginTop: '10px' }}>
-              Gestionar contenido
-            </button>
-          )}
         </div>
       )}
 

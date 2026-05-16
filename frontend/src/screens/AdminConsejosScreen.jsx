@@ -24,27 +24,19 @@ export default function AdminConsejosScreen() {
   const [editor, setEditor] = useState(null); // { tipo: 'articulo'|'clasif'|'etiqueta', data: {} }
   const [refreshKey, setRefreshKey] = useState(0);
   const [seeding, setSeeding] = useState(false);
+  const [seedModalOpen, setSeedModalOpen] = useState(false);
+  const [seedResult, setSeedResult] = useState(null); // {ok, ...} | {error}
 
-  const handleSeed = async () => {
-    const conImagen = window.confirm(
-      '¿Generar también las imágenes de portada con IA?\n\n' +
-      'Aceptar = SÍ (puede tardar 1-2 minutos)\n' +
-      'Cancelar = NO (más rápido, sin imágenes)'
-    );
-    if (!window.confirm('Esto añadirá el lote completo de consejos a la base de datos.\n¿Continuar?')) return;
+  const handleSeedConfirm = async (conImagen) => {
+    setSeedModalOpen(false);
     setSeeding(true);
+    setSeedResult(null);
     try {
       const res = await ApiService.seedConsejosDemo({ generar_imagenes: conImagen });
-      alert(
-        `Hecho.\n` +
-        `Clasificaciones creadas: ${res.clasificaciones_creadas}\n` +
-        `Etiquetas creadas: ${res.etiquetas_creadas}\n` +
-        `Artículos creados: ${res.articulos_creados}\n` +
-        (res.sin_imagen_ia ? `Sin imagen IA: ${res.sin_imagen_ia}\n` : '')
-      );
+      setSeedResult({ ok: true, ...res });
       setRefreshKey(k => k + 1);
     } catch (e) {
-      alert(e.message);
+      setSeedResult({ error: e.message });
     } finally {
       setSeeding(false);
     }
@@ -58,11 +50,11 @@ export default function AdminConsejosScreen() {
         </button>
         <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800', flex: 1 }}>Gestionar consejos</h1>
         <button
-          onClick={handleSeed}
+          onClick={() => setSeedModalOpen(true)}
           disabled={seeding}
           title="Cargar lote completo de consejos predefinidos"
           style={{
-            background: '#fef3c7', color: '#92400e', border: '1.5px solid #fbbf24',
+            background: 'white', color: 'var(--primary)', border: '1.5px solid var(--primary)',
             borderRadius: '12px', padding: '8px 12px', cursor: seeding ? 'wait' : 'pointer',
             display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700'
           }}
@@ -70,6 +62,53 @@ export default function AdminConsejosScreen() {
           <Database size={14} /> {seeding ? 'Cargando…' : 'Cargar lote'}
         </button>
       </div>
+
+      {/* Modal: confirmar carga del lote */}
+      {seedModalOpen && (
+        <ConfirmModal
+          titulo="Cargar lote de consejos"
+          mensaje="Se añadirá un lote completo de consejos predefinidos a la base de datos (clasificaciones, etiquetas y artículos)."
+          onClose={() => setSeedModalOpen(false)}
+          opciones={[
+            { label: 'Con imágenes IA (1-2 min)', icon: <Sparkles size={16} />, onClick: () => handleSeedConfirm(true), primary: true },
+            { label: 'Sin imágenes (rápido)', icon: <Database size={16} />, onClick: () => handleSeedConfirm(false) },
+          ]}
+        />
+      )}
+
+      {/* Modal: resultado / errores */}
+      {seedResult && (
+        <ConfirmModal
+          titulo={seedResult.error ? 'Error' : 'Carga completada'}
+          mensaje={seedResult.error || (
+            `• Clasificaciones creadas: ${seedResult.clasificaciones_creadas}\n` +
+            `• Etiquetas creadas: ${seedResult.etiquetas_creadas}\n` +
+            `• Artículos creados: ${seedResult.articulos_creados}` +
+            (seedResult.actualizados ? `\n• Actualizados: ${seedResult.actualizados}` : '') +
+            (seedResult.sin_imagen_ia ? `\n• Sin imagen IA: ${seedResult.sin_imagen_ia}` : '')
+          )}
+          onClose={() => setSeedResult(null)}
+          opciones={[
+            { label: 'Aceptar', onClick: () => setSeedResult(null), primary: true },
+          ]}
+        />
+      )}
+
+      {seeding && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(176,91,181,0.15)', zIndex: 1600,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14
+        }}>
+          <div style={{
+            background: 'white', padding: '24px 32px', borderRadius: 16,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', gap: 12
+          }}>
+            <div className="loader" />
+            <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: 14 }}>Cargando contenido…</div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
         {TABS.map(t => (
@@ -448,6 +487,40 @@ function Modal({ titulo, children, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
         </div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ titulo, mensaje, onClose, opciones }) {
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1700,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 18, padding: 22, width: '100%', maxWidth: 380,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--primary)' }}>{titulo}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}><X size={20} /></button>
+        </div>
+        <p style={{ margin: '0 0 18px', fontSize: 14, color: 'var(--text-dark)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+          {mensaje}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {opciones.map((o, i) => (
+            <button key={i} onClick={o.onClick} style={{
+              padding: '11px 14px', borderRadius: 12, border: o.primary ? 'none' : '1.5px solid var(--primary)',
+              background: o.primary ? 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)' : 'white',
+              color: o.primary ? 'white' : 'var(--primary)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+            }}>
+              {o.icon} {o.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
