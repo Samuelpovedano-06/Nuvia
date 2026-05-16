@@ -379,6 +379,7 @@ def actualizar_articulo(id: UUID, datos: ConsejoArticuloUpdate, db: Session = De
 
 @router.post("/articulos/{id}/regenerar-imagen")
 def regenerar_imagen(id: UUID, db: Session = Depends(get_db), prompt: Optional[str] = None, _admin: Usuaria = Depends(require_admin)):
+    """Genera una imagen candidata y la GUARDA inmediatamente (uso legado)."""
     from app.utils.gemini import ultimo_error
     a = db.query(ConsejoArticulo).filter(ConsejoArticulo.id == id).first()
     if not a:
@@ -394,6 +395,24 @@ def regenerar_imagen(id: UUID, db: Session = Depends(get_db), prompt: Optional[s
     a.imagen_prompt = prompt or f"auto:{a.titulo}"
     db.commit()
     return {"ok": True, "tiene_imagen": True}
+
+
+@router.post("/articulos/{id}/preview-imagen")
+def preview_imagen(id: UUID, db: Session = Depends(get_db), prompt: Optional[str] = None, _admin: Usuaria = Depends(require_admin)):
+    """Genera una imagen candidata SIN guardarla y la devuelve como data URL base64.
+    El admin podrá luego aceptarla (guardándola via PUT /articulos/{id}) o descartarla."""
+    from app.utils.gemini import ultimo_error
+    a = db.query(ConsejoArticulo).filter(ConsejoArticulo.id == id).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="No existe")
+    gen = generar_imagen_consejo(a.titulo, a.resumen or "", prompt or "")
+    if not gen:
+        err = ultimo_error() or "No se pudo generar la imagen."
+        codigo = 429 if "cuota" in err.lower() else 502
+        raise HTTPException(status_code=codigo, detail=err)
+    mime, b = gen
+    data_url = f"data:{mime};base64,{base64.b64encode(b).decode('ascii')}"
+    return {"ok": True, "data_url": data_url, "mime": mime}
 
 
 @router.delete("/articulos/{id}", status_code=204, dependencies=[Depends(require_admin)])

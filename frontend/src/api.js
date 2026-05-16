@@ -520,6 +520,14 @@ export const ApiService = {
     if (!res.ok) throw new Error(data.detail || 'No se pudo regenerar');
     return data;
   },
+
+  previewImagenArticuloConsejo: async (id, prompt = null) => {
+    const url = `${baseUrl}/consejos/articulos/${id}/preview-imagen${prompt ? `?prompt=${encodeURIComponent(prompt)}` : ''}`;
+    const res = await fetch(url, { method: 'POST', headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'No se pudo generar la vista previa');
+    return data;
+  },
   toggleFavoritoConsejo: async (id) => {
     const res = await fetch(`${baseUrl}/consejos/articulos/${id}/favorito`, { method: 'POST', headers: getHeaders() });
     const data = await res.json();

@@ -228,12 +228,17 @@ function ArticuloEditor({ data, onClose }) {
     if (editing) {
       setGenerando(true);
       try {
-        await ApiService.regenerarImagenArticuloConsejo(data.id, promptImg || null);
-        setImgPreview(null);              // descarta cualquier preview manual
-        setImgVersion(Date.now());        // fuerza recarga de la imagen sin cerrar el modal
-        setAviso({ titulo: 'Imagen generada', mensaje: 'La portada se ha regenerado correctamente.', tipo: 'ok' });
+        // Pedimos preview: NO se guarda en la BD, solo nos dan el data URL
+        const { data_url } = await ApiService.previewImagenArticuloConsejo(data.id, promptImg || null);
+        // Mostramos como preview pendiente de aceptación
+        setImgPreview(data_url);
+        setAviso({
+          titulo: 'Foto candidata generada',
+          mensaje: 'Revisa la imagen propuesta arriba. Pulsa "Guardar" para aplicarla o usa la X para descartarla.',
+          tipo: 'info'
+        });
       } catch (e) {
-        setAviso({ titulo: 'Error en Gemini', mensaje: 'No se pudo generar la imagen. Revise los logs del backend para más detalles.', tipo: 'error' });
+        setAviso({ titulo: 'No se pudo generar', mensaje: e.message || 'Error al generar la imagen. Revisa los logs del backend.', tipo: 'error' });
       } finally { setGenerando(false); }
     } else {
       setAviso({ titulo: 'Guarda el artículo primero', mensaje: 'Crea el artículo con la opción "Generar imagen con IA" para que la portada se cree al guardar.', tipo: 'info' });
