@@ -68,56 +68,20 @@ def diagnostico() -> dict:
 
 def generar_imagen_consejo(titulo: str, resumen: str = "", prompt_extra: str = ""):
     """
-    Genera una imagen ilustrativa para un consejo, estilo Flo (ilustración suave,
-    pastel, sin texto). Devuelve tupla (mime, bytes) o None si falla / no hay key.
+    Busca en Unsplash la foto más apropiada para el consejo y la valida con Gemini.
+    Devuelve tupla (mime, bytes) o None si nada encaja.
     """
-    if not _has_key():
-        print("[Gemini] GEMINI_API_KEY no configurada — saltando generación de imagen")
-        return None
-
-    prompt = prompt_extra.strip() if prompt_extra else (
-        f"Ilustración digital estilo aplicación de salud femenina (estilo Flo / Clue), "
-        f"colores pastel suaves (rosas, morados, melocotón), figura humana estilizada, "
-        f"sin texto, fondo limpio. Tema: {titulo}. {resumen}"
-    )
-
-    url = f"{_BASE}/{IMAGEN_MODEL}:generateContent?key={_get_key()}"
-    body = {
-        "contents": [{
-            "role": "user",
-            "parts": [{"text": prompt}]
-        }],
-        "generationConfig": {
-            "responseModalities": ["IMAGE"]
-        }
-    }
-
     global _ULTIMO_ERROR
     _ULTIMO_ERROR = None
     try:
-        r = requests.post(url, json=body, timeout=60)
-        if r.status_code == 429:
-            print(f"[Gemini imagen] 429 cuota: {r.text[:200]}")
-            _ULTIMO_ERROR = "Has agotado la cuota gratuita diaria de Gemini para imágenes. Espera ~24h o sube de plan."
-            return None
-        if r.status_code != 200:
-            print(f"[Gemini imagen] HTTP {r.status_code}: {r.text[:300]}")
-            _ULTIMO_ERROR = f"Gemini devolvió HTTP {r.status_code}"
-            return None
-        data = r.json()
-        candidates = data.get("candidates", [])
-        for cand in candidates:
-            parts = cand.get("content", {}).get("parts", [])
-            for p in parts:
-                inline = p.get("inlineData") or p.get("inline_data")
-                if inline and inline.get("data"):
-                    mime = inline.get("mimeType") or inline.get("mime_type") or "image/png"
-                    return mime, base64.b64decode(inline["data"])
-        print(f"[Gemini imagen] Sin parte de imagen en respuesta: {json.dumps(data)[:400]}")
-        _ULTIMO_ERROR = "Gemini respondió sin contenido de imagen (posible filtro de seguridad)"
+        from app.utils.unsplash import buscar_imagen_validada
+        resultado = buscar_imagen_validada(titulo, resumen, prompt_extra)
+        if resultado:
+            return resultado
+        _ULTIMO_ERROR = "Ninguna foto de Unsplash encaja según la evaluación de Gemini. Prueba con un prompt diferente."
         return None
     except Exception as e:
-        print(f"[Gemini imagen] Excepción: {e}")
+        print(f"[Imagen consejo] Excepción: {e}")
         _ULTIMO_ERROR = f"Excepción: {e}"
         return None
 
