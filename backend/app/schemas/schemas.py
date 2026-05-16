@@ -227,6 +227,7 @@ class MensajeOut(BaseModel):
     id_receptor: UUID
     contenido: Optional[str] = ""
     tiene_imagen: bool = False
+    es_compartido: bool = False
     leido: bool
     fecha: datetime
 

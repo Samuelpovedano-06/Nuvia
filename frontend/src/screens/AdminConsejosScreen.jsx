@@ -229,7 +229,6 @@ function ArticuloEditor({ data, onClose }) {
         await ApiService.regenerarImagenArticuloConsejo(data.id, promptImg || null);
         setAviso({ titulo: 'Imagen generada', mensaje: 'La portada se ha regenerado correctamente.', tipo: 'ok', cerrar: onClose });
       } catch (e) {
-        console.error('[Gemini]', e);
         setAviso({ titulo: 'Error en Gemini', mensaje: 'No se pudo generar la imagen. Revise los logs del backend para más detalles.', tipo: 'error' });
       } finally { setGenerando(false); }
     } else {

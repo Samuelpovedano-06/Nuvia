@@ -69,6 +69,7 @@ def run_migrations():
         "ALTER TABLE foro_publicaciones ALTER COLUMN contenido DROP NOT NULL",
         "ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS imagen BYTEA",
         "ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS imagen_mime VARCHAR(50)",
+        "ALTER TABLE mensajes ADD COLUMN IF NOT EXISTS es_compartido BOOLEAN DEFAULT FALSE",
         "ALTER TABLE mensajes ALTER COLUMN contenido DROP NOT NULL",
         "ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS imagen BYTEA",
         "ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS imagen_mime VARCHAR(50)",

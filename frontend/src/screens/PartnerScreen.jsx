@@ -530,25 +530,39 @@ const PartnerScreen = () => {
                 <div key={m.id} style={{
                   alignSelf: isMe ? 'flex-end' : 'flex-start',
                   maxWidth: '80%',
-                  padding: tieneImagen && !tieneTexto ? '4px' : '10px 14px',
+                  padding: '8px 10px 22px',
                   borderRadius: isMe ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
                   background: isMe ? 'var(--primary)' : 'white',
                   color: isMe ? 'white' : 'var(--text-dark)',
                   boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
                   position: 'relative',
-                  overflow: 'hidden'
                 }}>
+                  {m.es_compartido && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      fontSize: '10px', fontWeight: '700', opacity: 0.85,
+                      paddingBottom: '6px', marginBottom: '6px',
+                      borderBottom: `1px solid ${isMe ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)'}`,
+                      padding: '0 4px 6px'
+                    }}>
+                      <MessageCircle size={11} /> Enviado desde Chats Secretos
+                    </div>
+                  )}
+                  {tieneTexto && (
+                    <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4', overflowWrap: 'break-word', wordBreak: 'break-word', padding: '0 4px', marginBottom: tieneImagen ? '8px' : 0 }}>{m.contenido}</p>
+                  )}
                   {tieneImagen && (
                     <AuthImage
                       src={ApiService.imagenChatUrl(m.id)}
                       onClick={() => setImagenPreview(ApiService.imagenChatUrl(m.id))}
-                      style={{ maxWidth: '260px', maxHeight: '320px', borderRadius: '14px', display: 'block', cursor: 'pointer', marginBottom: tieneTexto ? '6px' : 0 }}
+                      style={{ maxWidth: '260px', maxHeight: '320px', width: '100%', borderRadius: '12px', display: 'block', cursor: 'pointer' }}
                     />
                   )}
-                  {tieneTexto && (
-                    <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4', overflowWrap: 'break-word', wordBreak: 'break-word', padding: tieneImagen ? '0 8px' : 0 }}>{m.contenido}</p>
-                  )}
-                  <span style={{ fontSize: '9px', opacity: 0.7, marginTop: '4px', display: 'block', textAlign: isMe ? 'right' : 'left', padding: tieneImagen && !tieneTexto ? '0 8px 4px' : 0 }}>
+                  <span style={{
+                    fontSize: '9px', opacity: 0.7,
+                    position: 'absolute', bottom: '6px',
+                    [isMe ? 'right' : 'left']: '12px'
+                  }}>
                     {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>

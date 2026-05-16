@@ -182,13 +182,14 @@ class Mensaje(Base):
     __tablename__ = "mensajes"
 
     id           = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_remitente = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    id_receptor  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    contenido    = Column(Text, nullable=True)
-    imagen       = Column(LargeBinary, nullable=True)
-    imagen_mime  = Column(String(50), nullable=True)
-    leido        = Column(Boolean, server_default=text("false"))
-    fecha        = Column(DateTime, server_default=func.now())
+    id_remitente   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    id_receptor    = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    contenido      = Column(Text, nullable=True)
+    imagen         = Column(LargeBinary, nullable=True)
+    imagen_mime    = Column(String(50), nullable=True)
+    es_compartido  = Column(Boolean, server_default=text("false"))
+    leido          = Column(Boolean, server_default=text("false"))
+    fecha          = Column(DateTime, server_default=func.now())
 
     remitente = relationship("Usuaria", foreign_keys=[id_remitente])
     receptor  = relationship("Usuaria", foreign_keys=[id_receptor])

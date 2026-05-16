@@ -326,27 +326,32 @@ export default function CommunityScreen() {
   const [sharePost, setSharePost] = useState(null);     // post a compartir
   const [shareParejas, setShareParejas] = useState([]); // lista de parejas
   const [sharing, setSharing] = useState(false);
+  const [toast, setToast] = useState(null);             // { mensaje, tipo: 'ok'|'error' }
+
+  const mostrarToast = (mensaje, tipo = 'ok') => {
+    setToast({ mensaje, tipo });
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const handleShare = async (post, e) => {
     e?.stopPropagation();
     try {
       const parejas = await ApiService.getParejas();
       if (!parejas || parejas.length === 0) {
-        alert('No tienes ninguna pareja vinculada para compartir.');
+        mostrarToast('No tienes ninguna pareja vinculada para compartir', 'error');
         return;
       }
       if (parejas.length === 1) {
         // Pareja única → enviar directamente
         await ApiService.compartirPublicacion(parejas[0].other_id || parejas[0].id_pareja, post.id);
-        alert('Publicación enviada a tu pareja');
+        mostrarToast('Publicación enviada a tu pareja');
         return;
       }
       // Varias parejas → modal de elección
       setShareParejas(parejas);
       setSharePost(post);
     } catch (err) {
-      console.error(err);
-      alert(err.message || 'Error al compartir');
+      mostrarToast(err.message || 'Error al compartir', 'error');
     }
   };
 
@@ -357,9 +362,9 @@ export default function CommunityScreen() {
       await ApiService.compartirPublicacion(idPareja, sharePost.id);
       setSharePost(null);
       setShareParejas([]);
-      alert('Publicación enviada');
+      mostrarToast('Publicación enviada');
     } catch (err) {
-      alert(err.message || 'Error al compartir');
+      mostrarToast(err.message || 'Error al compartir', 'error');
     } finally {
       setSharing(false);
     }
@@ -701,6 +706,29 @@ export default function CommunityScreen() {
           </div>
         </div>
       )}
+
+      {/* Toast: notificación tipo "Publicación enviada" */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)',
+          background: toast.tipo === 'error'
+            ? 'linear-gradient(135deg, #F6416C 0%, #C03060 100%)'
+            : 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
+          color: 'white', padding: '12px 20px', borderRadius: '16px',
+          fontSize: '14px', fontWeight: '600',
+          boxShadow: '0 6px 24px rgba(176,91,181,0.35)',
+          zIndex: 2500, maxWidth: '85%', textAlign: 'center',
+          animation: 'nuviaToastIn 0.25s ease-out'
+        }}>
+          {toast.mensaje}
+        </div>
+      )}
+      <style>{`
+        @keyframes nuviaToastIn {
+          from { opacity: 0; transform: translate(-50%, 20px); }
+          to   { opacity: 1; transform: translate(-50%, 0); }
+        }
+      `}</style>
     </>
   );
 }

@@ -46,6 +46,7 @@ def _mensaje_out(m: Mensaje) -> dict:
         "id_receptor": m.id_receptor,
         "contenido": m.contenido or "",
         "tiene_imagen": m.imagen is not None,
+        "es_compartido": bool(getattr(m, "es_compartido", False)),
         "leido": bool(m.leido),
         "fecha": m.fecha,
     }
@@ -150,9 +151,10 @@ def compartir_publicacion(
     nuevo = Mensaje(
         id_remitente=current_user.id_usuaria,
         id_receptor=body.id_receptor,
-        contenido=(pub.contenido or "") or None,
+        contenido=(pub.contenido or "").strip() or None,
         imagen=pub.imagen,
         imagen_mime=pub.imagen_mime,
+        es_compartido=True,
     )
     db.add(nuevo)
     db.commit()
