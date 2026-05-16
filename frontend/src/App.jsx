@@ -17,7 +17,7 @@ import CommunityScreen from './screens/CommunityScreen';
 import ConsejosScreen from './screens/ConsejosScreen';
 import ConsejoDetailScreen from './screens/ConsejoDetailScreen';
 import AdminConsejosScreen from './screens/AdminConsejosScreen';
-import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users, BookOpen } from 'lucide-react';
+import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users } from 'lucide-react';
 
 const LogoIcon = ({ size = 22, color = 'currentColor' }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
@@ -41,7 +41,6 @@ const BottomNav = () => {
   const navItems = [
     { label: 'Inicio', icon: <Home size={22} />, path: '/', restricted: false },
     { label: 'Síntomas', icon: <Flower2 size={22} />, path: '/sintomas', restricted: true },
-    { label: 'Consejos', icon: <BookOpen size={22} />, path: '/consejos', restricted: false },
     { label: 'Ciclo', icon: <Calendar size={22} />, path: '/calendar', restricted: true },
     { label: 'Perfil', icon: <User size={22} />, path: '/profile', restricted: false },
   ];

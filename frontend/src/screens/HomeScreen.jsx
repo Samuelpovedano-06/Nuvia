@@ -406,7 +406,7 @@ export default function HomeScreen() {
 
         <div
           className="card"
-          onClick={() => navigate('/wellness')}
+          onClick={() => navigate('/consejos')}
           style={{
             textAlign: 'center',
             cursor: 'pointer',

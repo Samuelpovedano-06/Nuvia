@@ -46,21 +46,25 @@ export default function ConsejosScreen() {
   return (
     <div className="screen-container" style={{ paddingBottom: '100px', overflowX: 'hidden' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px' }}>
-            <ChevronLeft size={26} />
-          </button>
-          <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '800', color: 'var(--text-dark)' }}>Consejos</h1>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => setMostrarFavoritos(v => !v)}
-            style={{ background: mostrarFavoritos ? 'var(--primary)' : '#f5f5fa', color: mostrarFavoritos ? 'white' : '#666', border: 'none', borderRadius: '12px', padding: '8px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-          >
-            {mostrarFavoritos ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
-          </button>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px' }}>
+          <ChevronLeft size={26} />
+        </button>
+        <h1 style={{ margin: 0, fontSize: '26px', fontWeight: '800', color: 'var(--text-dark)', flex: 1 }}>Consejos</h1>
+        <button
+          onClick={() => setMostrarFavoritos(v => !v)}
+          style={{
+            background: mostrarFavoritos ? 'var(--primary)' : 'white',
+            color: mostrarFavoritos ? 'white' : 'var(--primary)',
+            border: `1.5px solid var(--primary)`,
+            borderRadius: '14px', padding: '8px 14px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '6px',
+            fontSize: '13px', fontWeight: '700', marginLeft: '12px'
+          }}
+        >
+          {mostrarFavoritos ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+          Mis favoritos
+        </button>
       </div>
 
       {/* Etiquetas (chips) */}
