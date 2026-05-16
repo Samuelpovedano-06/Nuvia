@@ -79,19 +79,74 @@ export default function AdminPanelScreen() {
     return () => clearInterval(interval);
   }, [showLogs, logTab]);
 
-  // Efecto para logs de UI (Front)
+  // Intercepta console.* y errores globales mientras el panel admin está montado.
+  // Captura todo lo que iría a las DevTools (Inspector → Consola).
   useEffect(() => {
-    if (!showLogs || logTab !== 'front') return;
-    
-    // Aquí podrías interceptar eventos reales, por ahora añadimos uno al entrar
-    const newEntry = { 
-      id: Date.now(), 
-      content: `[UI] Inspeccionando logs - Vista: ${logTab.toUpperCase()} - ${new Date().toLocaleTimeString()}`,
-      color: 'var(--primary)' 
-    };
-    setClientLogs(prev => [...prev.slice(-49), newEntry]);
+    const formatear = (args) => args.map(a => {
+      if (a instanceof Error) return `${a.name}: ${a.message}${a.stack ? '\n' + a.stack : ''}`;
+      if (typeof a === 'object') {
+        try { return JSON.stringify(a); } catch { return String(a); }
+      }
+      return String(a);
+    }).join(' ');
 
-  }, [showLogs, logTab]);
+    const niveles = {
+      log:   { prefijo: 'LOG',   color: '#64748b' },
+      info:  { prefijo: 'INFO',  color: '#38bdf8' },
+      warn:  { prefijo: 'WARN',  color: '#f59e0b' },
+      error: { prefijo: 'ERROR', color: '#ef4444' },
+      debug: { prefijo: 'DEBUG', color: '#94a3b8' },
+    };
+    const originales = {};
+    let contador = 0;
+
+    Object.entries(niveles).forEach(([metodo, { prefijo, color }]) => {
+      originales[metodo] = console[metodo].bind(console);
+      console[metodo] = (...args) => {
+        originales[metodo](...args);  // que siga apareciendo en DevTools
+        const hora = new Date().toLocaleTimeString();
+        const entry = {
+          id: `${Date.now()}-${++contador}`,
+          content: `[${hora}] ${prefijo}: ${formatear(args)}`,
+          color,
+        };
+        setClientLogs(prev => [...prev.slice(-199), entry]);
+      };
+    });
+
+    // Errores no capturados
+    const onError = (e) => {
+      const entry = {
+        id: `${Date.now()}-${++contador}`,
+        content: `[${new Date().toLocaleTimeString()}] UNCAUGHT: ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}`,
+        color: '#dc2626',
+      };
+      setClientLogs(prev => [...prev.slice(-199), entry]);
+    };
+    const onRejection = (e) => {
+      const entry = {
+        id: `${Date.now()}-${++contador}`,
+        content: `[${new Date().toLocaleTimeString()}] PROMISE REJECTED: ${e.reason?.message || e.reason}`,
+        color: '#dc2626',
+      };
+      setClientLogs(prev => [...prev.slice(-199), entry]);
+    };
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+
+    // Entrada inicial para que se vea algo aunque no haya logs aún
+    setClientLogs(prev => [...prev, {
+      id: `init-${Date.now()}`,
+      content: `[${new Date().toLocaleTimeString()}] INFO: Captura de consola activa. Aparecerá aquí todo lo que se imprima en la consola del navegador.`,
+      color: '#38bdf8',
+    }]);
+
+    return () => {
+      Object.entries(originales).forEach(([metodo, fn]) => { console[metodo] = fn; });
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -224,14 +279,15 @@ export default function AdminPanelScreen() {
 
           {/* Consola de Logs (Light) */}
           <div ref={logScrollRef} style={{
-            flex: 1, overflowY: 'auto', padding: '25px', fontFamily: '"Fira Code", monospace', fontSize: '13px',
+            flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '25px', fontFamily: '"Fira Code", monospace', fontSize: '13px',
             background: 'transparent', color: 'var(--text-dark)', lineHeight: '1.8'
           }}>
             <div style={{ background: 'white', borderRadius: '20px', padding: '20px', border: '1px solid rgba(155, 108, 152, 0.08)', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
               {(logTab === 'rass' ? serverLogs : clientLogs).map((log) => (
-                <div key={log.id} style={{ 
-                  color: log.color === '#94a3b8' ? '#64748b' : (log.color === '#f8fafc' ? '#334155' : log.color), 
-                  marginBottom: '6px', animation: 'fadeIn 0.2s ease', borderBottom: '1px solid #f8fafc', paddingBottom: '4px'
+                <div key={log.id} style={{
+                  color: log.color === '#94a3b8' ? '#64748b' : (log.color === '#f8fafc' ? '#334155' : log.color),
+                  marginBottom: '6px', animation: 'fadeIn 0.2s ease', borderBottom: '1px solid #f8fafc', paddingBottom: '4px',
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere'
                 }}>
                   {log.content}
                 </div>
