@@ -815,6 +815,7 @@ class BanearBody(BaseModel):
     motivos: List[str] = []
     motivo_personalizado: Optional[str] = ""
     duracion_dias: Optional[int] = None
+    id_reporte: Optional[UUID] = None  # si viene, también elimina la publicación de ese reporte
 
 
 @router.post("/admin/banear/{id_usuaria}")
@@ -849,6 +850,28 @@ def admin_banear(
         id_admin=current_user.id_usuaria,
     )
     db.add(bane)
+
+    # Si viene un id_reporte, eliminar la publicación reportada y crear aviso
+    if body.id_reporte:
+        r = db.query(ReporteForo).filter(ReporteForo.id == body.id_reporte).first()
+        if r and r.id_publicacion:
+            pub = db.query(PublicacionForo).filter(PublicacionForo.id == r.id_publicacion).first()
+            if pub:
+                aviso = EliminacionAvisoForo(
+                    id_autor=pub.id_usuaria,
+                    contenido_original=pub.contenido or "",
+                    tenia_imagen=pub.imagen is not None,
+                    motivos=json.dumps(motivos_filtrados),
+                    motivo_personalizado=(body.motivo_personalizado or "").strip() or None,
+                )
+                db.add(aviso)
+                db.delete(pub)
+            # Marcar reportes pendientes de esta publicación como eliminados
+            db.query(ReporteForo).filter(
+                ReporteForo.id_publicacion == r.id_publicacion,
+                ReporteForo.estado == "pendiente"
+            ).update({"estado": "eliminado", "id_admin": current_user.id_usuaria, "resolved_at": datetime.utcnow()})
+
     db.commit()
     return {"ok": True, "permanente": fecha_fin is None, "fecha_fin": _iso_utc(fecha_fin)}
 
@@ -866,6 +889,28 @@ def admin_desbanear(id_usuaria: UUID, db: Session = Depends(get_db), current_use
 @router.get("/admin/motivos")
 def catalogo_motivos(current_user: Usuaria = Depends(get_current_user)):
     return [{"clave": k, "etiqueta": v} for k, v in MOTIVOS_VALIDOS.items()]
+
+
+@router.get("/mis/bane-activo")
+def mi_bane_activo(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Devuelve info del bane activo (independiente de si está visto o no), o null."""
+    b = _bane_activo(db, current_user.id_usuaria)
+    if not b:
+        return None
+    try:
+        motivos = json.loads(b.motivos or "[]")
+    except Exception:
+        motivos = []
+    return {
+        "tipo": "bane",
+        "id": str(b.id),
+        "activo": True,
+        "permanente": b.fecha_fin is None,
+        "fecha_fin": _iso_utc(b.fecha_fin),
+        "motivos": [{"clave": m, "etiqueta": MOTIVOS_VALIDOS.get(m, m)} for m in motivos],
+        "motivo_personalizado": b.motivo_personalizado or "",
+        "created_at": _iso_utc(b.created_at),
+    }
 
 
 @router.get("/mis/avisos")

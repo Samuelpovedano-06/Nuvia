@@ -74,9 +74,9 @@ export default function AdminReportesScreen() {
         const idAutor = activo.publicacion?.id_autor;
         if (!idAutor) throw new Error('Sin id de autor');
         const dur = permanente ? null : (Number(duracionDias) || 0);
-        await ApiService.adminBanear(idAutor, motivosArr, textoPersonalizado.trim(), dur);
-        // Marcar reporte como resuelto-eliminado opcionalmente al banear? mejor anular:
-        mostrarToast('Usuaria baneada');
+        // Pasamos id_reporte para que el backend también elimine la publicación
+        await ApiService.adminBanear(idAutor, motivosArr, textoPersonalizado.trim(), dur, activo.id);
+        mostrarToast('Usuaria baneada y publicación eliminada');
       }
       setAccion(null);
       setActivo(null);

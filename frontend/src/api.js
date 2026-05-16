@@ -605,14 +605,20 @@ export const ApiService = {
     if (!res.ok) throw new Error(data.detail || 'Error');
     return data;
   },
-  adminBanear: async (idUsuaria, motivos, motivo_personalizado = '', duracion_dias = null) => {
+  adminBanear: async (idUsuaria, motivos, motivo_personalizado = '', duracion_dias = null, id_reporte = null) => {
     const res = await fetch(`${baseUrl}/foro/admin/banear/${idUsuaria}`, {
       method: 'POST', headers: getHeaders(),
-      body: JSON.stringify({ motivos, motivo_personalizado, duracion_dias })
+      body: JSON.stringify({ motivos, motivo_personalizado, duracion_dias, id_reporte })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Error');
     return data;
+  },
+
+  getMiBaneActivo: async () => {
+    const res = await fetch(`${baseUrl}/foro/mis/bane-activo`, { headers: getHeaders() });
+    if (!res.ok) return null;
+    return await res.json();
   },
   adminDesbanear: async (idUsuaria) => {
     const res = await fetch(`${baseUrl}/foro/admin/desbanear/${idUsuaria}`, { method: 'POST', headers: getHeaders() });

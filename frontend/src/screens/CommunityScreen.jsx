@@ -271,14 +271,22 @@ export default function CommunityScreen() {
     return () => clearInterval(t);
   }, [user?.rol]);
 
-  // Avisos pendientes (eliminaciones / banes) al entrar al foro
+  // Avisos pendientes (eliminaciones / banes) en tiempo real — polling cada 5s
   useEffect(() => {
-    (async () => {
+    const fetchAvisos = async () => {
       try {
         const list = await ApiService.getMisAvisosForo();
-        if (list.length > 0) setAvisos(list);
+        if (list.length === 0) return;
+        setAvisos(prev => {
+          const keys = new Set(prev.map(a => `${a.tipo}-${a.id}`));
+          const nuevos = list.filter(a => !keys.has(`${a.tipo}-${a.id}`));
+          return nuevos.length ? [...prev, ...nuevos] : prev;
+        });
       } catch {}
-    })();
+    };
+    fetchAvisos();
+    const t = setInterval(fetchAvisos, 5000);
+    return () => clearInterval(t);
   }, []);
 
   const cerrarAviso = async (av) => {
@@ -362,6 +370,8 @@ export default function CommunityScreen() {
       updatePost({ id: activePost.id, comments_count: (activePost.comments_count || 0) + 1 });
       setActivePost(p => ({ ...p, comments_count: (p.comments_count || 0) + 1 }));
       setTimeout(() => replyEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    } catch (err) {
+      await mostrarBaneSiAplica(err);
     } finally {
       setLoadingReply(false);
     }
@@ -399,6 +409,28 @@ export default function CommunityScreen() {
     }
   };
 
+  // Si el error indica bane, descarga la info del bane y la muestra como aviso
+  const mostrarBaneSiAplica = async (err) => {
+    const msg = String(err?.message || '');
+    if (msg.toLowerCase().includes('baneada')) {
+      try {
+        const bane = await ApiService.getMiBaneActivo();
+        if (bane) {
+          setShowCreate(false);
+          // Mostramos el bane inmediatamente (al inicio de la cola)
+          setAvisos(prev => {
+            const k = `bane-${bane.id}`;
+            if (prev.find(a => `${a.tipo}-${a.id}` === k)) return prev;
+            return [bane, ...prev];
+          });
+          return true;
+        }
+      } catch {}
+    }
+    mostrarToast(msg || 'Error', 'error');
+    return false;
+  };
+
   const handlePublish = async () => {
     if (!newContent.trim() && !newImage) return;
     setPublishing(true);
@@ -409,7 +441,7 @@ export default function CommunityScreen() {
       setNewContent('');
       setNewImage(null);
     } catch (err) {
-      alert(err.message);
+      await mostrarBaneSiAplica(err);
     } finally {
       setPublishing(false);
     }
