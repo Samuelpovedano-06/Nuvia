@@ -536,13 +536,14 @@ export default function CommunityScreen() {
             onClick={abrirBloqueados}
             title="Ver bloqueadas"
             style={{
-              background: 'white', border: '1.5px solid #eee',
-              borderRadius: '14px', padding: '8px 10px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', color: '#666',
+              background: 'white', border: '1.5px solid var(--primary)',
+              borderRadius: '14px', padding: '8px 12px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px',
+              color: 'var(--primary)', fontWeight: '700', fontSize: '13px',
               marginTop: '2px'
             }}
           >
-            <Ban size={16} />
+            <Ban size={16} /> Bloqueadas
           </button>
           {user?.rol === 'admin' && (
             <button
@@ -664,55 +665,51 @@ export default function CommunityScreen() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
             {/* Post full */}
             <div style={{ marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <AvatarRow seed={activePost.avatar_seed} time={activePost.created_at} />
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  {!activePost.es_mia && (
-                    <button onClick={e => handleSeguir(activePost.id_autor, e)} style={{
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      padding: '6px 12px', borderRadius: '12px', border: '1.5px solid var(--primary)',
-                      background: activePost.es_seguido ? 'var(--primary)' : 'transparent',
-                      color: activePost.es_seguido ? 'white' : 'var(--primary)',
-                      fontSize: '12px', fontWeight: '700', cursor: 'pointer'
-                    }}>
-                      {activePost.es_seguido ? <><UserCheck size={12} /> Siguiendo</> : <><UserPlus size={12} /> Seguir</>}
-                    </button>
-                  )}
-                  {!activePost.es_mia && (
-                    <>
-                      <button
-                        onClick={() => setReportPost(activePost)}
-                        title="Reportar publicación"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '4px',
-                          padding: '6px 10px', borderRadius: '12px', border: '1.5px solid #F59E0B',
-                          background: 'transparent', color: '#D97706',
-                          fontSize: '12px', fontWeight: '700', cursor: 'pointer'
-                        }}
-                      >
-                        <Flag size={12} /> Reportar
-                      </button>
-                      <button
-                        onClick={() => setConfirmBlock({ idAutor: activePost.id_autor })}
-                        title="Bloquear a esta usuaria"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '4px',
-                          padding: '6px 10px', borderRadius: '12px', border: '1.5px solid #ef4444',
-                          background: 'transparent', color: '#ef4444',
-                          fontSize: '12px', fontWeight: '700', cursor: 'pointer'
-                        }}
-                      >
-                        <Ban size={12} /> Bloquear
-                      </button>
-                    </>
-                  )}
-                  {(activePost.es_mia || user?.rol === 'admin') && (
-                    <button onClick={e => pedirConfirmDelete('post', activePost.id, e)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}>
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
+                {(activePost.es_mia || user?.rol === 'admin') && (
+                  <button onClick={e => pedirConfirmDelete('post', activePost.id, e)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
+              {!activePost.es_mia && (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  <button onClick={e => handleSeguir(activePost.id_autor, e)} style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '6px 12px', borderRadius: '12px', border: '1.5px solid var(--primary)',
+                    background: activePost.es_seguido ? 'var(--primary)' : 'transparent',
+                    color: activePost.es_seguido ? 'white' : 'var(--primary)',
+                    fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                  }}>
+                    {activePost.es_seguido ? <><UserCheck size={12} /> Siguiendo</> : <><UserPlus size={12} /> Seguir</>}
+                  </button>
+                  <button
+                    onClick={() => setReportPost(activePost)}
+                    title="Reportar publicación"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      padding: '6px 12px', borderRadius: '12px', border: '1.5px solid #F59E0B',
+                      background: 'transparent', color: '#D97706',
+                      fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                    }}
+                  >
+                    <Flag size={12} /> Reportar
+                  </button>
+                  <button
+                    onClick={() => setConfirmBlock({ idAutor: activePost.id_autor })}
+                    title="Bloquear a esta usuaria"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      padding: '6px 12px', borderRadius: '12px', border: '1.5px solid #ef4444',
+                      background: 'transparent', color: '#ef4444',
+                      fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                    }}
+                  >
+                    <Ban size={12} /> Bloquear
+                  </button>
+                </div>
+              )}
               {activePost.contenido && (
                 <p style={{ margin: '0 0 12px', fontSize: '15px', lineHeight: '1.6', color: 'var(--text-dark)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{activePost.contenido}</p>
               )}
@@ -1108,9 +1105,6 @@ export default function CommunityScreen() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dark)' }}>Anónima</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {b.avatar_seed}
-                        </div>
                       </div>
                       <button
                         onClick={() => desbloquearUsuaria(b.id_autor)}
