@@ -6,6 +6,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const getMe = async () => {
     const token = localStorage.getItem('token');
@@ -19,6 +20,10 @@ export const AuthProvider = ({ children }) => {
       const data = await ApiService.getMe();
       setUser(data);
     } catch (e) {
+      // El token existía pero el servidor lo rechazó → la sesión caducó
+      if (localStorage.getItem('token')) {
+        setSessionExpired(true);
+      }
       setUser(null);
       ApiService.logout();
     } finally {
@@ -26,12 +31,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const clearSessionExpired = () => setSessionExpired(false);
+
   useEffect(() => {
     getMe();
   }, []);
 
   const login = async (email, password, role) => {
     await ApiService.login(email, password, role);
+    setSessionExpired(false);
     await getMe();
   };
 
@@ -46,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, getMe }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, getMe, sessionExpired, clearSessionExpired }}>
       {children}
     </AuthContext.Provider>
   );

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Mail, Lock, X, KeyRound, Check, Eye, EyeOff, User, Heart } from 'lucide-react';
 
 export default function LoginScreen() {
-  const { login } = useContext(AuthContext);
+  const { login, sessionExpired, clearSessionExpired } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -85,6 +85,24 @@ export default function LoginScreen() {
       </div>
 
       <div style={{ maxWidth: '400px', width: '100%', margin: '0 auto' }}>
+        {sessionExpired && (
+          <div style={{
+            background: '#FFF1F2', color: '#9F1239', border: '1.5px solid #FF9A9E',
+            borderRadius: '14px', padding: '12px 14px', marginBottom: '14px',
+            display: 'flex', alignItems: 'flex-start', gap: '10px', position: 'relative'
+          }}>
+            <KeyRound size={18} style={{ marginTop: '2px', flexShrink: 0, color: '#F6416C' }} />
+            <div style={{ flex: 1, fontSize: '13px', lineHeight: 1.4 }}>
+              <strong>Tu sesión ha expirado.</strong> Por seguridad debes volver a iniciar sesión.
+            </div>
+            <button
+              onClick={clearSessionExpired}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9F1239', padding: 0 }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
         <div className="role-selector-container">
           <div className={`role-marker ${role}`}></div>
           <div 
