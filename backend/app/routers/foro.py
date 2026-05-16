@@ -52,19 +52,71 @@ router = APIRouter(prefix="/foro", tags=["Foro"])
 
 REACCIONES_VALIDAS = {'❤️', '🔥', '💪', '🤗', '😢'}
 
+# Cada entrada: [(palabra_clave, peso)]. Pesos altos = palabra muy específica.
 CATEGORIA_KEYWORDS = {
-    "menstruacion": ["regla", "periodo", "menstruac", "sangrado", "menstrual", "compresa", "tampon", "copa menstrual", "dismenorrea", "manchad"],
-    "sexo_placer": ["sexo", "masturbac", "orgasmo", "placer", "libido", "deseo sexual", "sexual", "intimidad", "vibrador", "juguete", "clitor", "vagin", "lubric"],
-    "embarazo": ["embaraz", "gestac", "trimestre", "feto", "ecograf", "parto", "cesarea", "lactanc", "matern", "preconcep", "test de embarazo", "prueba de embarazo"],
-    "anticoncepcion": ["anticoncep", "pildora", "condon", "preservativo", "diu", "implant", "metodo barrera", "mac", "ligadura", "vasectom", "parche anticonc", "anillo vaginal"],
-    "fertilidad": ["fertilidad", "ovulac", "concebir", "concepc", "fertil", "esteril", "tratamiento de fert", "fiv ", "inseminac"],
-    "salud_mental": ["ansiedad", "depres", "estres", "terapia", "psicol", "psiquia", "animo", "tristeza", "panic", "mental", "autoestima", "burnout", "trauma"],
-    "relaciones": ["pareja", "novio", "novia", "relacion", "ruptura", "celos", "infidel", "discusion", "matrimonio", "boda", "ex ", "amor"],
-    "nutricion": ["comida", "dieta", "alimentac", "comer", "nutric", "antojo", "ayuno", "vegan", "vegetar", "calor", "azucar", "proteina"],
-    "ejercicio": ["ejercicio", "deporte", "gimnasio", "gym", "correr", "yoga", "pilates", "entrenam", "rutina", "cardio", "pesas", "caminar"],
-    "adolescencia": ["adolescen", "primera regla", "menarquia", "primera vez", "pubertad", "instituto", "secundaria", "joven"],
-    "menopausia": ["menopaus", "climater", "sofoco", "perimenop", "postmenop"],
-    "salud": ["doctor", "medico", "doctora", "ginecol", "hospital", "clinica", "analitica", "analisis", "infeccion", "candidiasis", "cistitis", "ovario poliquist", "endometriosis", "mioma", "quiste", "dolor", "sintoma", "enfermedad"],
+    "menstruacion": [
+        ("regla", 3), ("menstruac", 3), ("menstrual", 3), ("dismenorrea", 4),
+        ("sangrado", 2), ("compresa", 3), ("tampon", 3), ("copa menstrual", 4),
+        ("manchad", 2), ("periodo", 2),
+    ],
+    "sexo_placer": [
+        ("masturbac", 4), ("orgasmo", 4), ("libido", 4), ("deseo sexual", 4),
+        ("sexual", 2), ("sexo", 3), ("placer", 2), ("intimidad", 2),
+        ("vibrador", 4), ("juguete sexual", 4), ("clitor", 4), ("vagin", 2),
+        ("lubricac", 3), ("erotic", 3), ("preliminares", 3),
+    ],
+    "embarazo": [
+        ("embaraz", 4), ("gestac", 4), ("trimestre", 3), ("feto", 4),
+        ("ecograf", 3), ("parto", 3), ("cesarea", 4), ("lactanc", 3),
+        ("matern", 2), ("preconcep", 3), ("test de embarazo", 4),
+        ("prueba de embarazo", 4), ("estoy embarazada", 5), ("voy a ser madre", 4),
+    ],
+    "anticoncepcion": [
+        ("anticoncep", 4), ("pildora del dia", 4), ("pildora anticoncep", 4),
+        ("condon", 4), ("preservativo", 4), ("diu ", 4), ("implant", 3),
+        ("metodo barrera", 4), ("ligadura", 4), ("vasectom", 4),
+        ("parche anticonc", 4), ("anillo vaginal", 4),
+    ],
+    "fertilidad": [
+        ("fertilidad", 4), ("ovulac", 4), ("concebir", 4), ("concepc", 3),
+        ("esteril", 3), ("tratamiento de fert", 4), ("fiv ", 4), ("inseminac", 4),
+        ("ventana fertil", 4),
+    ],
+    "salud_mental": [
+        ("ansiedad", 4), ("depres", 4), ("estres", 3), ("terapia", 3),
+        ("psicol", 3), ("psiquia", 4), ("tristeza", 3), ("panic", 3),
+        ("salud mental", 4), ("autoestima", 3), ("burnout", 4), ("trauma", 3),
+    ],
+    "relaciones": [
+        ("mi pareja", 3), ("mi novio", 3), ("mi novia", 3), ("ruptura", 3),
+        ("celos", 3), ("infidel", 4), ("discusion con", 3), ("matrimonio", 3),
+        ("boda", 2), ("mi ex ", 3), ("nuestra relacion", 3),
+    ],
+    "nutricion": [
+        ("dieta", 3), ("alimentac", 3), ("nutric", 3), ("antojo", 2),
+        ("ayuno", 3), ("vegan", 3), ("vegetar", 3), ("azucar", 2),
+        ("proteina", 2),
+    ],
+    "ejercicio": [
+        ("ejercicio", 3), ("deporte", 3), ("gimnasio", 3), ("gym ", 3),
+        ("correr ", 2), ("yoga", 3), ("pilates", 3), ("entrenam", 3),
+        ("cardio", 3), ("pesas", 2), ("caminar", 2),
+    ],
+    "adolescencia": [
+        ("adolescen", 4), ("primera regla", 5), ("menarquia", 5),
+        ("primera vez", 3), ("pubertad", 4), ("instituto", 2),
+    ],
+    "menopausia": [
+        ("menopaus", 5), ("climater", 4), ("sofoco", 4),
+        ("perimenop", 5), ("postmenop", 5),
+    ],
+    "salud": [
+        ("doctora", 3), ("medico", 2), ("ginecol", 4), ("hospital", 2),
+        ("clinica", 2), ("analitica", 3), ("analisis de sangre", 3),
+        ("infeccion", 3), ("candidiasis", 4), ("cistitis", 4),
+        ("ovario poliquist", 5), ("endometriosis", 5), ("mioma", 4),
+        ("quiste", 3), ("dolor de", 2), ("sintoma", 2), ("enfermedad", 2),
+    ],
 }
 
 
@@ -72,20 +124,31 @@ def _normalize(text: str) -> str:
     t = text.lower()
     t = unicodedata.normalize("NFD", t)
     t = "".join(c for c in t if unicodedata.category(c) != "Mn")
-    return t
+    # Asegurar espacios alrededor de la puntuación para mejores matches
+    t = re.sub(r"[^\w\s]", " ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return f" {t} "  # padding para que keywords con espacios funcionen
 
 
 def clasificar_categoria(contenido: str) -> str:
-    """Devuelve la categoría con más coincidencias de keywords. 'general' si ninguna."""
+    """Devuelve la categoría con mayor score ponderado. 'general' si todas a 0."""
     texto = _normalize(contenido)
-    mejor_cat = "general"
-    mejor_score = 0
+    scores = scores_categorias(contenido)
+    mejor_cat = max(scores, key=scores.get)
+    return mejor_cat if scores[mejor_cat] > 0 else "general"
+
+
+def scores_categorias(contenido: str) -> dict:
+    """Devuelve {categoria: score} para depuración."""
+    texto = _normalize(contenido)
+    out = {}
     for cat, kws in CATEGORIA_KEYWORDS.items():
-        score = sum(len(re.findall(re.escape(kw), texto)) for kw in kws)
-        if score > mejor_score:
-            mejor_score = score
-            mejor_cat = cat
-    return mejor_cat
+        total = 0
+        for kw, peso in kws:
+            ocurrencias = len(re.findall(re.escape(kw), texto))
+            total += ocurrencias * peso
+        out[cat] = total
+    return out
 
 
 def _build_posts(posts, db, current_user_id):
@@ -466,3 +529,33 @@ def obtener_imagen_publicacion(id: UUID, db: Session = Depends(get_db), current_
     if not p or not p.imagen:
         raise HTTPException(status_code=404, detail="Imagen no encontrada")
     return Response(content=bytes(p.imagen), media_type=p.imagen_mime or "image/jpeg")
+
+
+@router.post("/clasificar-test")
+def clasificar_test(
+    body: dict,
+    _admin: Usuaria = Depends(get_current_user)
+):
+    """Diagnóstico: dado un texto, muestra qué categoría se le asigna y los scores parciales."""
+    if (_admin.rol or "") != "admin":
+        raise HTTPException(status_code=403, detail="Solo admin")
+    texto = (body.get("texto") or "").strip()
+    if not texto:
+        raise HTTPException(status_code=400, detail="Falta texto")
+    keyword_cat = clasificar_categoria(texto)
+    scores = scores_categorias(texto)
+    resultado_ia = None
+    if keyword_cat == "general" and len(texto) > 8:
+        try:
+            from app.utils.gemini import clasificar_texto_foro
+            categorias_validas = list(CATEGORIA_KEYWORDS.keys()) + ["general"]
+            resultado_ia = clasificar_texto_foro(texto, categorias_validas)
+        except Exception as e:
+            resultado_ia = f"error: {e}"
+    return {
+        "texto": texto[:200],
+        "keyword_cat": keyword_cat,
+        "scores": scores,
+        "fallback_ia": resultado_ia,
+        "final": resultado_ia if resultado_ia and keyword_cat == "general" else keyword_cat,
+    }
