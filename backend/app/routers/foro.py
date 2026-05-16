@@ -612,7 +612,7 @@ def toggle_bloqueo(id_usuaria: UUID, db: Session = Depends(get_db), current_user
     return {"bloqueado": bloqueado}
 
 
-@router.get("/bloqueados")
+@router.get("/mis/bloqueados")
 def listar_bloqueados(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
     """Lista los id_autor que la usuaria actual tiene bloqueados."""
     rows = db.query(BloqueoForo).filter(BloqueoForo.id_bloqueador == current_user.id_usuaria).all()
@@ -863,12 +863,12 @@ def admin_desbanear(id_usuaria: UUID, db: Session = Depends(get_db), current_use
     return {"ok": True}
 
 
-@router.get("/motivos")
+@router.get("/admin/motivos")
 def catalogo_motivos(current_user: Usuaria = Depends(get_current_user)):
     return [{"clave": k, "etiqueta": v} for k, v in MOTIVOS_VALIDOS.items()]
 
 
-@router.get("/mis-avisos")
+@router.get("/mis/avisos")
 def mis_avisos(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
     elims = db.query(EliminacionAvisoForo).filter(
         EliminacionAvisoForo.id_autor == current_user.id_usuaria,
@@ -918,7 +918,7 @@ class MarcarVistoBody(BaseModel):
     id: UUID
 
 
-@router.post("/mis-avisos/marcar-visto")
+@router.post("/mis/avisos/marcar-visto")
 def marcar_aviso_visto(
     body: MarcarVistoBody,
     db: Session = Depends(get_db),

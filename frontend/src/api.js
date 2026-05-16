@@ -559,7 +559,7 @@ export const ApiService = {
   },
 
   getBloqueadosForo: async () => {
-    const res = await fetch(`${baseUrl}/foro/bloqueados`, { headers: getHeaders() });
+    const res = await fetch(`${baseUrl}/foro/mis/bloqueados`, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
@@ -621,17 +621,17 @@ export const ApiService = {
     return data;
   },
   getMotivosForo: async () => {
-    const res = await fetch(`${baseUrl}/foro/motivos`, { headers: getHeaders() });
+    const res = await fetch(`${baseUrl}/foro/admin/motivos`, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
   getMisAvisosForo: async () => {
-    const res = await fetch(`${baseUrl}/foro/mis-avisos`, { headers: getHeaders() });
+    const res = await fetch(`${baseUrl}/foro/mis/avisos`, { headers: getHeaders() });
     if (!res.ok) return [];
     return await res.json();
   },
   marcarAvisoVistoForo: async (tipo, id) => {
-    await fetch(`${baseUrl}/foro/mis-avisos/marcar-visto`, {
+    await fetch(`${baseUrl}/foro/mis/avisos/marcar-visto`, {
       method: 'POST', headers: getHeaders(),
       body: JSON.stringify({ tipo, id })
     });
