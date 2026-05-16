@@ -271,19 +271,30 @@ def _query_limpia(titulo: str) -> str:
 
 def buscar_imagen_validada(titulo: str, resumen: str = "", prompt_extra: str = "") -> Optional[tuple]:
     """
-    Busca en Unsplash con las palabras clave del TÍTULO del consejo (o prompt manual)
-    y devuelve la primera foto encontrada.
+    Intenta encontrar una foto en Unsplash con fallbacks progresivos:
+      1) Query limpia del título (o prompt manual)
+      2) Si 0 resultados → cada palabra clave individualmente
+      3) Si nada → genérico "woman wellness"
     """
     if prompt_extra and prompt_extra.strip():
-        query = prompt_extra.strip()
+        queries = [prompt_extra.strip()]
     else:
-        query = _query_limpia(titulo)
-    print(f"[Unsplash] Query: '{query}' para «{titulo}»")
-    candidatos = _buscar_unsplash(query, n=1)
-    if not candidatos:
-        print(f"[Unsplash] Sin resultados para '{query}'")
-        return None
-    elegida = candidatos[0]
-    print(f"[Unsplash] ✓ Imagen elegida para '{titulo}': '{(elegida['desc'] or '')[:80]}'")
-    _trigger_download(elegida["url_descarga"])
-    return _descargar(elegida["url_regular"])
+        limpia = _query_limpia(titulo)
+        queries = [limpia]
+        # Fallback: cada palabra individual (filtros de Unsplash pueden rechazar combinaciones)
+        palabras = [p for p in limpia.split() if len(p) > 4]
+        queries.extend(palabras)
+        # Último recurso: una query genérica que siempre devuelve algo
+        queries.append("woman wellness")
+
+    for query in queries:
+        print(f"[Unsplash] Probando query: '{query}' para «{titulo}»")
+        candidatos = _buscar_unsplash(query, n=1)
+        if candidatos:
+            elegida = candidatos[0]
+            print(f"[Unsplash] ✓ Imagen elegida ({query}) para '{titulo}': '{(elegida['desc'] or '')[:80]}'")
+            _trigger_download(elegida["url_descarga"])
+            return _descargar(elegida["url_regular"])
+
+    print(f"[Unsplash] Ningún fallback dio resultado para '{titulo}'")
+    return None
