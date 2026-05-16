@@ -526,7 +526,7 @@ export const ApiService = {
     if (!res.ok) throw new Error(data.detail || 'Error');
     return data;
   },
-  imagenArticuloConsejoUrl: (id) => `${baseUrl}/consejos/articulos/${id}/imagen`,
+  imagenArticuloConsejoUrl: (id, version) => `${baseUrl}/consejos/articulos/${id}/imagen${version ? `?v=${version}` : ''}`,
 
   seedConsejosDemo: async ({ generar_imagenes = false, sobreescribir = false } = {}) => {
     const params = new URLSearchParams();

@@ -69,17 +69,49 @@ TRADUCCIONES = {
 }
 
 
-def _query_para(titulo: str, resumen: str = "") -> str:
-    """Convierte el título a una query óptima en inglés para Unsplash."""
+def _query_keywords(titulo: str, resumen: str = "") -> str:
+    """Fallback determinista: si Gemini no responde, buscamos por palabra clave conocida."""
     base = _quitar_acentos((titulo + " " + resumen).lower())
     base = re.sub(r"[^\w\s]", " ", base)
     base = re.sub(r"\s+", " ", base).strip()
-    # Buscar la primera coincidencia en el diccionario de traducciones
     for clave, traduccion in TRADUCCIONES.items():
         if clave in base:
             return traduccion
-    # Fallback genérico para temas de salud femenina
     return "woman wellness soft pastel"
+
+
+def _query_desde_titulo_con_gemini(titulo: str, resumen: str = "") -> Optional[str]:
+    """Pide a Gemini que genere 2-4 palabras en inglés para buscar en Unsplash."""
+    try:
+        from app.utils.gemini import _get_key as gem_key, _BASE, TEXTO_MODEL
+        if not gem_key():
+            return None
+        prompt = (
+            f"Eres asistente de búsqueda de imágenes para una app de salud femenina. "
+            f"Dado el siguiente título de un artículo en español, devuelve 2 a 4 palabras EN INGLÉS "
+            f"que sirvan como query para Unsplash y traigan una foto representativa del tema. "
+            f"NO incluyas comillas, signos de puntuación ni el texto original. Solo las palabras inglesas separadas por espacios.\n\n"
+            f"Título: {titulo}\n"
+            f"Resumen: {resumen[:300]}"
+        )
+        url = f"{_BASE}/{TEXTO_MODEL}:generateContent?key={gem_key()}"
+        body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}]}
+        r = requests.post(url, json=body, timeout=20)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        for cand in data.get("candidates", []):
+            for p in cand.get("content", {}).get("parts", []):
+                txt = (p.get("text") or "").strip()
+                # Sanitiza: quita comillas, puntos, saltos
+                txt = re.sub(r"[\"'`.,!?:\n]", " ", txt)
+                txt = re.sub(r"\s+", " ", txt).strip().lower()
+                if 2 <= len(txt.split()) <= 6:
+                    return txt
+        return None
+    except Exception as e:
+        print(f"[Unsplash+Gemini] query falló: {e}")
+        return None
 
 
 def _buscar_unsplash(query: str, n: int = MAX_CANDIDATOS):
@@ -115,7 +147,10 @@ def _buscar_unsplash(query: str, n: int = MAX_CANDIDATOS):
 
 
 def _evaluar_con_gemini(titulo: str, resumen: str, candidatos: list) -> int:
-    """Pregunta a Gemini cuál de las descripciones encaja mejor con el tema. Devuelve índice 0..n-1."""
+    """Pregunta a Gemini cuál encaja BIEN con el tema. Devuelve índice 0..n-1, o -1 si ninguna encaja.
+
+    Estricto: solo elige si hay relación clara. No vale "la menos mala".
+    """
     if not candidatos:
         return -1
     try:
@@ -124,9 +159,14 @@ def _evaluar_con_gemini(titulo: str, resumen: str, candidatos: list) -> int:
             return 0  # Sin Gemini → primera
         opciones = "\n".join(f"{i+1}. {c['desc'] or '(sin descripción)'}" for i, c in enumerate(candidatos))
         prompt = (
-            f"Tema del artículo: «{titulo}». Resumen: «{resumen}».\n"
-            f"Te paso descripciones de fotos candidatas. Elige el NÚMERO de la que mejor ilustra el tema "
-            f"para una app de salud femenina (estilo Flo). Si NINGUNA encaja, responde 0. Responde SOLO con el número.\n\n"
+            f"Eres curadora de imágenes para una app de salud femenina (estilo Flo).\n"
+            f"Tema del artículo: «{titulo}»\n"
+            f"Resumen: «{resumen[:300]}»\n\n"
+            f"Te paso descripciones (en inglés) de fotos candidatas de Unsplash. "
+            f"SÉ EXIGENTE: elige solo si la foto está claramente relacionada con el tema concreto "
+            f"(no vale algo genérico tipo 'flores' si el tema es anatomía, ni 'mujer mirando' si el tema "
+            f"es nutrición). Si NINGUNA encaja con suficiente claridad, responde 0. "
+            f"Responde SOLO con el número (0 si ninguna, o 1-{len(candidatos)} si una encaja bien).\n\n"
             f"{opciones}"
         )
         url = f"{_BASE}/{TEXTO_MODEL}:generateContent?key={gem_key()}"
@@ -178,27 +218,16 @@ def _trigger_download(url_descarga: str):
 
 def buscar_imagen_validada(titulo: str, resumen: str = "", prompt_extra: str = "") -> Optional[tuple]:
     """
-    Devuelve (mime, bytes) de la foto más apropiada para el consejo, o None si nada encaja.
-
-    1) Construye una query óptima a partir del título (con traducción a inglés).
-    2) Busca candidatos en Unsplash.
-    3) Pide a Gemini que evalúe cuál encaja mejor.
-    4) Descarga la elegida (y notifica a Unsplash por licencia).
+    Busca en Unsplash directamente con el TÍTULO del consejo (o prompt manual si se pasó)
+    y devuelve la primera foto encontrada.
     """
-    query = (prompt_extra.strip() or _query_para(titulo, resumen))
-    candidatos = _buscar_unsplash(query)
+    query = (prompt_extra.strip() if prompt_extra and prompt_extra.strip() else titulo.strip())
+    print(f"[Unsplash] Query: '{query}' para «{titulo}»")
+    candidatos = _buscar_unsplash(query, n=1)
     if not candidatos:
-        # Fallback: query genérica
-        candidatos = _buscar_unsplash("woman wellness soft pastel")
-        if not candidatos:
-            return None
-
-    idx = _evaluar_con_gemini(titulo, resumen, candidatos)
-    if idx < 0:
-        print(f"[Unsplash] Gemini dijo que ninguna encaja para '{titulo}'")
+        print(f"[Unsplash] Sin resultados para '{query}'")
         return None
-
-    elegida = candidatos[idx]
-    print(f"[Unsplash] Imagen elegida para '{titulo}': '{elegida['desc'][:80]}'")
+    elegida = candidatos[0]
+    print(f"[Unsplash] ✓ Imagen elegida para '{titulo}': '{(elegida['desc'] or '')[:80]}'")
     _trigger_download(elegida["url_descarga"])
     return _descargar(elegida["url_regular"])

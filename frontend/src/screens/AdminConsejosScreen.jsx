@@ -125,9 +125,9 @@ export default function AdminConsejosScreen() {
       {tab === 'clasificaciones' && <ClasificacionesTab key={`c${refreshKey}`} onEdit={c => setEditor({ tipo: 'clasif', data: c })} onNew={() => setEditor({ tipo: 'clasif', data: null })} />}
       {tab === 'etiquetas' && <EtiquetasTab key={`e${refreshKey}`} onEdit={e => setEditor({ tipo: 'etiqueta', data: e })} onNew={() => setEditor({ tipo: 'etiqueta', data: null })} />}
 
-      {editor?.tipo === 'articulo' && <ArticuloEditor data={editor.data} onClose={() => setEditor(null)} />}
-      {editor?.tipo === 'clasif' && <ClasificacionEditor data={editor.data} onClose={() => setEditor(null)} />}
-      {editor?.tipo === 'etiqueta' && <EtiquetaEditor data={editor.data} onClose={() => setEditor(null)} />}
+      {editor?.tipo === 'articulo' && <ArticuloEditor data={editor.data} onClose={() => { setEditor(null); setRefreshKey(k => k + 1); }} />}
+      {editor?.tipo === 'clasif' && <ClasificacionEditor data={editor.data} onClose={() => { setEditor(null); setRefreshKey(k => k + 1); }} />}
+      {editor?.tipo === 'etiqueta' && <EtiquetaEditor data={editor.data} onClose={() => { setEditor(null); setRefreshKey(k => k + 1); }} />}
     </div>
   );
 }
@@ -136,6 +136,7 @@ export default function AdminConsejosScreen() {
 function ArticulosTab({ onEdit, onNew }) {
   const [articulos, setArticulos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const imgVersion = React.useRef(Date.now()).current;  // buster constante en este montaje
 
   const cargar = async () => {
     setLoading(true);
@@ -165,7 +166,7 @@ function ArticulosTab({ onEdit, onNew }) {
           {articulos.map(a => (
             <div key={a.id} style={{ background: 'white', borderRadius: 12, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
               <div style={{ width: 60, height: 60, borderRadius: 10, background: '#f3e5f5', flexShrink: 0, overflow: 'hidden' }}>
-                {a.tiene_imagen ? <AuthImage src={ApiService.imagenArticuloConsejoUrl(a.id)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 28, textAlign: 'center', paddingTop: 12 }}>✨</div>}
+                {a.tiene_imagen ? <AuthImage src={ApiService.imagenArticuloConsejoUrl(a.id, imgVersion)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 28, textAlign: 'center', paddingTop: 12 }}>✨</div>}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.titulo}</div>
@@ -196,6 +197,7 @@ function ArticuloEditor({ data, onClose }) {
   const [guardando, setGuardando] = useState(false);
   const [generando, setGenerando] = useState(false);
   const [promptImg, setPromptImg] = useState('');
+  const [imgVersion, setImgVersion] = useState(() => Date.now()); // se bumpea tras regenerar
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -227,7 +229,9 @@ function ArticuloEditor({ data, onClose }) {
       setGenerando(true);
       try {
         await ApiService.regenerarImagenArticuloConsejo(data.id, promptImg || null);
-        setAviso({ titulo: 'Imagen generada', mensaje: 'La portada se ha regenerado correctamente.', tipo: 'ok', cerrar: onClose });
+        setImgPreview(null);              // descarta cualquier preview manual
+        setImgVersion(Date.now());        // fuerza recarga de la imagen sin cerrar el modal
+        setAviso({ titulo: 'Imagen generada', mensaje: 'La portada se ha regenerado correctamente.', tipo: 'ok' });
       } catch (e) {
         setAviso({ titulo: 'Error en Gemini', mensaje: 'No se pudo generar la imagen. Revise los logs del backend para más detalles.', tipo: 'error' });
       } finally { setGenerando(false); }
@@ -314,7 +318,7 @@ function ArticuloEditor({ data, onClose }) {
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: 8 }}>
             {imgPreview
               ? <img src={imgPreview} alt="" style={{ maxHeight: 140, borderRadius: 10, display: 'block' }} />
-              : <AuthImage src={ApiService.imagenArticuloConsejoUrl(data.id)} style={{ maxHeight: 140, borderRadius: 10, display: 'block' }} />}
+              : <AuthImage src={ApiService.imagenArticuloConsejoUrl(data.id, imgVersion)} style={{ maxHeight: 140, borderRadius: 10, display: 'block' }} />}
             {imgPreview && (
               <button onClick={() => setImgPreview(null)} style={{
                 position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: 'white',
