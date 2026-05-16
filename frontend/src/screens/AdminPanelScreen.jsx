@@ -28,10 +28,34 @@ export default function AdminPanelScreen() {
   ]);
 
   const logEndRef = React.useRef(null);
+  const logScrollRef = React.useRef(null);
+  const logsPrimeraCargaRef = React.useRef(true);
 
-  // Efecto para scroll automático
+  // Al abrir la consola o cambiar de pestaña, ir abajo del todo (forzar)
   useEffect(() => {
     if (showLogs) {
+      logsPrimeraCargaRef.current = true;
+    }
+  }, [showLogs, logTab]);
+
+  // Auto-scroll inteligente: solo si la usuaria está cerca del fondo
+  useEffect(() => {
+    if (!showLogs) return;
+    const cont = logScrollRef.current;
+    if (logsPrimeraCargaRef.current) {
+      logsPrimeraCargaRef.current = false;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (cont) cont.scrollTop = cont.scrollHeight;
+          else logEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        });
+      });
+      return;
+    }
+    if (!cont) return;
+    // Solo seguir bajando si estás a menos de 120px del fondo
+    const dist = cont.scrollHeight - cont.scrollTop - cont.clientHeight;
+    if (dist < 120) {
       logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [serverLogs, clientLogs, showLogs, logTab]);
@@ -199,9 +223,9 @@ export default function AdminPanelScreen() {
           </div>
 
           {/* Consola de Logs (Light) */}
-          <div style={{ 
-            flex: 1, overflowY: 'auto', padding: '25px', fontFamily: '"Fira Code", monospace', fontSize: '13px', 
-            background: 'transparent', color: 'var(--text-dark)', lineHeight: '1.8' 
+          <div ref={logScrollRef} style={{
+            flex: 1, overflowY: 'auto', padding: '25px', fontFamily: '"Fira Code", monospace', fontSize: '13px',
+            background: 'transparent', color: 'var(--text-dark)', lineHeight: '1.8'
           }}>
             <div style={{ background: 'white', borderRadius: '20px', padding: '20px', border: '1px solid rgba(155, 108, 152, 0.08)', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
               {(logTab === 'rass' ? serverLogs : clientLogs).map((log) => (
