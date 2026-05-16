@@ -74,31 +74,44 @@ export default function ConsejoDetailScreen() {
         />
       )}
 
-      <h1 style={{ margin: '0 0 8px', fontSize: '26px', fontWeight: '800', color: 'var(--text-dark)', lineHeight: '1.2' }}>
-        {articulo.titulo}
-      </h1>
+      <div style={{
+        background: 'white', borderRadius: '20px', padding: '22px 20px 26px',
+        boxShadow: '0 2px 12px rgba(176,91,181,0.08)'
+      }}>
+        <h1 style={{ margin: '0 0 12px', fontSize: '24px', fontWeight: '800', color: 'var(--text-dark)', lineHeight: '1.25' }}>
+          {articulo.titulo}
+        </h1>
 
-      {articulo.etiquetas?.length > 0 && (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
-          {articulo.etiquetas.map(et => (
-            <span key={et.id} style={{
-              background: 'rgba(176,91,181,0.08)', color: 'var(--primary)',
-              padding: '4px 10px', borderRadius: '14px', fontSize: '11px', fontWeight: '600'
-            }}>
-              {et.nombre}
-            </span>
-          ))}
+        {articulo.etiquetas?.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+            {articulo.etiquetas.map(et => (
+              <span key={et.id} style={{
+                background: 'rgba(176,91,181,0.08)', color: 'var(--primary)',
+                padding: '4px 10px', borderRadius: '14px', fontSize: '11px', fontWeight: '600'
+              }}>
+                {et.nombre}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {articulo.resumen && (
+          <p style={{
+            margin: '0 0 18px', fontSize: '14px', lineHeight: '1.5',
+            color: 'var(--primary)', fontStyle: 'italic',
+            background: 'rgba(176,91,181,0.06)', padding: '12px 14px',
+            borderRadius: '12px', borderLeft: '3px solid var(--primary)'
+          }}>
+            {articulo.resumen}
+          </p>
+        )}
+
+        <div style={{
+          fontSize: '15px', lineHeight: '1.7', color: 'var(--text-dark)',
+          whiteSpace: 'pre-wrap', overflowWrap: 'break-word'
+        }}>
+          {articulo.cuerpo}
         </div>
-      )}
-
-      {articulo.resumen && (
-        <p style={{ margin: '0 0 16px', fontSize: '15px', lineHeight: '1.5', color: 'var(--text-light)', fontStyle: 'italic' }}>
-          {articulo.resumen}
-        </p>
-      )}
-
-      <div style={{ fontSize: '15px', lineHeight: '1.7', color: 'var(--text-dark)', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}>
-        {articulo.cuerpo}
       </div>
     </div>
   );

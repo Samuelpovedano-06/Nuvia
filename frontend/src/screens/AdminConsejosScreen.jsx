@@ -337,10 +337,12 @@ function ArticuloEditor({ data, onClose }) {
       </div>
 
       {editing && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <input type="checkbox" checked={activo} onChange={e => setActivo(e.target.checked)} />
-          <span>Activo (visible para usuarios)</span>
-        </label>
+        <ToggleSwitch
+          checked={activo}
+          onChange={setActivo}
+          label={activo ? 'Activo' : 'Inactivo'}
+          hint={activo ? 'Visible para los usuarios' : 'Oculto para los usuarios'}
+        />
       )}
 
       <button onClick={handleGuardar} disabled={guardando} style={{ ...btnPrimario, width: '100%', justifyContent: 'center' }}>
@@ -422,10 +424,12 @@ function ClasificacionEditor({ data, onClose }) {
       <Label>Orden</Label>
       <input type="number" value={orden} onChange={e => setOrden(e.target.value)} style={inputCss} />
       {editing && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <input type="checkbox" checked={activa} onChange={e => setActiva(e.target.checked)} />
-          <span>Activa</span>
-        </label>
+        <ToggleSwitch
+          checked={activa}
+          onChange={setActiva}
+          label={activa ? 'Activa' : 'Inactiva'}
+          hint={activa ? 'Los usuarios pueden verla' : 'No aparece en el listado'}
+        />
       )}
       <button onClick={handleGuardar} style={{ ...btnPrimario, width: '100%', justifyContent: 'center' }}><Save size={16} /> Guardar</button>
     </Modal>
@@ -483,10 +487,12 @@ function EtiquetaEditor({ data, onClose }) {
       <Label>Nombre</Label>
       <input value={nombre} onChange={e => setNombre(e.target.value)} style={inputCss} />
       {editing && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <input type="checkbox" checked={activa} onChange={e => setActiva(e.target.checked)} />
-          <span>Activa</span>
-        </label>
+        <ToggleSwitch
+          checked={activa}
+          onChange={setActiva}
+          label={activa ? 'Activa' : 'Inactiva'}
+          hint={activa ? 'Disponible como filtro' : 'Oculta del filtro'}
+        />
       )}
       <button onClick={handleGuardar} style={{ ...btnPrimario, width: '100%', justifyContent: 'center' }}><Save size={16} /> Guardar</button>
     </Modal>
@@ -577,6 +583,37 @@ function ConfirmModal({ titulo, mensaje, onClose, opciones }) {
 }
 
 const Label = ({ children }) => <div style={{ fontSize: 12, color: 'var(--text-light)', fontWeight: 600, margin: '6px 0 4px' }}>{children}</div>;
+
+function ToggleSwitch({ checked, onChange, label, hint }) {
+  return (
+    <div
+      onClick={() => onChange(!checked)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        background: checked ? 'rgba(176,91,181,0.08)' : '#f5f5fa',
+        border: `1.5px solid ${checked ? 'var(--primary)' : '#eee'}`,
+        borderRadius: 14, padding: '12px 14px',
+        cursor: 'pointer', marginBottom: 14, userSelect: 'none', transition: 'all 0.2s'
+      }}
+    >
+      <div style={{
+        width: 42, height: 24, borderRadius: 14,
+        background: checked ? 'var(--primary)' : '#d1d5db',
+        position: 'relative', transition: 'background 0.2s', flexShrink: 0
+      }}>
+        <div style={{
+          width: 18, height: 18, borderRadius: '50%', background: 'white',
+          position: 'absolute', top: 3, left: checked ? 21 : 3, transition: 'left 0.2s',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+        }} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: checked ? 'var(--primary)' : 'var(--text-dark)' }}>{label}</div>
+        {hint && <div style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 2 }}>{hint}</div>}
+      </div>
+    </div>
+  );
+}
 const inputCss = { width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #eee', fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 10, fontFamily: 'inherit' };
 const btnPrimario = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 14, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' };
 const btnSec = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 12px', borderRadius: 12, border: '1.5px solid #eee', background: 'white', color: 'var(--primary)', fontWeight: 700, fontSize: 13, cursor: 'pointer' };
