@@ -212,9 +212,19 @@ def crear_publicacion(
         imagen_mime, imagen_bytes = _decode_data_url(datos.imagen_data)
     if not contenido and not imagen_bytes:
         raise HTTPException(status_code=400, detail="La publicación debe tener texto o imagen")
-    # La categoría se asigna automáticamente analizando el contenido (si lo hay)
+    # 1) Intenta el clasificador de keywords; 2) si falla (resultado 'general' y hay texto), intenta Gemini
     categoria_auto = clasificar_categoria(contenido) if contenido else "general"
-    print(f"[Foro] Nueva publicación → categoría detectada: '{categoria_auto}' | texto: {contenido[:80]!r}")
+    if categoria_auto == "general" and contenido and len(contenido) > 8:
+        try:
+            from app.utils.gemini import clasificar_texto_foro
+            categorias_validas = list(CATEGORIA_KEYWORDS.keys()) + ["general"]
+            ia = clasificar_texto_foro(contenido, categorias_validas)
+            if ia:
+                categoria_auto = ia
+                print(f"[Foro] Categoría asignada por IA: '{ia}'")
+        except Exception as e:
+            print(f"[Foro] Fallback IA falló: {e}")
+    print(f"[Foro] Nueva publicación → categoría final: '{categoria_auto}' | texto: {contenido[:80]!r}")
     pub = PublicacionForo(
         id_usuaria=current_user.id_usuaria,
         contenido=contenido,

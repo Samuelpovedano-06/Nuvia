@@ -244,6 +244,47 @@ class RespuestaForoCreate(BaseModel):
     contenido: Optional[str] = ""
     imagen_data: Optional[str] = None
 
+
+# ─────────────────────── CONSEJOS ───────────────────────
+
+class ConsejoClasificacionCreate(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = ""
+    orden: Optional[int] = 0
+
+class ConsejoClasificacionUpdate(BaseModel):
+    nombre: Optional[str] = None
+    descripcion: Optional[str] = None
+    orden: Optional[int] = None
+    activa: Optional[bool] = None
+
+class ConsejoEtiquetaCreate(BaseModel):
+    nombre: str
+
+class ConsejoEtiquetaUpdate(BaseModel):
+    nombre: Optional[str] = None
+    activa: Optional[bool] = None
+
+class ConsejoArticuloCreate(BaseModel):
+    id_clasificacion: UUID
+    titulo: str
+    resumen: Optional[str] = ""
+    cuerpo: Optional[str] = ""
+    etiquetas: Optional[list] = []         # lista de UUIDs (string) de etiquetas
+    imagen_data: Optional[str] = None      # data URL si el admin sube manualmente
+    generar_imagen: Optional[bool] = False # si True → llama a Gemini al crear
+    prompt_imagen: Optional[str] = None    # prompt opcional para forzar generación
+
+class ConsejoArticuloUpdate(BaseModel):
+    id_clasificacion: Optional[UUID] = None
+    titulo: Optional[str] = None
+    resumen: Optional[str] = None
+    cuerpo: Optional[str] = None
+    activo: Optional[bool] = None
+    orden: Optional[int] = None
+    etiquetas: Optional[list] = None
+    imagen_data: Optional[str] = None
+
 class ReaccionForoCreate(BaseModel):
     emoji: str
 

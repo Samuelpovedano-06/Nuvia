@@ -434,6 +434,100 @@ export const ApiService = {
     await fetch(`${baseUrl}/foro/respuestas/${id}`, { method: 'DELETE', headers: getHeaders() });
   },
 
+  // ─────────── Consejos ───────────
+  getClasificacionesConsejo: async (incluirInactivas = false) => {
+    const url = `${baseUrl}/consejos/clasificaciones${incluirInactivas ? '?incluir_inactivas=true' : ''}`;
+    const res = await fetch(url, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  crearClasificacionConsejo: async (datos) => {
+    const res = await fetch(`${baseUrl}/consejos/clasificaciones`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(datos) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  actualizarClasificacionConsejo: async (id, datos) => {
+    const res = await fetch(`${baseUrl}/consejos/clasificaciones/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(datos) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  eliminarClasificacionConsejo: async (id) => {
+    const res = await fetch(`${baseUrl}/consejos/clasificaciones/${id}`, { method: 'DELETE', headers: getHeaders() });
+    if (!res.ok) throw new Error('Error al eliminar');
+  },
+
+  getEtiquetasConsejo: async (incluirInactivas = false) => {
+    const url = `${baseUrl}/consejos/etiquetas${incluirInactivas ? '?incluir_inactivas=true' : ''}`;
+    const res = await fetch(url, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  crearEtiquetaConsejo: async (nombre) => {
+    const res = await fetch(`${baseUrl}/consejos/etiquetas`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ nombre }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  actualizarEtiquetaConsejo: async (id, datos) => {
+    const res = await fetch(`${baseUrl}/consejos/etiquetas/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(datos) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  eliminarEtiquetaConsejo: async (id) => {
+    const res = await fetch(`${baseUrl}/consejos/etiquetas/${id}`, { method: 'DELETE', headers: getHeaders() });
+    if (!res.ok) throw new Error('Error al eliminar');
+  },
+
+  getArticulosConsejo: async ({ clasificacion, etiqueta, favoritos, incluirInactivos } = {}) => {
+    const params = new URLSearchParams();
+    if (clasificacion) params.append('clasificacion', clasificacion);
+    if (etiqueta) params.append('etiqueta', etiqueta);
+    if (favoritos) params.append('favoritos', 'true');
+    if (incluirInactivos) params.append('incluir_inactivos', 'true');
+    const res = await fetch(`${baseUrl}/consejos/articulos?${params}`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  getArticuloConsejo: async (id) => {
+    const res = await fetch(`${baseUrl}/consejos/articulos/${id}`, { headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  crearArticuloConsejo: async (datos) => {
+    const res = await fetch(`${baseUrl}/consejos/articulos`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(datos) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  actualizarArticuloConsejo: async (id, datos) => {
+    const res = await fetch(`${baseUrl}/consejos/articulos/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(datos) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  eliminarArticuloConsejo: async (id) => {
+    const res = await fetch(`${baseUrl}/consejos/articulos/${id}`, { method: 'DELETE', headers: getHeaders() });
+    if (!res.ok) throw new Error('Error al eliminar');
+  },
+  regenerarImagenArticuloConsejo: async (id, prompt = null) => {
+    const url = `${baseUrl}/consejos/articulos/${id}/regenerar-imagen${prompt ? `?prompt=${encodeURIComponent(prompt)}` : ''}`;
+    const res = await fetch(url, { method: 'POST', headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'No se pudo regenerar');
+    return data;
+  },
+  toggleFavoritoConsejo: async (id) => {
+    const res = await fetch(`${baseUrl}/consejos/articulos/${id}/favorito`, { method: 'POST', headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  imagenArticuloConsejoUrl: (id) => `${baseUrl}/consejos/articulos/${id}/imagen`,
+
   toggleSeguirForo: async (idUsuaria) => {
     const res = await fetch(`${baseUrl}/foro/seguir/${idUsuaria}`, { method: 'POST', headers: getHeaders() });
     if (!res.ok) {

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -73,6 +73,45 @@ def run_migrations():
         "ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS imagen BYTEA",
         "ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS imagen_mime VARCHAR(50)",
         "ALTER TABLE foro_respuestas ALTER COLUMN contenido DROP NOT NULL",
+        # Consejos
+        """CREATE TABLE IF NOT EXISTS consejos_clasificaciones (
+            id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            nombre      VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            activa      BOOLEAN DEFAULT TRUE,
+            orden       INTEGER DEFAULT 0,
+            created_at  TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS consejos_etiquetas (
+            id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            nombre     VARCHAR(60) NOT NULL UNIQUE,
+            activa     BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS consejos_articulos (
+            id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_clasificacion UUID NOT NULL REFERENCES consejos_clasificaciones(id) ON DELETE CASCADE,
+            titulo           VARCHAR(200) NOT NULL,
+            resumen          TEXT,
+            cuerpo           TEXT,
+            imagen           BYTEA,
+            imagen_mime      VARCHAR(50),
+            imagen_prompt    TEXT,
+            activo           BOOLEAN DEFAULT TRUE,
+            orden            INTEGER DEFAULT 0,
+            created_at       TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS consejos_articulo_etiquetas (
+            id_articulo UUID NOT NULL REFERENCES consejos_articulos(id) ON DELETE CASCADE,
+            id_etiqueta UUID NOT NULL REFERENCES consejos_etiquetas(id) ON DELETE CASCADE,
+            PRIMARY KEY (id_articulo, id_etiqueta)
+        )""",
+        """CREATE TABLE IF NOT EXISTS consejos_favoritos (
+            id_articulo UUID NOT NULL REFERENCES consejos_articulos(id) ON DELETE CASCADE,
+            id_usuaria  UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            created_at  TIMESTAMP DEFAULT NOW(),
+            PRIMARY KEY (id_articulo, id_usuaria)
+        )""",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -136,6 +175,7 @@ app.include_router(admin.router)
 app.include_router(parejas.router)
 app.include_router(chat.router)
 app.include_router(foro.router)
+app.include_router(consejos.router)
 
 @app.get("/")
 def read_root():

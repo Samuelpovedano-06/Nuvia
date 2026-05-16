@@ -14,7 +14,10 @@ import CalendarScreen from './screens/CalendarScreen';
 import WellnessScreen from './screens/WellnessScreen';
 import PartnerScreen from './screens/PartnerScreen';
 import CommunityScreen from './screens/CommunityScreen';
-import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users } from 'lucide-react';
+import ConsejosScreen from './screens/ConsejosScreen';
+import ConsejoDetailScreen from './screens/ConsejoDetailScreen';
+import AdminConsejosScreen from './screens/AdminConsejosScreen';
+import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users, BookOpen } from 'lucide-react';
 
 const LogoIcon = ({ size = 22, color = 'currentColor' }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
@@ -38,6 +41,7 @@ const BottomNav = () => {
   const navItems = [
     { label: 'Inicio', icon: <Home size={22} />, path: '/', restricted: false },
     { label: 'Síntomas', icon: <Flower2 size={22} />, path: '/sintomas', restricted: true },
+    { label: 'Consejos', icon: <BookOpen size={22} />, path: '/consejos', restricted: false },
     { label: 'Ciclo', icon: <Calendar size={22} />, path: '/calendar', restricted: true },
     { label: 'Perfil', icon: <User size={22} />, path: '/profile', restricted: false },
   ];
@@ -176,6 +180,9 @@ function App() {
         <Route path="/calendar" element={user ? <CalendarScreen /> : <Navigate to="/login" />} />
         <Route path="/wellness" element={user ? <WellnessScreen /> : <Navigate to="/login" />} />
         <Route path="/comunidad" element={user ? <CommunityScreen /> : <Navigate to="/login" />} />
+        <Route path="/consejos" element={user ? <ConsejosScreen /> : <Navigate to="/login" />} />
+        <Route path="/consejos/:id" element={user ? <ConsejoDetailScreen /> : <Navigate to="/login" />} />
+        <Route path="/admin/consejos" element={user?.rol === 'admin' ? <AdminConsejosScreen /> : <Navigate to="/" />} />
         <Route path="/pareja" element={user ? <PartnerScreen /> : <Navigate to="/login" />} />
         <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.rol === 'admin' ? <AdminUsersScreen /> : <Navigate to="/" />} />

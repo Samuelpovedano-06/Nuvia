@@ -192,3 +192,53 @@ class Mensaje(Base):
 
     remitente = relationship("Usuaria", foreign_keys=[id_remitente])
     receptor  = relationship("Usuaria", foreign_keys=[id_receptor])
+
+
+# ─────────────────────── CONSEJOS ───────────────────────
+
+class ConsejoClasificacion(Base):
+    __tablename__ = "consejos_clasificaciones"
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    nombre      = Column(String(100), nullable=False)
+    descripcion = Column(Text, nullable=True)
+    activa      = Column(Boolean, server_default=text("true"))
+    orden       = Column(Integer, server_default=text("0"))
+    created_at  = Column(DateTime, server_default=func.now())
+
+
+class ConsejoEtiqueta(Base):
+    __tablename__ = "consejos_etiquetas"
+    id         = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    nombre     = Column(String(60), nullable=False, unique=True)
+    activa     = Column(Boolean, server_default=text("true"))
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class ConsejoArticulo(Base):
+    __tablename__ = "consejos_articulos"
+    id                = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_clasificacion  = Column(UUID(as_uuid=True), ForeignKey("consejos_clasificaciones.id", ondelete="CASCADE"), nullable=False)
+    titulo            = Column(String(200), nullable=False)
+    resumen           = Column(Text, nullable=True)
+    cuerpo            = Column(Text, nullable=True)  # markdown / texto plano
+    imagen            = Column(LargeBinary, nullable=True)
+    imagen_mime       = Column(String(50), nullable=True)
+    imagen_prompt     = Column(Text, nullable=True)  # último prompt usado para generar
+    activo            = Column(Boolean, server_default=text("true"))
+    orden             = Column(Integer, server_default=text("0"))
+    created_at        = Column(DateTime, server_default=func.now())
+
+    clasificacion = relationship("ConsejoClasificacion")
+
+
+class ConsejoArticuloEtiqueta(Base):
+    __tablename__ = "consejos_articulo_etiquetas"
+    id_articulo  = Column(UUID(as_uuid=True), ForeignKey("consejos_articulos.id", ondelete="CASCADE"), primary_key=True)
+    id_etiqueta  = Column(UUID(as_uuid=True), ForeignKey("consejos_etiquetas.id", ondelete="CASCADE"), primary_key=True)
+
+
+class ConsejoFavorito(Base):
+    __tablename__ = "consejos_favoritos"
+    id_articulo  = Column(UUID(as_uuid=True), ForeignKey("consejos_articulos.id", ondelete="CASCADE"), primary_key=True)
+    id_usuaria   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+    created_at   = Column(DateTime, server_default=func.now())
