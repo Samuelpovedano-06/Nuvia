@@ -216,12 +216,34 @@ def _trigger_download(url_descarga: str):
         pass
 
 
+# Palabras vacías comunes que dañan la búsqueda en Unsplash
+STOPWORDS_ES = {
+    "el","la","los","las","un","una","unos","unas","de","del","a","al","en","por","para","con","sin",
+    "y","o","u","e","que","qué","cual","cuál","como","cómo","cuando","cuándo","donde","dónde",
+    "es","son","ser","estar","esta","este","esto","eso","ese","esa","tu","tus","mi","mis","su","sus",
+    "lo","le","les","se","sí","no","te","me","nos","os","muy","mas","más","ya","pues","sobre","entre",
+    "hay","hace","ha","han","fue","fueron","será","sera","han","habrá","habra","etc",
+    "qué","qué","aún","aun","sí","también","tan","tanto"
+}
+
+
+def _query_limpia(titulo: str) -> str:
+    """Limpia el título dejando solo palabras significativas (>3 letras, sin stopwords)."""
+    base = _quitar_acentos(titulo.lower())
+    base = re.sub(r"[^\w\s]", " ", base)
+    palabras = [p for p in base.split() if len(p) > 3 and p not in STOPWORDS_ES]
+    return " ".join(palabras) if palabras else titulo.strip()
+
+
 def buscar_imagen_validada(titulo: str, resumen: str = "", prompt_extra: str = "") -> Optional[tuple]:
     """
-    Busca en Unsplash directamente con el TÍTULO del consejo (o prompt manual si se pasó)
+    Busca en Unsplash con las palabras clave del TÍTULO del consejo (o prompt manual)
     y devuelve la primera foto encontrada.
     """
-    query = (prompt_extra.strip() if prompt_extra and prompt_extra.strip() else titulo.strip())
+    if prompt_extra and prompt_extra.strip():
+        query = prompt_extra.strip()
+    else:
+        query = _query_limpia(titulo)
     print(f"[Unsplash] Query: '{query}' para «{titulo}»")
     candidatos = _buscar_unsplash(query, n=1)
     if not candidatos:
