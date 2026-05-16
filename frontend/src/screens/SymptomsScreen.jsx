@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Save, Utensils, Droplets, Heart, FileText, Lightbulb, Sparkles, Egg, Cloud, Shield, ShieldOff } from 'lucide-react';
 import { ApiService } from '../api';
 
@@ -146,13 +146,27 @@ const DISCHARGE_CARDS = [
 
 export default function SymptomsScreen() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isPareja = localStorage.getItem('plataforma') === 'pareja';
   const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
   const partnerName = isPareja ? (localStorage.getItem('selectedPartnerName') || 'tu pareja') : null;
 
-  const today = (() => {
+  const todayStr = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+
+  // Si viene ?fecha=YYYY-MM-DD desde el calendario, usar esa; si no, hoy
+  const fechaParam = searchParams.get('fecha');
+  const today = (fechaParam && /^\d{4}-\d{2}-\d{2}$/.test(fechaParam)) ? fechaParam : todayStr;
+  const esHoy = today === todayStr;
+
+  // Etiqueta legible de la fecha que se está editando (ej. "vie 16 may")
+  const fechaLabel = (() => {
+    try {
+      const d = new Date(today + 'T12:00:00');
+      return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    } catch { return today; }
   })();
 
   const [sintomasCatalogo, setSintomasCatalogo] = useState([]);
@@ -170,15 +184,21 @@ export default function SymptomsScreen() {
         const [catalogo, diario, registros] = await Promise.all([
           ApiService.getSintomas(),
           ApiService.getRegistroDiario(today, targetId),
-          isPareja ? ApiService.getRegistrosSintomas(today, targetId) : Promise.resolve([])
+          ApiService.getRegistrosSintomas(today, targetId)
         ]);
         setSintomasCatalogo(catalogo);
+        // Resetear estado antes de cargar (importante al cambiar de fecha)
+        setSelected([]);
+        setIntensities({});
+        setNotas('');
+        setFlujo('');
+        setRelaciones(0);
         if (diario) {
           setNotas(diario.notas || '');
           setFlujo(diario.flujo || '');
           setRelaciones(diario.relaciones || 0);
         }
-        if (isPareja && registros.length > 0) {
+        if (registros && registros.length > 0) {
           const ids = registros.map(r => r.id_sintoma);
           const intMap = {};
           registros.forEach(r => { intMap[r.id_sintoma] = r.intensidad; });
@@ -264,6 +284,29 @@ export default function SymptomsScreen() {
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h2>Diario de Nuvia</h2>
         <p className="subtitle">{isPareja ? `Registro de ${partnerName}` : 'Tu salud, bajo control y con estilo'}</p>
+      </div>
+
+      {/* Banner: fecha que se está editando */}
+      <div style={{
+        background: esHoy ? 'rgba(176,91,181,0.08)' : 'rgba(245,158,11,0.12)',
+        border: `1.5px solid ${esHoy ? 'rgba(176,91,181,0.25)' : '#FCD34D'}`,
+        borderRadius: '14px', padding: '10px 14px', marginBottom: '20px',
+        maxWidth: '800px', width: '100%', margin: '0 auto 20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px'
+      }}>
+        <span style={{ fontSize: '13px', color: esHoy ? 'var(--primary)' : '#92400E', fontWeight: '700' }}>
+          {esHoy ? 'Hoy' : 'Editando'} · {fechaLabel}
+        </span>
+        {!esHoy && (
+          <button
+            onClick={() => navigate('/sintomas')}
+            style={{
+              background: 'white', border: '1.5px solid #FCD34D',
+              color: '#92400E', borderRadius: '10px', padding: '4px 10px',
+              fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+            }}
+          >Ir a hoy</button>
+        )}
       </div>
 
       {isPareja && (

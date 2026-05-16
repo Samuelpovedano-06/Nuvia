@@ -300,8 +300,9 @@ export default function CalendarScreen() {
               const d = i + 1;
               const status = getDayStatus(d);
               const future = isFuture(d);
+              const fechaIso = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
               return (
-                <div key={d} className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''} ${future ? 'future' : ''}`} onClick={() => !future && navigate('/sintomas')}>
+                <div key={d} className={`calendar-day ${status || ''} ${isToday(d) ? 'today' : ''} ${future ? 'future' : ''}`} onClick={() => !future && navigate(`/sintomas?fecha=${fechaIso}`)}>
                   <span className="day-number">{d}</span>
                   {status === 'ovulacion' && <Sparkles size={10} className="ovulacion-icon" />}
                 </div>

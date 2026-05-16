@@ -551,33 +551,33 @@ export default function CommunityScreen() {
             <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', color: 'var(--text-dark)' }}>Comunidad</h1>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>Un espacio seguro y anónimo para compartir</p>
           </div>
+        </div>
+
+        {/* Acciones (Bloqueadas / Reportes) — debajo del título, encima de los tabs */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
           <button
             onClick={abrirBloqueados}
-            title="Ver bloqueadas"
             style={{
               background: 'white', border: '1.5px solid var(--primary)',
-              borderRadius: '14px', padding: '8px 12px', cursor: 'pointer',
+              borderRadius: '14px', padding: '8px 14px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: '6px',
-              color: 'var(--primary)', fontWeight: '700', fontSize: '13px',
-              marginTop: '2px'
+              color: 'var(--primary)', fontWeight: '700', fontSize: '13px'
             }}
           >
-            <Ban size={16} /> Bloqueadas
+            <Ban size={15} /> Bloqueadas
           </button>
           {user?.rol === 'admin' && (
             <button
               onClick={() => navigate('/admin/reportes')}
-              title="Gestionar reportes"
               style={{
                 position: 'relative',
                 background: 'white', border: '1.5px solid var(--primary)',
-                borderRadius: '14px', padding: '8px 12px', cursor: 'pointer',
+                borderRadius: '14px', padding: '8px 14px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: '6px',
-                color: 'var(--primary)', fontWeight: '700', fontSize: '13px',
-                marginTop: '2px'
+                color: 'var(--primary)', fontWeight: '700', fontSize: '13px'
               }}
             >
-              <Flag size={16} /> Reportes
+              <Flag size={15} /> Reportes
               {reportesPendientes > 0 && (
                 <span style={{
                   position: 'absolute', top: '-6px', right: '-6px',

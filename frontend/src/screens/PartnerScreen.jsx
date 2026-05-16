@@ -33,7 +33,10 @@ const PartnerScreen = () => {
   const [showChat, setShowChat] = useState(localStorage.getItem('showUsChat') === 'true');
   const [imagenPreview, setImagenPreview] = useState(null); // url para overlay
   const chatEndRef = React.useRef(null);
+  const chatScrollRef = React.useRef(null);
   const fileInputRef = React.useRef(null);
+  const ultimoIdRef = React.useRef(null);   // último id de mensaje conocido
+  const primeraCargaRef = React.useRef(true); // para forzar scroll al entrar
 
   const handlePickImage = async (e) => {
     const file = e.target.files?.[0];
@@ -73,19 +76,68 @@ const PartnerScreen = () => {
 
   useEffect(() => {
     if (selectedId) {
+      // Resetear flags al cambiar de chat
+      primeraCargaRef.current = true;
+      ultimoIdRef.current = null;
       fetchMensajes();
       const interval = setInterval(fetchMensajes, 3000);
       return () => clearInterval(interval);
     }
   }, [selectedId]);
 
+  // Cuando abrimos el chat (showChat true) también forzamos scroll al fondo
   useEffect(() => {
-    scrollToBottom();
-  }, [mensajes]);
+    if (showChat) {
+      primeraCargaRef.current = true;
+    }
+  }, [showChat]);
 
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Hace scroll instantáneo al fondo del contenedor del chat (más fiable que scrollIntoView)
+  const scrollAlFondoInstant = () => {
+    // Doble RAF + setTimeout: aseguramos que el DOM y el layout estén listos
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const cont = chatScrollRef.current;
+        if (cont) cont.scrollTop = cont.scrollHeight;
+        else chatEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      });
+    });
   };
+
+  // Decidir si auto-scroll cuando llegan mensajes nuevos o entramos al chat
+  useEffect(() => {
+    if (!showChat || mensajes.length === 0) return;
+    const ultimo = mensajes[mensajes.length - 1];
+    const idUltimo = ultimo?.id;
+    const hayNuevo = idUltimo !== ultimoIdRef.current;
+
+    if (primeraCargaRef.current) {
+      // Al entrar al chat: ir al fondo de golpe (sin animación)
+      primeraCargaRef.current = false;
+      ultimoIdRef.current = idUltimo;
+      scrollAlFondoInstant();
+      // Reintento por si las imágenes aún no han cargado y cambian la altura
+      setTimeout(scrollAlFondoInstant, 200);
+      setTimeout(scrollAlFondoInstant, 500);
+      return;
+    }
+
+    if (!hayNuevo) return;  // mismo mensaje → no scroll, dejamos a la usuaria en paz
+    ultimoIdRef.current = idUltimo;
+
+    // Si soy yo quien lo envió → siempre scroll
+    // Si lo envió la otra persona → solo si la usuaria está cerca del fondo
+    const esMio = ultimo.id_remitente === user?.id_usuaria;
+    const cont = chatScrollRef.current;
+    let cercaDelFondo = true;
+    if (cont) {
+      const dist = cont.scrollHeight - cont.scrollTop - cont.clientHeight;
+      cercaDelFondo = dist < 120;
+    }
+    if (esMio || cercaDelFondo) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [mensajes, showChat, user?.id_usuaria]);
 
   const fetchMensajes = async () => {
     try {
@@ -516,7 +568,7 @@ const PartnerScreen = () => {
             </button>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#fafafa' }}>
+          <div ref={chatScrollRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#fafafa' }}>
             {mensajes.length === 0 ? (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
                 <MessageCircle size={40} style={{ marginBottom: '10px' }} />
