@@ -74,11 +74,11 @@ def generar_imagen_consejo(titulo: str, resumen: str = "", prompt_extra: str = "
     global _ULTIMO_ERROR
     _ULTIMO_ERROR = None
     try:
-        from app.utils.unsplash import buscar_imagen_validada
+        from app.utils.unsplash import buscar_imagen_validada, ultimo_error_unsplash
         resultado = buscar_imagen_validada(titulo, resumen, prompt_extra)
         if resultado:
             return resultado
-        _ULTIMO_ERROR = "Ninguna foto de Unsplash encaja según la evaluación de Gemini. Prueba con un prompt diferente."
+        _ULTIMO_ERROR = ultimo_error_unsplash() or "Unsplash no devolvió ninguna foto. Prueba con otro prompt."
         return None
     except Exception as e:
         print(f"[Imagen consejo] Excepción: {e}")

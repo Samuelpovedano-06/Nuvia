@@ -6,8 +6,22 @@ Variables de entorno:
 import os
 import re
 import unicodedata
+from pathlib import Path
 import requests
 from typing import Optional
+from dotenv import load_dotenv
+
+# Buscar .env desde rutas habituales (igual que gemini.py)
+_THIS_FILE = Path(__file__).resolve()
+for _p in [
+    _THIS_FILE.parents[2] / ".env",
+    _THIS_FILE.parents[3] / ".env",
+    Path.cwd() / ".env",
+    Path("/app/.env"),
+]:
+    if _p.exists():
+        load_dotenv(_p, override=False)
+        break
 
 
 UNSPLASH_API = "https://api.unsplash.com/search/photos"
@@ -114,11 +128,22 @@ def _query_desde_titulo_con_gemini(titulo: str, resumen: str = "") -> Optional[s
         return None
 
 
+# Último error capturado, accesible desde gemini.py para mostrar al admin
+_ULTIMO_ERROR_UNSPLASH: Optional[str] = None
+
+
+def ultimo_error_unsplash() -> Optional[str]:
+    return _ULTIMO_ERROR_UNSPLASH
+
+
 def _buscar_unsplash(query: str, n: int = MAX_CANDIDATOS):
     """Devuelve hasta n candidatos: [{'id', 'url_regular', 'url_descarga', 'desc'}, ...]"""
+    global _ULTIMO_ERROR_UNSPLASH
+    _ULTIMO_ERROR_UNSPLASH = None
     key = _get_key()
     if not key:
         print("[Unsplash] UNSPLASH_ACCESS_KEY no configurada")
+        _ULTIMO_ERROR_UNSPLASH = "Falta UNSPLASH_ACCESS_KEY en el .env del backend."
         return []
     try:
         r = requests.get(
@@ -127,8 +152,13 @@ def _buscar_unsplash(query: str, n: int = MAX_CANDIDATOS):
             headers={"Authorization": f"Client-ID {key}"},
             timeout=15,
         )
+        if r.status_code == 403:
+            print(f"[Unsplash] 403: {r.text[:200]}")
+            _ULTIMO_ERROR_UNSPLASH = "Unsplash devolvió 403. Has agotado la cuota (50/h en demo) o la key es incorrecta."
+            return []
         if r.status_code != 200:
             print(f"[Unsplash] HTTP {r.status_code}: {r.text[:200]}")
+            _ULTIMO_ERROR_UNSPLASH = f"Unsplash devolvió HTTP {r.status_code}: {r.text[:120]}"
             return []
         data = r.json()
         candidatos = []
@@ -140,9 +170,13 @@ def _buscar_unsplash(query: str, n: int = MAX_CANDIDATOS):
                 "desc": it.get("alt_description") or it.get("description") or "",
                 "color": it.get("color"),
             })
-        return [c for c in candidatos if c["url_regular"]]
+        out = [c for c in candidatos if c["url_regular"]]
+        if not out:
+            _ULTIMO_ERROR_UNSPLASH = f"Unsplash no devolvió ninguna foto para «{query}»."
+        return out
     except Exception as e:
         print(f"[Unsplash] Excepción: {e}")
+        _ULTIMO_ERROR_UNSPLASH = f"Error al llamar a Unsplash: {e}"
         return []
 
 
