@@ -17,6 +17,7 @@ import CommunityScreen from './screens/CommunityScreen';
 import ConsejosScreen from './screens/ConsejosScreen';
 import ConsejoDetailScreen from './screens/ConsejoDetailScreen';
 import AdminConsejosScreen from './screens/AdminConsejosScreen';
+import AdminReportesScreen from './screens/AdminReportesScreen';
 import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users } from 'lucide-react';
 
 const LogoIcon = ({ size = 22, color = 'currentColor' }) => (
@@ -182,6 +183,7 @@ function App() {
         <Route path="/consejos" element={user ? <ConsejosScreen /> : <Navigate to="/login" />} />
         <Route path="/consejos/:id" element={user ? <ConsejoDetailScreen /> : <Navigate to="/login" />} />
         <Route path="/admin/consejos" element={user?.rol === 'admin' ? <AdminConsejosScreen /> : <Navigate to="/" />} />
+        <Route path="/admin/reportes" element={user?.rol === 'admin' ? <AdminReportesScreen /> : <Navigate to="/" />} />
         <Route path="/pareja" element={user ? <PartnerScreen /> : <Navigate to="/login" />} />
         <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
         <Route path="/admin/users" element={user?.rol === 'admin' ? <AdminUsersScreen /> : <Navigate to="/" />} />

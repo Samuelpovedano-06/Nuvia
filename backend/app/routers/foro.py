@@ -1,9 +1,11 @@
 import base64
+import json
 import unicodedata
 import re
-from datetime import timezone
-from typing import Optional
+from datetime import timezone, datetime, timedelta
+from typing import Optional, List
 from uuid import UUID
+from pydantic import BaseModel
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
@@ -33,7 +35,8 @@ def _decode_data_url(data_url: str):
 from app.database.connection import get_db
 from app.models.models import (
     PublicacionForo, RespuestaForo, LikeForo, FavoritoForo,
-    ReaccionForo, SeguimientoForo, Usuaria
+    ReaccionForo, SeguimientoForo, BloqueoForo, Usuaria,
+    ReporteForo, BaneForo, EliminacionAvisoForo
 )
 from app.schemas.schemas import PublicacionForoCreate, RespuestaForoCreate, ReaccionForoCreate
 from app.routers.auth_utils import get_current_user
@@ -171,6 +174,12 @@ def _build_posts(posts, db, current_user_id):
         .filter(SeguimientoForo.id_seguidor == current_user_id)
         .all()
     }
+    bloqueados = {
+        str(b.id_bloqueado)
+        for b in db.query(BloqueoForo)
+        .filter(BloqueoForo.id_bloqueador == current_user_id)
+        .all()
+    }
 
     likes_map     = {}
     liked_set     = set()
@@ -217,6 +226,7 @@ def _build_posts(posts, db, current_user_id):
             "mi_reaccion": mi_reac_map.get(pid),
             "es_mia": p.id_usuaria == current_user_id,
             "es_seguido": str(p.id_usuaria) in seguidos,
+            "es_bloqueado": str(p.id_usuaria) in bloqueados,
         })
     return result
 
@@ -235,6 +245,13 @@ def listar_publicaciones(
 
     if categoria:
         q = q.filter(PublicacionForo.categoria == categoria)
+
+    # Excluir publicaciones de usuarias bloqueadas (excepto en "mis")
+    if tab != "mis":
+        bloqueados_sq = db.query(BloqueoForo.id_bloqueado)\
+                          .filter(BloqueoForo.id_bloqueador == current_user.id_usuaria)\
+                          .subquery()
+        q = q.filter(~PublicacionForo.id_usuaria.in_(bloqueados_sq))
 
     if tab == "mis":
         q = q.filter(PublicacionForo.id_usuaria == current_user.id_usuaria)
@@ -268,6 +285,11 @@ def crear_publicacion(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
+    # Verificar bane activo
+    bane = _bane_activo(db, current_user.id_usuaria)
+    if bane:
+        raise HTTPException(status_code=403, detail="Estás baneada del foro")
+
     contenido = (datos.contenido or "").strip()
     imagen_bytes = None
     imagen_mime = None
@@ -446,6 +468,9 @@ def crear_respuesta(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
+    bane = _bane_activo(db, current_user.id_usuaria)
+    if bane:
+        raise HTTPException(status_code=403, detail="Estás baneada del foro")
     pub = db.query(PublicacionForo).filter(PublicacionForo.id == id).first()
     if not pub:
         raise HTTPException(status_code=404, detail="Publicación no encontrada")
@@ -559,3 +584,360 @@ def clasificar_test(
         "fallback_ia": resultado_ia,
         "final": resultado_ia if resultado_ia and keyword_cat == "general" else keyword_cat,
     }
+
+
+@router.post("/bloquear/{id_usuaria}")
+def toggle_bloqueo(id_usuaria: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Bloquea o desbloquea a una usuaria del foro."""
+    if id_usuaria == current_user.id_usuaria:
+        raise HTTPException(status_code=400, detail="No puedes bloquearte a ti misma")
+    existing = db.query(BloqueoForo).filter(
+        BloqueoForo.id_bloqueador == current_user.id_usuaria,
+        BloqueoForo.id_bloqueado == id_usuaria
+    ).first()
+    if existing:
+        db.delete(existing)
+        bloqueado = False
+    else:
+        db.add(BloqueoForo(id_bloqueador=current_user.id_usuaria, id_bloqueado=id_usuaria))
+        bloqueado = True
+        # Al bloquear, dejar de seguir si corresponde
+        sig = db.query(SeguimientoForo).filter(
+            SeguimientoForo.id_seguidor == current_user.id_usuaria,
+            SeguimientoForo.id_seguido == id_usuaria
+        ).first()
+        if sig:
+            db.delete(sig)
+    db.commit()
+    return {"bloqueado": bloqueado}
+
+
+@router.get("/bloqueados")
+def listar_bloqueados(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Lista los id_autor que la usuaria actual tiene bloqueados."""
+    rows = db.query(BloqueoForo).filter(BloqueoForo.id_bloqueador == current_user.id_usuaria).all()
+    return [{"id_autor": str(b.id_bloqueado), "avatar_seed": str(b.id_bloqueado)[:12]} for b in rows]
+
+
+# ─────────────────────── REPORTES / BANES / AVISOS ───────────────────────
+
+MOTIVOS_VALIDOS = {
+    "contenido_explicito": "Contenido sexual explícito",
+    "contenido_menores":   "Contenido inapropiado con menores",
+    "insultos":            "Insultos y lenguaje ofensivo",
+    "racismo":             "Racismo o discriminación",
+    "spam":                "Spam o publicidad",
+    "acoso":               "Acoso o intimidación",
+    "info_peligrosa":      "Información médica peligrosa o falsa",
+    "violencia":           "Apología de la violencia",
+    "otros":               "Otro motivo",
+}
+
+
+def _bane_activo(db: Session, id_usuaria) -> Optional["BaneForo"]:
+    ahora = datetime.utcnow()
+    bane = db.query(BaneForo).filter(
+        BaneForo.id_usuaria == id_usuaria,
+        BaneForo.activo == True,
+    ).order_by(BaneForo.created_at.desc()).first()
+    if not bane:
+        return None
+    if bane.fecha_fin is not None and bane.fecha_fin < ahora:
+        bane.activo = False
+        db.commit()
+        return None
+    return bane
+
+
+def _require_admin(user: Usuaria):
+    if (user.rol or "") != "admin":
+        raise HTTPException(status_code=403, detail="Solo administradores")
+
+
+class ReportarBody(BaseModel):
+    motivo: Optional[str] = ""
+
+
+@router.post("/{id}/reportar")
+def reportar_publicacion(
+    id: UUID,
+    body: ReportarBody,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    pub = db.query(PublicacionForo).filter(PublicacionForo.id == id).first()
+    if not pub:
+        raise HTTPException(status_code=404, detail="Publicación no encontrada")
+    if pub.id_usuaria == current_user.id_usuaria:
+        raise HTTPException(status_code=400, detail="No puedes reportar tu propia publicación")
+    ya = db.query(ReporteForo).filter(
+        ReporteForo.id_publicacion == id,
+        ReporteForo.id_reportador == current_user.id_usuaria,
+        ReporteForo.estado == "pendiente"
+    ).first()
+    if ya:
+        return {"ok": True, "ya_reportado": True}
+    r = ReporteForo(
+        id_publicacion=id,
+        id_reportador=current_user.id_usuaria,
+        motivo_reporte=(body.motivo or "").strip() or None,
+    )
+    db.add(r)
+    db.commit()
+    return {"ok": True, "ya_reportado": False}
+
+
+@router.get("/admin/reportes/count")
+def admin_reportes_count(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    _require_admin(current_user)
+    count = db.query(ReporteForo).filter(ReporteForo.estado == "pendiente").count()
+    return {"pendientes": count}
+
+
+@router.get("/admin/reportes")
+def admin_reportes_listar(
+    estado: str = "pendiente",
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    _require_admin(current_user)
+    rows = db.query(ReporteForo).filter(ReporteForo.estado == estado).order_by(ReporteForo.created_at.desc()).all()
+    out = []
+    for r in rows:
+        pub = db.query(PublicacionForo).filter(PublicacionForo.id == r.id_publicacion).first() if r.id_publicacion else None
+        out.append({
+            "id": str(r.id),
+            "estado": r.estado,
+            "created_at": _iso_utc(r.created_at),
+            "motivo_reporte": r.motivo_reporte or "",
+            "publicacion": (
+                {
+                    "id": str(pub.id),
+                    "id_autor": str(pub.id_usuaria),
+                    "avatar_seed": str(pub.id_usuaria)[:12],
+                    "contenido": pub.contenido or "",
+                    "categoria": pub.categoria,
+                    "tiene_imagen": pub.imagen is not None,
+                    "created_at": _iso_utc(pub.created_at),
+                } if pub else None
+            ),
+        })
+    return out
+
+
+@router.get("/admin/reportes/{id}")
+def admin_reporte_detalle(id: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    _require_admin(current_user)
+    r = db.query(ReporteForo).filter(ReporteForo.id == id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="No encontrado")
+    pub = db.query(PublicacionForo).filter(PublicacionForo.id == r.id_publicacion).first() if r.id_publicacion else None
+    return {
+        "id": str(r.id),
+        "estado": r.estado,
+        "created_at": _iso_utc(r.created_at),
+        "motivo_reporte": r.motivo_reporte or "",
+        "publicacion": (
+            {
+                "id": str(pub.id),
+                "id_autor": str(pub.id_usuaria),
+                "avatar_seed": str(pub.id_usuaria)[:12],
+                "contenido": pub.contenido or "",
+                "categoria": pub.categoria,
+                "tiene_imagen": pub.imagen is not None,
+                "created_at": _iso_utc(pub.created_at),
+            } if pub else None
+        ),
+    }
+
+
+class ResolverEliminarBody(BaseModel):
+    motivos: List[str] = []
+    motivo_personalizado: Optional[str] = ""
+
+
+@router.post("/admin/reportes/{id}/eliminar")
+def admin_resolver_eliminar(
+    id: UUID,
+    body: ResolverEliminarBody,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    _require_admin(current_user)
+    r = db.query(ReporteForo).filter(ReporteForo.id == id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="No encontrado")
+    motivos_filtrados = [m for m in (body.motivos or []) if m in MOTIVOS_VALIDOS]
+    if not motivos_filtrados:
+        raise HTTPException(status_code=400, detail="Selecciona al menos un motivo")
+    if "otros" in motivos_filtrados and not (body.motivo_personalizado or "").strip():
+        raise HTTPException(status_code=400, detail="Si eliges 'Otros' debes escribir el motivo")
+
+    pub = db.query(PublicacionForo).filter(PublicacionForo.id == r.id_publicacion).first() if r.id_publicacion else None
+    if pub:
+        aviso = EliminacionAvisoForo(
+            id_autor=pub.id_usuaria,
+            contenido_original=pub.contenido or "",
+            tenia_imagen=pub.imagen is not None,
+            motivos=json.dumps(motivos_filtrados),
+            motivo_personalizado=(body.motivo_personalizado or "").strip() or None,
+        )
+        db.add(aviso)
+        db.delete(pub)
+
+    if r.id_publicacion:
+        db.query(ReporteForo).filter(
+            ReporteForo.id_publicacion == r.id_publicacion,
+            ReporteForo.estado == "pendiente"
+        ).update({"estado": "eliminado", "id_admin": current_user.id_usuaria, "resolved_at": datetime.utcnow()})
+    else:
+        r.estado = "eliminado"
+        r.id_admin = current_user.id_usuaria
+        r.resolved_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/admin/reportes/{id}/anular")
+def admin_resolver_anular(id: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    _require_admin(current_user)
+    r = db.query(ReporteForo).filter(ReporteForo.id == id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="No encontrado")
+    r.estado = "anulado"
+    r.id_admin = current_user.id_usuaria
+    r.resolved_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True}
+
+
+class BanearBody(BaseModel):
+    motivos: List[str] = []
+    motivo_personalizado: Optional[str] = ""
+    duracion_dias: Optional[int] = None
+
+
+@router.post("/admin/banear/{id_usuaria}")
+def admin_banear(
+    id_usuaria: UUID,
+    body: BanearBody,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    _require_admin(current_user)
+    if id_usuaria == current_user.id_usuaria:
+        raise HTTPException(status_code=400, detail="No puedes banearte a ti misma")
+    motivos_filtrados = [m for m in (body.motivos or []) if m in MOTIVOS_VALIDOS]
+    if not motivos_filtrados:
+        raise HTTPException(status_code=400, detail="Selecciona al menos un motivo")
+    if "otros" in motivos_filtrados and not (body.motivo_personalizado or "").strip():
+        raise HTTPException(status_code=400, detail="Si eliges 'Otros' debes escribir el motivo")
+
+    fecha_fin = None
+    if body.duracion_dias and body.duracion_dias > 0:
+        fecha_fin = datetime.utcnow() + timedelta(days=body.duracion_dias)
+
+    db.query(BaneForo).filter(
+        BaneForo.id_usuaria == id_usuaria, BaneForo.activo == True
+    ).update({"activo": False})
+
+    bane = BaneForo(
+        id_usuaria=id_usuaria,
+        motivos=json.dumps(motivos_filtrados),
+        motivo_personalizado=(body.motivo_personalizado or "").strip() or None,
+        fecha_fin=fecha_fin,
+        id_admin=current_user.id_usuaria,
+    )
+    db.add(bane)
+    db.commit()
+    return {"ok": True, "permanente": fecha_fin is None, "fecha_fin": _iso_utc(fecha_fin)}
+
+
+@router.post("/admin/desbanear/{id_usuaria}")
+def admin_desbanear(id_usuaria: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    _require_admin(current_user)
+    db.query(BaneForo).filter(
+        BaneForo.id_usuaria == id_usuaria, BaneForo.activo == True
+    ).update({"activo": False})
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/motivos")
+def catalogo_motivos(current_user: Usuaria = Depends(get_current_user)):
+    return [{"clave": k, "etiqueta": v} for k, v in MOTIVOS_VALIDOS.items()]
+
+
+@router.get("/mis-avisos")
+def mis_avisos(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    elims = db.query(EliminacionAvisoForo).filter(
+        EliminacionAvisoForo.id_autor == current_user.id_usuaria,
+        EliminacionAvisoForo.visto == False
+    ).order_by(EliminacionAvisoForo.created_at.desc()).all()
+
+    banes = db.query(BaneForo).filter(
+        BaneForo.id_usuaria == current_user.id_usuaria,
+        BaneForo.visto_por_usuaria == False
+    ).order_by(BaneForo.created_at.desc()).all()
+
+    out = []
+    for e in elims:
+        try:
+            motivos = json.loads(e.motivos or "[]")
+        except Exception:
+            motivos = []
+        out.append({
+            "tipo": "eliminacion",
+            "id": str(e.id),
+            "contenido_original": e.contenido_original or "",
+            "tenia_imagen": bool(e.tenia_imagen),
+            "motivos": [{"clave": m, "etiqueta": MOTIVOS_VALIDOS.get(m, m)} for m in motivos],
+            "motivo_personalizado": e.motivo_personalizado or "",
+            "created_at": _iso_utc(e.created_at),
+        })
+    for b in banes:
+        try:
+            motivos = json.loads(b.motivos or "[]")
+        except Exception:
+            motivos = []
+        out.append({
+            "tipo": "bane",
+            "id": str(b.id),
+            "activo": bool(b.activo),
+            "permanente": b.fecha_fin is None,
+            "fecha_fin": _iso_utc(b.fecha_fin),
+            "motivos": [{"clave": m, "etiqueta": MOTIVOS_VALIDOS.get(m, m)} for m in motivos],
+            "motivo_personalizado": b.motivo_personalizado or "",
+            "created_at": _iso_utc(b.created_at),
+        })
+    return out
+
+
+class MarcarVistoBody(BaseModel):
+    tipo: str
+    id: UUID
+
+
+@router.post("/mis-avisos/marcar-visto")
+def marcar_aviso_visto(
+    body: MarcarVistoBody,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    if body.tipo == "eliminacion":
+        e = db.query(EliminacionAvisoForo).filter(
+            EliminacionAvisoForo.id == body.id,
+            EliminacionAvisoForo.id_autor == current_user.id_usuaria
+        ).first()
+        if e:
+            e.visto = True
+            db.commit()
+    elif body.tipo == "bane":
+        b = db.query(BaneForo).filter(
+            BaneForo.id == body.id,
+            BaneForo.id_usuaria == current_user.id_usuaria
+        ).first()
+        if b:
+            b.visto_por_usuaria = True
+            db.commit()
+    return {"ok": True}

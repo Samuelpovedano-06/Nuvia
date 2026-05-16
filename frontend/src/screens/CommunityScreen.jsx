@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2, ChevronLeft, ImagePlus } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2, ChevronLeft, ImagePlus, Ban, Flag, AlertTriangle, ShieldAlert, Check } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import AuthImage from '../components/AuthImage';
@@ -250,6 +250,81 @@ export default function CommunityScreen() {
     setShowReactions(false);
   };
 
+  const [confirmBlock, setConfirmBlock] = useState(null); // { idAutor }
+  const [reportPost, setReportPost] = useState(null);     // post a reportar
+  const [reportMotivo, setReportMotivo] = useState('');
+  const [reportSending, setReportSending] = useState(false);
+  const [reportesPendientes, setReportesPendientes] = useState(0);
+  const [avisos, setAvisos] = useState([]);               // avisos pendientes para la usuaria
+
+  // Polling badge admin
+  useEffect(() => {
+    if (user?.rol !== 'admin') return;
+    const fetchCount = async () => {
+      try {
+        const r = await ApiService.adminReportesCount();
+        setReportesPendientes(r.pendientes || 0);
+      } catch {}
+    };
+    fetchCount();
+    const t = setInterval(fetchCount, 6000);
+    return () => clearInterval(t);
+  }, [user?.rol]);
+
+  // Avisos pendientes (eliminaciones / banes) al entrar al foro
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await ApiService.getMisAvisosForo();
+        if (list.length > 0) setAvisos(list);
+      } catch {}
+    })();
+  }, []);
+
+  const cerrarAviso = async (av) => {
+    try {
+      await ApiService.marcarAvisoVistoForo(av.tipo, av.id);
+    } catch {}
+    setAvisos(prev => prev.filter(a => !(a.tipo === av.tipo && a.id === av.id)));
+  };
+
+  const handleReportar = async () => {
+    if (!reportPost) return;
+    setReportSending(true);
+    try {
+      const res = await ApiService.reportarPublicacion(reportPost.id, reportMotivo);
+      if (res.ya_reportado) {
+        mostrarToast('Ya habías reportado esta publicación');
+      } else {
+        mostrarToast('Publicación reportada. Gracias.');
+      }
+      setReportPost(null);
+      setReportMotivo('');
+    } catch (err) {
+      mostrarToast(err.message || 'Error al reportar', 'error');
+    } finally {
+      setReportSending(false);
+    }
+  };
+
+  const handleBloquear = async (idAutor) => {
+    if (!idAutor) return;
+    setConfirmBlock(null);
+    try {
+      const res = await ApiService.toggleBloqueoForo(idAutor);
+      if (res.bloqueado) {
+        // Quitar todos los posts de ese autor del feed actual y cerrar overlay
+        setPosts(prev => prev.filter(p => p.id_autor !== idAutor));
+        if (activePost?.id_autor === idAutor) setActivePost(null);
+        mostrarToast('Usuaria bloqueada. No verás más sus publicaciones.');
+      } else {
+        mostrarToast('Usuaria desbloqueada. Refresca para ver sus publicaciones.');
+      }
+    } catch (err) {
+      mostrarToast(err.message || 'Error al bloquear', 'error');
+    }
+  };
+
   const handleSeguir = async (idAutor, e) => {
     e?.stopPropagation();
     if (!idAutor) {
@@ -292,18 +367,36 @@ export default function CommunityScreen() {
     }
   };
 
-  const handleDeleteReply = async (rid) => {
-    await ApiService.eliminarRespuesta(rid);
-    setReplies(prev => prev.filter(r => r.id !== rid));
-    updatePost({ id: activePost.id, comments_count: Math.max(0, (activePost.comments_count || 1) - 1) });
-    setActivePost(p => ({ ...p, comments_count: Math.max(0, (p.comments_count || 1) - 1) }));
+  // Confirmación de eliminado
+  const [confirmDelete, setConfirmDelete] = useState(null); // { tipo: 'post'|'reply', id, e? }
+
+  const pedirConfirmDelete = (tipo, id, e) => {
+    e?.stopPropagation();
+    setConfirmDelete({ tipo, id });
   };
 
-  const handleDeletePost = async (postId, e) => {
-    e?.stopPropagation();
-    await ApiService.eliminarPublicacion(postId);
-    setPosts(prev => prev.filter(p => p.id !== postId));
-    if (activePost?.id === postId) setActivePost(null);
+  const ejecutarDelete = async () => {
+    if (!confirmDelete) return;
+    const { tipo, id } = confirmDelete;
+    setConfirmDelete(null);
+    try {
+      if (tipo === 'post') {
+        await ApiService.eliminarPublicacion(id);
+        setPosts(prev => prev.filter(p => p.id !== id));
+        if (activePost?.id === id) setActivePost(null);
+        mostrarToast('Publicación eliminada');
+      } else {
+        await ApiService.eliminarRespuesta(id);
+        setReplies(prev => prev.filter(r => r.id !== id));
+        if (activePost) {
+          updatePost({ id: activePost.id, comments_count: Math.max(0, (activePost.comments_count || 1) - 1) });
+          setActivePost(p => ({ ...p, comments_count: Math.max(0, (p.comments_count || 1) - 1) }));
+        }
+        mostrarToast('Respuesta eliminada');
+      }
+    } catch (err) {
+      mostrarToast(err.message || 'Error al eliminar', 'error');
+    }
   };
 
   const handlePublish = async () => {
@@ -381,10 +474,36 @@ export default function CommunityScreen() {
           >
             <ChevronLeft size={26} />
           </button>
-          <div>
+          <div style={{ flex: 1 }}>
             <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', color: 'var(--text-dark)' }}>Comunidad</h1>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>Un espacio seguro y anónimo para compartir</p>
           </div>
+          {user?.rol === 'admin' && (
+            <button
+              onClick={() => navigate('/admin/reportes')}
+              title="Gestionar reportes"
+              style={{
+                position: 'relative',
+                background: 'white', border: '1.5px solid var(--primary)',
+                borderRadius: '14px', padding: '8px 12px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                color: 'var(--primary)', fontWeight: '700', fontSize: '13px',
+                marginTop: '2px'
+              }}
+            >
+              <Flag size={16} /> Reportes
+              {reportesPendientes > 0 && (
+                <span style={{
+                  position: 'absolute', top: '-6px', right: '-6px',
+                  background: '#DC2626', color: 'white', borderRadius: '10px',
+                  minWidth: '20px', height: '20px', padding: '0 6px',
+                  fontSize: '11px', fontWeight: '800',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(220,38,38,0.4)'
+                }}>{reportesPendientes > 99 ? '99+' : reportesPendientes}</span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
@@ -432,9 +551,9 @@ export default function CommunityScreen() {
             onOpen={() => openPost(post)}
             onLike={e => handleLike(post.id, e)}
             onFav={e => handleFav(post.id, e)}
-            onDelete={e => handleDeletePost(post.id, e)}
+            onDelete={e => pedirConfirmDelete('post', post.id, e)}
             onShare={e => handleShare(post, e)}
-            isMine={post.es_mia}
+            puedeEliminar={post.es_mia || user?.rol === 'admin'}
           />)
         )}
 
@@ -493,8 +612,36 @@ export default function CommunityScreen() {
                       {activePost.es_seguido ? <><UserCheck size={12} /> Siguiendo</> : <><UserPlus size={12} /> Seguir</>}
                     </button>
                   )}
-                  {activePost.es_mia && (
-                    <button onClick={e => handleDeletePost(activePost.id, e)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}>
+                  {!activePost.es_mia && (
+                    <>
+                      <button
+                        onClick={() => setReportPost(activePost)}
+                        title="Reportar publicación"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '4px',
+                          padding: '6px 10px', borderRadius: '12px', border: '1.5px solid #F59E0B',
+                          background: 'transparent', color: '#D97706',
+                          fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                        }}
+                      >
+                        <Flag size={12} /> Reportar
+                      </button>
+                      <button
+                        onClick={() => setConfirmBlock({ idAutor: activePost.id_autor })}
+                        title="Bloquear a esta usuaria"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '4px',
+                          padding: '6px 10px', borderRadius: '12px', border: '1.5px solid #ef4444',
+                          background: 'transparent', color: '#ef4444',
+                          fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+                        }}
+                      >
+                        <Ban size={12} /> Bloquear
+                      </button>
+                    </>
+                  )}
+                  {(activePost.es_mia || user?.rol === 'admin') && (
+                    <button onClick={e => pedirConfirmDelete('post', activePost.id, e)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}>
                       <Trash2 size={16} />
                     </button>
                   )}
@@ -548,7 +695,8 @@ export default function CommunityScreen() {
             </h3>
             {replies.map(r => (
               <ReplyCard key={r.id} reply={r}
-                onDelete={() => handleDeleteReply(r.id)}
+                puedeEliminar={r.es_mia || user?.rol === 'admin'}
+                onDelete={() => pedirConfirmDelete('reply', r.id)}
                 onLike={async () => {
                   const res = await ApiService.toggleLikeForo(r.id);
                   setReplies(prev => prev.map(x => x.id === r.id ? { ...x, is_liked: res.liked, likes_count: res.likes_count } : x));
@@ -707,6 +855,142 @@ export default function CommunityScreen() {
         </div>
       )}
 
+      {/* Modal de confirmación de bloqueo */}
+      {confirmBlock && (
+        <div
+          onClick={() => setConfirmBlock(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 2200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ background: '#FEE2E2', color: '#DC2626', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Ban size={20} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: 'var(--text-dark)' }}>
+                ¿Bloquear a esta usuaria?
+              </h3>
+            </div>
+            <p style={{ margin: '0 0 18px', fontSize: '14px', color: 'var(--text-light)', lineHeight: 1.5 }}>
+              Dejarás de ver sus publicaciones y respuestas en el foro. Si la seguías, también dejarás de hacerlo. Puedes desbloquearla en cualquier momento.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setConfirmBlock(null)} style={{
+                flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #eee',
+                background: 'white', color: 'var(--text-dark)', fontWeight: '700', fontSize: '14px', cursor: 'pointer'
+              }}>Cancelar</button>
+              <button onClick={() => handleBloquear(confirmBlock.idAutor)} style={{
+                flex: 1, padding: '12px', borderRadius: '14px', border: 'none',
+                background: 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)',
+                color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+              }}>
+                <Ban size={15} /> Bloquear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {confirmDelete && (
+        <div
+          onClick={() => setConfirmDelete(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 2200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ background: '#FFF1F2', color: '#F6416C', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trash2 size={20} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: 'var(--text-dark)' }}>
+                ¿Eliminar {confirmDelete.tipo === 'post' ? 'publicación' : 'respuesta'}?
+              </h3>
+            </div>
+            <p style={{ margin: '0 0 18px', fontSize: '14px', color: 'var(--text-light)', lineHeight: 1.5 }}>
+              Esta acción es permanente y no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setConfirmDelete(null)} style={{
+                flex: 1, padding: '12px', borderRadius: '14px', border: '1.5px solid #eee',
+                background: 'white', color: 'var(--text-dark)', fontWeight: '700', fontSize: '14px', cursor: 'pointer'
+              }}>Cancelar</button>
+              <button onClick={ejecutarDelete} style={{
+                flex: 1, padding: '12px', borderRadius: '14px', border: 'none',
+                background: 'linear-gradient(135deg, #F6416C 0%, #C03060 100%)',
+                color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+              }}>
+                <Trash2 size={15} /> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de reportar publicación */}
+      {reportPost && (
+        <div onClick={() => !reportSending && setReportPost(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 2300,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 380,
+            boxShadow: '0 12px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{
+                background: '#FEF3C7', color: '#D97706', width: 40, height: 40, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Flag size={20} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>
+                Reportar publicación
+              </h3>
+            </div>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-light)', lineHeight: 1.5 }}>
+              Si crees que esta publicación es inadecuada, repórtala. Un administrador la revisará.
+            </p>
+            <textarea
+              value={reportMotivo}
+              onChange={e => setReportMotivo(e.target.value)}
+              rows={3}
+              placeholder="Motivo del reporte (opcional)…"
+              style={{
+                width: '100%', padding: 12, borderRadius: 12, border: '1.5px solid #eee',
+                fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+                resize: 'none', marginBottom: 14
+              }}
+            />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setReportPost(null)} disabled={reportSending} style={{
+                flex: 1, padding: 12, borderRadius: 14, border: '1.5px solid #eee',
+                background: 'white', color: 'var(--text-dark)', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+              }}>Cancelar</button>
+              <button onClick={handleReportar} disabled={reportSending} style={{
+                flex: 1, padding: 12, borderRadius: 14, border: 'none',
+                background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+              }}>
+                <Flag size={15} /> {reportSending ? 'Enviando…' : 'Reportar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de avisos para la usuaria (eliminaciones / banes) */}
+      {avisos.length > 0 && (
+        <AvisoUsuariaModal aviso={avisos[0]} onClose={() => cerrarAviso(avisos[0])} />
+      )}
+
       {/* Toast: notificación tipo "Publicación enviada" */}
       {toast && (
         <div style={{
@@ -758,7 +1042,7 @@ function ActionBtn({ icon, label, onClick }) {
   );
 }
 
-function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, isMine }) {
+function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, puedeEliminar }) {
   const LIMIT = 220;
   const truncated = post.contenido.length > LIMIT;
   const preview = truncated ? post.contenido.slice(0, LIMIT) : post.contenido;
@@ -767,7 +1051,7 @@ function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, isMine }) {
     <div className="card" style={{ padding: '16px', marginBottom: '12px', cursor: 'pointer' }} onClick={onOpen}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
         <AvatarRow seed={post.avatar_seed} time={post.created_at} />
-        {isMine && (
+        {puedeEliminar && (
           <button onClick={onDelete} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
             <Trash2 size={15} />
           </button>
@@ -831,7 +1115,7 @@ function PostCard({ post, onOpen, onLike, onFav, onDelete, onShare, isMine }) {
   );
 }
 
-function ReplyCard({ reply, onDelete, onLike }) {
+function ReplyCard({ reply, onDelete, onLike, puedeEliminar }) {
   return (
     <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
       {(() => {
@@ -859,7 +1143,7 @@ function ReplyCard({ reply, onDelete, onLike }) {
             <Heart size={13} fill={reply.is_liked ? '#F6416C' : 'none'} color={reply.is_liked ? '#F6416C' : '#aaa'} />
             {reply.likes_count > 0 && reply.likes_count}
           </button>
-          {reply.es_mia && (
+          {puedeEliminar && (
             <button onClick={onDelete} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Trash2 size={13} /> Eliminar
             </button>
@@ -869,3 +1153,92 @@ function ReplyCard({ reply, onDelete, onLike }) {
     </div>
   );
 }
+
+
+function AvisoUsuariaModal({ aviso, onClose }) {
+  const esBane = aviso.tipo === 'bane';
+  const titulo = esBane ? 'Has sido baneada del foro' : 'Tu publicación ha sido eliminada';
+  const colorBorde = esBane ? '#DC2626' : '#F6416C';
+  const fondoIcono = esBane ? '#FEE2E2' : '#FFE4E6';
+  const motivosArr = aviso.motivos || [];
+  const personalizado = aviso.motivo_personalizado || '';
+  const formatearFin = (iso) => {
+    if (!iso) return 'Permanente';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch { return iso; }
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 2800,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 420,
+        maxHeight: '90vh', overflowY: 'auto',
+        borderTop: `5px solid ${colorBorde}`, boxShadow: '0 12px 40px rgba(0,0,0,0.3)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%', background: fondoIcono, color: colorBorde,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            {esBane ? <Ban size={22} /> : <AlertTriangle size={22} />}
+          </div>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--text-dark)', flex: 1 }}>{titulo}</h3>
+        </div>
+
+        {esBane ? (
+          <p style={{ margin: '0 0 14px', fontSize: 14, color: 'var(--text-dark)', lineHeight: 1.5 }}>
+            No podrás publicar ni responder hasta: <strong>{aviso.permanente ? 'permanente' : formatearFin(aviso.fecha_fin)}</strong>.
+          </p>
+        ) : (
+          <>
+            <p style={{ margin: '0 0 10px', fontSize: 14, color: 'var(--text-dark)', lineHeight: 1.5 }}>
+              Tu publicación ha sido reportada y eliminada por incumplir las normas de la comunidad.
+            </p>
+            {aviso.contenido_original && (
+              <div style={{
+                background: '#f9f9fc', borderRadius: 10, padding: '10px 12px',
+                fontSize: 13, color: 'var(--text-light)', marginBottom: 14,
+                borderLeft: '3px solid #ddd', maxHeight: 100, overflowY: 'auto', fontStyle: 'italic'
+              }}>
+                «{aviso.contenido_original.slice(0, 250)}{aviso.contenido_original.length > 250 ? '…' : ''}»
+              </div>
+            )}
+          </>
+        )}
+
+        <div style={{ marginBottom: 14 }}>
+          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--text-light)' }}>Motivos:</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {motivosArr.map(m => (
+              <div key={m.clave} style={{
+                background: '#FFF1F2', color: '#9F1239', padding: '8px 12px',
+                borderRadius: 10, fontSize: 13, fontWeight: 600,
+                border: '1px solid #FECACA'
+              }}>{m.etiqueta}</div>
+            ))}
+          </div>
+          {personalizado && (
+            <div style={{
+              marginTop: 8, background: '#FFF1F2', color: '#9F1239', padding: '10px 12px',
+              borderRadius: 10, fontSize: 13, border: '1px solid #FECACA'
+            }}>
+              <strong>Detalle:</strong> {personalizado}
+            </div>
+          )}
+        </div>
+
+        <button onClick={onClose} style={{
+          width: '100%', padding: 12, borderRadius: 14, border: 'none',
+          background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
+          color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer'
+        }}>Entendido</button>
+      </div>
+    </div>
+  );
+}
+

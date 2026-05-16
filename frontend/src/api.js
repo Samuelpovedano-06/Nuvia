@@ -547,4 +547,93 @@ export const ApiService = {
     }
     return await res.json();
   },
+
+  toggleBloqueoForo: async (idUsuaria) => {
+    const res = await fetch(`${baseUrl}/foro/bloquear/${idUsuaria}`, { method: 'POST', headers: getHeaders() });
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try { const j = await res.json(); detail = j.detail || detail; } catch {}
+      throw new Error(detail);
+    }
+    return await res.json();
+  },
+
+  getBloqueadosForo: async () => {
+    const res = await fetch(`${baseUrl}/foro/bloqueados`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  // ─── Reportes / Banes / Avisos ───
+  reportarPublicacion: async (id, motivo = '') => {
+    const res = await fetch(`${baseUrl}/foro/${id}/reportar`, {
+      method: 'POST', headers: getHeaders(), body: JSON.stringify({ motivo })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al reportar');
+    return data;
+  },
+
+  adminReportesCount: async () => {
+    const res = await fetch(`${baseUrl}/foro/admin/reportes/count`, { headers: getHeaders() });
+    if (!res.ok) return { pendientes: 0 };
+    return await res.json();
+  },
+  adminReportesListar: async (estado = 'pendiente') => {
+    const res = await fetch(`${baseUrl}/foro/admin/reportes?estado=${estado}`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  adminReporteDetalle: async (id) => {
+    const res = await fetch(`${baseUrl}/foro/admin/reportes/${id}`, { headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  adminResolverEliminar: async (id, motivos, motivo_personalizado = '') => {
+    const res = await fetch(`${baseUrl}/foro/admin/reportes/${id}/eliminar`, {
+      method: 'POST', headers: getHeaders(),
+      body: JSON.stringify({ motivos, motivo_personalizado })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  adminResolverAnular: async (id) => {
+    const res = await fetch(`${baseUrl}/foro/admin/reportes/${id}/anular`, { method: 'POST', headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  adminBanear: async (idUsuaria, motivos, motivo_personalizado = '', duracion_dias = null) => {
+    const res = await fetch(`${baseUrl}/foro/admin/banear/${idUsuaria}`, {
+      method: 'POST', headers: getHeaders(),
+      body: JSON.stringify({ motivos, motivo_personalizado, duracion_dias })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  adminDesbanear: async (idUsuaria) => {
+    const res = await fetch(`${baseUrl}/foro/admin/desbanear/${idUsuaria}`, { method: 'POST', headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error');
+    return data;
+  },
+  getMotivosForo: async () => {
+    const res = await fetch(`${baseUrl}/foro/motivos`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  getMisAvisosForo: async () => {
+    const res = await fetch(`${baseUrl}/foro/mis-avisos`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+  marcarAvisoVistoForo: async (tipo, id) => {
+    await fetch(`${baseUrl}/foro/mis-avisos/marcar-visto`, {
+      method: 'POST', headers: getHeaders(),
+      body: JSON.stringify({ tipo, id })
+    });
+  },
 };

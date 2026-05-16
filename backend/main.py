@@ -63,6 +63,44 @@ def run_migrations():
             id_seguido UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
             PRIMARY KEY (id_seguidor, id_seguido)
         )""",
+        """CREATE TABLE IF NOT EXISTS foro_bloqueos (
+            id_bloqueador UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            id_bloqueado  UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            created_at    TIMESTAMP DEFAULT NOW(),
+            PRIMARY KEY (id_bloqueador, id_bloqueado)
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_reportes (
+            id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_publicacion  UUID REFERENCES foro_publicaciones(id) ON DELETE SET NULL,
+            id_reportador   UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            motivo_reporte  TEXT,
+            estado          VARCHAR(30) NOT NULL DEFAULT 'pendiente',
+            id_admin        UUID REFERENCES usuarias(id_usuaria) ON DELETE SET NULL,
+            resolved_at     TIMESTAMP,
+            created_at      TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_baneos (
+            id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_usuaria            UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            motivos               TEXT,
+            motivo_personalizado  TEXT,
+            fecha_inicio          TIMESTAMP DEFAULT NOW(),
+            fecha_fin             TIMESTAMP,
+            activo                BOOLEAN DEFAULT TRUE,
+            id_admin              UUID REFERENCES usuarias(id_usuaria) ON DELETE SET NULL,
+            visto_por_usuaria     BOOLEAN DEFAULT FALSE,
+            created_at            TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS foro_eliminaciones_aviso (
+            id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_autor              UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            contenido_original    TEXT,
+            tenia_imagen          BOOLEAN DEFAULT FALSE,
+            motivos               TEXT,
+            motivo_personalizado  TEXT,
+            visto                 BOOLEAN DEFAULT FALSE,
+            created_at            TIMESTAMP DEFAULT NOW()
+        )""",
         # Adjuntos de imagen (foro y chat)
         "ALTER TABLE foro_publicaciones ADD COLUMN IF NOT EXISTS imagen BYTEA",
         "ALTER TABLE foro_publicaciones ADD COLUMN IF NOT EXISTS imagen_mime VARCHAR(50)",

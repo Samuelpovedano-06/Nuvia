@@ -178,6 +178,47 @@ class SeguimientoForo(Base):
     id_seguidor = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
     id_seguido  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
 
+class BloqueoForo(Base):
+    __tablename__ = "foro_bloqueos"
+    id_bloqueador = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+    id_bloqueado  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+    created_at    = Column(DateTime, server_default=func.now())
+
+class ReporteForo(Base):
+    __tablename__ = "foro_reportes"
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_publicacion  = Column(UUID(as_uuid=True), ForeignKey("foro_publicaciones.id", ondelete="SET NULL"), nullable=True)
+    id_reportador   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    motivo_reporte  = Column(Text, nullable=True)
+    estado          = Column(String(30), nullable=False, server_default="pendiente")  # pendiente | eliminado | anulado
+    id_admin        = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="SET NULL"), nullable=True)
+    resolved_at     = Column(DateTime, nullable=True)
+    created_at      = Column(DateTime, server_default=func.now())
+
+class BaneForo(Base):
+    __tablename__ = "foro_baneos"
+    id                    = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria            = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    motivos               = Column(Text, nullable=True)   # JSON con array de claves de motivos
+    motivo_personalizado  = Column(Text, nullable=True)
+    fecha_inicio          = Column(DateTime, server_default=func.now())
+    fecha_fin             = Column(DateTime, nullable=True)  # NULL = permanente
+    activo                = Column(Boolean, server_default=text("true"))
+    id_admin              = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="SET NULL"), nullable=True)
+    visto_por_usuaria     = Column(Boolean, server_default=text("false"))
+    created_at            = Column(DateTime, server_default=func.now())
+
+class EliminacionAvisoForo(Base):
+    __tablename__ = "foro_eliminaciones_aviso"
+    id                    = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_autor              = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    contenido_original    = Column(Text, nullable=True)
+    tenia_imagen          = Column(Boolean, server_default=text("false"))
+    motivos               = Column(Text, nullable=True)   # JSON array
+    motivo_personalizado  = Column(Text, nullable=True)
+    visto                 = Column(Boolean, server_default=text("false"))
+    created_at            = Column(DateTime, server_default=func.now())
+
 class Mensaje(Base):
     __tablename__ = "mensajes"
 
