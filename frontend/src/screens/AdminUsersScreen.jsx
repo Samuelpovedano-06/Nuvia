@@ -4,7 +4,7 @@ import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import {
   ChevronLeft, Users, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, Search, Shield, Heart, AlertTriangle,
-  Activity, Lightbulb, Droplets, Lock, Ban, Unlock
+  Activity, Lightbulb, Droplets, Lock, Ban, Check
 } from 'lucide-react';
 
 export default function AdminUsersScreen() {
@@ -28,6 +28,11 @@ export default function AdminUsersScreen() {
   const [loadingBanes, setLoadingBanes] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  // Modal Desbanear
+  const [showDesbanearModal, setShowDesbanearModal] = useState(false);
+  const [userToDesbanear, setUserToDesbanear] = useState(null);
+  const [submittingDesbanear, setSubmittingDesbanear] = useState(false);
 
   // Estado del modal de banear
   const [showBanModal, setShowBanModal] = useState(false);
@@ -128,13 +133,23 @@ export default function AdminUsersScreen() {
     }
   };
 
-  const handleDesbanear = async (u) => {
-    if (!window.confirm(`¿Desbanear a ${u.nombre}?`)) return;
+  const handleOpenDesbanearModal = (u) => {
+    setUserToDesbanear(u);
+    setShowDesbanearModal(true);
+  };
+
+  const confirmDesbanear = async () => {
+    if (!userToDesbanear) return;
+    setSubmittingDesbanear(true);
     try {
-      await ApiService.adminDesbanear(u.id_usuaria);
+      await ApiService.adminDesbanear(userToDesbanear.id_usuaria);
+      setShowDesbanearModal(false);
+      setUserToDesbanear(null);
       fetchUsers();
     } catch (err) {
       alert(err.message || 'No se pudo desbanear');
+    } finally {
+      setSubmittingDesbanear(false);
     }
   };
 
@@ -260,8 +275,11 @@ export default function AdminUsersScreen() {
               </button>
               {u.id_usuaria !== user?.id_usuaria && (
                 u.baneado ? (
-                  <button onClick={() => handleDesbanear(u)} title="Desbanear" style={{ flex: 1, minWidth: '70px', background: '#dcfce7', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
-                    <Unlock size={16} /> Desbanear
+                  <button onClick={() => handleOpenDesbanearModal(u)} title="Desbanear" style={{ flex: 1, minWidth: '70px', background: '#dcfce7', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Desbanear
                   </button>
                 ) : (
                   <button onClick={() => handleOpenBanModal(u)} title="Banear" style={{ flex: 1, minWidth: '70px', background: '#fff7ed', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#c2410c', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
@@ -553,6 +571,55 @@ export default function AdminUsersScreen() {
             >
               <Edit size={18} /> Editar Perfil Completo
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Desbanear */}
+      {showDesbanearModal && userToDesbanear && (
+        <div
+          onClick={() => setShowDesbanearModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(30, 10, 40, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card"
+            style={{ width: '100%', maxWidth: '400px', margin: 0, padding: '30px', textAlign: 'center', animation: 'scaleIn 0.3s ease', border: '1px solid rgba(34, 197, 94, 0.15)' }}
+          >
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '50%', background: '#dcfce7',
+              display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#15803d', margin: '0 auto 20px',
+              boxShadow: '0 0 20px rgba(34, 197, 94, 0.15)'
+            }}>
+              <Check size={32} strokeWidth={3} />
+            </div>
+
+            <h3 style={{ margin: '0 0 10px', fontSize: '22px', color: '#1e293b', fontWeight: 700 }}>¿Desbanear usuaria?</h3>
+            <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.6, margin: '0 0 25px' }}>
+              Vas a quitar el ban de <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{userToDesbanear.nombre}</span>.
+              Volverá a poder publicar y participar en el foro inmediatamente.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowDesbanearModal(false)}
+                style={{ flex: 1, padding: '14px', borderRadius: '15px', border: '1px solid #e2e8f0', background: '#f8fafc', cursor: 'pointer', fontWeight: 600, color: '#64748b' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDesbanear}
+                disabled={submittingDesbanear}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: '15px', border: 'none',
+                  background: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)', color: 'white', cursor: 'pointer', fontWeight: 600,
+                  boxShadow: '0 4px 12px rgba(21, 128, 61, 0.25)',
+                  opacity: submittingDesbanear ? 0.7 : 1
+                }}
+              >
+                {submittingDesbanear ? 'Desbaneando...' : 'Sí, desbanear'}
+              </button>
+            </div>
           </div>
         </div>
       )}
