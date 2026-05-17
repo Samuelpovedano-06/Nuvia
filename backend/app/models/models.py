@@ -205,6 +205,18 @@ class BaneForo(Base):
     visto_por_usuaria     = Column(Boolean, server_default=text("false"))
     created_at            = Column(DateTime, server_default=func.now())
 
+class DesvinculacionPareja(Base):
+    """Cuando alguien desvincula una pareja, se crea una notificación para el otro lado."""
+    __tablename__ = "desvinculaciones_pareja"
+    id              = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_afectada     = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    id_otra         = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="SET NULL"), nullable=True)
+    nombre_otra     = Column(String(100), nullable=False)
+    rol_afectada    = Column(String(20), nullable=False)  # 'usuaria' o 'pareja' (qué rol tenía en el vínculo)
+    visto           = Column(Boolean, server_default=text("false"))
+    created_at      = Column(DateTime, server_default=func.now())
+
+
 class EliminacionAvisoForo(Base):
     __tablename__ = "foro_eliminaciones_aviso"
     id                    = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))

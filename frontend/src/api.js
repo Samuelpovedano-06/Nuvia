@@ -300,6 +300,19 @@ export const ApiService = {
     if (!res.ok) throw new Error('Error al desvincular');
   },
 
+  getDesvinculacionesPendientes: async () => {
+    const res = await fetch(`${baseUrl}/parejas/desvinculaciones`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  marcarDesvinculacionVista: async (id) => {
+    await fetch(`${baseUrl}/parejas/desvinculaciones/${id}/visto`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+  },
+
   aceptarPareja: async () => {
     const res = await fetch(`${baseUrl}/configuracion/aceptar-pareja`, {
       method: 'POST',

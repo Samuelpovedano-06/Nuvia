@@ -91,6 +91,15 @@ def run_migrations():
             visto_por_usuaria     BOOLEAN DEFAULT FALSE,
             created_at            TIMESTAMP DEFAULT NOW()
         )""",
+        """CREATE TABLE IF NOT EXISTS desvinculaciones_pareja (
+            id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_afectada   UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            id_otra       UUID REFERENCES usuarias(id_usuaria) ON DELETE SET NULL,
+            nombre_otra   VARCHAR(100) NOT NULL,
+            rol_afectada  VARCHAR(20) NOT NULL,
+            visto         BOOLEAN DEFAULT FALSE,
+            created_at    TIMESTAMP DEFAULT NOW()
+        )""",
         """CREATE TABLE IF NOT EXISTS foro_eliminaciones_aviso (
             id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             id_autor              UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,

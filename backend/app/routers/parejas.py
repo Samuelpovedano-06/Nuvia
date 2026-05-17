@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Optional
 from app.database.connection import get_db
-from app.models.models import Usuaria, Pareja
+from app.models.models import Usuaria, Pareja, DesvinculacionPareja
 from app.routers.auth_utils import get_current_user
 
 router = APIRouter(prefix="/parejas", tags=["Parejas"])
@@ -47,7 +47,7 @@ def listar_vinculos(
                 "nombre": other_name
             })
         return result
-    
+
     # Comportamiento por defecto (sin vista)
     if current_user.rol in ["usuaria", "admin"]:
         # Devolver todos donde participe
@@ -62,7 +62,7 @@ def listar_vinculos(
             else:
                 other_id = r.id_usuaria
                 other_name = r.usuaria.nombre
-            
+
             result.append({
                 "id": str(r.id),
                 "id_usuaria": str(r.id_usuaria),
@@ -87,5 +87,52 @@ def desvincular(vinculo_id: UUID, db: Session = Depends(get_db), current_user: U
         raise HTTPException(status_code=404, detail="Vínculo no encontrado")
     if row.id_usuaria != current_user.id_usuaria and row.id_pareja != current_user.id_usuaria:
         raise HTTPException(status_code=403, detail="Sin permiso")
+
+    # Determinar quién es la "otra parte" (la que recibe el aviso)
+    if row.id_usuaria == current_user.id_usuaria:
+        id_otra = row.id_pareja
+        rol_otra = "pareja"   # la otra estaba como pareja en el vínculo
+    else:
+        id_otra = row.id_usuaria
+        rol_otra = "usuaria"  # la otra estaba como usuaria en el vínculo
+
+    nombre_iniciador = current_user.nombre or "Tu pareja"
+    db.add(DesvinculacionPareja(
+        id_afectada=id_otra,
+        id_otra=current_user.id_usuaria,
+        nombre_otra=nombre_iniciador,
+        rol_afectada=rol_otra,
+    ))
+
     db.delete(row)
     db.commit()
+
+
+@router.get("/desvinculaciones")
+def listar_desvinculaciones(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Lista las desvinculaciones no vistas dirigidas a la usuaria actual."""
+    rows = db.query(DesvinculacionPareja).filter(
+        DesvinculacionPareja.id_afectada == current_user.id_usuaria,
+        DesvinculacionPareja.visto == False,
+    ).order_by(DesvinculacionPareja.created_at.desc()).all()
+    return [
+        {
+            "id": str(r.id),
+            "nombre_otra": r.nombre_otra,
+            "rol_afectada": r.rol_afectada,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]
+
+
+@router.post("/desvinculaciones/{id}/visto")
+def marcar_visto(id: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    row = db.query(DesvinculacionPareja).filter(DesvinculacionPareja.id == id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="No encontrada")
+    if row.id_afectada != current_user.id_usuaria:
+        raise HTTPException(status_code=403, detail="Sin permiso")
+    row.visto = True
+    db.commit()
+    return {"ok": True}

@@ -74,6 +74,7 @@ function App() {
   const { user, loading, getMe } = useContext(AuthContext);
   const [maintenance, setMaintenance] = useState(false);
   const [showRejectionPopup, setShowRejectionPopup] = useState(false);
+  const [desvinculacion, setDesvinculacion] = useState(null);
 
   // Polling para actualizaciones en tiempo real (cada 10 segundos)
   useEffect(() => {
@@ -84,6 +85,31 @@ function App() {
       return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Polling de desvinculaciones pendientes
+  useEffect(() => {
+    if (!user) return;
+    let cancel = false;
+    const fetchDesv = async () => {
+      try {
+        const data = await ApiService.getDesvinculacionesPendientes();
+        if (cancel) return;
+        if (Array.isArray(data) && data.length > 0 && !desvinculacion) {
+          setDesvinculacion(data[0]);
+        }
+      } catch (_) {}
+    };
+    fetchDesv();
+    const id = setInterval(fetchDesv, 10000);
+    return () => { cancel = true; clearInterval(id); };
+  }, [user, desvinculacion]);
+
+  const handleCerrarDesvinculacion = async () => {
+    if (!desvinculacion) return;
+    const id = desvinculacion.id;
+    setDesvinculacion(null);
+    try { await ApiService.marcarDesvinculacionVista(id); } catch (_) {}
+  };
 
   // Vigilar rechazos
   useEffect(() => {
@@ -198,6 +224,42 @@ function App() {
       </Routes>
       <MascotaNuvia user={user} />
       <BottomNav />
+      {/* MODAL: la otra parte ha cortado el vínculo */}
+      {desvinculacion && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1002, padding: '20px'
+        }}>
+          <div className="card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '30px' }}>
+            <div style={{
+              background: '#FFF1F2', color: '#F6416C',
+              width: '64px', height: '64px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 18px'
+            }}>
+              <Heart size={32} />
+            </div>
+            <h2 style={{ fontSize: '22px', margin: '0 0 10px 0' }}>Ya no sois pareja</h2>
+            <p style={{ color: 'var(--text-light)', marginBottom: '25px', lineHeight: '1.5', fontSize: '14px' }}>
+              <strong>{desvinculacion.nombre_otra}</strong> ha cortado el vínculo contigo.
+              {desvinculacion.rol_afectada === 'pareja'
+                ? ' Ya no podrás gestionar su ciclo ni acceder a sus datos.'
+                : ' Ya no tendrá acceso a tu ciclo.'}
+            </p>
+            <button
+              onClick={handleCerrarDesvinculacion}
+              style={{
+                width: '100%', background: 'var(--primary)', color: 'white', border: 'none',
+                padding: '15px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer'
+              }}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
       {showRejectionPopup && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
