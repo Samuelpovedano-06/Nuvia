@@ -20,6 +20,7 @@ import AdminConsejosScreen from './screens/AdminConsejosScreen';
 import AdminReportesScreen from './screens/AdminReportesScreen';
 import SupportChatScreen from './screens/SupportChatScreen';
 import AdminSupportScreen from './screens/AdminSupportScreen';
+import MascotaNuvia from './components/MascotaNuvia';
 import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users } from 'lucide-react';
 
 const LogoIcon = ({ size = 22, color = 'currentColor' }) => (
@@ -195,6 +196,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      <MascotaNuvia user={user} />
       <BottomNav />
       {showRejectionPopup && (
         <div style={{

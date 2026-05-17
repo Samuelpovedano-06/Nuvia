@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 from app.database.connection import get_db
-from app.models.models import Usuaria, Mensaje, Pareja, PublicacionForo
+from app.models.models import Usuaria, Mensaje, Pareja, PublicacionForo, ReporteForo
 from app.schemas.schemas import MensajeCreate, MensajeOut
 from app.routers.auth_utils import get_current_user
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 
 
 class CompartirPublicacionBody(BaseModel):
@@ -188,6 +188,76 @@ def obtener_mensajes(id_pareja: UUID, limit: int = 50, db: Session = Depends(get
     db.commit()
 
     return [_mensaje_out(m) for m in mensajes]
+
+
+@router.get("/mascota/avisos")
+def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Lista avisos pendientes para la mascota:
+    - usuaria: mensajes no leídos de su pareja + respuestas no leídas del admin
+    - admin: mensajes no leídos de usuarias (soporte) + reportes pendientes + mensajes de su pareja
+    """
+    avisos = []
+    admin_ids = {a.id_usuaria for a in db.query(Usuaria.id_usuaria).filter(Usuaria.rol == "admin").all()}
+
+    # IDs de parejas vinculadas a current_user
+    pareja_links = db.query(Pareja).filter(
+        or_(Pareja.id_usuaria == current_user.id_usuaria, Pareja.id_pareja == current_user.id_usuaria)
+    ).all()
+    pareja_ids = set()
+    for v in pareja_links:
+        pareja_ids.add(v.id_usuaria if v.id_pareja == current_user.id_usuaria else v.id_pareja)
+
+    # Mensajes no leídos recibidos
+    no_leidos = db.query(Mensaje).filter(
+        Mensaje.id_receptor == current_user.id_usuaria,
+        Mensaje.leido == False,
+    ).all()
+
+    de_pareja = [m for m in no_leidos if m.id_remitente in pareja_ids]
+    de_admin = [m for m in no_leidos if m.id_remitente in admin_ids and m.id_remitente != current_user.id_usuaria]
+    de_usuarias = [m for m in no_leidos if m.id_remitente not in admin_ids and m.id_remitente not in pareja_ids]
+
+    if de_pareja:
+        n = len(de_pareja)
+        avisos.append({
+            "tipo": "mensaje_pareja",
+            "texto": "Tu pareja te ha escrito 💜" if n == 1 else f"Tienes {n} mensajes de tu pareja 💜",
+            "count": n,
+        })
+
+    if current_user.rol != "admin" and de_admin:
+        n = len(de_admin)
+        avisos.append({
+            "tipo": "respuesta_soporte",
+            "texto": "El equipo te ha respondido 💬" if n == 1 else f"Tienes {n} respuestas de soporte 💬",
+            "count": n,
+        })
+
+    if current_user.rol == "admin":
+        if de_usuarias:
+            # Cuántas usuarias distintas han escrito
+            usuarias_distintas = {m.id_remitente for m in de_usuarias}
+            n_u = len(usuarias_distintas)
+            n_m = len(de_usuarias)
+            avisos.append({
+                "tipo": "soporte_admin",
+                "texto": (f"Una usuaria espera respuesta 🎧" if n_u == 1
+                          else f"{n_u} usuarias esperan respuesta ({n_m} mensajes) 🎧"),
+                "count": n_m,
+            })
+
+        reportes_pendientes = db.query(func.count(ReporteForo.id)).filter(
+            ReporteForo.estado == "pendiente"
+        ).scalar() or 0
+        if reportes_pendientes > 0:
+            avisos.append({
+                "tipo": "reporte_pendiente",
+                "texto": ("Hay un reporte pendiente 🚩" if reportes_pendientes == 1
+                          else f"Hay {reportes_pendientes} reportes pendientes 🚩"),
+                "count": int(reportes_pendientes),
+            })
+
+    return avisos
 
 
 @router.post("/compartir-publicacion", response_model=MensajeOut)
