@@ -229,7 +229,7 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
         n = len(de_admin)
         avisos.append({
             "tipo": "respuesta_soporte",
-            "texto": "El equipo te ha respondido 💬" if n == 1 else f"Tienes {n} respuestas de soporte 💬",
+            "texto": "El equipo te ha respondido" if n == 1 else f"Tienes {n} respuestas de soporte",
             "count": n,
         })
 
@@ -241,8 +241,8 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
             n_m = len(de_usuarias)
             avisos.append({
                 "tipo": "soporte_admin",
-                "texto": (f"Una usuaria espera respuesta 🎧" if n_u == 1
-                          else f"{n_u} usuarias esperan respuesta ({n_m} mensajes) 🎧"),
+                "texto": (f"Una usuaria espera respuesta en atención al cliente" if n_u == 1
+                          else f"{n_u} usuarias esperan respuesta en atención al cliente ({n_m} mensajes)"),
                 "count": n_m,
             })
 
@@ -252,8 +252,8 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
         if reportes_pendientes > 0:
             avisos.append({
                 "tipo": "reporte_pendiente",
-                "texto": ("Hay un reporte pendiente 🚩" if reportes_pendientes == 1
-                          else f"Hay {reportes_pendientes} reportes pendientes 🚩"),
+                "texto": ("Hay un reporte pendiente" if reportes_pendientes == 1
+                          else f"Hay {reportes_pendientes} reportes pendientes"),
                 "count": int(reportes_pendientes),
             })
 
