@@ -208,6 +208,16 @@ class BaneForo(Base):
     visto_por_usuaria     = Column(Boolean, server_default=text("false"))
     created_at            = Column(DateTime, server_default=func.now())
 
+class NotificationDevice(Base):
+    __tablename__ = "notification_devices"
+    id          = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), nullable=False)
+    plataforma  = Column(String(20), nullable=False)  # 'web' (PWA/iOS) | 'android' (FCM)
+    token       = Column(Text, nullable=False)        # FCM token o JSON de Web Push subscription
+    activo      = Column(Boolean, server_default=text("true"))
+    created_at  = Column(DateTime, server_default=func.now())
+
+
 class EliminacionAvisoForo(Base):
     __tablename__ = "foro_eliminaciones_aviso"
     id                    = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))

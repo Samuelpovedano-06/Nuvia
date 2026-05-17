@@ -498,6 +498,17 @@ def crear_respuesta(
     db.add(r)
     db.commit()
     db.refresh(r)
+    # Notificar a la autora del post (si no es ella misma)
+    try:
+        if pub.id_usuaria != current_user.id_usuaria:
+            from app.utils.push import enviar_a_usuaria
+            preview = (contenido or "").strip()[:80] or "📷 Imagen"
+            enviar_a_usuaria(db, pub.id_usuaria,
+                             title="Nueva respuesta en tu publicación",
+                             body=preview,
+                             data={"tipo": "foro_respuesta", "id_publicacion": str(pub.id)})
+    except Exception as e:
+        print(f"[Push] respuesta foro error: {e}")
     return {
         "id": str(r.id),
         "avatar_seed": str(r.id_usuaria)[:12],
@@ -802,6 +813,16 @@ def admin_resolver_eliminar(
         r.id_admin = current_user.id_usuaria
         r.resolved_at = datetime.utcnow()
     db.commit()
+    # Push al autor del post eliminado
+    try:
+        if pub:
+            from app.utils.push import enviar_a_usuaria
+            enviar_a_usuaria(db, pub.id_usuaria,
+                             title="Tu publicación fue eliminada",
+                             body="Revisa el motivo en el foro.",
+                             data={"tipo": "foro_eliminacion"})
+    except Exception as e:
+        print(f"[Push] eliminar reporte error: {e}")
     return {"ok": True}
 
 
@@ -880,6 +901,16 @@ def admin_banear(
             ).update({"estado": "eliminado", "id_admin": current_user.id_usuaria, "resolved_at": datetime.utcnow()})
 
     db.commit()
+    # Push a la usuaria baneada
+    try:
+        from app.utils.push import enviar_a_usuaria
+        msg = "Permanente" if fecha_fin is None else f"Hasta {fecha_fin.strftime('%d/%m/%Y %H:%M')}"
+        enviar_a_usuaria(db, id_usuaria,
+                         title="Has sido baneada del foro",
+                         body=msg,
+                         data={"tipo": "foro_bane"})
+    except Exception as e:
+        print(f"[Push] bane error: {e}")
     return {"ok": True, "permanente": fecha_fin is None, "fecha_fin": _iso_utc(fecha_fin)}
 
 

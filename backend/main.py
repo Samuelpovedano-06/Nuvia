@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos, notifications
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -90,6 +90,15 @@ def run_migrations():
             id_admin              UUID REFERENCES usuarias(id_usuaria) ON DELETE SET NULL,
             visto_por_usuaria     BOOLEAN DEFAULT FALSE,
             created_at            TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS notification_devices (
+            id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id_usuaria  UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            plataforma  VARCHAR(20) NOT NULL,
+            token       TEXT NOT NULL,
+            activo      BOOLEAN DEFAULT TRUE,
+            created_at  TIMESTAMP DEFAULT NOW(),
+            UNIQUE(plataforma, token)
         )""",
         """CREATE TABLE IF NOT EXISTS foro_eliminaciones_aviso (
             id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -215,6 +224,7 @@ app.include_router(parejas.router)
 app.include_router(chat.router)
 app.include_router(foro.router)
 app.include_router(consejos.router)
+app.include_router(notifications.router)
 
 @app.get("/")
 def read_root():

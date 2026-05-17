@@ -650,4 +650,31 @@ export const ApiService = {
       body: JSON.stringify({ tipo, id })
     });
   },
+
+  // ─── Push notifications ───
+  getVapidPublicKey: async () => {
+    const res = await fetch(`${baseUrl}/notifications/vapid-public-key`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.key || null;
+  },
+  registerPushDevice: async (plataforma, token) => {
+    const res = await fetch(`${baseUrl}/notifications/register-device`, {
+      method: 'POST', headers: getHeaders(),
+      body: JSON.stringify({ plataforma, token })
+    });
+    if (!res.ok) throw new Error('Error al registrar dispositivo');
+    return await res.json();
+  },
+  unregisterPushDevice: async (plataforma, token) => {
+    await fetch(`${baseUrl}/notifications/unregister-device`, {
+      method: 'DELETE', headers: getHeaders(),
+      body: JSON.stringify({ plataforma, token })
+    });
+  },
+  testPush: async () => {
+    const res = await fetch(`${baseUrl}/notifications/test`, { method: 'POST', headers: getHeaders() });
+    if (!res.ok) throw new Error('Error al enviar prueba');
+    return await res.json();
+  },
 };

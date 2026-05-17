@@ -792,6 +792,8 @@ export default function ProfileScreen() {
           </div>
         </div>
 
+        <PushToggle />
+
         <div
           onClick={toggleModoOscuro}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
@@ -1136,6 +1138,83 @@ export default function ProfileScreen() {
         })(),
         document.body
       )}
+    </div>
+  );
+}
+
+// --------- Toggle de notificaciones push ----------
+import { Bell as BellIcon } from 'lucide-react';
+import { enablePush, disablePush, getCurrentPermission, isPushSupported } from '../utils/push';
+
+function PushToggle() {
+  const [estado, setEstado] = React.useState('checking'); // 'on' | 'off' | 'denied' | 'unsupported' | 'checking'
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    (async () => {
+      if (!(await isPushSupported())) { setEstado('unsupported'); return; }
+      const p = await getCurrentPermission();
+      if (p === 'denied') setEstado('denied');
+      else if (p === 'granted') setEstado('on');
+      else setEstado('off');
+    })();
+  }, []);
+
+  const toggle = async () => {
+    if (busy || estado === 'denied' || estado === 'unsupported') return;
+    setBusy(true);
+    try {
+      if (estado === 'on') {
+        await disablePush();
+        setEstado('off');
+      } else {
+        await enablePush();
+        setEstado('on');
+      }
+    } catch (e) {
+      alert(e.message || 'No se pudo cambiar las notificaciones push');
+    } finally { setBusy(false); }
+  };
+
+  const activo = estado === 'on';
+  const disabled = estado === 'denied' || estado === 'unsupported' || busy;
+  const subtitulo = estado === 'denied'
+    ? 'Permiso bloqueado en el navegador'
+    : estado === 'unsupported'
+      ? 'Tu navegador no las soporta'
+      : activo
+        ? 'Recibirás avisos en este dispositivo'
+        : 'No recibirás avisos en este dispositivo';
+
+  return (
+    <div
+      onClick={toggle}
+      style={{
+        padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.6 : 1,
+        borderTop: '1px solid rgba(0,0,0,0.05)'
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ background: activo ? '#FFF1F2' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: activo ? '#F6416C' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
+          <BellIcon size={18} />
+        </div>
+        <div>
+          <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones push</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{subtitulo}</div>
+        </div>
+      </div>
+      <div style={{
+        width: '42px', height: '22px', background: activo ? '#F6416C' : '#ccc',
+        borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
+      }}>
+        <div style={{
+          width: '18px', height: '18px', background: 'white', borderRadius: '50%',
+          position: 'absolute', left: activo ? '22px' : '2px', top: '2px',
+          transition: 'left 0.3s'
+        }}></div>
+      </div>
     </div>
   );
 }
