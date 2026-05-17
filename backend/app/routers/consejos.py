@@ -35,29 +35,6 @@ from app.schemas.schemas import (
 )
 from app.routers.auth_utils import get_current_user
 from app.utils.gemini import generar_imagen_consejo
-from app.utils.push import enviar_a_usuaria
-
-
-def _push_consejo_a_todas(db: Session, articulo: ConsejoArticulo):
-    """Notifica a todas las usuarias con notificaciones activas sobre un consejo nuevo."""
-    from app.models.models import ConfiguracionUsuaria
-    usuarias = db.query(Usuaria.id_usuaria).join(
-        ConfiguracionUsuaria, ConfiguracionUsuaria.id_usuaria == Usuaria.id_usuaria
-    ).filter(ConfiguracionUsuaria.notificaciones == 1).all()
-    titulo = (articulo.titulo or "").strip()
-    cuerpo = (articulo.resumen or "Hay un nuevo consejo disponible en Nuvia").strip()
-    if len(cuerpo) > 120:
-        cuerpo = cuerpo[:117] + "..."
-    for (uid,) in usuarias:
-        try:
-            enviar_a_usuaria(
-                db, uid,
-                title=f"💡 Nuevo consejo: {titulo}",
-                body=cuerpo,
-                data={"tipo": "consejo_nuevo", "id": str(articulo.id)},
-            )
-        except Exception as e:
-            print(f"[push consejo_nuevo] {e}")
 
 router = APIRouter(prefix="/consejos", tags=["Consejos"])
 
@@ -355,9 +332,6 @@ def crear_articulo(datos: ConsejoArticuloCreate, db: Session = Depends(get_db), 
             db.add(ConsejoArticuloEtiqueta(id_articulo=a.id, id_etiqueta=eid_uuid))
         db.commit()
 
-    if a.activo:
-        _push_consejo_a_todas(db, a)
-
     return _build_articulos([a], db, current_user.id_usuaria)[0]
 
 
@@ -366,7 +340,6 @@ def actualizar_articulo(id: UUID, datos: ConsejoArticuloUpdate, db: Session = De
     a = db.query(ConsejoArticulo).filter(ConsejoArticulo.id == id).first()
     if not a:
         raise HTTPException(status_code=404, detail="No existe")
-    activo_anterior = bool(a.activo)
     if datos.id_clasificacion is not None:
         cla = db.query(ConsejoClasificacion).filter(ConsejoClasificacion.id == datos.id_clasificacion).first()
         if not cla:
@@ -401,10 +374,6 @@ def actualizar_articulo(id: UUID, datos: ConsejoArticuloUpdate, db: Session = De
             db.add(ConsejoArticuloEtiqueta(id_articulo=id, id_etiqueta=eid_uuid))
     db.commit()
     db.refresh(a)
-
-    # Si el artículo pasa de inactivo a activo, notificar como nuevo
-    if a.activo and not activo_anterior:
-        _push_consejo_a_todas(db, a)
 
     return _build_articulos([a], db, current_user.id_usuaria)[0]
 

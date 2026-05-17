@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Nuvia</string>
+    <string name="title_activity_main">Nuvia</string>
+    <string name="package_name">app.nuvia.android</string>
+    <string name="custom_url_scheme">app.nuvia.android</string>
+</resources>

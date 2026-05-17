@@ -11,4 +11,3 @@ cryptography>=42.0.7
 gunicorn==21.2.0
 requests>=2.31.0
 sib-api-v3-sdk>=7.6.0
-pywebpush>=2.0.0

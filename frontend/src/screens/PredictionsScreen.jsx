@@ -116,20 +116,14 @@ export default function PredictionsScreen() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({ diaActual: 1, duracion: 28 });
   const [selectedPoint, setSelectedPoint] = useState(14);
-  const [globalNotifsDisabled, setGlobalNotifsDisabled] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const [ciclos, config, status] = await Promise.all([
+        const [ciclos, config] = await Promise.all([
           ApiService.getCiclos(),
-          ApiService.getConfig(),
-          ApiService.getPublicStatus()
+          ApiService.getConfig()
         ]);
-
-        if (status && status.notificaciones_globales === false) {
-          setGlobalNotifsDisabled(true);
-        }
 
         const duracion = config?.duracion_ciclo || 28;
         let hoy = new Date();
@@ -165,18 +159,6 @@ export default function PredictionsScreen() {
 
   return (
     <div className="screen-container">
-      {/* Banner de Notificaciones Desactivadas */}
-      {globalNotifsDisabled && (
-        <div style={{ 
-          background: '#FFF1F2', color: '#F6416C', padding: '12px 20px', borderRadius: '15px',
-          marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px',
-          border: '1px solid #FF9A9E', width: '100%', maxWidth: '900px', margin: '0 auto'
-        }}>
-          <MessageCircle size={18} />
-          <span><strong>Aviso del sistema:</strong> Las notificaciones globales están pausadas temporalmente por el administrador.</span>
-        </div>
-      )}
-
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '900px', margin: '0 auto 20px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
           <ChevronLeft size={20} /> <span style={{ marginLeft: '4px' }}>Volver</span>

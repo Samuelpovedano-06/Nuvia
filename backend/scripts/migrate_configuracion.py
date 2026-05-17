@@ -7,8 +7,6 @@ from app.database.connection import engine
 from sqlalchemy import text
 
 COLUMNS = [
-    ("notificaciones",      "SMALLINT DEFAULT 1"),
-    ("recordatorio_ciclo",  "SMALLINT DEFAULT 1"),
     ("privacidad_estricta", "SMALLINT DEFAULT 0"),
     ("duracion_ciclo",      "SMALLINT DEFAULT 28"),
     ("duracion_periodo",    "SMALLINT DEFAULT 5"),

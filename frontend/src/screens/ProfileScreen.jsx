@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Bell, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils } from 'lucide-react';
 import { ApiService } from '../api';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -229,10 +229,7 @@ export default function ProfileScreen() {
   const [viewMode, setViewMode] = useState('days'); // 'days', 'years'
 
   // Estados de configuración
-  const [notificaciones, setNotificaciones] = useState(1);
   const [modoOscuro, setModoOscuro] = useState(0);
-  const [horaPastilla, setHoraPastilla] = useState('');
-  const [recordatorioPastilla, setRecordatorioPastilla] = useState(0);
   const [isCycleEditable, setIsCycleEditable] = useState(false);
   const [systemRanges, setSystemRanges] = useState({
     min_dias_ciclo: 21,
@@ -240,7 +237,6 @@ export default function ProfileScreen() {
     min_dias_periodo: 3,
     max_dias_periodo: 10
   });
-  const [globalNotifsDisabled, setGlobalNotifsDisabled] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -360,10 +356,6 @@ export default function ProfileScreen() {
             setPickerMonth(d.getMonth());
             setPickerYear(d.getFullYear());
           }
-          setNotificaciones(config.notificaciones ?? 1);
-          if (config.hora_pastilla) setHoraPastilla(config.hora_pastilla);
-          setRecordatorioPastilla(config.recordatorio_pastilla ?? 0);
-
           const dark = config.modo_oscuro ?? 0;
           setModoOscuro(dark);
           localStorage.setItem('nuvia_modo_oscuro', dark);
@@ -387,7 +379,6 @@ export default function ProfileScreen() {
               min_dias_periodo: config.min_dias_periodo || 3,
               max_dias_periodo: config.max_dias_periodo || 10
             });
-            setGlobalNotifsDisabled(config.notificaciones_globales === false);
           }
         })
         .catch(console.error);
@@ -402,7 +393,6 @@ export default function ProfileScreen() {
               min_dias_periodo: status.min_dias_periodo || 3,
               max_dias_periodo: status.max_dias_periodo || 10
             });
-            setGlobalNotifsDisabled(status.notificaciones_globales === false);
           }
         })
         .catch(console.error);
@@ -470,16 +460,6 @@ export default function ProfileScreen() {
     }
     setShowDatePicker(false);
   };
-
-  const toggleNotificaciones = () => {
-    const newVal = notificaciones === 1 ? 0 : 1;
-    setNotificaciones(newVal);
-    // Actualizamos ambos campos en la BD para simplificar
-    handleUpdateConfig('notificaciones', newVal);
-    handleUpdateConfig('recordatorio_ciclo', newVal);
-  };
-
-
 
   const toggleModoOscuro = () => {
     const newVal = modoOscuro === 1 ? 0 : 1;
@@ -751,60 +731,8 @@ export default function ProfileScreen() {
         </div>
       </div>
 
-      {/* Banner de Notificaciones Desactivadas */}
-      {globalNotifsDisabled && (
-        <div style={{
-          background: '#FFF1F2', color: '#F6416C', padding: '12px 20px', borderRadius: '15px',
-          marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px',
-          border: '1px solid #FF9A9E'
-        }}>
-          <Bell size={18} />
-          <span><strong>Aviso:</strong> El administrador ha pausado las notificaciones del sistema.</span>
-        </div>
-      )}
-
       {/* Options List */}
       <div className="card" style={{ padding: '10px 0' }}>
-        <div
-          onClick={() => !globalNotifsDisabled && toggleNotificaciones()}
-          style={{
-            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            cursor: globalNotifsDisabled ? 'not-allowed' : 'pointer',
-            opacity: globalNotifsDisabled ? 0.6 : 1
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: (notificaciones && !globalNotifsDisabled) ? '#FFF1F2' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: (notificaciones && !globalNotifsDisabled) ? '#F6416C' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
-              <Bell size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
-                {globalNotifsDisabled ? 'Pausado por el administrador' : notificaciones ? 'Activadas' : 'Desactivadas'}
-              </div>
-            </div>
-          </div>
-          <div style={{
-            width: '42px', height: '22px', background: (notificaciones && !globalNotifsDisabled) ? '#F6416C' : '#ccc',
-            borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
-          }}>
-            <div style={{
-              width: '18px', height: '18px', background: 'white', borderRadius: '50%',
-              position: 'absolute', left: (notificaciones && !globalNotifsDisabled) ? '22px' : '2px', top: '2px',
-              transition: 'left 0.3s'
-            }}></div>
-          </div>
-        </div>
-
-        <PushToggle />
-
-        <PastillaToggle
-          horaPastilla={horaPastilla}
-          setHoraPastilla={setHoraPastilla}
-          activo={recordatorioPastilla}
-          setActivo={setRecordatorioPastilla}
-        />
-
         <div
           onClick={toggleModoOscuro}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
@@ -1153,146 +1081,3 @@ export default function ProfileScreen() {
   );
 }
 
-// --------- Toggle recordatorio de pastilla ----------
-function PastillaToggle({ horaPastilla, setHoraPastilla, activo, setActivo }) {
-  const [busy, setBusy] = React.useState(false);
-  const [localHora, setLocalHora] = React.useState(horaPastilla || '');
-
-  React.useEffect(() => { setLocalHora(horaPastilla || ''); }, [horaPastilla]);
-
-  const guardarHora = async (val) => {
-    setLocalHora(val);
-    setHoraPastilla(val);
-    setBusy(true);
-    try {
-      await ApiService.updateConfig({ hora_pastilla: val });
-    } catch (e) {
-      alert(e.message || 'No se pudo guardar la hora');
-    } finally { setBusy(false); }
-  };
-
-  const toggle = async () => {
-    if (busy) return;
-    if (!localHora && activo === 0) {
-      alert('Primero indica la hora de la pastilla');
-      return;
-    }
-    const nuevo = activo === 1 ? 0 : 1;
-    setActivo(nuevo);
-    setBusy(true);
-    try {
-      await ApiService.updateConfig({ recordatorio_pastilla: nuevo });
-    } catch (e) {
-      setActivo(activo);
-      alert(e.message || 'No se pudo cambiar el recordatorio');
-    } finally { setBusy(false); }
-  };
-
-  const on = activo === 1;
-  return (
-    <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={toggle}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ background: on ? '#FFF1F2' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: on ? '#F6416C' : '#999', marginRight: '16px', transition: 'all 0.3s', fontSize: '18px' }}>
-            💊
-          </div>
-          <div>
-            <div style={{ fontSize: '15px', fontWeight: '500' }}>Recordatorio pastilla</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
-              {on ? `Aviso diario a las ${localHora || '—'}` : 'Desactivado'}
-            </div>
-          </div>
-        </div>
-        <div style={{ width: '42px', height: '22px', background: on ? '#F6416C' : '#ccc', borderRadius: '12px', position: 'relative', transition: 'background 0.3s' }}>
-          <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%', position: 'absolute', left: on ? '22px' : '2px', top: '2px', transition: 'left 0.3s' }} />
-        </div>
-      </div>
-      <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '54px' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>Hora</span>
-        <input
-          type="time"
-          value={localHora}
-          onChange={(e) => guardarHora(e.target.value)}
-          style={{ padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// --------- Toggle de notificaciones push ----------
-import { Bell as BellIcon } from 'lucide-react';
-import { enablePush, disablePush, getCurrentPermission, isPushSupported } from '../utils/push';
-
-function PushToggle() {
-  const [estado, setEstado] = React.useState('checking'); // 'on' | 'off' | 'denied' | 'unsupported' | 'checking'
-  const [busy, setBusy] = React.useState(false);
-
-  React.useEffect(() => {
-    (async () => {
-      if (!(await isPushSupported())) { setEstado('unsupported'); return; }
-      const p = await getCurrentPermission();
-      if (p === 'denied') setEstado('denied');
-      else if (p === 'granted') setEstado('on');
-      else setEstado('off');
-    })();
-  }, []);
-
-  const toggle = async () => {
-    if (busy || estado === 'denied' || estado === 'unsupported') return;
-    setBusy(true);
-    try {
-      if (estado === 'on') {
-        await disablePush();
-        setEstado('off');
-      } else {
-        await enablePush();
-        setEstado('on');
-      }
-    } catch (e) {
-      alert(e.message || 'No se pudo cambiar las notificaciones push');
-    } finally { setBusy(false); }
-  };
-
-  const activo = estado === 'on';
-  const disabled = estado === 'denied' || estado === 'unsupported' || busy;
-  const subtitulo = estado === 'denied'
-    ? 'Permiso bloqueado en el navegador'
-    : estado === 'unsupported'
-      ? 'Tu navegador no las soporta'
-      : activo
-        ? 'Recibirás avisos en este dispositivo'
-        : 'No recibirás avisos en este dispositivo';
-
-  return (
-    <div
-      onClick={toggle}
-      style={{
-        padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.6 : 1,
-        borderTop: '1px solid rgba(0,0,0,0.05)'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ background: activo ? '#FFF1F2' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: activo ? '#F6416C' : '#999', marginRight: '16px', transition: 'all 0.3s' }}>
-          <BellIcon size={18} />
-        </div>
-        <div>
-          <div style={{ fontSize: '15px', fontWeight: '500' }}>Notificaciones push</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{subtitulo}</div>
-        </div>
-      </div>
-      <div style={{
-        width: '42px', height: '22px', background: activo ? '#F6416C' : '#ccc',
-        borderRadius: '12px', position: 'relative', transition: 'background 0.3s'
-      }}>
-        <div style={{
-          width: '18px', height: '18px', background: 'white', borderRadius: '50%',
-          position: 'absolute', left: activo ? '22px' : '2px', top: '2px',
-          transition: 'left 0.3s'
-        }}></div>
-      </div>
-    </div>
-  );
-}

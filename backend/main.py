@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos, notifications
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -91,24 +91,6 @@ def run_migrations():
             visto_por_usuaria     BOOLEAN DEFAULT FALSE,
             created_at            TIMESTAMP DEFAULT NOW()
         )""",
-        """CREATE TABLE IF NOT EXISTS notification_devices (
-            id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            id_usuaria  UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
-            plataforma  VARCHAR(20) NOT NULL,
-            token       TEXT NOT NULL,
-            activo      BOOLEAN DEFAULT TRUE,
-            created_at  TIMESTAMP DEFAULT NOW(),
-            UNIQUE(plataforma, token)
-        )""",
-        """CREATE TABLE IF NOT EXISTS notificaciones_enviadas (
-            id_usuaria  UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
-            tipo        VARCHAR(40) NOT NULL,
-            clave       VARCHAR(40) NOT NULL,
-            created_at  TIMESTAMP DEFAULT NOW(),
-            PRIMARY KEY (id_usuaria, tipo, clave)
-        )""",
-        "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS hora_pastilla TIME",
-        "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS recordatorio_pastilla SMALLINT DEFAULT 0",
         """CREATE TABLE IF NOT EXISTS foro_eliminaciones_aviso (
             id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             id_autor              UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
@@ -233,13 +215,6 @@ app.include_router(parejas.router)
 app.include_router(chat.router)
 app.include_router(foro.router)
 app.include_router(consejos.router)
-app.include_router(notifications.router)
-
-from app.utils.scheduler import iniciar_scheduler
-
-@app.on_event("startup")
-def _arrancar_scheduler():
-    iniciar_scheduler()
 
 
 @app.get("/")

@@ -84,18 +84,6 @@ def enviar_mensaje(mensaje: MensajeCreate, db: Session = Depends(get_db), curren
     db.add(nuevo_mensaje)
     db.commit()
     db.refresh(nuevo_mensaje)
-
-    # Notificar al receptor
-    try:
-        from app.utils.push import enviar_a_usuaria
-        nombre = current_user.nombre or "Tu pareja"
-        body_txt = contenido[:80] if contenido else "📷 Foto"
-        enviar_a_usuaria(db, mensaje.id_receptor,
-                         title=f"{nombre} te ha enviado un mensaje",
-                         body=body_txt,
-                         data={"tipo": "chat", "id_remitente": str(current_user.id_usuaria)})
-    except Exception as e:
-        print(f"[Push] chat error: {e}")
     return _mensaje_out(nuevo_mensaje)
 
 

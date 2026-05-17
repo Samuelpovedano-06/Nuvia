@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { ChevronLeft, Bell, Zap, Shield, Save, RefreshCw, AlertTriangle, Check } from 'lucide-react';
+import { ChevronLeft, Zap, Shield, Save, RefreshCw, AlertTriangle, Check } from 'lucide-react';
 
 export default function AdminConfigScreen() {
   const navigate = useNavigate();
@@ -10,7 +10,6 @@ export default function AdminConfigScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [config, setConfig] = useState({
     modo_mantenimiento: false,
-    notificaciones_globales: true,
     max_dias_ciclo: 45,
     min_dias_ciclo: 21,
     max_dias_periodo: 10,
@@ -97,36 +96,6 @@ export default function AdminConfigScreen() {
       <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '30px' }}>
         Gestiona los parámetros globales y el comportamiento de la plataforma Nuvia.
       </p>
-
-      {/* Notificaciones */}
-      <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ background: '#FCE4EC', padding: '10px', borderRadius: '12px', color: '#E91E63' }}>
-            <Bell size={20} />
-          </div>
-          <div>
-            <h4 style={{ margin: 0 }}>Notificaciones del Sistema</h4>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)' }}>Alertas push y recordatorios globales</p>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '14px' }}>Estado de notificaciones globales</span>
-          <div 
-            onClick={() => setConfig({...config, notificaciones_globales: !config.notificaciones_globales})}
-            style={{ 
-              width: '45px', height: '24px', background: config.notificaciones_globales ? 'var(--primary)' : '#ccc', 
-              borderRadius: '12px', position: 'relative', transition: 'background 0.3s', cursor: 'pointer'
-            }}
-          >
-            <div style={{ 
-              width: '20px', height: '20px', background: 'white', borderRadius: '50%', 
-              position: 'absolute', left: config.notificaciones_globales ? '23px' : '2px', top: '2px',
-              transition: 'left 0.3s'
-            }}></div>
-          </div>
-        </div>
-      </div>
 
       {/* Algoritmo */}
       <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>

@@ -141,28 +141,20 @@ class PrediccionOut(BaseModel):
 # ─────────────────────── CONFIGURACIÓN ───────────────────────
 
 class ConfiguracionUpdate(BaseModel):
-    notificaciones: Optional[int] = None
-    recordatorio_ciclo: Optional[int] = None
     privacidad_estricta: Optional[int] = None
     duracion_ciclo: Optional[int] = None
     duracion_periodo: Optional[int] = None
     fecha_nacimiento: Optional[date] = None
     modo_oscuro: Optional[int] = None
-    hora_pastilla: Optional[str] = None  # 'HH:MM' o '' para limpiar
-    recordatorio_pastilla: Optional[int] = None
     codigo_pareja: Optional[str] = None  # usado solo para enviar solicitud de vinculación
 
 class ConfiguracionOut(BaseModel):
     id_usuaria: UUID
-    notificaciones: int
-    recordatorio_ciclo: int
     privacidad_estricta: int
     duracion_ciclo: int
     duracion_periodo: int
     fecha_nacimiento: Optional[date] = None
     modo_oscuro: int
-    hora_pastilla: Optional[str] = None
-    recordatorio_pastilla: int = 0
 
     class Config:
         from_attributes = True
@@ -199,7 +191,6 @@ class AdminStatsOut(BaseModel):
 
 class AdminConfigUpdate(BaseModel):
     modo_mantenimiento: Optional[bool] = None
-    notificaciones_globales: Optional[bool] = None
     max_dias_ciclo: Optional[int] = None
     min_dias_ciclo: Optional[int] = None
     max_dias_periodo: Optional[int] = None
@@ -208,7 +199,6 @@ class AdminConfigUpdate(BaseModel):
 class AdminConfigOut(BaseModel):
     id: int
     modo_mantenimiento: bool
-    notificaciones_globales: bool
     max_dias_ciclo: int
     min_dias_ciclo: int
     max_dias_periodo: int
