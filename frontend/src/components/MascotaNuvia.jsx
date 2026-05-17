@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
 
@@ -24,8 +24,11 @@ export default function MascotaNuvia({ user }) {
   // Estados visuales:
   //   hasAviso  -> lift arriba + flotando visible (instantáneo al cambiar aviso)
   //   paused    -> wrap + animaciones de capas en pausa (se mantiene durante el descenso)
+  //   centerX   -> offset px para llevar la mascota al centro mientras flota
   const [hasAviso, setHasAviso] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [centerX, setCenterX] = useState(0);
+  const wrapRef = useRef(null);
 
   const ocultar = !user;
 
@@ -70,9 +73,22 @@ export default function MascotaNuvia({ user }) {
   // - aviso desaparece -> hasAviso=false al instante (descenso 700ms), paused=false al terminar
   useEffect(() => {
     if (tieneAviso) {
+      // 1. Pausar primero para que el wrap deje de moverse
       setPaused(true);
       setHasAviso(true);
+      // 2. En el siguiente frame ya está congelado → leer su posición real y centrar
+      const raf = requestAnimationFrame(() => {
+        if (wrapRef.current) {
+          const rect = wrapRef.current.getBoundingClientRect();
+          const currentCenter = rect.left + rect.width / 2;
+          const targetCenter = window.innerWidth / 2;
+          setCenterX(targetCenter - currentCenter);
+        }
+      });
+      return () => cancelAnimationFrame(raf);
     } else {
+      // Volver al sitio donde se quedó el wrap
+      setCenterX(0);
       setHasAviso(false);
       const t = setTimeout(() => setPaused(false), DESCENT_MS);
       return () => clearTimeout(t);
@@ -162,6 +178,16 @@ export default function MascotaNuvia({ user }) {
         .nuvia-mascota-wrap.paused .nuvia-capa-andando,
         .nuvia-mascota-wrap.paused .nuvia-capa-sentado {
           animation-play-state: paused;
+        }
+
+        /* Capa "centrar": desplazamiento horizontal hasta el centro cuando flota */
+        .nuvia-mascota-centrar {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transition: transform ${DESCENT_MS}ms cubic-bezier(0.34, 1.05, 0.64, 1);
+          transform: translateX(0);
+          will-change: transform;
         }
 
         .nuvia-mascota-lift {
@@ -294,12 +320,17 @@ export default function MascotaNuvia({ user }) {
         }
       `}</style>
       <div
+        ref={wrapRef}
         className={[
           'nuvia-mascota-wrap',
           paused ? 'paused' : '',
           hasAviso ? 'has-aviso' : ''
         ].filter(Boolean).join(' ')}
       >
+        <div
+          className="nuvia-mascota-centrar"
+          style={{ transform: `translateX(${centerX}px)` }}
+        >
         <div className="nuvia-mascota-lift">
           {aviso && (
             <div className="nuvia-bocadillo" onClick={onMascotaClick}>
@@ -339,6 +370,7 @@ export default function MascotaNuvia({ user }) {
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
     </>
