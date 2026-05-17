@@ -1,5 +1,6 @@
 /* Safe area para iPhones con notch / barra inferior cuando se instala como app */
-html, body {
+html,
+body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   /* En navegador normal estas variables valen 0 — solo aplican en modo standalone */
 }
@@ -238,9 +239,17 @@ h4 {
 }
 
 @media (min-width: 768px) {
-  h1 { font-size: 2.5rem; }
-  h2 { font-size: 2rem; }
-  h3 { font-size: 1.5rem; }
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
 }
 
 .subtitle {
@@ -404,8 +413,13 @@ h4 {
 }
 
 @keyframes rotate-sun {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .card:hover .nuvia-sun-bg {
@@ -554,7 +568,7 @@ body.dark-mode .role-marker {
 
 /* Adjusted screen container for bottom nav */
 .has-bottom-nav .screen-container {
-  padding-bottom: 120px;
+  padding-bottom: 60px;
 }
 
 body.dark-mode .bottom-nav {
