@@ -4,7 +4,7 @@ import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import {
   ChevronLeft, Users, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, Search, Shield, Heart, AlertTriangle,
-  Activity, Lightbulb, Droplets, Lock, Ban, ShieldOff
+  Activity, Lightbulb, Droplets, Lock, Ban, Unlock
 } from 'lucide-react';
 
 export default function AdminUsersScreen() {
@@ -261,7 +261,7 @@ export default function AdminUsersScreen() {
               {u.id_usuaria !== user?.id_usuaria && (
                 u.baneado ? (
                   <button onClick={() => handleDesbanear(u)} title="Desbanear" style={{ flex: 1, minWidth: '70px', background: '#dcfce7', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
-                    <ShieldOff size={16} /> Desbanear
+                    <Unlock size={16} /> Desbanear
                   </button>
                 ) : (
                   <button onClick={() => handleOpenBanModal(u)} title="Banear" style={{ flex: 1, minWidth: '70px', background: '#fff7ed', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#c2410c', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
