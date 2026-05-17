@@ -52,18 +52,34 @@ def _mensaje_out(m: Mensaje) -> dict:
     }
 
 
+def _puede_chatear(db: Session, current_user: Usuaria, id_otro: UUID) -> bool:
+    """Permite chat si son pareja vinculada o si uno de los dos es admin (soporte)."""
+    if current_user.rol == "admin":
+        return True
+    otro = db.query(Usuaria).filter(Usuaria.id_usuaria == id_otro).first()
+    if otro and otro.rol == "admin":
+        return True
+    return db.query(Pareja).filter(
+        or_(
+            and_(Pareja.id_usuaria == current_user.id_usuaria, Pareja.id_pareja == id_otro),
+            and_(Pareja.id_pareja == current_user.id_usuaria, Pareja.id_usuaria == id_otro)
+        )
+    ).first() is not None
+
+
+@router.get("/soporte/admin")
+def obtener_admin_soporte(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Devuelve el admin con el que hablar para atención al cliente."""
+    admin = db.query(Usuaria).filter(Usuaria.rol == "admin").order_by(Usuaria.fecha_registro.asc()).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="No hay administradores disponibles")
+    return {"id_usuaria": str(admin.id_usuaria), "nombre": admin.nombre}
+
+
 @router.post("/", response_model=MensajeOut)
 def enviar_mensaje(mensaje: MensajeCreate, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
-    # Verificar si son pareja
-    vinculo = db.query(Pareja).filter(
-        or_(
-            and_(Pareja.id_usuaria == current_user.id_usuaria, Pareja.id_pareja == mensaje.id_receptor),
-            and_(Pareja.id_pareja == current_user.id_usuaria, Pareja.id_usuaria == mensaje.id_receptor)
-        )
-    ).first()
-
-    if not vinculo:
-        raise HTTPException(status_code=403, detail="No puedes enviar mensajes a alguien que no es tu pareja vinculada.")
+    if not _puede_chatear(db, current_user, mensaje.id_receptor):
+        raise HTTPException(status_code=403, detail="No puedes enviar mensajes a esta usuaria.")
 
     contenido = (mensaje.contenido or "").strip()
     imagen_bytes = None
@@ -99,16 +115,8 @@ def obtener_imagen_mensaje(id: UUID, db: Session = Depends(get_db), current_user
 
 @router.get("/{id_pareja}")
 def obtener_mensajes(id_pareja: UUID, limit: int = 50, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
-    # Verificar si son pareja
-    vinculo = db.query(Pareja).filter(
-        or_(
-            and_(Pareja.id_usuaria == current_user.id_usuaria, Pareja.id_pareja == id_pareja),
-            and_(Pareja.id_pareja == current_user.id_usuaria, Pareja.id_usuaria == id_pareja)
-        )
-    ).first()
-
-    if not vinculo:
-        raise HTTPException(status_code=403, detail="No puedes ver mensajes con alguien que no es tu pareja vinculada.")
+    if not _puede_chatear(db, current_user, id_pareja):
+        raise HTTPException(status_code=403, detail="No puedes ver mensajes con esta usuaria.")
 
     mensajes = db.query(Mensaje).filter(
         or_(

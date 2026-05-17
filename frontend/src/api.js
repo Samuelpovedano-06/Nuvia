@@ -353,6 +353,16 @@ export const ApiService = {
   imagenChatUrl: (id) => `${baseUrl}/chat/imagen/${id}`,
   imagenForoUrl: (id) => `${baseUrl}/foro/${id}/imagen`,
 
+  getAdminSoporte: async () => {
+    const res = await fetch(`${baseUrl}/chat/soporte/admin`, { headers: getHeaders() });
+    if (!res.ok) {
+      let detail = `Soporte no disponible (HTTP ${res.status})`;
+      try { const j = await res.json(); if (j.detail) detail = j.detail; } catch {}
+      throw new Error(detail);
+    }
+    return await res.json();
+  },
+
   compartirPublicacion: async (idReceptor, idPublicacion) => {
     const res = await fetch(`${baseUrl}/chat/compartir-publicacion`, {
       method: 'POST',
