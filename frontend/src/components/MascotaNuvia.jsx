@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-
-const RUTAS_SIN_MASCOTA = ['/login', '/register', '/soporte', '/admin/soporte', '/pareja'];
 
 const MASCOTA_SIZE = 60;
 const ANIM_SECS = 18;
 
 export default function MascotaNuvia({ user }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [avisos, setAvisos] = useState([]);
   const [indiceAviso, setIndiceAviso] = useState(0);
 
-  const ocultar = !user || RUTAS_SIN_MASCOTA.includes(location.pathname);
+  const ocultar = !user;
 
   useEffect(() => {
     if (ocultar) return;
@@ -137,7 +134,15 @@ export default function MascotaNuvia({ user }) {
             className="nuvia-mascota-img"
             src="/mascota.png"
             alt="Nuvia"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            onError={(e) => {
+              // Fallback al SVG si el PNG no existe
+              if (!e.currentTarget.dataset.fallback) {
+                e.currentTarget.dataset.fallback = '1';
+                e.currentTarget.src = '/mascota.svg';
+              } else {
+                e.currentTarget.style.display = 'none';
+              }
+            }}
           />
         </div>
       </div>

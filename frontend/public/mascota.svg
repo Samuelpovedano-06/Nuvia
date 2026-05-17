@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="body" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#d182d6"/>
+      <stop offset="100%" stop-color="#a259a8"/>
+    </radialGradient>
+  </defs>
+  <!-- Sombra -->
+  <ellipse cx="100" cy="188" rx="42" ry="6" fill="rgba(120, 60, 130, 0.25)"/>
+  <!-- Piernas -->
+  <line x1="80" y1="160" x2="78" y2="178" stroke="#a259a8" stroke-width="6" stroke-linecap="round"/>
+  <line x1="120" y1="160" x2="122" y2="178" stroke="#a259a8" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="78" cy="180" r="5" fill="#a259a8"/>
+  <circle cx="122" cy="180" r="5" fill="#a259a8"/>
+  <!-- Pinchos / rayos alrededor del cuerpo -->
+  <g stroke="#a259a8" stroke-width="5" stroke-linecap="round">
+    <line x1="100" y1="20" x2="100" y2="5"/>
+    <line x1="60" y1="35" x2="48" y2="22"/>
+    <line x1="140" y1="35" x2="152" y2="22"/>
+    <line x1="30" y1="70" x2="14" y2="64"/>
+    <line x1="170" y1="70" x2="186" y2="64"/>
+    <line x1="25" y1="100" x2="8" y2="100"/>
+    <line x1="175" y1="100" x2="192" y2="100"/>
+    <line x1="30" y1="130" x2="14" y2="138"/>
+    <line x1="170" y1="130" x2="186" y2="138"/>
+    <line x1="80" y1="20" x2="76" y2="6"/>
+    <line x1="120" y1="20" x2="124" y2="6"/>
+    <line x1="45" y1="50" x2="32" y2="40"/>
+    <line x1="155" y1="50" x2="168" y2="40"/>
+    <line x1="45" y1="150" x2="32" y2="160"/>
+    <line x1="155" y1="150" x2="168" y2="160"/>
+  </g>
+  <!-- Brazos -->
+  <path d="M 30 110 Q 18 120 24 138" stroke="#a259a8" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M 170 110 Q 182 120 176 138" stroke="#a259a8" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <!-- Cuerpo redondo -->
+  <circle cx="100" cy="100" r="65" fill="url(#body)"/>
+  <!-- Ojos -->
+  <ellipse cx="80" cy="92" rx="5" ry="7" fill="#2d1b2d"/>
+  <ellipse cx="120" cy="92" rx="5" ry="7" fill="#2d1b2d"/>
+  <!-- Brillo en los ojos -->
+  <circle cx="82" cy="89" r="1.5" fill="white"/>
+  <circle cx="122" cy="89" r="1.5" fill="white"/>
+  <!-- Sonrisa -->
+  <path d="M 78 115 Q 100 135 122 115" stroke="#2d1b2d" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <!-- Mejillitas -->
+  <circle cx="70" cy="108" r="6" fill="rgba(255, 105, 180, 0.35)"/>
+  <circle cx="130" cy="108" r="6" fill="rgba(255, 105, 180, 0.35)"/>
+</svg>
