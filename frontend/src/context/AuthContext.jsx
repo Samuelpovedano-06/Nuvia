@@ -18,6 +18,12 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const data = await ApiService.getMe();
+      // Si es pareja y se quedó sin vínculos, limpiar el selectedPartnerId cacheado
+      // (la otra parte cortó el vínculo → evitamos 403 al pedir sus datos)
+      if (data?.rol === 'pareja' && !data?.tiene_vinculos) {
+        localStorage.removeItem('selectedPartnerId');
+        localStorage.removeItem('showUsChat');
+      }
       setUser(data);
     } catch (e) {
       // El token existía pero el servidor lo rechazó → la sesión caducó

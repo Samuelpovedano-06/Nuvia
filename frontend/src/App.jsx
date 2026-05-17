@@ -86,7 +86,8 @@ function App() {
     }
   }, [user]);
 
-  // Polling de desvinculaciones pendientes
+  // Polling de desvinculaciones pendientes — NO depende de desvinculacion
+  // para evitar reinicios y race conditions con el "marcar visto"
   useEffect(() => {
     if (!user) return;
     let cancel = false;
@@ -94,21 +95,22 @@ function App() {
       try {
         const data = await ApiService.getDesvinculacionesPendientes();
         if (cancel) return;
-        if (Array.isArray(data) && data.length > 0 && !desvinculacion) {
-          setDesvinculacion(data[0]);
+        if (Array.isArray(data) && data.length > 0) {
+          setDesvinculacion(prev => prev ?? data[0]);
         }
       } catch (_) {}
     };
     fetchDesv();
     const id = setInterval(fetchDesv, 10000);
     return () => { cancel = true; clearInterval(id); };
-  }, [user, desvinculacion]);
+  }, [user]);
 
   const handleCerrarDesvinculacion = async () => {
     if (!desvinculacion) return;
     const id = desvinculacion.id;
-    setDesvinculacion(null);
+    // Marcamos primero en backend para que el siguiente fetch no la traiga
     try { await ApiService.marcarDesvinculacionVista(id); } catch (_) {}
+    setDesvinculacion(null);
   };
 
   // Vigilar rechazos

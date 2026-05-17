@@ -198,6 +198,11 @@ export default function WellnessScreen() {
 
   useEffect(() => {
     const fetchWellness = async () => {
+      // Pareja sin vínculo seleccionado → estado vacío, no pedimos nada
+      if (isPareja && !targetId) {
+        setLoading(false);
+        return;
+      }
       try {
         const [ciclos, config, s7, d7, sintomas] = await Promise.all([
           ApiService.getCiclos(targetId),

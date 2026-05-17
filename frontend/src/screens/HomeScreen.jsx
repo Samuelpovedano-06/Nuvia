@@ -36,6 +36,11 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Si es pareja sin vínculos (o sin partner seleccionado), no pedimos nada → muestra estado vacío
+      if (isPareja && !localStorage.getItem('selectedPartnerId')) {
+        setLoadingData(false);
+        return;
+      }
       try {
         const today = new Date().toISOString().split('T')[0];
         const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
@@ -126,7 +131,7 @@ export default function HomeScreen() {
     };
 
     fetchData();
-  }, []);
+  }, [isUnlinkedPareja, user?.tiene_vinculos]);
 
   const handleLogPeriod = async () => {
     setLoadingData(true);

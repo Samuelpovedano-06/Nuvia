@@ -179,6 +179,14 @@ const PartnerScreen = () => {
           localStorage.setItem('selectedPartnerId', getVid(first));
           localStorage.setItem('selectedPartnerName', first.nombre);
         }
+      } else {
+        // Ya no hay vínculos → limpiar selección obsoleta
+        setSelectedId(null);
+        setMensajes([]);
+        setShowChat(false);
+        localStorage.removeItem('selectedPartnerId');
+        localStorage.removeItem('selectedPartnerName');
+        localStorage.removeItem('showUsChat');
       }
     } catch (err) {
       console.error('Error fetching vinculos:', err);
