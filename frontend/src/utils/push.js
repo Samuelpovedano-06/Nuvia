@@ -7,6 +7,13 @@ import { ApiService } from '../api';
 
 const isCapacitor = () => !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 
+// Variable indirecta para que Vite NO intente resolver el paquete en build.
+// Capacitor solo se carga en tiempo de ejecución dentro de la app nativa.
+const CAP_PUSH_PKG = '@capacitor/push-notifications';
+async function loadCapacitorPush() {
+  return await import(/* @vite-ignore */ CAP_PUSH_PKG);
+}
+
 function urlBase64ToUint8Array(b64) {
   const padding = '='.repeat((4 - (b64.length % 4)) % 4);
   const base64 = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -24,7 +31,7 @@ export async function isPushSupported() {
 export async function getCurrentPermission() {
   if (isCapacitor()) {
     try {
-      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const { PushNotifications } = await loadCapacitorPush();
       const r = await PushNotifications.checkPermissions();
       return r.receive; // 'granted' | 'denied' | 'prompt'
     } catch { return 'prompt'; }
@@ -38,7 +45,7 @@ export async function enablePush() {
 }
 
 async function enablePushCapacitor() {
-  const { PushNotifications } = await import('@capacitor/push-notifications');
+  const { PushNotifications } = await loadCapacitorPush();
   let perm = await PushNotifications.checkPermissions();
   if (perm.receive === 'prompt') perm = await PushNotifications.requestPermissions();
   if (perm.receive !== 'granted') throw new Error('Permiso de notificaciones denegado');
