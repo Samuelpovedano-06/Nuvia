@@ -35,6 +35,11 @@ self.addEventListener('notificationclick', (event) => {
   if (data.tipo === 'chat')              url = '/pareja';
   else if (data.tipo === 'foro_respuesta') url = '/comunidad';
   else if (data.tipo === 'foro_eliminacion' || data.tipo === 'foro_bane') url = '/comunidad';
+  else if (data.tipo === 'pareja_solicitud' || data.tipo === 'pareja_aceptada') url = '/profile';
+  else if (data.tipo === 'consejo_nuevo')    url = data.id ? `/consejos/${data.id}` : '/consejos';
+  else if (data.tipo === 'recordatorio_regla' || data.tipo === 'recordatorio_ovulacion') url = '/calendar';
+  else if (data.tipo === 'recordatorio_pastilla') url = '/profile';
+  else if (data.tipo === 'cumple_pareja')    url = '/pareja';
 
   event.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

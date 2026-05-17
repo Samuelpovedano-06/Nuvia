@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text, Boolean, LargeBinary
+from sqlalchemy import Column, Integer, String, Date, DateTime, Time, Text, SmallInteger, ForeignKey, func, UUID, text, Boolean, LargeBinary
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
 import uuid
@@ -112,6 +112,8 @@ class ConfiguracionUsuaria(Base):
     google_token       = Column(Text, nullable=True)
     google_refresh_token = Column(Text, nullable=True)
     google_token_expiry = Column(DateTime, nullable=True)
+    hora_pastilla              = Column(Time, nullable=True)        # HH:MM diaria
+    recordatorio_pastilla      = Column(SmallInteger, server_default="0")
 
     usuaria = relationship("Usuaria", back_populates="configuracion")
 
@@ -215,6 +217,16 @@ class NotificationDevice(Base):
     plataforma  = Column(String(20), nullable=False)  # 'web' (PWA/iOS) | 'android' (FCM)
     token       = Column(Text, nullable=False)        # FCM token o JSON de Web Push subscription
     activo      = Column(Boolean, server_default=text("true"))
+    created_at  = Column(DateTime, server_default=func.now())
+
+
+class NotificacionEnviada(Base):
+    """Dedup de notificaciones recurrentes (regla, ovulación, pastilla, cumpleaños).
+    `clave` es algo único por evento+día (ej. '2026-05-17' o '2026-05-17:08:30')."""
+    __tablename__ = "notificaciones_enviadas"
+    id_usuaria  = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+    tipo        = Column(String(40), primary_key=True)
+    clave       = Column(String(40), primary_key=True)
     created_at  = Column(DateTime, server_default=func.now())
 
 

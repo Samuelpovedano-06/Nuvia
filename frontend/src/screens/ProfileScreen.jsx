@@ -231,6 +231,8 @@ export default function ProfileScreen() {
   // Estados de configuración
   const [notificaciones, setNotificaciones] = useState(1);
   const [modoOscuro, setModoOscuro] = useState(0);
+  const [horaPastilla, setHoraPastilla] = useState('');
+  const [recordatorioPastilla, setRecordatorioPastilla] = useState(0);
   const [isCycleEditable, setIsCycleEditable] = useState(false);
   const [systemRanges, setSystemRanges] = useState({
     min_dias_ciclo: 21,
@@ -359,6 +361,8 @@ export default function ProfileScreen() {
             setPickerYear(d.getFullYear());
           }
           setNotificaciones(config.notificaciones ?? 1);
+          if (config.hora_pastilla) setHoraPastilla(config.hora_pastilla);
+          setRecordatorioPastilla(config.recordatorio_pastilla ?? 0);
 
           const dark = config.modo_oscuro ?? 0;
           setModoOscuro(dark);
@@ -794,6 +798,13 @@ export default function ProfileScreen() {
 
         <PushToggle />
 
+        <PastillaToggle
+          horaPastilla={horaPastilla}
+          setHoraPastilla={setHoraPastilla}
+          activo={recordatorioPastilla}
+          setActivo={setRecordatorioPastilla}
+        />
+
         <div
           onClick={toggleModoOscuro}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
@@ -1138,6 +1149,73 @@ export default function ProfileScreen() {
         })(),
         document.body
       )}
+    </div>
+  );
+}
+
+// --------- Toggle recordatorio de pastilla ----------
+function PastillaToggle({ horaPastilla, setHoraPastilla, activo, setActivo }) {
+  const [busy, setBusy] = React.useState(false);
+  const [localHora, setLocalHora] = React.useState(horaPastilla || '');
+
+  React.useEffect(() => { setLocalHora(horaPastilla || ''); }, [horaPastilla]);
+
+  const guardarHora = async (val) => {
+    setLocalHora(val);
+    setHoraPastilla(val);
+    setBusy(true);
+    try {
+      await ApiService.updateConfig({ hora_pastilla: val });
+    } catch (e) {
+      alert(e.message || 'No se pudo guardar la hora');
+    } finally { setBusy(false); }
+  };
+
+  const toggle = async () => {
+    if (busy) return;
+    if (!localHora && activo === 0) {
+      alert('Primero indica la hora de la pastilla');
+      return;
+    }
+    const nuevo = activo === 1 ? 0 : 1;
+    setActivo(nuevo);
+    setBusy(true);
+    try {
+      await ApiService.updateConfig({ recordatorio_pastilla: nuevo });
+    } catch (e) {
+      setActivo(activo);
+      alert(e.message || 'No se pudo cambiar el recordatorio');
+    } finally { setBusy(false); }
+  };
+
+  const on = activo === 1;
+  return (
+    <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={toggle}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ background: on ? '#FFF1F2' : '#f0f0f0', padding: '10px', borderRadius: '50%', color: on ? '#F6416C' : '#999', marginRight: '16px', transition: 'all 0.3s', fontSize: '18px' }}>
+            💊
+          </div>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: '500' }}>Recordatorio pastilla</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+              {on ? `Aviso diario a las ${localHora || '—'}` : 'Desactivado'}
+            </div>
+          </div>
+        </div>
+        <div style={{ width: '42px', height: '22px', background: on ? '#F6416C' : '#ccc', borderRadius: '12px', position: 'relative', transition: 'background 0.3s' }}>
+          <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%', position: 'absolute', left: on ? '22px' : '2px', top: '2px', transition: 'left 0.3s' }} />
+        </div>
+      </div>
+      <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '54px' }}>
+        <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>Hora</span>
+        <input
+          type="time"
+          value={localHora}
+          onChange={(e) => guardarHora(e.target.value)}
+          style={{ padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }}
+        />
+      </div>
     </div>
   );
 }

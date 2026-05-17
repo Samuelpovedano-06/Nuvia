@@ -1,12 +1,29 @@
 from uuid import UUID
+from datetime import time as dtime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja
 from app.schemas.schemas import ConfiguracionUpdate, ConfiguracionOut
 from app.routers.auth_utils import get_current_user
+from app.utils.push import enviar_a_usuaria
 
 router = APIRouter(prefix="/configuracion", tags=["Configuración"])
+
+
+def _serialize_config(c: ConfiguracionUsuaria) -> dict:
+    return {
+        "id_usuaria": str(c.id_usuaria),
+        "notificaciones": c.notificaciones or 0,
+        "recordatorio_ciclo": c.recordatorio_ciclo or 0,
+        "privacidad_estricta": c.privacidad_estricta or 0,
+        "duracion_ciclo": c.duracion_ciclo or 28,
+        "duracion_periodo": c.duracion_periodo or 5,
+        "fecha_nacimiento": c.fecha_nacimiento,
+        "modo_oscuro": c.modo_oscuro or 0,
+        "hora_pastilla": c.hora_pastilla.strftime("%H:%M") if c.hora_pastilla else None,
+        "recordatorio_pastilla": c.recordatorio_pastilla or 0,
+    }
 
 
 @router.get("/", response_model=ConfiguracionOut)
@@ -32,7 +49,7 @@ def obtener_configuracion(id_usuaria: UUID = None, db: Session = Depends(get_db)
                .first()
     if not config:
         raise HTTPException(status_code=404, detail="Configuración no encontrada")
-    return config
+    return _serialize_config(config)
 
 
 @router.put("/")
@@ -45,6 +62,7 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
     if not config:
         raise HTTPException(status_code=404, detail="Configuración no encontrada")
 
+    objetivo_push = None
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         if campo == "codigo_pareja":
             if valor:
@@ -56,11 +74,33 @@ def actualizar_configuracion(datos: ConfiguracionUpdate,
                 objetivo.solicitud_id = current_user.id_usuaria
                 objetivo.solicitud_estado = "pendiente"
                 current_user.solicitud_estado = "enviada"
+                objetivo_push = objetivo
+        elif campo == "hora_pastilla":
+            if not valor:
+                config.hora_pastilla = None
+            else:
+                try:
+                    hh, mm = valor.split(":")
+                    config.hora_pastilla = dtime(int(hh), int(mm))
+                except Exception:
+                    raise HTTPException(status_code=400, detail="hora_pastilla debe tener formato HH:MM")
         else:
             setattr(config, campo, valor)
     db.commit()
     db.refresh(config)
-    return config
+
+    if objetivo_push is not None:
+        try:
+            enviar_a_usuaria(
+                db, objetivo_push.id_usuaria,
+                title="💞 Solicitud de pareja",
+                body=f"{current_user.nombre} quiere vincularse contigo en Nuvia",
+                data={"tipo": "pareja_solicitud"},
+            )
+        except Exception as e:
+            print(f"[push pareja_solicitud] {e}")
+
+    return _serialize_config(config)
 
 @router.post("/aceptar-pareja")
 def aceptar_pareja(db: Session = Depends(get_db),
@@ -77,12 +117,25 @@ def aceptar_pareja(db: Session = Depends(get_db),
     db.add(vinculo)
 
     # Limpiar estados de solicitud
+    id_solicitante = solicitante.id_usuaria
+    nombre_solicitante = solicitante.nombre
     current_user.solicitud_id = None
     current_user.solicitud_estado = None
     solicitante.solicitud_estado = None
-    
+
     db.commit()
-    return {"message": "Pareja vinculada con éxito."}
+
+    try:
+        enviar_a_usuaria(
+            db, id_solicitante,
+            title="💞 Solicitud aceptada",
+            body=f"{current_user.nombre} ha aceptado tu solicitud de pareja",
+            data={"tipo": "pareja_aceptada"},
+        )
+    except Exception as e:
+        print(f"[push pareja_aceptada] {e}")
+
+    return {"message": "Pareja vinculada con éxito.", "nombre": nombre_solicitante}
 
 @router.post("/rechazar-pareja")
 def rechazar_pareja(db: Session = Depends(get_db),

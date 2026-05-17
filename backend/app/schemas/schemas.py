@@ -148,6 +148,8 @@ class ConfiguracionUpdate(BaseModel):
     duracion_periodo: Optional[int] = None
     fecha_nacimiento: Optional[date] = None
     modo_oscuro: Optional[int] = None
+    hora_pastilla: Optional[str] = None  # 'HH:MM' o '' para limpiar
+    recordatorio_pastilla: Optional[int] = None
     codigo_pareja: Optional[str] = None  # usado solo para enviar solicitud de vinculación
 
 class ConfiguracionOut(BaseModel):
@@ -159,6 +161,8 @@ class ConfiguracionOut(BaseModel):
     duracion_periodo: int
     fecha_nacimiento: Optional[date] = None
     modo_oscuro: int
+    hora_pastilla: Optional[str] = None
+    recordatorio_pastilla: int = 0
 
     class Config:
         from_attributes = True
