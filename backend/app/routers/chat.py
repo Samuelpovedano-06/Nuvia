@@ -241,8 +241,8 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
             n_m = len(de_usuarias)
             avisos.append({
                 "tipo": "soporte_admin",
-                "texto": (f"Una usuaria espera respuesta en atención al cliente" if n_u == 1
-                          else f"{n_u} usuarias esperan respuesta en atención al cliente ({n_m} mensajes)"),
+                "texto": (f"Una usuaria espera respuesta en soporte" if n_u == 1
+                          else f"{n_u} usuarias esperan respuesta en soporte ({n_m} mensajes)"),
                 "count": n_m,
             })
 
