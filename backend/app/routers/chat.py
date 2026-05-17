@@ -76,6 +76,60 @@ def obtener_admin_soporte(db: Session = Depends(get_db), current_user: Usuaria =
     return {"id_usuaria": str(admin.id_usuaria), "nombre": admin.nombre}
 
 
+@router.get("/soporte/conversaciones")
+def listar_conversaciones_soporte(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Solo admin. Devuelve la lista de usuarias que han chateado con admins, con el último mensaje y los no leídos."""
+    if current_user.rol != "admin":
+        raise HTTPException(status_code=403, detail="Solo administradores")
+
+    admin_ids = [a.id_usuaria for a in db.query(Usuaria.id_usuaria).filter(Usuaria.rol == "admin").all()]
+
+    # Todos los mensajes en los que un admin es remitente o receptor
+    mensajes = db.query(Mensaje).filter(
+        or_(Mensaje.id_remitente.in_(admin_ids), Mensaje.id_receptor.in_(admin_ids))
+    ).order_by(Mensaje.fecha.asc()).all()
+
+    # Agrupar por "la otra parte" (la usuaria no admin)
+    conv = {}  # id_usuaria_no_admin -> { ultimo_mensaje, fecha, no_leidos, mio }
+    for m in mensajes:
+        otro = m.id_receptor if m.id_remitente in admin_ids else m.id_remitente
+        if otro in admin_ids:
+            continue  # admin <-> admin, ignorar
+        entry = conv.get(otro)
+        es_de_admin = m.id_remitente in admin_ids
+        no_leido_para_admin = (not es_de_admin) and (m.id_receptor == current_user.id_usuaria) and (not m.leido)
+        if entry is None:
+            entry = {"no_leidos": 0}
+            conv[otro] = entry
+        entry["ultimo_mensaje"] = (m.contenido or ("📷 Imagen" if m.imagen else ""))[:120]
+        entry["fecha"] = m.fecha
+        entry["mio"] = es_de_admin
+        if no_leido_para_admin:
+            entry["no_leidos"] += 1
+
+    if not conv:
+        return []
+
+    usuarias = {u.id_usuaria: u for u in db.query(Usuaria).filter(Usuaria.id_usuaria.in_(list(conv.keys()))).all()}
+
+    out = []
+    for uid, info in conv.items():
+        u = usuarias.get(uid)
+        if not u:
+            continue
+        out.append({
+            "id_usuaria": str(uid),
+            "nombre": u.nombre,
+            "email": u.email,
+            "ultimo_mensaje": info["ultimo_mensaje"],
+            "fecha": info["fecha"],
+            "no_leidos": info["no_leidos"],
+            "mio": info["mio"],
+        })
+    out.sort(key=lambda r: r["fecha"], reverse=True)
+    return out
+
+
 @router.post("/", response_model=MensajeOut)
 def enviar_mensaje(mensaje: MensajeCreate, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
     if not _puede_chatear(db, current_user, mensaje.id_receptor):

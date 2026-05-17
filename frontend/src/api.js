@@ -363,6 +363,12 @@ export const ApiService = {
     return await res.json();
   },
 
+  getConversacionesSoporte: async () => {
+    const res = await fetch(`${baseUrl}/chat/soporte/conversaciones`, { headers: getHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
   compartirPublicacion: async (idReceptor, idPublicacion) => {
     const res = await fetch(`${baseUrl}/chat/compartir-publicacion`, {
       method: 'POST',

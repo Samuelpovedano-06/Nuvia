@@ -2,9 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { ApiService } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ChevronLeft, Users, Shield, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, 
-  TrendingUp, Activity, Calendar, Download, Settings, Zap, ArrowUpRight
+import {
+  ChevronLeft, Users, Shield, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff,
+  TrendingUp, Activity, Calendar, Download, Settings, Zap, ArrowUpRight, Headphones
 } from 'lucide-react';
 
 export default function AdminPanelScreen() {
@@ -319,6 +319,7 @@ export default function AdminPanelScreen() {
         {[
           { icon: <Settings size={18} />, label: 'Configuración del sistema', path: '/admin/config' },
           { icon: <Users size={18} />, label: 'Gestión de usuarios', path: '/admin/users' },
+          { icon: <Headphones size={18} />, label: 'Atención al cliente', path: '/admin/soporte' },
           { icon: <Activity size={18} />, label: 'Monitor de Sistema (Logs)', action: () => setShowLogs(true) }
         ].map((item, i) => (
           <div 
@@ -326,7 +327,7 @@ export default function AdminPanelScreen() {
             onClick={() => item.path ? navigate(item.path) : item.action()}
             style={{ 
               padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer',
-              borderBottom: i < 2 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none',
+              borderBottom: i < 3 ? '1px solid rgba(155, 108, 152, 0.1)' : 'none',
               transition: 'background 0.2s'
             }}
           >
