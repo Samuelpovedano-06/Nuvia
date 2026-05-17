@@ -759,7 +759,7 @@ export default function ProfileScreen() {
         </div>
 
         <div
-          onClick={() => navigate('/soporte')}
+          onClick={() => navigate(user?.rol === 'admin' ? '/admin/soporte' : '/soporte')}
           style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderTop: '1px solid rgba(0,0,0,0.05)' }}
         >
           <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -768,7 +768,9 @@ export default function ProfileScreen() {
             </div>
             <div>
               <div style={{ fontSize: '15px', fontWeight: '500' }}>Atención al cliente</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Chatea con el equipo de Nuvia</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
+                {user?.rol === 'admin' ? 'Conversaciones de soporte' : 'Chatea con el equipo de Nuvia'}
+              </div>
             </div>
           </div>
           <ChevronRight size={20} color="var(--text-light)" />

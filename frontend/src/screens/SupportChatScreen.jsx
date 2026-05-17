@@ -26,10 +26,14 @@ export default function SupportChatScreen() {
   };
 
   useEffect(() => {
+    if (user?.rol === 'admin') {
+      navigate('/admin/soporte', { replace: true });
+      return;
+    }
     ApiService.getAdminSoporte()
       .then(setAdmin)
       .catch(e => setError(e.message || 'No se pudo conectar con soporte'));
-  }, []);
+  }, [user, navigate]);
 
   const fetchMensajes = async () => {
     if (!admin) return;
