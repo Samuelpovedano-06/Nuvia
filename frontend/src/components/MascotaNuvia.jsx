@@ -21,13 +21,14 @@ export default function MascotaNuvia({ user }) {
   const [sentadoOk, setSentadoOk] = useState(null);
   const [flotandoOk, setFlotandoOk] = useState(null);
 
-  // Estados visuales (desincronizados del aviso para que el descenso sea suave)
-  const [enAviso, setEnAviso] = useState(false);   // lift arriba + wrap paused
-  const [mostrarFlotando, setMostrarFlotando] = useState(false); // capa flotando renderizada
+  // Estados visuales:
+  //   hasAviso  -> lift arriba + flotando visible (instantáneo al cambiar aviso)
+  //   paused    -> wrap + animaciones de capas en pausa (se mantiene durante el descenso)
+  const [hasAviso, setHasAviso] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   const ocultar = !user;
 
-  // Probar disponibilidad de imágenes
   useEffect(() => {
     if (ocultar) return;
     const check = (src, set) => {
@@ -41,7 +42,6 @@ export default function MascotaNuvia({ user }) {
     check('/mascota-flotando.png', setFlotandoOk);
   }, [ocultar]);
 
-  // Polling de avisos
   useEffect(() => {
     if (ocultar) return;
     let cancel = false;
@@ -56,7 +56,6 @@ export default function MascotaNuvia({ user }) {
     return () => { cancel = true; clearInterval(id); };
   }, [ocultar]);
 
-  // Rotar entre avisos cada 5s si hay varios
   useEffect(() => {
     if (avisos.length <= 1) { setIndiceAviso(0); return; }
     const id = setInterval(() => setIndiceAviso(i => (i + 1) % avisos.length), 5000);
@@ -66,16 +65,16 @@ export default function MascotaNuvia({ user }) {
   const aviso = avisos[indiceAviso];
   const tieneAviso = !!aviso;
 
-  // Sincronizar estados visuales con la presencia de aviso
+  // Coordinación de estados:
+  // - aviso aparece    -> paused+hasAviso=true al instante
+  // - aviso desaparece -> hasAviso=false al instante (descenso 700ms), paused=false al terminar
   useEffect(() => {
     if (tieneAviso) {
-      // Entrada inmediata: pausar, subir, mostrar flotando
-      setEnAviso(true);
-      setMostrarFlotando(true);
+      setPaused(true);
+      setHasAviso(true);
     } else {
-      // Salida: bajar (lift transition) y luego volver a caminar
-      setEnAviso(false);  // dispara la transición de bajada
-      const t = setTimeout(() => setMostrarFlotando(false), DESCENT_MS);
+      setHasAviso(false);
+      const t = setTimeout(() => setPaused(false), DESCENT_MS);
       return () => clearTimeout(t);
     }
   }, [tieneAviso]);
@@ -88,8 +87,6 @@ export default function MascotaNuvia({ user }) {
     else if (aviso.tipo === 'respuesta_soporte') navigate('/soporte');
     else if (aviso.tipo === 'soporte_admin') navigate('/admin/soporte');
     else if (aviso.tipo === 'reporte_pendiente') navigate('/admin/reportes');
-    // Vaciamos los avisos localmente: la mascota baja y reanuda el paseo.
-    // El siguiente poll (15s) vuelve a sincronizar con el backend por si quedan no leídos.
     setAvisos([]);
     setIndiceAviso(0);
   };
@@ -99,7 +96,6 @@ export default function MascotaNuvia({ user }) {
   return (
     <>
       <style>{`
-        /* Movimiento horizontal: caminar + sentarse (sin flotar) */
         @keyframes mascota-walk {
           0%   { left: 0; }
           22%  { left: 36vw; }
@@ -109,21 +105,15 @@ export default function MascotaNuvia({ user }) {
           75%  { left: calc(100vw - ${MASCOTA_SIZE}px - 36vw); }
           100% { left: 0; }
         }
-
-        /* Frames del walk-cycle */
         @keyframes mascota-frames {
           from { background-position-x: 0px; }
           to   { background-position-x: -${MASCOTA_SIZE * COLS}px; }
         }
-
-        /* Cambio de fila según dirección */
         @keyframes mascota-direccion {
           0%,  49.9% { background-position-y: -${MASCOTA_SIZE * ROW_RIGHT}px; }
           50%, 99.9% { background-position-y: -${MASCOTA_SIZE * ROW_LEFT}px; }
           100%       { background-position-y: -${MASCOTA_SIZE * ROW_RIGHT}px; }
         }
-
-        /* Opacidad de la capa "andando" según el momento del ciclo (oculta en pausas) */
         @keyframes capa-andando-ciclo {
           0%,  22%    { opacity: 1; }
           22.1%, 25%  { opacity: 0; }
@@ -131,8 +121,6 @@ export default function MascotaNuvia({ user }) {
           72.1%, 75%  { opacity: 0; }
           75.1%, 100% { opacity: 1; }
         }
-
-        /* Opacidad de la capa "sentado" (visible durante las pausas) */
         @keyframes capa-sentado-ciclo {
           0%,  22%    { opacity: 0; }
           22.1%, 25%  { opacity: 1; }
@@ -140,19 +128,14 @@ export default function MascotaNuvia({ user }) {
           72.1%, 75%  { opacity: 1; }
           75.1%, 100% { opacity: 0; }
         }
-
-        /* Bob suave mientras flota (cuando hay aviso) */
         @keyframes flotar-bob {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-6px); }
         }
-
         @keyframes bocadillo-pop {
           from { opacity: 0; transform: translateX(-50%) translateY(0)     scale(0.6); }
           to   { opacity: 1; transform: translateX(-50%) translateY(-12px) scale(1);   }
         }
-
-        /* Fallback (sin sprites) */
         @keyframes mascota-fallback-bob {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-4px); }
@@ -174,11 +157,13 @@ export default function MascotaNuvia({ user }) {
           animation: mascota-walk ${CYCLE_SECS}s linear infinite;
           will-change: left;
         }
-        .nuvia-mascota-wrap.paused {
+        /* Pausa global: el wrap y las animaciones internas paran a la vez para mantener sincronía */
+        .nuvia-mascota-wrap.paused,
+        .nuvia-mascota-wrap.paused .nuvia-capa-andando,
+        .nuvia-mascota-wrap.paused .nuvia-capa-sentado {
           animation-play-state: paused;
         }
 
-        /* Capa "lift": sube cuando hay aviso, baja al quitarlo, con transition */
         .nuvia-mascota-lift {
           position: relative;
           width: 100%;
@@ -190,7 +175,6 @@ export default function MascotaNuvia({ user }) {
           transform: translateY(-32px);
         }
 
-        /* Capa "bob": pequeño balanceo cuando flota */
         .nuvia-mascota-bob {
           position: relative;
           width: 100%;
@@ -198,6 +182,27 @@ export default function MascotaNuvia({ user }) {
         }
         .nuvia-mascota-wrap.has-aviso .nuvia-mascota-bob {
           animation: flotar-bob 2.4s ease-in-out infinite;
+        }
+
+        /* Grupos de capas: opacidad controlada por has-aviso con transición suave */
+        .nuvia-grupo-andando {
+          position: absolute;
+          inset: 0;
+          transition: opacity 0.4s ease-in-out;
+          opacity: 1;
+        }
+        .nuvia-mascota-wrap.has-aviso .nuvia-grupo-andando {
+          opacity: 0;
+        }
+
+        .nuvia-grupo-flotando {
+          position: absolute;
+          inset: 0;
+          transition: opacity 0.4s ease-in-out;
+          opacity: 0;
+        }
+        .nuvia-mascota-wrap.has-aviso .nuvia-grupo-flotando {
+          opacity: 1;
         }
 
         .nuvia-capa {
@@ -238,7 +243,6 @@ export default function MascotaNuvia({ user }) {
           opacity: 1;
         }
 
-        /* Fallback */
         .nuvia-mascota-fallback {
           width: 100%;
           height: 100%;
@@ -292,8 +296,8 @@ export default function MascotaNuvia({ user }) {
       <div
         className={[
           'nuvia-mascota-wrap',
-          (enAviso || mostrarFlotando) ? 'paused' : '',
-          enAviso ? 'has-aviso' : ''
+          paused ? 'paused' : '',
+          hasAviso ? 'has-aviso' : ''
         ].filter(Boolean).join(' ')}
       >
         <div className="nuvia-mascota-lift">
@@ -304,18 +308,19 @@ export default function MascotaNuvia({ user }) {
           )}
           <div className="nuvia-mascota-bob">
             {usarSprites ? (
-              mostrarFlotando ? (
-                flotandoOk && (
-                  <div className="nuvia-capa nuvia-capa-flotando" onClick={onMascotaClick} aria-label="Nuvia" />
-                )
-              ) : (
-                <>
+              <>
+                <div className="nuvia-grupo-andando">
                   <div className="nuvia-capa nuvia-capa-andando" onClick={onMascotaClick} aria-label="Nuvia" />
                   {sentadoOk && (
                     <div className="nuvia-capa nuvia-capa-sentado" onClick={onMascotaClick} aria-hidden />
                   )}
-                </>
-              )
+                </div>
+                {flotandoOk && (
+                  <div className="nuvia-grupo-flotando">
+                    <div className="nuvia-capa nuvia-capa-flotando" onClick={onMascotaClick} aria-hidden />
+                  </div>
+                )}
+              </>
             ) : (
               <div className="nuvia-mascota-fallback">
                 <img
