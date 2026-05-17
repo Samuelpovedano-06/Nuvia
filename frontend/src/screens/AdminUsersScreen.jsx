@@ -4,7 +4,7 @@ import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import {
   ChevronLeft, Users, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, Search, Shield, Heart, AlertTriangle,
-  Activity, Lightbulb, Droplets, Lock
+  Activity, Lightbulb, Droplets, Lock, Ban, ShieldOff
 } from 'lucide-react';
 
 export default function AdminUsersScreen() {
@@ -24,8 +24,20 @@ export default function AdminUsersScreen() {
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingUser, setViewingUser] = useState(null);
+  const [banesInfo, setBanesInfo] = useState(null); // { total_banes, activo, historial }
+  const [loadingBanes, setLoadingBanes] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  // Estado del modal de banear
+  const [showBanModal, setShowBanModal] = useState(false);
+  const [userToBan, setUserToBan] = useState(null);
+  const [motivosBan, setMotivosBan] = useState([]); // [{clave, etiqueta}]
+  const [motivosSeleccionados, setMotivosSeleccionados] = useState([]);
+  const [motivoPersonalizado, setMotivoPersonalizado] = useState('');
+  const [duracionDias, setDuracionDias] = useState('');
+  const [submittingBan, setSubmittingBan] = useState(false);
+  const [errorBan, setErrorBan] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -64,9 +76,17 @@ export default function AdminUsersScreen() {
     setError('');
   };
 
-  const handleOpenViewModal = (u) => {
+  const handleOpenViewModal = async (u) => {
     setViewingUser(u);
     setShowViewModal(true);
+    setBanesInfo(null);
+    setLoadingBanes(true);
+    try {
+      const data = await ApiService.getBanesUsuaria(u.id_usuaria);
+      setBanesInfo(data);
+    } catch (_) {} finally {
+      setLoadingBanes(false);
+    }
   };
 
   const handleSaveUser = async (e) => {
@@ -91,6 +111,55 @@ export default function AdminUsersScreen() {
   const handleOpenDeleteModal = (u) => {
     setUserToDelete(u);
     setShowDeleteModal(true);
+  };
+
+  const handleOpenBanModal = async (u) => {
+    setUserToBan(u);
+    setMotivosSeleccionados([]);
+    setMotivoPersonalizado('');
+    setDuracionDias('');
+    setErrorBan('');
+    setShowBanModal(true);
+    if (motivosBan.length === 0) {
+      try {
+        const data = await ApiService.getMotivosForo();
+        setMotivosBan(data || []);
+      } catch (_) {}
+    }
+  };
+
+  const handleDesbanear = async (u) => {
+    if (!window.confirm(`¿Desbanear a ${u.nombre}?`)) return;
+    try {
+      await ApiService.adminDesbanear(u.id_usuaria);
+      fetchUsers();
+    } catch (err) {
+      alert(err.message || 'No se pudo desbanear');
+    }
+  };
+
+  const confirmBan = async () => {
+    if (motivosSeleccionados.length === 0) {
+      setErrorBan('Selecciona al menos un motivo');
+      return;
+    }
+    if (motivosSeleccionados.includes('otros') && !motivoPersonalizado.trim()) {
+      setErrorBan('Si eliges "Otros" debes escribir el motivo');
+      return;
+    }
+    setSubmittingBan(true);
+    setErrorBan('');
+    try {
+      const dur = duracionDias ? parseInt(duracionDias) : null;
+      await ApiService.adminBanear(userToBan.id_usuaria, motivosSeleccionados, motivoPersonalizado.trim(), dur);
+      setShowBanModal(false);
+      setUserToBan(null);
+      fetchUsers();
+    } catch (err) {
+      setErrorBan(err.message || 'No se pudo banear');
+    } finally {
+      setSubmittingBan(false);
+    }
   };
 
   const confirmDeleteUser = async () => {
@@ -161,36 +230,48 @@ export default function AdminUsersScreen() {
       {/* Users List */}
       <div style={{ display: 'grid', gap: '12px', paddingBottom: '40px' }}>
         {filteredUsers.map((u, i) => (
-          <div key={u.id_usuaria} className="card" style={{ margin: 0, padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', animation: `fadeIn 0.3s ease ${i * 0.05}s both` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1, minWidth: 0 }}>
-              <div style={{ 
+          <div key={u.id_usuaria} className="card" style={{ margin: 0, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', animation: `fadeIn 0.3s ease ${i * 0.05}s both` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', minWidth: 0 }}>
+              <div style={{
                 width: '45px', height: '45px', borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, var(--primary) 0%, #F472B6 100%)', 
+                background: 'linear-gradient(135deg, var(--primary) 0%, #F472B6 100%)',
                 display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', fontSize: '18px',
                 boxShadow: '0 4px 10px rgba(186, 104, 200, 0.15)'
               }}>
                 {u.nombre.charAt(0).toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '600', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontWeight: '600', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.nombre}</span>
                   {u.rol === 'admin' && <span style={{ fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Admin</span>}
                   {u.rol === 'pareja' && <span style={{ fontSize: '10px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Pareja</span>}
+                  {u.baneado && <span style={{ fontSize: '10px', background: '#fee2e2', color: '#b91c1c', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Baneada</span>}
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
               </div>
             </div>
-            
-            <div style={{ display: 'flex', gap: '8px', marginLeft: '10px', flexShrink: 0 }}>
-              <button onClick={() => handleOpenViewModal(u)} title="Ver Resumen" style={{ background: '#f0f9ff', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#0369a1' }}>
-                <Eye size={18} />
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={() => handleOpenViewModal(u)} title="Ver Resumen" style={{ flex: 1, minWidth: '70px', background: '#f0f9ff', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                <Eye size={16} /> Ver
               </button>
-              <button onClick={() => handleOpenModal(u)} title="Editar" style={{ background: '#f5f3ff', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#6d28d9' }}>
-                <Edit size={18} />
+              <button onClick={() => handleOpenModal(u)} title="Editar" style={{ flex: 1, minWidth: '70px', background: '#f5f3ff', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                <Edit size={16} /> Editar
               </button>
               {u.id_usuaria !== user?.id_usuaria && (
-                <button onClick={() => handleOpenDeleteModal(u)} title="Eliminar" style={{ background: '#fee2e2', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#ef4444' }}>
-                  <Trash2 size={18} />
+                u.baneado ? (
+                  <button onClick={() => handleDesbanear(u)} title="Desbanear" style={{ flex: 1, minWidth: '70px', background: '#dcfce7', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    <ShieldOff size={16} /> Desbanear
+                  </button>
+                ) : (
+                  <button onClick={() => handleOpenBanModal(u)} title="Banear" style={{ flex: 1, minWidth: '70px', background: '#fff7ed', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#c2410c', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    <Ban size={16} /> Banear
+                  </button>
+                )
+              )}
+              {u.id_usuaria !== user?.id_usuaria && (
+                <button onClick={() => handleOpenDeleteModal(u)} title="Eliminar" style={{ flex: 1, minWidth: '70px', background: '#fee2e2', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                  <Trash2 size={16} /> Eliminar
                 </button>
               )}
             </div>
@@ -384,12 +465,230 @@ export default function AdminUsersScreen() {
               </div>
             </div>
 
-            <button 
+            {/* Historial de baneos */}
+            <div style={{ marginBottom: '25px', padding: '14px', borderRadius: '14px', background: '#FFF1F2', border: '1px solid rgba(246, 65, 108, 0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <Ban size={16} color="#F6416C" />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#F6416C' }}>Historial de baneos</span>
+              </div>
+
+              {loadingBanes && (
+                <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Cargando…</div>
+              )}
+
+              {!loadingBanes && banesInfo && (
+                <>
+                  <div style={{ fontSize: '13px', color: '#4a3a4a', marginBottom: '8px' }}>
+                    Veces baneada: <strong>{banesInfo.total_banes}</strong>
+                  </div>
+
+                  {banesInfo.activo ? (
+                    <div style={{
+                      background: 'white', borderRadius: '10px', padding: '10px 12px',
+                      border: '1px solid rgba(246, 65, 108, 0.25)'
+                    }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: '#b91c1c', marginBottom: '4px' }}>
+                        Ban activo ahora mismo
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#4a3a4a', lineHeight: 1.5 }}>
+                        Duración: <strong>
+                          {banesInfo.activo.permanente
+                            ? 'Permanente'
+                            : (banesInfo.activo.dias_restantes != null
+                                ? `${banesInfo.activo.dias_restantes} ${banesInfo.activo.dias_restantes === 1 ? 'día restante' : 'días restantes'}`
+                                : '—')}
+                        </strong>
+                        {!banesInfo.activo.permanente && banesInfo.activo.fecha_fin && (
+                          <span style={{ color: 'var(--text-light)' }}> · hasta {new Date(banesInfo.activo.fecha_fin).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                      {banesInfo.activo.motivos.length > 0 && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '4px' }}>
+                          Motivos: {banesInfo.activo.motivos.map(m => m.etiqueta).join(', ')}
+                        </div>
+                      )}
+                      {banesInfo.activo.motivo_personalizado && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '2px', fontStyle: 'italic' }}>
+                          "{banesInfo.activo.motivo_personalizado}"
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '12px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                      {banesInfo.total_banes === 0
+                        ? 'Sin baneos previos.'
+                        : 'Sin ban activo en este momento.'}
+                    </div>
+                  )}
+
+                  {banesInfo.historial.length > 1 && (
+                    <details style={{ marginTop: '10px' }}>
+                      <summary style={{ fontSize: '12px', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}>
+                        Ver historial completo ({banesInfo.historial.length})
+                      </summary>
+                      <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {banesInfo.historial.map((b, i) => (
+                          <div key={b.id} style={{ background: 'white', padding: '8px 10px', borderRadius: '8px', fontSize: '11px', color: '#4a3a4a' }}>
+                            <div style={{ fontWeight: 600 }}>
+                              #{banesInfo.historial.length - i} · {b.permanente ? 'Permanente' : (b.fecha_fin ? `Hasta ${new Date(b.fecha_fin).toLocaleDateString()}` : '—')}
+                              {b.activo && <span style={{ color: '#F6416C', marginLeft: '6px' }}>· activo</span>}
+                            </div>
+                            <div style={{ color: 'var(--text-light)' }}>
+                              {b.fecha_inicio && `Desde ${new Date(b.fecha_inicio).toLocaleDateString()}`}
+                              {b.motivos.length > 0 && ` · ${b.motivos.map(m => m.etiqueta).join(', ')}`}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </>
+              )}
+            </div>
+
+            <button
               onClick={() => { setShowViewModal(false); handleOpenModal(viewingUser); }}
               className="btn-primary"
               style={{ width: '100%', padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
               <Edit size={18} /> Editar Perfil Completo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Ban */}
+      {showBanModal && userToBan && (
+        <div
+          onClick={() => setShowBanModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(30, 10, 40, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '20px' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card"
+            style={{ width: '100%', maxWidth: '420px', margin: 0, padding: '24px', maxHeight: '90vh', overflowY: 'auto', animation: 'scaleIn 0.3s ease' }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '50%',
+                background: '#FFF1F2', color: '#F6416C',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+              }}>
+                <Ban size={22} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '20px', color: 'var(--primary)', fontWeight: 700, flex: 1, minWidth: 0 }}>
+                Banear a la usuaria
+              </h3>
+              <button onClick={() => setShowBanModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', flexShrink: 0, padding: 0 }}>
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Motivos */}
+            <div style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 700, marginBottom: '10px' }}>
+              Motivos del baneo <span style={{ color: '#F6416C' }}>*</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '18px' }}>
+              {motivosBan.map(m => {
+                const sel = motivosSeleccionados.includes(m.clave);
+                return (
+                  <label
+                    key={m.clave}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '12px 14px', borderRadius: '12px',
+                      background: sel ? 'rgba(176, 91, 181, 0.12)' : '#F5F1F5',
+                      cursor: 'pointer', userSelect: 'none',
+                      transition: 'background 0.15s'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={sel}
+                      onChange={() => {
+                        setMotivosSeleccionados(prev =>
+                          prev.includes(m.clave) ? prev.filter(x => x !== m.clave) : [...prev, m.clave]
+                        );
+                      }}
+                      style={{
+                        width: '18px', height: '18px', flexShrink: 0,
+                        accentColor: 'var(--primary)', cursor: 'pointer'
+                      }}
+                    />
+                    <span style={{ fontSize: '14px', color: '#4a3a4a', fontWeight: sel ? 600 : 500 }}>
+                      {m.etiqueta}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Motivo personalizado si "otros" */}
+            {motivosSeleccionados.includes('otros') && (
+              <div style={{ marginBottom: '18px' }}>
+                <textarea
+                  value={motivoPersonalizado}
+                  onChange={e => setMotivoPersonalizado(e.target.value)}
+                  placeholder="Explica brevemente el motivo..."
+                  rows={3}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+              </div>
+            )}
+
+            {/* Duración */}
+            <div style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 700, marginBottom: '10px' }}>
+              Duración del baneo:
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+              {[
+                { label: '1d', dias: 1 },
+                { label: '7d', dias: 7 },
+                { label: '30d', dias: 30 },
+                { label: '90d', dias: 90 },
+                { label: 'Permanente', dias: null }
+              ].map(opt => {
+                const val = opt.dias === null ? '' : String(opt.dias);
+                const sel = duracionDias === val;
+                return (
+                  <button
+                    key={opt.label}
+                    onClick={() => setDuracionDias(val)}
+                    type="button"
+                    style={{
+                      padding: '8px 18px', borderRadius: '999px',
+                      border: 'none',
+                      background: sel ? 'var(--primary)' : '#F5F1F5',
+                      color: sel ? 'white' : '#4a3a4a',
+                      cursor: 'pointer', fontWeight: sel ? 700 : 600, fontSize: '13px',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {errorBan && (
+              <div style={{ background: '#fef2f2', color: '#b91c1c', padding: '10px 12px', borderRadius: '10px', fontSize: '13px', marginBottom: '15px' }}>
+                {errorBan}
+              </div>
+            )}
+
+            <button
+              onClick={confirmBan}
+              disabled={submittingBan}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
+                background: 'linear-gradient(135deg, #F6416C 0%, #d11744 100%)',
+                color: 'white', cursor: 'pointer', fontWeight: 700, fontSize: '15px',
+                boxShadow: '0 6px 18px rgba(246, 65, 108, 0.35)',
+                opacity: submittingBan ? 0.7 : 1
+              }}
+            >
+              {submittingBan ? 'Baneando...' : 'Banear'}
             </button>
           </div>
         </div>

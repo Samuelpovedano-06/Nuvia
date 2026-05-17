@@ -674,6 +674,12 @@ export const ApiService = {
     if (!res.ok) return [];
     return await res.json();
   },
+
+  getBanesUsuaria: async (idUsuaria) => {
+    const res = await fetch(`${baseUrl}/foro/admin/banes/${idUsuaria}`, { headers: getHeaders() });
+    if (!res.ok) return { total_banes: 0, activo: null, historial: [] };
+    return await res.json();
+  },
   getMisAvisosForo: async () => {
     const res = await fetch(`${baseUrl}/foro/mis/avisos`, { headers: getHeaders() });
     if (!res.ok) return [];

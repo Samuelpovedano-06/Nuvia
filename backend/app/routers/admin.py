@@ -5,7 +5,7 @@ from typing import List
 from uuid import UUID
 from datetime import date, datetime, timedelta
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, RegistroDiario, ConfiguracionSistema
+from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, RegistroDiario, ConfiguracionSistema, BaneForo
 from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut, AdminConfigOut, AdminConfigUpdate
 from app.routers.auth_utils import get_current_user, hash_password
 
@@ -95,30 +95,40 @@ def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
     """Lista todas las usuarias del sistema con estadísticas detalladas."""
     users = db.query(Usuaria).all()
     hoy = datetime.now()
-    
+    ahora_utc = datetime.utcnow()
+
+    # IDs de usuarias con ban activo (no expirado)
+    banes_activos = db.query(BaneForo).filter(BaneForo.activo == True).all()
+    ids_baneadas = {
+        b.id_usuaria for b in banes_activos
+        if (b.fecha_fin is None) or (b.fecha_fin > ahora_utc)
+    }
+
     for user in users:
         # Conteos básicos
         user.total_ciclos = db.query(Ciclo).filter(Ciclo.id_usuaria == user.id_usuaria).count()
         user.total_sintomas = db.query(RegistroSintoma).filter(RegistroSintoma.id_usuaria == user.id_usuaria).count()
-        
+
         # Conteo de notas (Registros diarios con texto)
         user.total_notas = db.query(RegistroDiario).filter(
             RegistroDiario.id_usuaria == user.id_usuaria,
             RegistroDiario.notas != None,
             RegistroDiario.notas != ""
         ).count()
-        
+
         # Última fecha de periodo
         ultimo_ciclo = db.query(Ciclo).filter(Ciclo.id_usuaria == user.id_usuaria).order_by(Ciclo.fecha_inicio.desc()).first()
         user.ultima_fecha_periodo = ultimo_ciclo.fecha_inicio if ultimo_ciclo else None
-        
+
         # Estado de actividad
         if user.ultimo_acceso:
             diff = (hoy - user.ultimo_acceso).days
             user.estado = "Inactiva" if diff > 30 else "Activa"
         else:
             user.estado = "Pendiente"
-            
+
+        user.baneado = user.id_usuaria in ids_baneadas
+
     return users
 
 @router.post("/users", response_model=UsuariaOut, status_code=201)

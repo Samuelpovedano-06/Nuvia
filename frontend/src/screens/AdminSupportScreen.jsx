@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Send, Headphones, User } from 'lucide-react';
+import { ChevronLeft, Send, Headphones, User, PlusCircle, Search, X } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -21,6 +21,37 @@ export default function AdminSupportScreen() {
   const [mensajes, setMensajes] = useState([]);
   const [nuevo, setNuevo] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  // Modal "Nueva conversación"
+  const [mostrarPicker, setMostrarPicker] = useState(false);
+  const [todosUsuarios, setTodosUsuarios] = useState([]);
+  const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+  const [filtroBusqueda, setFiltroBusqueda] = useState('');
+
+  const abrirPicker = async () => {
+    setMostrarPicker(true);
+    setFiltroBusqueda('');
+    if (todosUsuarios.length === 0) {
+      setCargandoUsuarios(true);
+      try {
+        const data = await ApiService.getUsers();
+        setTodosUsuarios((data || []).filter(u => u.rol !== 'admin'));
+      } catch (_) {} finally {
+        setCargandoUsuarios(false);
+      }
+    }
+  };
+
+  const iniciarConversacionCon = (u) => {
+    setMostrarPicker(false);
+    setSelected({ id_usuaria: u.id_usuaria, nombre: u.nombre, email: u.email });
+  };
+
+  const usuariosFiltrados = todosUsuarios.filter(u => {
+    const q = filtroBusqueda.trim().toLowerCase();
+    if (!q) return true;
+    return (u.nombre || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q);
+  });
 
   const scrollRef = useRef(null);
   const ultimoIdRef = useRef(null);
@@ -201,12 +232,25 @@ export default function AdminSupportScreen() {
           <div style={{ background: '#F3E5F5', padding: '12px', borderRadius: '50%', color: 'var(--primary)', display: 'flex' }}>
             <Headphones size={22} />
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ margin: 0, fontSize: '22px' }}>Atención al cliente</h2>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>
               {conversaciones.length} {conversaciones.length === 1 ? 'conversación' : 'conversaciones'}
             </p>
           </div>
+          <button
+            onClick={abrirPicker}
+            style={{
+              flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'var(--primary)', color: 'white',
+              border: 'none', borderRadius: '12px', padding: '10px 14px',
+              fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(176, 91, 181, 0.25)'
+            }}
+          >
+            <PlusCircle size={16} /> Nueva
+          </button>
         </div>
 
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -264,6 +308,104 @@ export default function AdminSupportScreen() {
           ))}
         </div>
       </div>
+
+      {/* MODAL: elegir usuaria para iniciar conversación */}
+      {mostrarPicker && (
+        <div
+          onClick={() => setMostrarPicker(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2000, padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card"
+            style={{
+              width: '100%', maxWidth: '480px', maxHeight: '80vh',
+              display: 'flex', flexDirection: 'column',
+              padding: '0', overflow: 'hidden'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '18px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+              <h3 style={{ margin: 0, flex: 1, fontSize: '17px' }}>Nueva conversación</h3>
+              <button
+                onClick={() => setMostrarPicker(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', display: 'flex' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Buscador */}
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: '#F8F4FA', borderRadius: '12px', padding: '8px 12px'
+              }}>
+                <Search size={16} color="var(--text-light)" />
+                <input
+                  type="text"
+                  value={filtroBusqueda}
+                  onChange={(e) => setFiltroBusqueda(e.target.value)}
+                  placeholder="Buscar por nombre o email..."
+                  autoFocus
+                  style={{
+                    flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                    fontSize: '14px', color: 'var(--text-dark)'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Lista */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {cargandoUsuarios && (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '14px' }}>
+                  Cargando usuarias…
+                </div>
+              )}
+              {!cargandoUsuarios && usuariosFiltrados.length === 0 && (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '14px' }}>
+                  No hay usuarias que coincidan.
+                </div>
+              )}
+              {usuariosFiltrados.map((u, i) => (
+                <div
+                  key={u.id_usuaria}
+                  onClick={() => iniciarConversacionCon(u)}
+                  style={{
+                    padding: '12px 18px',
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    cursor: 'pointer',
+                    borderTop: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.05)'
+                  }}
+                >
+                  <div style={{
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: 'var(--primary-light)', color: 'white',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '16px', fontWeight: 600, flexShrink: 0
+                  }}>
+                    {u.nombre?.charAt(0).toUpperCase() || '?'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {u.nombre}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {u.email}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

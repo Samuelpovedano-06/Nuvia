@@ -898,6 +898,44 @@ def catalogo_motivos(current_user: Usuaria = Depends(get_current_user)):
     return [{"clave": k, "etiqueta": v} for k, v in MOTIVOS_VALIDOS.items()]
 
 
+@router.get("/admin/banes/{id_usuaria}")
+def historial_banes_usuaria(id_usuaria: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Solo admin. Devuelve resumen y historial de banes de una usuaria."""
+    _require_admin(current_user)
+    rows = db.query(BaneForo).filter(BaneForo.id_usuaria == id_usuaria).order_by(BaneForo.created_at.desc()).all()
+    ahora = datetime.utcnow()
+    activo = None
+    historial = []
+    for b in rows:
+        try:
+            motivos_claves = json.loads(b.motivos or "[]")
+        except Exception:
+            motivos_claves = []
+        item = {
+            "id": str(b.id),
+            "fecha_inicio": _iso_utc(b.fecha_inicio),
+            "fecha_fin": _iso_utc(b.fecha_fin),
+            "permanente": b.fecha_fin is None,
+            "activo": bool(b.activo and (b.fecha_fin is None or b.fecha_fin > ahora)),
+            "motivos": [{"clave": m, "etiqueta": MOTIVOS_VALIDOS.get(m, m)} for m in motivos_claves],
+            "motivo_personalizado": b.motivo_personalizado,
+        }
+        if item["activo"] and activo is None:
+            # días restantes si no es permanente
+            if b.fecha_fin is not None:
+                delta = b.fecha_fin - ahora
+                item["dias_restantes"] = max(0, delta.days + (1 if delta.seconds > 0 else 0))
+            else:
+                item["dias_restantes"] = None
+            activo = item
+        historial.append(item)
+    return {
+        "total_banes": len(rows),
+        "activo": activo,
+        "historial": historial,
+    }
+
+
 @router.get("/mis/bane-activo")
 def mi_bane_activo(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
     """Devuelve info del bane activo (independiente de si está visto o no), o null."""
