@@ -64,11 +64,9 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
     # Validaciones de plataforma
     plataforma = datos.plataforma or "usuaria"
 
-    if plataforma == "pareja" and usuaria.rol != "admin":
-        # Puede entrar como pareja si tiene al menos un vínculo donde es id_pareja
-        es_pareja = db.query(Pareja).filter(Pareja.id_pareja == usuaria.id_usuaria).first()
-        if not es_pareja:
-            return {"error": "No tienes ninguna pareja vinculada para acceder a esta vista."}
+    # Antes se bloqueaba el login de pareja sin vínculos. Ahora dejamos entrar igualmente
+    # (verá las vistas relevantes desactivadas) para que pueda navegar a "Mi pareja" y
+    # enviar una solicitud, o esperar a recibir una.
 
     if plataforma == "usuaria" and usuaria.rol == "pareja":
         # Pareja pura no tiene vista de usuaria

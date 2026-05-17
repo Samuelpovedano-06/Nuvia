@@ -200,6 +200,11 @@ function App() {
 
   return (
     <div className={`app-container ${user ? 'has-bottom-nav' : ''}`}>
+      {(() => {
+        // Pareja sin vínculos: solo puede ir a Home, Pareja y Perfil
+        const isUnlinkedPareja = user?.rol === 'pareja' && !user?.tiene_vinculos;
+        const guardPareja = (el) => isUnlinkedPareja ? <Navigate to="/" /> : el;
+      return (
       <Routes>
         <Route path="/login" element={!user ? <LoginScreen /> : <Navigate to="/" />} />
         <Route path="/register" element={!user ? <RegisterScreen /> : <Navigate to="/" />} />
@@ -207,12 +212,12 @@ function App() {
         {/* Rutas protegidas */}
         <Route path="/" element={user ? <HomeScreen /> : <Navigate to="/login" />} />
         <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
-        <Route path="/sintomas" element={user ? <SymptomsScreen /> : <Navigate to="/login" />} />
-        <Route path="/calendar" element={user ? <CalendarScreen /> : <Navigate to="/login" />} />
-        <Route path="/wellness" element={user ? <WellnessScreen /> : <Navigate to="/login" />} />
-        <Route path="/comunidad" element={user ? <CommunityScreen /> : <Navigate to="/login" />} />
-        <Route path="/consejos" element={user ? <ConsejosScreen /> : <Navigate to="/login" />} />
-        <Route path="/consejos/:id" element={user ? <ConsejoDetailScreen /> : <Navigate to="/login" />} />
+        <Route path="/sintomas" element={user ? guardPareja(<SymptomsScreen />) : <Navigate to="/login" />} />
+        <Route path="/calendar" element={user ? guardPareja(<CalendarScreen />) : <Navigate to="/login" />} />
+        <Route path="/wellness" element={user ? guardPareja(<WellnessScreen />) : <Navigate to="/login" />} />
+        <Route path="/comunidad" element={user ? guardPareja(<CommunityScreen />) : <Navigate to="/login" />} />
+        <Route path="/consejos" element={user ? guardPareja(<ConsejosScreen />) : <Navigate to="/login" />} />
+        <Route path="/consejos/:id" element={user ? guardPareja(<ConsejoDetailScreen />) : <Navigate to="/login" />} />
         <Route path="/admin/consejos" element={user?.rol === 'admin' ? <AdminConsejosScreen /> : <Navigate to="/" />} />
         <Route path="/admin/reportes" element={user?.rol === 'admin' ? <AdminReportesScreen /> : <Navigate to="/" />} />
         <Route path="/pareja" element={user ? <PartnerScreen /> : <Navigate to="/login" />} />
@@ -224,6 +229,8 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      );
+      })()}
       <MascotaNuvia user={user} />
       <BottomNav />
       {/* MODAL: la otra parte ha cortado el vínculo */}
