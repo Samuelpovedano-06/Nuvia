@@ -432,7 +432,7 @@ const PartnerScreen = () => {
 
           {/* ── Formulario para introducir código (si no hay vínculos ni solicitud enviada) ── */}
           {user?.solicitud_estado !== 'enviada' && vinculos.length === 0 && (
-            <div className="card" style={{ padding: '20px', marginTop: '20px' }}>
+            <div className="card" style={{ padding: '24px', marginTop: '20px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
                 <Shield size={24} color="var(--primary)" />
                 <h3 style={{ margin: 0, fontSize: '18px' }}>Vincular con mi pareja</h3>
@@ -440,18 +440,18 @@ const PartnerScreen = () => {
               <p style={{ color: 'var(--text-light)', fontSize: '14px', marginBottom: '20px' }}>
                 Introduce el código de tu pareja para solicitar la vinculación.
               </p>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
                 <input
                   type="text"
                   placeholder="Código (ej: X1Y2Z3)"
                   value={partnerCode}
                   onChange={e => setPartnerCode(e.target.value.toUpperCase())}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #eee', fontSize: '13px', outline: 'none', fontWeight: 'bold', letterSpacing: '2px' }}
+                  style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '12px', border: '1.5px solid #eee', fontSize: '13px', outline: 'none', fontWeight: 'bold', letterSpacing: '2px', boxSizing: 'border-box' }}
                 />
                 <button
                   onClick={handleSendRequest}
                   disabled={loading || !partnerCode}
-                  style={{ padding: '12px 18px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: loading || !partnerCode ? 0.7 : 1 }}
+                  style={{ flexShrink: 0, padding: '12px 18px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: loading || !partnerCode ? 0.7 : 1 }}
                 >
                   {loading ? '...' : 'Enviar'}
                 </button>
@@ -462,20 +462,20 @@ const PartnerScreen = () => {
 
           {/* Botón para añadir otra vinculación (si ya tiene vínculos) */}
           {vinculos.length > 0 && user?.solicitud_estado !== 'enviada' && (
-            <div className="card" style={{ padding: '16px', marginTop: '12px' }}>
+            <div className="card" style={{ padding: '20px', marginTop: '12px', boxSizing: 'border-box' }}>
               <p style={{ margin: '0 0 10px', fontSize: '14px', color: 'var(--text-light)' }}>Vincular con otra pareja</p>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
                 <input
                   type="text"
                   placeholder="Código (ej: X1Y2Z3)"
                   value={partnerCode}
                   onChange={e => setPartnerCode(e.target.value.toUpperCase())}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #eee', fontSize: '13px', outline: 'none', fontWeight: 'bold', letterSpacing: '2px' }}
+                  style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '12px', border: '1.5px solid #eee', fontSize: '13px', outline: 'none', fontWeight: 'bold', letterSpacing: '2px', boxSizing: 'border-box' }}
                 />
                 <button
                   onClick={handleSendRequest}
                   disabled={loading || !partnerCode}
-                  style={{ padding: '12px 18px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: loading || !partnerCode ? 0.7 : 1 }}
+                  style={{ flexShrink: 0, padding: '12px 18px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: loading || !partnerCode ? 0.7 : 1 }}
                 >
                   {loading ? '...' : 'Enviar'}
                 </button>
