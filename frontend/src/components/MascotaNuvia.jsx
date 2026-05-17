@@ -88,6 +88,10 @@ export default function MascotaNuvia({ user }) {
     else if (aviso.tipo === 'respuesta_soporte') navigate('/soporte');
     else if (aviso.tipo === 'soporte_admin') navigate('/admin/soporte');
     else if (aviso.tipo === 'reporte_pendiente') navigate('/admin/reportes');
+    // Vaciamos los avisos localmente: la mascota baja y reanuda el paseo.
+    // El siguiente poll (15s) vuelve a sincronizar con el backend por si quedan no leídos.
+    setAvisos([]);
+    setIndiceAviso(0);
   };
 
   const usarSprites = walkOk === true;
