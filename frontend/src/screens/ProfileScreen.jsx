@@ -758,23 +758,23 @@ export default function ProfileScreen() {
           </div>
         </div>
 
-        <div
-          onClick={() => navigate(user?.rol === 'admin' ? '/admin/soporte' : '/soporte')}
-          style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderTop: '1px solid rgba(0,0,0,0.05)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ background: '#F3E5F5', padding: '10px', borderRadius: '50%', color: 'var(--primary)', marginRight: '16px' }}>
-              <Headphones size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: '500' }}>Atención al cliente</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>
-                {user?.rol === 'admin' ? 'Conversaciones de soporte' : 'Chatea con el equipo de Nuvia'}
+        {user?.rol !== 'admin' && (
+          <div
+            onClick={() => navigate('/soporte')}
+            style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderTop: '1px solid rgba(0,0,0,0.05)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ background: '#F3E5F5', padding: '10px', borderRadius: '50%', color: 'var(--primary)', marginRight: '16px' }}>
+                <Headphones size={18} />
+              </div>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: '500' }}>Atención al cliente</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>Chatea con el equipo de Nuvia</div>
               </div>
             </div>
+            <ChevronRight size={20} color="var(--text-light)" />
           </div>
-          <ChevronRight size={20} color="var(--text-light)" />
-        </div>
+        )}
 
         {user?.rol === 'admin' && (
           <div
