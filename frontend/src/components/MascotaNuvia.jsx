@@ -144,8 +144,8 @@ export default function MascotaNuvia({ user }) {
         }
 
         @keyframes bocadillo-pop {
-          from { opacity: 0; transform: translateX(-50%) translateY(0)    scale(0.6); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(-6px) scale(1);   }
+          from { opacity: 0; transform: translateX(-50%) translateY(0)     scale(0.6); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(-12px) scale(1);   }
         }
 
         /* Fallback (sin sprites) */
@@ -256,7 +256,7 @@ export default function MascotaNuvia({ user }) {
           position: absolute;
           bottom: 100%;
           left: 50%;
-          transform: translateX(-50%) translateY(-6px);
+          transform: translateX(-50%) translateY(-12px);
           background: white;
           color: var(--text-dark);
           padding: 8px 14px;
@@ -292,12 +292,12 @@ export default function MascotaNuvia({ user }) {
           enAviso ? 'has-aviso' : ''
         ].filter(Boolean).join(' ')}
       >
-        {aviso && (
-          <div className="nuvia-bocadillo" onClick={onMascotaClick}>
-            {aviso.texto}
-          </div>
-        )}
         <div className="nuvia-mascota-lift">
+          {aviso && (
+            <div className="nuvia-bocadillo" onClick={onMascotaClick}>
+              {aviso.texto}
+            </div>
+          )}
           <div className="nuvia-mascota-bob">
             {usarSprites ? (
               mostrarFlotando ? (
