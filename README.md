@@ -4,6 +4,9 @@ Aplicación de bienestar femenino: seguimiento del ciclo menstrual, predicciones
 
 Disponible como **PWA web** y **APK Android** (mismo bundle empaquetado con Capacitor).
 
+web: [nuviaa](https://nuviaa.vercel.app)
+
+apk: ![descargar y pasar a android e instalar](Nuvia.apk)
 ---
 
 ## Tecnologías
