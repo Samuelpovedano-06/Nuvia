@@ -180,8 +180,9 @@ function App() {
     );
   }
 
-  // Pantalla de Mantenimiento (Solo si no es admin)
-  if (maintenance && user?.rol !== 'admin') {
+  // Pantalla de Mantenimiento: solo se muestra a usuarias logueadas que no sean admin.
+  // Sin login (user=null) NO se bloquea, para que el admin pueda entrar al login y desactivarlo.
+  if (maintenance && user && user.rol !== 'admin') {
     return (
       <div className="screen-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px' }}>
         <div style={{ background: '#FFF1F2', padding: '30px', borderRadius: '50%', color: '#F6416C', marginBottom: '30px' }}>

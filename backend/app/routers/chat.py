@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 from app.database.connection import get_db
-from app.models.models import Usuaria, Mensaje, Pareja, PublicacionForo, ReporteForo
+from app.models.models import Usuaria, Mensaje, Pareja, PublicacionForo, ReporteForo, Ciclo, ConfiguracionUsuaria, Prediccion, RegistroSintoma, Sintoma, RegistroDiario
 from app.schemas.schemas import MensajeCreate, MensajeOut
 from app.routers.auth_utils import get_current_user
 from sqlalchemy import or_, and_, func
@@ -256,6 +256,169 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
                           else f"Hay {reportes_pendientes} reportes pendientes"),
                 "count": int(reportes_pendientes),
             })
+
+    # Ciclo abierto demasiado tiempo: la usuaria empezó la regla pero no marcó
+    # la fecha de fin → la mascota se lo recuerda para que cierre el ciclo.
+    from datetime import date
+    ultimo_ciclo = (
+        db.query(Ciclo)
+          .filter(Ciclo.id_usuaria == current_user.id_usuaria,
+                  Ciclo.fecha_fin == None)
+          .order_by(Ciclo.fecha_inicio.desc())
+          .first()
+    )
+    if ultimo_ciclo and ultimo_ciclo.fecha_inicio:
+        cfg = db.query(ConfiguracionUsuaria).filter(
+            ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
+        ).first()
+        duracion_esperada = (cfg.duracion_periodo if cfg and cfg.duracion_periodo else 5)
+        umbral_dias = max(duracion_esperada + 2, 7)
+        dias = (date.today() - ultimo_ciclo.fecha_inicio).days
+        if dias >= umbral_dias:
+            avisos.append({
+                "tipo": "ciclo_abierto",
+                "texto": f"¿Ya terminó tu regla? Lleva {dias} días sin cerrar 🌸",
+                "count": dias,
+                "id_ciclo": str(ultimo_ciclo.id_ciclo),
+            })
+
+    # Regla muy retrasada (≥14 días después de lo previsto y sin iniciar):
+    # posible embarazo → mascota recomienda acudir al ginecólogo.
+    prediccion = (
+        db.query(Prediccion)
+          .filter(Prediccion.id_usuaria == current_user.id_usuaria)
+          .first()
+    )
+    if prediccion and prediccion.proxima_menstruacion:
+        dias_retraso = (date.today() - prediccion.proxima_menstruacion).days
+        if dias_retraso >= 14:
+            # ¿Ha empezado un ciclo dentro de la ventana esperada?
+            from datetime import timedelta
+            inicio_ventana = prediccion.proxima_menstruacion - timedelta(days=7)
+            ciclo_iniciado = (
+                db.query(Ciclo)
+                  .filter(Ciclo.id_usuaria == current_user.id_usuaria,
+                          Ciclo.fecha_inicio >= inicio_ventana)
+                  .first()
+            )
+            if not ciclo_iniciado:
+                avisos.append({
+                    "tipo": "regla_retrasada",
+                    "texto": f"Tu regla lleva {dias_retraso} días de retraso — podría ser embarazo, acude a tu ginecóloga 🩺",
+                    "count": dias_retraso,
+                })
+
+    # Detección de ciclos irregulares: si los últimos ciclos tienen gaps muy
+    # variables o fuera del rango fisiológico normal (21-45 días), la mascota
+    # recomienda generar el informe en PDF y acudir al ginecólogo.
+    ciclos_recientes = (
+        db.query(Ciclo)
+          .filter(Ciclo.id_usuaria == current_user.id_usuaria,
+                  Ciclo.fecha_inicio != None)
+          .order_by(Ciclo.fecha_inicio.asc())
+          .all()
+    )
+    if len(ciclos_recientes) >= 4:  # necesitamos ≥3 gaps para detectar variabilidad
+        ultimos = ciclos_recientes[-6:]  # últimos 6 ciclos
+        gaps = []
+        for i in range(1, len(ultimos)):
+            gap = (ultimos[i].fecha_inicio - ultimos[i - 1].fecha_inicio).days
+            if gap > 0:
+                gaps.append(gap)
+        if len(gaps) >= 3:
+            fuera_de_rango = any(g < 21 or g > 45 for g in gaps)
+            muy_variable = (max(gaps) - min(gaps)) >= 14
+            if fuera_de_rango or muy_variable:
+                avisos.append({
+                    "tipo": "ciclo_irregular",
+                    "texto": "Tus ciclos están irregulares — genera el informe y consulta a tu ginecóloga 🩺",
+                    "count": len(gaps),
+                })
+
+    # Síntomas/flujo/observaciones atípicos para la fase actual del ciclo.
+    # Detecta sangrado fuera de regla, flujo fértil en lútea, flujo seco en
+    # ovulación y palabras de alarma en las notas (fiebre, mareo, etc.).
+    from datetime import timedelta
+    ultimo_ciclo_iniciado = (
+        db.query(Ciclo)
+          .filter(Ciclo.id_usuaria == current_user.id_usuaria,
+                  Ciclo.fecha_inicio != None)
+          .order_by(Ciclo.fecha_inicio.desc())
+          .first()
+    )
+    if ultimo_ciclo_iniciado:
+        cfg_u = db.query(ConfiguracionUsuaria).filter(
+            ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
+        ).first()
+        dur_ciclo = (cfg_u.duracion_ciclo if cfg_u and cfg_u.duracion_ciclo else 28)
+        dur_periodo = (cfg_u.duracion_periodo if cfg_u and cfg_u.duracion_periodo else 5)
+        dia_ciclo = (date.today() - ultimo_ciclo_iniciado.fecha_inicio).days + 1
+
+        # Solo evaluamos dentro de una ventana razonable (1..ciclo+7)
+        if 1 <= dia_ciclo <= dur_ciclo + 7:
+            ovulacion_dia = max(7, dur_ciclo - 14)
+            fertil_ini, fertil_fin = ovulacion_dia - 5, ovulacion_dia + 1
+
+            if dia_ciclo <= dur_periodo:
+                fase = "menstrual"
+            elif dia_ciclo < fertil_ini:
+                fase = "folicular"
+            elif fertil_ini <= dia_ciclo <= fertil_fin:
+                fase = "ovulatoria"
+            else:
+                fase = "lutea"
+
+            desde = date.today() - timedelta(days=2)
+            regs_sint = (
+                db.query(Sintoma.nombre_sintoma)
+                  .join(RegistroSintoma, RegistroSintoma.id_sintoma == Sintoma.id_sintoma)
+                  .filter(RegistroSintoma.id_usuaria == current_user.id_usuaria,
+                          RegistroSintoma.fecha >= desde)
+                  .all()
+            )
+            diarios = (
+                db.query(RegistroDiario)
+                  .filter(RegistroDiario.id_usuaria == current_user.id_usuaria,
+                          RegistroDiario.fecha >= desde)
+                  .all()
+            )
+            nombres_sintomas = {r[0] for r in regs_sint}
+            flujos = {d.flujo for d in diarios if d.flujo}
+            notas_texto = " ".join((d.notas or "") for d in diarios).lower()
+
+            atipicos = []
+
+            # A) Sangrado/cólicos fuera de menstrual (y fuera del premenstrual tardío)
+            sintomas_sangrado = {"Manchada", "Cólicos", "Dolor Abdominal"}
+            if fase in ("folicular", "ovulatoria") and (nombres_sintomas & sintomas_sangrado):
+                atipicos.append("sangrado o cólicos fuera de tu regla")
+            elif fase == "lutea" and "Manchada" in nombres_sintomas and dia_ciclo < dur_ciclo - 3:
+                atipicos.append("manchado a media fase lútea")
+
+            # B) Flujo fértil en lútea
+            if fase == "lutea" and (flujos & {"clara_huevo", "acuoso"}):
+                atipicos.append("flujo fértil en fase premenstrual")
+
+            # C) Sin flujo fértil en ovulación (seco aislado durante ventana fértil)
+            if fase == "ovulatoria" and "seco" in flujos and not (flujos & {"clara_huevo", "acuoso", "cremoso"}):
+                atipicos.append("flujo seco durante tu ovulación")
+
+            # D) Palabras de alarma en observaciones
+            palabras_alarma = ["fiebre", "mareo", "desmayo", "vómito", "vomito",
+                               "sangrado abundante", "dolor intenso", "sangre coágulo",
+                               "sangre coagulo", "pérdida de conciencia"]
+            if any(p in notas_texto for p in palabras_alarma):
+                atipicos.append("síntomas preocupantes en tus notas")
+
+            if atipicos:
+                principal = atipicos[0]
+                avisos.append({
+                    "tipo": "sintomas_atipicos",
+                    "texto": f"Has registrado {principal} — coméntalo con tu ginecóloga 🩺",
+                    "count": len(atipicos),
+                    "fase": fase,
+                    "detalles": atipicos,
+                })
 
     return avisos
 

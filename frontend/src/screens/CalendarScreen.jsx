@@ -27,7 +27,7 @@ const calcPuntosClave = (duracion) => {
     .sort((a, b) => a - b);
 };
 
-const getPuntosDetalle = (puntosClave, selectedPoint) => {
+const getPuntosDetalle = (puntosClave, selectedPoint, duracion = 28) => {
   const [d1, d2, d3, d4, d5, d6, d7] = puntosClave;
   const r = {};
   if (d1) r[d1] = { title: `Día ${d1}: Inicio`, desc: 'Menstruación. Fase de renovación.' };
@@ -38,9 +38,17 @@ const getPuntosDetalle = (puntosClave, selectedPoint) => {
   if (d6) r[d6] = { title: `Día ${d6}: Pico Lúteo`, desc: 'Posibles síntomas pre.' };
   if (d7) r[d7] = { title: `Día ${d7}: Cierre`, desc: 'Fin del ciclo actual.' };
 
-  // Si el punto seleccionado no tiene detalle, devolvemos uno genérico
+  // Si el punto seleccionado no tiene detalle, devolvemos su fase
   if (selectedPoint && !r[selectedPoint]) {
-    return { ...r, [selectedPoint]: { title: `Día ${selectedPoint}`, desc: 'Progreso de tu ciclo actual.' } };
+    const ovulacion = Math.max(7, duracion - 14);
+    const fertInicio = ovulacion - 3;
+    const fertFin = ovulacion + 1;
+    let descFase = 'Fase Lútea';
+    if (selectedPoint <= 5) descFase = 'Fase Menstrual';
+    else if (selectedPoint < fertInicio) descFase = 'Fase Folicular';
+    else if (selectedPoint <= fertFin) descFase = 'Ventana Fértil';
+    
+    return { ...r, [selectedPoint]: { title: `Día ${selectedPoint}`, desc: descFase } };
   }
   return r;
 };
@@ -240,7 +248,7 @@ export default function CalendarScreen() {
   if (loading) return <div className="screen-container"><div className="loader"></div></div>;
 
   const puntosClave = calcPuntosClave(config?.duracion_ciclo || 28);
-  const puntosDetalle = getPuntosDetalle(puntosClave, selectedPoint);
+  const puntosDetalle = getPuntosDetalle(puntosClave, selectedPoint, config?.duracion_ciclo || 28);
   const tooltipInfo = puntosDetalle[selectedPoint] || {};
 
   return (

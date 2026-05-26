@@ -4,10 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
 import { Sparkles, Heart, Zap, Calendar, Activity, User, Moon, Flower2, Info, Droplets, ChevronLeft, ChevronRight, MessageSquare, Users, BookOpen } from 'lucide-react';
 
-const getPhaseInfo = (day, duration = 28) => {
-  if (day <= 5) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
-  if (day <= 12) return { name: 'Fase Folicular', desc: 'Tu energía empieza a subir', color: 'linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%)' };
-  if (day <= 16) return { name: 'Fase Ovulatoria', desc: 'Alta probabilidad de embarazo', color: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)' };
+const getPhaseInfo = (day, duration = 28, durationPeriod = 5) => {
+  const ovulacion = Math.max(7, duration - 14);
+  const fertInicio = ovulacion - 3;
+  const fertFin = ovulacion + 1;
+
+  if (day <= durationPeriod) return { name: 'Fase Menstrual', desc: 'Día de descanso profundo', color: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)' };
+  if (day < fertInicio) return { name: 'Fase Folicular', desc: 'Tu energía empieza a subir', color: 'linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%)' };
+  if (day <= fertFin) return { name: 'Fase Ovulatoria', desc: 'Alta probabilidad de embarazo', color: 'linear-gradient(135deg, #BA68C8 0%, #9C27B0 100%)' };
   return { name: 'Fase Lútea', desc: 'Mantén la calma y mantente hidratada', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' };
 };
 
@@ -67,7 +71,7 @@ export default function HomeScreen() {
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
           const diaActual = (diffDays % duracion) + 1;
 
-          const phase = getPhaseInfo(diaActual, duracion);
+          const phase = getPhaseInfo(diaActual, duracion, config?.duracion_periodo || 5);
           setCycleStatus({
             day: diaActual,
             phase: phase.name,

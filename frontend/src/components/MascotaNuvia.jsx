@@ -103,6 +103,10 @@ export default function MascotaNuvia({ user }) {
     else if (aviso.tipo === 'respuesta_soporte') navigate('/soporte');
     else if (aviso.tipo === 'soporte_admin') navigate('/admin/soporte');
     else if (aviso.tipo === 'reporte_pendiente') navigate('/admin/reportes');
+    else if (aviso.tipo === 'ciclo_abierto') navigate('/calendar');
+    else if (aviso.tipo === 'ciclo_irregular') navigate('/wellness?tab=habits');
+    else if (aviso.tipo === 'regla_retrasada') navigate('/wellness?tab=habits');
+    else if (aviso.tipo === 'sintomas_atipicos') navigate('/wellness?tab=habits');
     setAvisos([]);
     setIndiceAviso(0);
   };

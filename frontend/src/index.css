@@ -568,7 +568,7 @@ body.dark-mode .role-marker {
 
 /* Adjusted screen container for bottom nav */
 .has-bottom-nav .screen-container {
-  padding-bottom: 60px;
+  padding-bottom: 90px;
 }
 
 body.dark-mode .bottom-nav {

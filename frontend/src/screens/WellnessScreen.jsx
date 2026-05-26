@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Sparkles, Coffee, Utensils, Zap, Moon, Heart, Info, Flower2, LayoutGrid, BookOpen, Activity, FileText, Cloud, Egg, Droplets, Shield, ShieldOff } from 'lucide-react';
 import { ApiService } from '../api';
 
@@ -189,7 +189,8 @@ export default function WellnessScreen() {
   const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
   const partnerName = isPareja ? (localStorage.getItem('selectedPartnerName') || 'tu pareja') : null;
 
-  const [activeTab, setActiveTab] = useState('guide');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'habits' ? 'habits' : 'guide');
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState('folicular');
   const [day, setDay] = useState(1);
