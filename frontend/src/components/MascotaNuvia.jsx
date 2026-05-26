@@ -302,14 +302,15 @@ export default function MascotaNuvia({ user }) {
           font-size: 12px;
           font-weight: 600;
           line-height: 1.3;
-          white-space: nowrap;
+          white-space: normal;
+          width: max-content;
+          max-width: 250px;
+          text-align: center;
           box-shadow: 0 6px 18px rgba(176, 91, 181, 0.25);
           border: 1px solid rgba(176, 91, 181, 0.15);
           pointer-events: auto;
           cursor: pointer;
-          max-width: 75vw;
           overflow: hidden;
-          text-overflow: ellipsis;
           animation: bocadillo-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           z-index: 10;
         }

@@ -277,7 +277,7 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
         if dias >= umbral_dias:
             avisos.append({
                 "tipo": "ciclo_abierto",
-                "texto": f"¿Ya terminó tu regla? Lleva {dias} días sin cerrar 🌸",
+                "texto": f"¿Ya terminó tu regla? Lleva {dias} días sin cerrar",
                 "count": dias,
                 "id_ciclo": str(ultimo_ciclo.id_ciclo),
             })
