@@ -388,6 +388,16 @@ export const ApiService = {
     return await res.json();
   },
 
+  descartarAvisoMascota: async (tipo) => {
+    try {
+      await fetch(`${baseUrl}/chat/mascota/avisos/descartar`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ tipo })
+      });
+    } catch (_) {}
+  },
+
   compartirPublicacion: async (idReceptor, idPublicacion) => {
     const res = await fetch(`${baseUrl}/chat/compartir-publicacion`, {
       method: 'POST',

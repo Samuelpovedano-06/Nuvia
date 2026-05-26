@@ -190,12 +190,49 @@ def obtener_mensajes(id_pareja: UUID, limit: int = 50, db: Session = Depends(get
     return [_mensaje_out(m) for m in mensajes]
 
 
+class DescartarAvisoBody(BaseModel):
+    tipo: str
+
+
+@router.post("/mascota/avisos/descartar")
+def descartar_aviso_mascota(
+    body: DescartarAvisoBody,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user),
+):
+    """Marca un aviso como descartado por la usuaria — no se mostrará en 24h.
+    Usa upsert para refrescar el timestamp si ya existía."""
+    from sqlalchemy import text as sql_text
+    db.execute(
+        sql_text("""
+            INSERT INTO avisos_mascota_descartados (id_usuaria, tipo, descartado_at)
+            VALUES (:uid, :tipo, NOW())
+            ON CONFLICT (id_usuaria, tipo) DO UPDATE SET descartado_at = NOW()
+        """),
+        {"uid": str(current_user.id_usuaria), "tipo": body.tipo},
+    )
+    db.commit()
+    return {"ok": True}
+
+
 @router.get("/mascota/avisos")
 def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
     """Lista avisos pendientes para la mascota:
     - usuaria: mensajes no leídos de su pareja + respuestas no leídas del admin
     - admin: mensajes no leídos de usuarias (soporte) + reportes pendientes + mensajes de su pareja
     """
+    # Avisos descartados en las últimas 24h (se ocultan)
+    from sqlalchemy import text as sql_text
+    descartados = {
+        row[0] for row in db.execute(
+            sql_text("""
+                SELECT tipo FROM avisos_mascota_descartados
+                WHERE id_usuaria = :uid AND descartado_at > NOW() - INTERVAL '1 day'
+            """),
+            {"uid": str(current_user.id_usuaria)},
+        ).fetchall()
+    }
+
     avisos = []
     admin_ids = {a.id_usuaria for a in db.query(Usuaria.id_usuaria).filter(Usuaria.rol == "admin").all()}
 
@@ -267,7 +304,7 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
           .order_by(Ciclo.fecha_inicio.desc())
           .first()
     )
-    if ultimo_ciclo and ultimo_ciclo.fecha_inicio:
+    if ultimo_ciclo and ultimo_ciclo.fecha_inicio and "ciclo_abierto" not in descartados:
         cfg = db.query(ConfiguracionUsuaria).filter(
             ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
         ).first()
@@ -289,7 +326,7 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
           .filter(Prediccion.id_usuaria == current_user.id_usuaria)
           .first()
     )
-    if prediccion and prediccion.proxima_menstruacion:
+    if prediccion and prediccion.proxima_menstruacion and "regla_retrasada" not in descartados:
         dias_retraso = (date.today() - prediccion.proxima_menstruacion).days
         if dias_retraso >= 14:
             # ¿Ha empezado un ciclo dentro de la ventana esperada?
@@ -318,7 +355,7 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
           .order_by(Ciclo.fecha_inicio.asc())
           .all()
     )
-    if len(ciclos_recientes) >= 4:  # necesitamos ≥3 gaps para detectar variabilidad
+    if len(ciclos_recientes) >= 4 and "ciclo_irregular" not in descartados:  # necesitamos ≥3 gaps para detectar variabilidad
         ultimos = ciclos_recientes[-6:]  # últimos 6 ciclos
         gaps = []
         for i in range(1, len(ultimos)):
@@ -346,7 +383,7 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
           .order_by(Ciclo.fecha_inicio.desc())
           .first()
     )
-    if ultimo_ciclo_iniciado:
+    if ultimo_ciclo_iniciado and "sintomas_atipicos" not in descartados:
         cfg_u = db.query(ConfiguracionUsuaria).filter(
             ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
         ).first()

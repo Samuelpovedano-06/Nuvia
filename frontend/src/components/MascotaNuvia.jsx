@@ -107,6 +107,14 @@ export default function MascotaNuvia({ user }) {
     else if (aviso.tipo === 'ciclo_irregular') navigate('/wellness?tab=habits');
     else if (aviso.tipo === 'regla_retrasada') navigate('/wellness?tab=habits');
     else if (aviso.tipo === 'sintomas_atipicos') navigate('/wellness?tab=habits');
+
+    // Para los avisos de salud, marcar como descartados en el backend (24h sin repetir).
+    // Los otros (mensaje_pareja, reporte_pendiente, etc.) desaparecen solos al gestionarlos.
+    const descartables = ['ciclo_abierto', 'ciclo_irregular', 'regla_retrasada', 'sintomas_atipicos'];
+    if (descartables.includes(aviso.tipo)) {
+      ApiService.descartarAvisoMascota(aviso.tipo);
+    }
+
     setAvisos([]);
     setIndiceAviso(0);
   };

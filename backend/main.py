@@ -160,6 +160,12 @@ def run_migrations():
             created_at  TIMESTAMP DEFAULT NOW(),
             PRIMARY KEY (id_articulo, id_usuaria)
         )""",
+        """CREATE TABLE IF NOT EXISTS avisos_mascota_descartados (
+            id_usuaria     UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            tipo           VARCHAR(40) NOT NULL,
+            descartado_at  TIMESTAMP DEFAULT NOW(),
+            PRIMARY KEY (id_usuaria, tipo)
+        )""",
     ]
     with engine.connect() as conn:
         for sql in migrations:
