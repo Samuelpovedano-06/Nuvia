@@ -321,29 +321,52 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
 
     # Regla muy retrasada (≥14 días después de lo previsto y sin iniciar):
     # posible embarazo → mascota recomienda acudir al ginecólogo.
-    prediccion = (
-        db.query(Prediccion)
-          .filter(Prediccion.id_usuaria == current_user.id_usuaria)
-          .first()
-    )
-    if prediccion and prediccion.proxima_menstruacion and "regla_retrasada" not in descartados:
-        dias_retraso = (date.today() - prediccion.proxima_menstruacion).days
-        if dias_retraso >= 14:
-            # ¿Ha empezado un ciclo dentro de la ventana esperada?
-            from datetime import timedelta
-            inicio_ventana = prediccion.proxima_menstruacion - timedelta(days=7)
-            ciclo_iniciado = (
+    # Calcula la fecha esperada usando la Prediccion si existe; si no, se basa
+    # en el último ciclo + duración configurada de la usuaria.
+    if "regla_retrasada" not in descartados:
+        from datetime import timedelta
+        fecha_esperada = None
+
+        prediccion = (
+            db.query(Prediccion)
+              .filter(Prediccion.id_usuaria == current_user.id_usuaria)
+              .first()
+        )
+        if prediccion and prediccion.proxima_menstruacion:
+            fecha_esperada = prediccion.proxima_menstruacion
+        else:
+            # Sin predicción: estimar desde el último ciclo + duración configurada
+            ultimo = (
                 db.query(Ciclo)
                   .filter(Ciclo.id_usuaria == current_user.id_usuaria,
-                          Ciclo.fecha_inicio >= inicio_ventana)
+                          Ciclo.fecha_inicio != None)
+                  .order_by(Ciclo.fecha_inicio.desc())
                   .first()
             )
-            if not ciclo_iniciado:
-                avisos.append({
-                    "tipo": "regla_retrasada",
-                    "texto": f"Tu regla lleva {dias_retraso} días de retraso — podría ser embarazo, acude a tu ginecóloga 🩺",
-                    "count": dias_retraso,
-                })
+            if ultimo:
+                cfg_r = db.query(ConfiguracionUsuaria).filter(
+                    ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
+                ).first()
+                dur_c = (cfg_r.duracion_ciclo if cfg_r and cfg_r.duracion_ciclo else 28)
+                fecha_esperada = ultimo.fecha_inicio + timedelta(days=dur_c)
+
+        if fecha_esperada:
+            dias_retraso = (date.today() - fecha_esperada).days
+            if dias_retraso >= 14:
+                # ¿Ha empezado un ciclo dentro de la ventana esperada?
+                inicio_ventana = fecha_esperada - timedelta(days=7)
+                ciclo_iniciado = (
+                    db.query(Ciclo)
+                      .filter(Ciclo.id_usuaria == current_user.id_usuaria,
+                              Ciclo.fecha_inicio >= inicio_ventana)
+                      .first()
+                )
+                if not ciclo_iniciado:
+                    avisos.append({
+                        "tipo": "regla_retrasada",
+                        "texto": f"Tu regla lleva {dias_retraso} días de retraso — podría ser embarazo, acude a tu ginecóloga 🩺",
+                        "count": dias_retraso,
+                    })
 
     # Detección de ciclos irregulares: si los últimos ciclos tienen gaps muy
     # variables o fuera del rango fisiológico normal (21-45 días), la mascota

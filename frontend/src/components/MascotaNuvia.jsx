@@ -76,16 +76,25 @@ export default function MascotaNuvia({ user }) {
       // 1. Pausar primero para que el wrap deje de moverse
       setPaused(true);
       setHasAviso(true);
-      // 2. En el siguiente frame ya está congelado → leer su posición real y centrar
-      const raf = requestAnimationFrame(() => {
-        if (wrapRef.current) {
-          const rect = wrapRef.current.getBoundingClientRect();
-          const currentCenter = rect.left + rect.width / 2;
-          const targetCenter = window.innerWidth / 2;
-          setCenterX(targetCenter - currentCenter);
-        }
+      // 2. Doble rAF: el primero deja que React aplique la clase .paused,
+      //    el segundo asegura que el navegador ya tiene congelada la animación
+      //    antes de medir. Si midiéramos en el primer rAF, el `left` de la
+      //    animación aún podría estar interpolando y el centrado quedaría off.
+      let raf2;
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          if (wrapRef.current) {
+            const rect = wrapRef.current.getBoundingClientRect();
+            const currentCenter = rect.left + rect.width / 2;
+            const targetCenter = window.innerWidth / 2;
+            setCenterX(targetCenter - currentCenter);
+          }
+        });
       });
-      return () => cancelAnimationFrame(raf);
+      return () => {
+        cancelAnimationFrame(raf1);
+        if (raf2) cancelAnimationFrame(raf2);
+      };
     } else {
       // Volver al sitio donde se quedó el wrap
       setCenterX(0);
