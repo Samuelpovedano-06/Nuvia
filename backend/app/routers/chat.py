@@ -200,16 +200,35 @@ def descartar_aviso_mascota(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user),
 ):
-    """Marca un aviso como descartado por la usuaria — no se mostrará en 24h.
-    Usa upsert para refrescar el timestamp si ya existía."""
+    """Marca un aviso como descartado por la usuaria.
+    - sintomas_atipicos: se guarda la fecha del registro más reciente como `clave`.
+      Solo vuelve a aparecer si la usuaria registra datos posteriores a esa fecha.
+    - resto de avisos: cooldown simple de 24h.
+    """
     from sqlalchemy import text as sql_text
+    from datetime import date
+
+    clave = None
+    if body.tipo == "sintomas_atipicos":
+        # Buscar la fecha más reciente entre síntomas y registros diarios
+        from sqlalchemy import func as sa_func
+        max_s = db.query(sa_func.max(RegistroSintoma.fecha)).filter(
+            RegistroSintoma.id_usuaria == current_user.id_usuaria
+        ).scalar()
+        max_d = db.query(sa_func.max(RegistroDiario.fecha)).filter(
+            RegistroDiario.id_usuaria == current_user.id_usuaria
+        ).scalar()
+        fechas = [f for f in (max_s, max_d) if f is not None]
+        ultima = max(fechas) if fechas else date.today()
+        clave = ultima.isoformat()
+
     db.execute(
         sql_text("""
-            INSERT INTO avisos_mascota_descartados (id_usuaria, tipo, descartado_at)
-            VALUES (:uid, :tipo, NOW())
-            ON CONFLICT (id_usuaria, tipo) DO UPDATE SET descartado_at = NOW()
+            INSERT INTO avisos_mascota_descartados (id_usuaria, tipo, descartado_at, clave)
+            VALUES (:uid, :tipo, NOW(), :clave)
+            ON CONFLICT (id_usuaria, tipo) DO UPDATE SET descartado_at = NOW(), clave = EXCLUDED.clave
         """),
-        {"uid": str(current_user.id_usuaria), "tipo": body.tipo},
+        {"uid": str(current_user.id_usuaria), "tipo": body.tipo, "clave": clave},
     )
     db.commit()
     return {"ok": True}
@@ -221,17 +240,27 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
     - usuaria: mensajes no leídos de su pareja + respuestas no leídas del admin
     - admin: mensajes no leídos de usuarias (soporte) + reportes pendientes + mensajes de su pareja
     """
-    # Avisos descartados en las últimas 24h (se ocultan)
+    # Avisos descartados: cooldown 24h para la mayoría, basado en clave (fecha del
+    # último registro) para sintomas_atipicos — así solo vuelve a aparecer si la
+    # usuaria registra algo en una fecha posterior a la que descartó.
     from sqlalchemy import text as sql_text
-    descartados = {
-        row[0] for row in db.execute(
-            sql_text("""
-                SELECT tipo FROM avisos_mascota_descartados
-                WHERE id_usuaria = :uid AND descartado_at > NOW() - INTERVAL '1 day'
-            """),
-            {"uid": str(current_user.id_usuaria)},
-        ).fetchall()
-    }
+    rows_desc = db.execute(
+        sql_text("""
+            SELECT tipo, clave, descartado_at FROM avisos_mascota_descartados
+            WHERE id_usuaria = :uid
+        """),
+        {"uid": str(current_user.id_usuaria)},
+    ).fetchall()
+    descartados = set()
+    descartado_sintomas_clave = None
+    for tipo_d, clave_d, descartado_at_d in rows_desc:
+        if tipo_d == "sintomas_atipicos":
+            descartado_sintomas_clave = clave_d  # se evaluará más abajo
+        else:
+            # Cooldown 24h
+            from datetime import datetime, timedelta
+            if descartado_at_d and (datetime.now() - descartado_at_d) < timedelta(days=1):
+                descartados.add(tipo_d)
 
     avisos = []
     admin_ids = {a.id_usuaria for a in db.query(Usuaria.id_usuaria).filter(Usuaria.rol == "admin").all()}
@@ -406,7 +435,7 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
           .order_by(Ciclo.fecha_inicio.desc())
           .first()
     )
-    if ultimo_ciclo_iniciado and "sintomas_atipicos" not in descartados:
+    if ultimo_ciclo_iniciado:
         cfg_u = db.query(ConfiguracionUsuaria).filter(
             ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
         ).first()
@@ -470,7 +499,21 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
             if any(p in notas_texto for p in palabras_alarma):
                 atipicos.append("síntomas preocupantes en tus notas")
 
-            if atipicos:
+            # Calcula la fecha más reciente entre los registros que disparan el aviso.
+            # Si ya se descartó para esa fecha (o anterior), no se vuelve a mostrar.
+            fechas_relevantes = [r.fecha for r in diarios] + [
+                rs.fecha for rs in db.query(RegistroSintoma).filter(
+                    RegistroSintoma.id_usuaria == current_user.id_usuaria,
+                    RegistroSintoma.fecha >= desde
+                ).all()
+            ]
+            ultima_fecha_registro = max(fechas_relevantes) if fechas_relevantes else date.today()
+            ya_descartada = (
+                descartado_sintomas_clave is not None and
+                descartado_sintomas_clave >= ultima_fecha_registro.isoformat()
+            )
+
+            if atipicos and not ya_descartada:
                 principal = atipicos[0]
                 avisos.append({
                     "tipo": "sintomas_atipicos",

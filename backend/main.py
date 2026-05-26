@@ -164,8 +164,10 @@ def run_migrations():
             id_usuaria     UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
             tipo           VARCHAR(40) NOT NULL,
             descartado_at  TIMESTAMP DEFAULT NOW(),
+            clave          VARCHAR(40),
             PRIMARY KEY (id_usuaria, tipo)
         )""",
+        "ALTER TABLE avisos_mascota_descartados ADD COLUMN IF NOT EXISTS clave VARCHAR(40)",
     ]
     with engine.connect() as conn:
         for sql in migrations:
