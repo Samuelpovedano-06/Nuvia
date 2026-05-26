@@ -69,6 +69,7 @@ export default function AdminConfigScreen() {
     try {
       await ApiService.updateSystemConfig(config);
       setShowSuccess(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       alert('Error: ' + err.message);
@@ -246,16 +247,20 @@ export default function AdminConfigScreen() {
           from { transform: translateY(100px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
+        @keyframes slideInDown {
+          from { transform: translateY(-100px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
       `}</style>
 
       {/* Notificación de Éxito Estilo Nuvia */}
       {showSuccess && (
         <div style={{
-          position: 'fixed', bottom: '40px', left: '20px', right: '20px',
+          position: 'fixed', top: '20px', left: '20px', right: '20px',
           background: 'white', padding: '16px 24px', borderRadius: '20px',
           display: 'flex', alignItems: 'center', gap: '15px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-          zIndex: 1000, animation: 'slideInUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)'
+          zIndex: 1000, animation: 'slideInDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)'
         }}>
           <div style={{ background: '#E8F5E9', color: '#4CAF50', padding: '8px', borderRadius: '50%', display: 'flex' }}>
             <Check size={20} />
