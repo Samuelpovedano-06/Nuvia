@@ -159,10 +159,16 @@ function App() {
   // Aplicar modo oscuro globalmente al cargar la app
   useEffect(() => {
     const checkStatus = async () => {
-      const status = await ApiService.getPublicStatus();
-      setMaintenance(status.modo_mantenimiento);
+      try {
+        const status = await ApiService.getPublicStatus();
+        setMaintenance(status.modo_mantenimiento);
+      } catch (_) {}
     };
     checkStatus();
+    // Polling cada 15s para que el mantenimiento se aplique a tiempo real:
+    // en cuanto el admin lo activa, los usuarios no admin caen en la pantalla
+    // de mantenimiento sin tener que recargar la app.
+    const id = setInterval(checkStatus, 15000);
 
     const savedMode = localStorage.getItem('nuvia_modo_oscuro');
     if (savedMode === '1') {
@@ -170,6 +176,8 @@ function App() {
     } else {
       document.body.classList.remove('dark-mode');
     }
+
+    return () => clearInterval(id);
   }, []);
 
   if (loading) {
