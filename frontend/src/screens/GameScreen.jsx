@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart } from 'lucide-react';
+import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause } from 'lucide-react';
 
 // ─────────────────────── Habitaciones ───────────────────────
 const HABITACIONES = [
@@ -40,8 +40,8 @@ const DURACION_POR_SALTAR_MS = 140;
 const DURACION_SALTO_MS = 600;
 
 const MASCOTA_TAMANO = 140;        // tamaño en la habitación
-const MASCOTA_TAMANO_JUEGO = 90;   // tamaño dentro del minijuego
-const COMPRESA_TAMANO = 80;
+const MASCOTA_TAMANO_JUEGO = 75;   // tamaño dentro del minijuego
+const COMPRESA_TAMANO = 95;
 
 export default function GameScreen() {
   const navigate = useNavigate();
@@ -244,7 +244,7 @@ export default function GameScreen() {
 function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
   const areaRef = useRef(null);
   const [tamPantalla, setTamPantalla] = useState({ w: 360, h: 600 });
-  const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'gameover'
+  const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
   const [puntos, setPuntos] = useState(0);
   const [vidas, setVidas] = useState(3);
   const [recordLocal, setRecordLocal] = useState(() => Number(localStorage.getItem('nuvia_esquivar_record') || 0));
@@ -358,6 +358,15 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
     setEstado('jugando');
   };
 
+  const togglePausa = () => {
+    if (estado === 'jugando') {
+      setEstado('pausa');
+    } else if (estado === 'pausa') {
+      ultimoTickRef.current = 0; // Para que no dé un salto al reanudar
+      setEstado('jugando');
+    }
+  };
+
   // Controles: arrastrar o pulsar para mover al jugador
   const onTouch = (e) => {
     const t = e.touches ? e.touches[0] : e;
@@ -370,7 +379,7 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: 'linear-gradient(180deg, #FDF2F8 0%, #FBCFE8 100%)',
+      background: 'linear-gradient(180deg, #DDD6FE 0%, #A78BFA 100%)',
       display: 'flex', flexDirection: 'column',
       zIndex: 1,
       userSelect: 'none',
@@ -396,6 +405,11 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
           borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '14px',
           fontWeight: 700, color: 'var(--primary)',
         }}>
+          {(estado === 'jugando' || estado === 'pausa') && (
+            <button onClick={togglePausa} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', color: 'var(--primary)' }}>
+              {estado === 'pausa' ? <Play size={20} fill="var(--primary)" /> : <Pause size={20} fill="var(--primary)" />}
+            </button>
+          )}
           <span>🎯 {puntos}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             {Array.from({ length: vidas }).map((_, i) => (
@@ -417,9 +431,6 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
         onMouseMove={(e) => { if (e.buttons === 1) onTouch(e); }}
         style={{
           flex: 1, position: 'relative', overflow: 'hidden',
-          margin: '0 16px 20px',
-          borderRadius: '24px',
-          background: 'rgba(255,255,255,0.45)',
           touchAction: 'none',
         }}
       >
@@ -488,6 +499,19 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
                 Récord: <strong style={{ color: 'var(--primary)' }}>{recordLocal}</strong>
               </p>
             )}
+          </Overlay>
+        )}
+
+        {/* Pantalla de pausa */}
+        {estado === 'pausa' && (
+          <Overlay>
+            <h2 style={{ color: 'var(--primary)', margin: 0 }}>Pausa</h2>
+            <p style={{ color: 'var(--text-light)', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
+              Tómate un respiro.
+            </p>
+            <button onClick={togglePausa} style={botonPrincipal}>
+              <Play size={18} fill="white" /> Reanudar
+            </button>
           </Overlay>
         )}
 
