@@ -1,10 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause } from 'lucide-react';
+import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X } from 'lucide-react';
 import { ApiService } from '../api';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
+
+const OvuloIcon = ({ size = 40, color = '#C084FC', opacity = 1 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" style={{ opacity }}>
+    {/* Halo exterior (Zona Pelúcida) */}
+    <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="0.5" strokeDasharray="2 1" opacity="0.5" />
+    <circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth="1.2" opacity="0.8" />
+
+    {/* Cuerpo del óvulo (Citoplasma) */}
+    <circle cx="12" cy="12" r="6" fill={color} opacity="0.15" />
+
+    {/* Núcleo con brillo */}
+    <circle cx="12" cy="12" r="2.5" fill={color} opacity="0.4" stroke={color} strokeWidth="1" />
+    <circle cx="11.2" cy="11.2" r="0.8" fill="white" opacity="0.9" />
+
+    {/* Pequeños destellos de vitalidad */}
+    <circle cx="17" cy="8" r="0.5" fill={color} />
+    <circle cx="18.5" cy="12" r="0.7" fill={color} opacity="0.6" />
+    <circle cx="7" cy="15" r="0.6" fill={color} opacity="0.8" />
+  </svg>
+);
 
 // ─────────────────────── Habitaciones ───────────────────────
 const HABITACIONES = [
@@ -54,6 +74,7 @@ export default function GameScreen() {
   const [spriteOk, setSpriteOk] = useState({ idle: null, porSaltar: null, jump: null, caida: null, compresa: null });
   const [fondoOk, setFondoOk] = useState({});
   const [enJuego, setEnJuego] = useState(false);
+  const [mostrarJuegos, setMostrarJuegos] = useState(false);
 
   const habitacion = HABITACIONES.find(h => h.id === habitacionId) || HABITACIONES[0];
 
@@ -89,7 +110,7 @@ export default function GameScreen() {
   const fondoUrl = fondoOk[habitacionId] ? habitacion.fondo : null;
   const spriteActual = (() => {
     if (faseSalto === 'por_saltar') return spriteOk.porSaltar ? SPRITE_POR_SALTAR : (spriteOk.idle ? SPRITE_IDLE : SPRITE_FALLBACK);
-    if (faseSalto === 'saltando')   return spriteOk.jump ? SPRITE_JUMP : SPRITE_FALLBACK;
+    if (faseSalto === 'saltando') return spriteOk.jump ? SPRITE_JUMP : SPRITE_FALLBACK;
     return spriteOk.idle ? SPRITE_IDLE : SPRITE_FALLBACK;
   })();
 
@@ -121,7 +142,7 @@ export default function GameScreen() {
           zIndex: -1,
         }} />
       )}
-      
+
       {/* Header con botón volver + selector de habitaciones */}
       <div style={{
         padding: '16px 20px',
@@ -202,24 +223,123 @@ export default function GameScreen() {
         />
       </div>
 
-      {/* Botón de minijuego solo en la sala */}
+      {/* Botón interactivo sobre la caja morada (diseño de cubo 3D) */}
       {habitacionId === 'sala' && (
         <button
-          onClick={() => setEnJuego(true)}
+          onClick={() => setMostrarJuegos(true)}
           style={{
-            position: 'absolute', top: '45%',
-            left: '50%', transform: 'translate(-50%, -50%)',
-            background: 'var(--primary)',
-            color: 'white', border: 'none',
-            borderRadius: '999px', padding: '14px 28px',
-            fontSize: '15px', fontWeight: 700,
-            display: 'flex', alignItems: 'center', gap: '8px',
+            position: 'absolute',
+            top: '49%', left: '22%',
+            width: 'calc(18% + 6px)', height: '14%',
+            background: 'none', border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 8px 20px rgba(176, 91, 181, 0.5)',
+            zIndex: 2,
+            WebkitTapHighlightColor: 'transparent',
+            transformStyle: 'preserve-3d',
+            transform: 'perspective(2000px) rotateX(70deg) rotateZ(47deg)',
           }}
         >
-          <Play size={18} fill="white" /> Esquiva-compresas
+          {/* Efecto de onda expansiva en perspectiva */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            borderLeft: 'none',
+            borderBottom: '2px solid #ffffff',
+            borderTop: 'none',
+            borderRight: '2px solid #ffffff',
+            borderRadius: '6px',
+            transformOrigin: 'top left',
+            animation: 'wave-animation 2s infinite cubic-bezier(0.36, 0.07, 0.19, 0.97)',
+            pointerEvents: 'none',
+          }} />
         </button>
+      )}
+
+      {/* Selector de Juegos */}
+      {mostrarJuegos && (
+        <Overlay>
+          <div style={{ alignSelf: 'stretch', display: 'flex', justifyContent: 'space-between', padding: '24px 24px 0' }}>
+            <h2 style={{ margin: 0, color: 'var(--primary)', fontSize: '22px' }}>Minijuegos</h2>
+            <button onClick={() => setMostrarJuegos(false)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0 }}>
+              <X size={28} />
+            </button>
+          </div>
+
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', padding: '30px 24px', width: '100%', maxWidth: '400px'
+          }}>
+            {/* Juego 1: Esquiva-compresas */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnJuego(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: '#ede9fe',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.08)',
+                border: '1.5px solid #ddd6fe',
+              }}>
+                {/* 1. Mascota arriba (centrada) */}
+                <img
+                  src="/juego/mascota-caida.png"
+                  alt="Mascota cayendo"
+                  style={{
+                    position: 'absolute',
+                    width: '52px', height: '52px',
+                    left: '50%', top: '6px',
+                    transform: 'translateX(-50%)',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
+                  }}
+                />
+
+                {/* 2. Compresas abajo y más grandes */}
+                 <img
+                  src="/juego/compresa.png"
+                  alt="Compresa 1"
+                  style={{
+                    position: 'absolute',
+                    width: '56px', height: '56px',
+                    left: '0px', bottom: '0px',
+                    objectFit: 'contain',
+                    transform: 'rotate(-15deg)',
+                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
+                  }}
+                />
+                <img
+                  src="/juego/compresa.png"
+                  alt="Compresa 2"
+                  style={{
+                    position: 'absolute',
+                    width: '50px', height: '50px',
+                    right: '0px', bottom: '2px',
+                    objectFit: 'contain',
+                    transform: 'rotate(20deg)',
+                    filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.08))',
+                  }}
+                />
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Esquiva<br />compresas
+              </span>
+            </div>
+
+            {/* Próximamente */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.6, gap: '10px' }}>
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.05)'
+              }}>
+                <span style={{ fontSize: '28px' }}>🔒</span>
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-light)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Próximamente
+              </span>
+            </div>
+          </div>
+        </Overlay>
       )}
 
       <style>{`
@@ -237,6 +357,10 @@ export default function GameScreen() {
           40%  { transform: translateY(-95px) scale(1.05); }
           70%  { transform: translateY(-70px) scale(1.05); }
           100% { transform: translateY(0) scale(1); }
+        }
+        @keyframes wave-animation {
+          0%   { transform: scale(0.95) translateZ(2px); opacity: 1; }
+          100% { transform: scale(1.25) translateZ(2px); opacity: 0; }
         }
       `}</style>
     </div>
@@ -352,7 +476,7 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
             setPuntos(p => p + 1);  // esquivada → punto
             return false;
           }
-          const oBox = { x1: o.x + 8, y1: o.y + 8, x2: o.x + o.w - 8, y2: o.y + o.h - 8 };
+          const oBox = { x1: o.x + 12, y1: o.y + 25, x2: o.x + o.w - 12, y2: o.y + o.h - 25 };
           const colision = !(pBox.x2 < oBox.x1 || pBox.x1 > oBox.x2 || pBox.y2 < oBox.y1 || pBox.y1 > oBox.y2);
           if (colision) {
             golpe = true;
@@ -473,6 +597,7 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
           touchAction: 'none',
         }}
       >
+        {/* Compresas */}
         {/* Compresas */}
         {obstaculosRef.current.map(o => (
           spriteCompresa ? (
