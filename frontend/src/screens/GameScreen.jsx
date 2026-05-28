@@ -272,54 +272,15 @@ export default function GameScreen() {
               onClick={() => { setMostrarJuegos(false); setEnJuego(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
             >
-              <div style={{
-                width: '100px', height: '100px', borderRadius: '22px',
-                background: '#ede9fe',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 8px 16px rgba(0,0,0,0.08)',
-                border: '1.5px solid #ddd6fe',
-              }}>
-                {/* 1. Mascota arriba (centrada) */}
-                <img
-                  src="/juego/mascota-caida.png"
-                  alt="Mascota cayendo"
-                  style={{
-                    position: 'absolute',
-                    width: '52px', height: '52px',
-                    left: '50%', top: '6px',
-                    transform: 'translateX(-50%)',
-                    objectFit: 'contain',
-                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
-                  }}
-                />
-
-                {/* 2. Compresas abajo y más grandes */}
-                 <img
-                  src="/juego/compresa.png"
-                  alt="Compresa 1"
-                  style={{
-                    position: 'absolute',
-                    width: '56px', height: '56px',
-                    left: '0px', bottom: '0px',
-                    objectFit: 'contain',
-                    transform: 'rotate(-15deg)',
-                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
-                  }}
-                />
-                <img
-                  src="/juego/compresa.png"
-                  alt="Compresa 2"
-                  style={{
-                    position: 'absolute',
-                    width: '50px', height: '50px',
-                    right: '0px', bottom: '2px',
-                    objectFit: 'contain',
-                    transform: 'rotate(20deg)',
-                    filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.08))',
-                  }}
-                />
-              </div>
+              <img
+                src="/juego/caratula-esquiva.png"
+                alt="Esquiva-compresas"
+                style={{
+                  width: '100px', height: '100px', borderRadius: '22px',
+                  objectFit: 'cover', boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
+                  border: '1.5px solid #ddd6fe'
+                }}
+              />
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Esquiva<br />compresas
               </span>
