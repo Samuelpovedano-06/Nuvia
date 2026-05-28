@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos, juegos
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -168,6 +168,13 @@ def run_migrations():
             PRIMARY KEY (id_usuaria, tipo)
         )""",
         "ALTER TABLE avisos_mascota_descartados ADD COLUMN IF NOT EXISTS clave VARCHAR(40)",
+        """CREATE TABLE IF NOT EXISTS juego_records (
+            id_usuaria  UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            juego       VARCHAR(40) NOT NULL,
+            record      INTEGER NOT NULL DEFAULT 0,
+            updated_at  TIMESTAMP DEFAULT NOW(),
+            PRIMARY KEY (id_usuaria, juego)
+        )""",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -232,6 +239,7 @@ app.include_router(parejas.router)
 app.include_router(chat.router)
 app.include_router(foro.router)
 app.include_router(consejos.router)
+app.include_router(juegos.router)
 
 
 @app.get("/")

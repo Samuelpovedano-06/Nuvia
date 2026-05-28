@@ -408,6 +408,27 @@ export const ApiService = {
     } catch (_) {}
   },
 
+  // Récords de minijuegos
+  getRecordsJuego: async () => {
+    try {
+      const res = await fetch(`${baseUrl}/juegos/records`, { headers: getHeaders() });
+      if (!res.ok) return {};
+      return await res.json();
+    } catch (_) { return {}; }
+  },
+
+  guardarRecordJuego: async (juego, puntos) => {
+    try {
+      const res = await fetch(`${baseUrl}/juegos/record`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ juego, puntos })
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) { return null; }
+  },
+
   compartirPublicacion: async (idReceptor, idPublicacion) => {
     const res = await fetch(`${baseUrl}/chat/compartir-publicacion`, {
       method: 'POST',

@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause } from 'lucide-react';
+import { ApiService } from '../api';
+
+const JUEGO_ID = 'esquivar_compresas';
+const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
 
 // ─────────────────────── Habitaciones ───────────────────────
 const HABITACIONES = [
@@ -247,7 +251,23 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
   const [puntos, setPuntos] = useState(0);
   const [vidas, setVidas] = useState(3);
-  const [recordLocal, setRecordLocal] = useState(() => Number(localStorage.getItem('nuvia_esquivar_record') || 0));
+  const [recordLocal, setRecordLocal] = useState(() => Number(localStorage.getItem(RECORD_LOCAL_KEY) || 0));
+
+  // Al montar, sincroniza con el récord del servidor (gana el mayor de los dos)
+  useEffect(() => {
+    (async () => {
+      const records = await ApiService.getRecordsJuego();
+      const enServidor = Number(records?.[JUEGO_ID] || 0);
+      const enLocal = Number(localStorage.getItem(RECORD_LOCAL_KEY) || 0);
+      const mejor = Math.max(enServidor, enLocal);
+      setRecordLocal(mejor);
+      localStorage.setItem(RECORD_LOCAL_KEY, String(mejor));
+      // Si el local era mayor que el del servidor, sincroniza hacia arriba
+      if (enLocal > enServidor) {
+        ApiService.guardarRecordJuego(JUEGO_ID, enLocal);
+      }
+    })();
+  }, []);
 
   // Estado del jugador y obstáculos en refs (para que el loop no se reinicie)
   const playerXRef = useRef(180);     // px desde el centro del player
@@ -358,11 +378,12 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
     return () => cancelAnimationFrame(raf);
   }, [estado, tamPantalla.w, tamPantalla.h, puntos]);
 
-  // Guardar récord al hacer gameover
+  // Guardar récord al hacer gameover: local + servidor
   useEffect(() => {
     if (estado === 'gameover' && puntos > recordLocal) {
       setRecordLocal(puntos);
-      localStorage.setItem('nuvia_esquivar_record', String(puntos));
+      localStorage.setItem(RECORD_LOCAL_KEY, String(puntos));
+      ApiService.guardarRecordJuego(JUEGO_ID, puntos);
     }
   }, [estado, puntos, recordLocal]);
 
