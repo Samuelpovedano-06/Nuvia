@@ -20,8 +20,9 @@ import AdminConsejosScreen from './screens/AdminConsejosScreen';
 import AdminReportesScreen from './screens/AdminReportesScreen';
 import SupportChatScreen from './screens/SupportChatScreen';
 import AdminSupportScreen from './screens/AdminSupportScreen';
+import GameScreen from './screens/GameScreen';
 import MascotaNuvia from './components/MascotaNuvia';
-import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users } from 'lucide-react';
+import { Heart, Sparkles, Calendar, User, Home, Flower2, X, Check, Users, Gamepad2 } from 'lucide-react';
 
 const LogoIcon = ({ size = 22, color = 'currentColor' }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
@@ -45,6 +46,7 @@ const BottomNav = () => {
   const navItems = [
     { label: 'Inicio', icon: <Home size={22} />, path: '/', restricted: false },
     { label: 'Síntomas', icon: <Flower2 size={22} />, path: '/sintomas', restricted: true },
+    { label: 'Juego', icon: <Gamepad2 size={22} />, path: '/juego', restricted: true },
     { label: 'Ciclo', icon: <Calendar size={22} />, path: '/calendar', restricted: true },
     { label: 'Perfil', icon: <User size={22} />, path: '/profile', restricted: false },
   ];
@@ -71,7 +73,7 @@ const BottomNav = () => {
 };
 
 function App() {
-  const { user, loading, getMe } = useContext(AuthContext);
+  const { user, loading, getMe, logout } = useContext(AuthContext);
   const [maintenance, setMaintenance] = useState(false);
   const [showRejectionPopup, setShowRejectionPopup] = useState(false);
   const [desvinculacion, setDesvinculacion] = useState(null);
@@ -200,7 +202,23 @@ function App() {
         <p style={{ color: 'var(--text-light)', lineHeight: '1.6', maxWidth: '300px' }}>
           Estamos realizando mejoras para cuidar mejor de ti. Volveremos en unos minutos con una experiencia aún más premium.
         </p>
-        <div style={{ marginTop: '40px', fontSize: '12px', color: 'var(--text-light)', opacity: 0.7 }}>
+        <button
+          onClick={() => { logout(); }}
+          style={{
+            marginTop: '32px',
+            padding: '10px 22px',
+            borderRadius: '14px',
+            border: '1px solid var(--primary)',
+            background: 'white',
+            color: 'var(--primary)',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
+        >
+          Cerrar sesión
+        </button>
+        <div style={{ marginTop: '24px', fontSize: '12px', color: 'var(--text-light)', opacity: 0.7 }}>
           Gracias por tu paciencia 💜
         </div>
       </div>
@@ -223,6 +241,7 @@ function App() {
         <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
         <Route path="/sintomas" element={user ? guardPareja(<SymptomsScreen />) : <Navigate to="/login" />} />
         <Route path="/calendar" element={user ? guardPareja(<CalendarScreen />) : <Navigate to="/login" />} />
+        <Route path="/juego" element={user ? guardPareja(<GameScreen />) : <Navigate to="/login" />} />
         <Route path="/wellness" element={user ? guardPareja(<WellnessScreen />) : <Navigate to="/login" />} />
         <Route path="/comunidad" element={user ? guardPareja(<CommunityScreen />) : <Navigate to="/login" />} />
         <Route path="/consejos" element={user ? guardPareja(<ConsejosScreen />) : <Navigate to="/login" />} />

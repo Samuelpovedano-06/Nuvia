@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiService } from '../api';
 
 const MASCOTA_SIZE = 70;
@@ -13,8 +13,13 @@ const ROW_LEFT  = 1;
 const COLS      = 6;
 const ROWS      = 2;
 
+// Rutas donde la mascota "hada" (la que pasea por la pantalla) no debe salir.
+// En /juego ya hay otra mascota interactiva, así que aquí la ocultamos.
+const RUTAS_SIN_MASCOTA = ['/juego'];
+
 export default function MascotaNuvia({ user }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [avisos, setAvisos] = useState([]);
   const [indiceAviso, setIndiceAviso] = useState(0);
   const [walkOk, setWalkOk] = useState(null);
@@ -30,7 +35,7 @@ export default function MascotaNuvia({ user }) {
   const [centerX, setCenterX] = useState(0);
   const wrapRef = useRef(null);
 
-  const ocultar = !user;
+  const ocultar = !user || RUTAS_SIN_MASCOTA.some(r => location.pathname.startsWith(r));
 
   useEffect(() => {
     if (ocultar) return;
