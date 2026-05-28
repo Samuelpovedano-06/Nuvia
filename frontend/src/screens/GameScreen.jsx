@@ -255,6 +255,7 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
   const ultimoSpawnRef = useRef(0);
   const ultimoTickRef = useRef(0);
   const idCounterRef = useRef(1);
+  const tiltRef = useRef(0); // Inclinación izquierda/derecha
 
   // Para forzar re-render del DOM con la posición actual sin reiniciar el loop
   const [, setRerender] = useState(0);
@@ -271,6 +272,16 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
     medir();
     window.addEventListener('resize', medir);
     return () => window.removeEventListener('resize', medir);
+  }, []);
+
+  // Escuchar acelerómetro / giroscopio
+  useEffect(() => {
+    const handleOrientation = (e) => {
+      // gamma es la inclinación izq/der en grados (-90 a 90)
+      tiltRef.current = e.gamma || 0;
+    };
+    window.addEventListener('deviceorientation', handleOrientation);
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, []);
 
   // Loop principal del juego
@@ -294,6 +305,13 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
           vy,
           w: COMPRESA_TAMANO, h: COMPRESA_TAMANO,
         });
+      }
+
+      // Movimiento de jugador por acelerómetro
+      if (Math.abs(tiltRef.current) > 2) {
+        const tiltSpeed = tiltRef.current * 0.4 * (dt / 16);
+        playerXRef.current += tiltSpeed;
+        playerXRef.current = Math.max(MASCOTA_TAMANO_JUEGO / 2, Math.min(tamPantalla.w - MASCOTA_TAMANO_JUEGO / 2, playerXRef.current));
       }
 
       // Movimiento de obstáculos + colisiones
