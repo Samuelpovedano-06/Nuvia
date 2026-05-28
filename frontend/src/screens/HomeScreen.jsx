@@ -166,24 +166,31 @@ export default function HomeScreen() {
         const completados = todosLosCiclos.filter(c => c.fecha_inicio && c.fecha_fin);
         if (completados.length > 0) {
           const updates = {};
+
+          // Duración del periodo: clamp a 3-10 días (rango fisiológico)
           let totalPeriodo = 0;
           completados.forEach(c => {
             const diff = (new Date(c.fecha_fin) - new Date(c.fecha_inicio)) / (86400000);
             totalPeriodo += Math.floor(diff) + 1;
           });
-          const nuevaDuracionP = Math.round(totalPeriodo / completados.length);
+          let nuevaDuracionP = Math.round(totalPeriodo / completados.length);
+          nuevaDuracionP = Math.min(10, Math.max(3, nuevaDuracionP));
           if (nuevaDuracionP !== userConfig.duracion_periodo) updates.duracion_periodo = nuevaDuracionP;
 
+          // Duración del ciclo: solo actualizar si los gaps son fisiológicos (21-45 días).
+          // Evita que ciclos de prueba con fechas atípicas rompan las predicciones.
           if (todosLosCiclos.length >= 2) {
-            let totalCiclo = 0;
-            let count = 0;
+            const gapsValidos = [];
             for (let i = 0; i < Math.min(3, todosLosCiclos.length - 1); i++) {
-              const diff = Math.abs(new Date(todosLosCiclos[i].fecha_inicio) - new Date(todosLosCiclos[i + 1].fecha_inicio)) / 86400000;
-              totalCiclo += Math.floor(diff);
-              count++;
+              const diff = Math.floor(
+                Math.abs(new Date(todosLosCiclos[i].fecha_inicio) - new Date(todosLosCiclos[i + 1].fecha_inicio)) / 86400000
+              );
+              if (diff >= 21 && diff <= 45) gapsValidos.push(diff);
             }
-            const nuevaFrecuencia = Math.round(totalCiclo / count);
-            if (nuevaFrecuencia !== userConfig.duracion_ciclo) updates.duracion_ciclo = nuevaFrecuencia;
+            if (gapsValidos.length > 0) {
+              const nuevaFrecuencia = Math.round(gapsValidos.reduce((a, b) => a + b, 0) / gapsValidos.length);
+              if (nuevaFrecuencia !== userConfig.duracion_ciclo) updates.duracion_ciclo = nuevaFrecuencia;
+            }
           }
           if (Object.keys(updates).length > 0) await ApiService.updateConfig(updates);
         }
@@ -197,6 +204,13 @@ export default function HomeScreen() {
         }
         await ApiService.crearCiclo({ fecha_inicio: hoy }, targetId);
       }
+
+      // Recalcular predicciones tras crear o cerrar un ciclo (silencioso — si no
+      // hay suficientes ciclos para calcular, simplemente devuelve null).
+      if (!isPareja) {
+        await ApiService.calcularPrediccion();
+      }
+
       window.location.reload();
     } catch (err) {
       setCustomAlert({ show: true, message: 'Error al procesar el registro: ' + err.message });

@@ -234,6 +234,16 @@ export const ApiService = {
     return await res.json();
   },
 
+  calcularPrediccion: async () => {
+    try {
+      const res = await fetch(`${baseUrl}/predicciones/calcular`, {
+        method: 'POST', headers: getHeaders()
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) { return null; }
+  },
+
   // Registros Diarios (Notas, Flujo, Relaciones)
   getRegistroDiario: async (fecha, targetId = null) => {
     let url = `${baseUrl}/registros-diarios?fecha=${fecha}`;

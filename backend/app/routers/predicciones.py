@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 from uuid import UUID
 from app.database.connection import get_db
-from app.models.models import Usuaria, Ciclo, Prediccion, Pareja
+from app.models.models import Usuaria, Ciclo, Prediccion, Pareja, ConfiguracionUsuaria
 from app.schemas.schemas import PrediccionOut
 from app.routers.auth_utils import get_current_user
 
@@ -18,22 +18,39 @@ def calcular_prediccion(db: Session = Depends(get_db),
     basándose en los ciclos históricos de la usuaria.
     Necesita al menos 2 ciclos completos.
     """
+    # Cogemos los últimos 6 ciclos por fecha_inicio (no exigimos fecha_fin: para la
+    # duración del ciclo solo nos interesa el inicio de cada uno).
     ciclos = db.query(Ciclo).filter(
         Ciclo.id_usuaria == current_user.id_usuaria,
-        Ciclo.fecha_fin  != None
+        Ciclo.fecha_inicio != None
     ).order_by(Ciclo.fecha_inicio.desc()).limit(6).all()
 
     if len(ciclos) < 2:
         raise HTTPException(
             status_code=400,
-            detail="Se necesitan al menos 2 ciclos completos para generar predicciones"
+            detail="Se necesitan al menos 2 ciclos para generar predicciones"
         )
 
-    # Duración media de ciclos anteriores
-    duraciones = [(c.fecha_fin - c.fecha_inicio).days for c in ciclos if c.fecha_fin]
-    duracion_media = round(sum(duraciones) / len(duraciones))
+    # Duración del ciclo = días entre inicios consecutivos (no la duración del
+    # sangrado). Solo contamos gaps fisiológicos (21-45 días) para que ciclos
+    # atípicos no rompan la media.
+    ciclos_asc = sorted(ciclos, key=lambda c: c.fecha_inicio)
+    gaps_validos = []
+    for i in range(1, len(ciclos_asc)):
+        diff = (ciclos_asc[i].fecha_inicio - ciclos_asc[i - 1].fecha_inicio).days
+        if 21 <= diff <= 45:
+            gaps_validos.append(diff)
 
-    # Último ciclo conocido
+    if gaps_validos:
+        duracion_media = round(sum(gaps_validos) / len(gaps_validos))
+    else:
+        # Sin gaps fisiológicos → usar la duración configurada de la usuaria (default 28)
+        cfg = db.query(ConfiguracionUsuaria).filter(
+            ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
+        ).first()
+        duracion_media = (cfg.duracion_ciclo if cfg and cfg.duracion_ciclo else 28)
+
+    # Último ciclo conocido (el más reciente)
     ultimo = ciclos[0]
     proxima_menstruacion  = ultimo.fecha_inicio + timedelta(days=duracion_media)
     prediccion_ovulacion  = proxima_menstruacion - timedelta(days=14)
