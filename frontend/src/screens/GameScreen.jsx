@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X } from 'lucide-react';
 import { ApiService } from '../api';
+import SkyJumpGame from './SkyJumpGame';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -74,6 +75,7 @@ export default function GameScreen() {
   const [spriteOk, setSpriteOk] = useState({ idle: null, porSaltar: null, jump: null, caida: null, compresa: null });
   const [fondoOk, setFondoOk] = useState({});
   const [enJuego, setEnJuego] = useState(false);
+  const [enSkyJump, setEnSkyJump] = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
 
   const habitacion = HABITACIONES.find(h => h.id === habitacionId) || HABITACIONES[0];
@@ -123,6 +125,10 @@ export default function GameScreen() {
         spriteCompresa={spriteOk.compresa ? SPRITE_COMPRESA : null}
       />
     );
+  }
+
+  if (enSkyJump) {
+    return <SkyJumpGame onSalir={() => setEnSkyJump(false)} />;
   }
 
   return (
@@ -286,17 +292,29 @@ export default function GameScreen() {
               </span>
             </div>
 
-            {/* Próximamente */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.6, gap: '10px' }}>
+            {/* Juego 2: Sky Jump */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnSkyJump(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
               <div style={{
                 width: '100px', height: '100px', borderRadius: '22px',
-                background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.05)'
+                background: 'linear-gradient(180deg, #BAE6FD 0%, #FBCFE8 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
+                border: '1.5px solid #ddd6fe',
+                fontSize: '40px',
+                overflow: 'hidden',
               }}>
-                <span style={{ fontSize: '28px' }}>🔒</span>
+                <img
+                  src="/juego/Sky_Jump/plataforma.png"
+                  alt=""
+                  style={{ width: '70%', height: '70%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}
+                  onError={(e) => { e.currentTarget.outerHTML = '☁️'; }}
+                />
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-light)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
-                Próximamente
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Sky Jump
               </span>
             </div>
           </div>

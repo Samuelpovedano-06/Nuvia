@@ -6,6 +6,7 @@ export const AuthContext = createContext();
 // Mapa juego → clave local. Si añadimos más juegos basta con extender este mapa.
 const RECORDS_LOCAL_KEYS = {
   esquivar_compresas: 'nuvia_esquivar_record',
+  sky_jump: 'nuvia_skyjump_record',
 };
 
 async function syncRecordsToLocal() {
