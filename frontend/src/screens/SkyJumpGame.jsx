@@ -27,7 +27,7 @@ const SP = {
 };
 
 // ─────────────────────── Constantes ───────────────────────
-const PX_POR_METRO = 25;
+const PX_POR_METRO = 100;   // antes 25 → ahora cada metro cuesta 4x más subir
 const M30   = 30  * PX_POR_METRO;   // 750  - fin plantas
 const M100  = 100 * PX_POR_METRO;   // 2500 - inicio transición
 const M200  = 200 * PX_POR_METRO;   // 5000 - primer portal
