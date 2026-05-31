@@ -539,7 +539,7 @@ export default function AdminUsersScreen() {
                     </div>
                   )}
 
-                  {banesInfo.historial.length > 1 && (
+                  {banesInfo.historial.length > 0 && (
                     <details style={{ marginTop: '10px' }}>
                       <summary style={{ fontSize: '12px', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600 }}>
                         Ver historial completo ({banesInfo.historial.length})
@@ -555,6 +555,11 @@ export default function AdminUsersScreen() {
                               {b.fecha_inicio && `Desde ${new Date(b.fecha_inicio).toLocaleDateString()}`}
                               {b.motivos.length > 0 && ` · ${b.motivos.map(m => m.etiqueta).join(', ')}`}
                             </div>
+                            {b.motivo_personalizado && (
+                              <div style={{ color: 'var(--text-light)', fontStyle: 'italic', marginTop: '3px' }}>
+                                "{b.motivo_personalizado}"
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
