@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Play, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Play, RefreshCw, Pause } from 'lucide-react';
 import { ApiService } from '../api';
 
 const JUEGO_ID = 'sky_jump';
@@ -7,19 +7,19 @@ const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
 
 // ─────────────────────── Sprites ───────────────────────
 const SP = {
-  player_idle:   '/juego/mascota-idle.png',
-  player_jump:   '/juego/mascota-jump.png',
-  player_caida:  '/juego/mascota-caida.png',
-  plataforma:    '/juego/Sky_Jump/plataforma.png',
+  player_idle: '/juego/mascota-idle.png',
+  player_jump: '/juego/mascota-jump.png',
+  player_caida: '/juego/mascota-caida.png',
+  plataforma: '/juego/Sky_Jump/plataforma.png',
   plataforma_portal: '/juego/Sky_Jump/plataforma_portal.png',
-  nube:          '/juego/Sky_Jump/nube.png',
-  estrella:      '/juego/Sky_Jump/estrella.png',
-  flor:          '/juego/Sky_Jump/flor.png',
-  enemigo:       '/juego/Sky_Jump/enemigo.png',
-  portal:        '/juego/Sky_Jump/portal.png',
-  avion:         '/juego/compresa.png',
+  nube: '/juego/Sky_Jump/nube.png',
+  estrella: '/juego/Sky_Jump/estrella.png',
+  flor: '/juego/Sky_Jump/flor.png',
+  enemigo: '/juego/Sky_Jump/enemigo.png',
+  portal: '/juego/Sky_Jump/portal.png',
+  avion: '/juego/compresa.png',
   fondo_plantas: '/juego/Sky_Jump/fondo_plantas.png',
-  fondo_nubes:   '/juego/Sky_Jump/fondo_nubes.png',
+  fondo_nubes: '/juego/Sky_Jump/fondo_nubes.png',
   fondo_nubes_1: '/juego/Sky_Jump/fondo_nubes_1.png',
   fondo_nubes_2: '/juego/Sky_Jump/fondo_nubes_2.png',
   fondo_nubes_portal: '/juego/Sky_Jump/fondo_nubes_portal.png',
@@ -28,12 +28,12 @@ const SP = {
 
 // ─────────────────────── Constantes ───────────────────────
 const PX_POR_METRO = 100;   // antes 25 → ahora cada metro cuesta 4x más subir
-const M30   = 30  * PX_POR_METRO;   // 750  - fin plantas
-const M100  = 100 * PX_POR_METRO;   // 2500 - inicio transición
-const M200  = 200 * PX_POR_METRO;   // 5000 - primer portal
+const M30 = 30 * PX_POR_METRO;   // 750  - fin plantas
+const M100 = 100 * PX_POR_METRO;   // 2500 - inicio transición
+const M200 = 200 * PX_POR_METRO;   // 5000 - primer portal
 const SEPARACION_PORTAL = 50 * PX_POR_METRO;
 const ALTURA_OBJETOS = 60 * PX_POR_METRO;
-const ALTURA_NUBE    = 60 * PX_POR_METRO;
+const ALTURA_NUBE = 60 * PX_POR_METRO;
 const ALTURA_AVIONES = 100 * PX_POR_METRO;
 
 // Player
@@ -68,7 +68,7 @@ function ri(min, max) { return Math.floor(rand(min, max)); }
 export default function SkyJumpGame({ onSalir }) {
   const areaRef = useRef(null);
   const [tam, setTam] = useState({ w: 360, h: 600 });
-  const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'gameover'
+  const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'pausa' | 'gameover'
   const [score, setScore] = useState(0);
   const [recordLocal, setRecordLocal] = useState(() => Number(localStorage.getItem(RECORD_LOCAL_KEY) || 0));
 
@@ -139,6 +139,7 @@ export default function SkyJumpGame({ onSalir }) {
 
   // Touch / drag horizontal
   const onMove = (e) => {
+    if (estado !== 'jugando') return;
     const t = e.touches ? e.touches[0] : e;
     if (!areaRef.current) return;
     const r = areaRef.current.getBoundingClientRect();
@@ -146,6 +147,14 @@ export default function SkyJumpGame({ onSalir }) {
     const p = playerRef.current;
     const diff = x - p.x;
     p.vx = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, diff * 0.005));
+  };
+
+  const togglePausa = () => {
+    if (estado === 'jugando') {
+      setEstado('pausa');
+    } else if (estado === 'pausa') {
+      setEstado('jugando');
+    }
   };
 
   // Reset
@@ -206,9 +215,9 @@ export default function SkyJumpGame({ onSalir }) {
       // cruzar la pantalla. 15% extremo izquierdo, 15% extremo derecho, resto aleatorio.
       let x;
       const rx = Math.random();
-      if (rx < 0.15)        x = MARGEN_LATERAL;
-      else if (rx < 0.30)   x = w - MARGEN_LATERAL - sz.w;
-      else                  x = MARGEN_LATERAL + Math.random() * (w - 2 * MARGEN_LATERAL - sz.w);
+      if (rx < 0.15) x = MARGEN_LATERAL;
+      else if (rx < 0.30) x = w - MARGEN_LATERAL - sz.w;
+      else x = MARGEN_LATERAL + Math.random() * (w - 2 * MARGEN_LATERAL - sz.w);
 
       const vx = tipo === 'movil' ? (Math.random() < 0.5 ? -0.06 : 0.06) : 0;
 
@@ -334,9 +343,8 @@ export default function SkyJumpGame({ onSalir }) {
         for (const pl of platsRef.current) {
           if (pl.usada) continue;
           const plTop = pl.y + pl.h;
-          // Hitbox estricto: el CENTRO del player tiene que estar sobre la
-          // plataforma (con una pequeña tolerancia de 6 px para no ser cruel).
-          const dentroX = p.x >= pl.x - 6 && p.x <= pl.x + pl.w + 6;
+          // Hitbox muy acortado: el CENTRO del player tiene que estar en el 40% central de la plataforma.
+          const dentroX = p.x >= pl.x + pl.w * 0.3 && p.x <= pl.x + pl.w * 0.7;
           const prevY = p.y - p.vy * dt;
           if (dentroX && p.y <= plTop && prevY >= plTop - 2) {
             p.y = plTop;
@@ -525,11 +533,29 @@ export default function SkyJumpGame({ onSalir }) {
           <ChevronLeft size={18} /> Salir
         </button>
         <div style={{
-          background: 'rgba(255,255,255,0.92)', padding: '6px 14px',
-          borderRadius: '12px', fontWeight: 700, color: 'var(--primary)',
+          display: 'flex', alignItems: 'center', gap: '10px',
           pointerEvents: 'auto',
         }}>
-          {score} m
+          {(estado === 'jugando' || estado === 'pausa') && (
+            <button
+              onClick={togglePausa}
+              style={{
+                background: 'rgba(255,255,255,0.9)', border: 'none',
+                borderRadius: '12px', width: '38px', height: '34px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--primary)', cursor: 'pointer',
+              }}
+            >
+              {estado === 'pausa' ? <Play size={18} fill="var(--primary)" /> : <Pause size={18} fill="var(--primary)" />}
+            </button>
+          )}
+          <div style={{
+            background: 'rgba(255,255,255,0.92)', padding: '6px 14px',
+            borderRadius: '12px', fontWeight: 700, color: 'var(--primary)',
+            minHeight: '34px', display: 'flex', alignItems: 'center',
+          }}>
+            {score} m
+          </div>
         </div>
       </div>
 
@@ -735,12 +761,21 @@ export default function SkyJumpGame({ onSalir }) {
         )}
 
         {/* Overlays */}
+        {estado === 'pausa' && <Overlay>
+          <h2 style={{ color: 'var(--primary)', margin: 0 }}>Pausa</h2>
+          <p style={{ color: 'var(--text-light)', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
+            Juego en pausa. ¡Tómate un respiro!
+          </p>
+          <button onClick={togglePausa} style={btn}>
+            <Play size={18} fill="white" /> Reanudar
+          </button>
+        </Overlay>}
         {estado === 'inicio' && <Overlay>
           <h2 style={{ color: 'var(--primary)', margin: 0 }}>Sky Jump</h2>
           <p style={{ color: 'var(--text-light)', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
             Inclina el móvil o arrastra el dedo para mover a Nuvia.
-            Salta de plataforma en plataforma y llega lo más alto que puedas.<br/>
-            ⭐ Estrella = turbo · 🌸 Flor = vuelo lento<br/>
+            Salta de plataforma en plataforma y llega lo más alto que puedas.<br />
+            ⭐ Estrella = turbo · 🌸 Flor = vuelo lento<br />
             A 200 m hay un portal: cógelo o el enemigo te perseguirá.
           </p>
           <button onClick={empezar} style={btn}>
