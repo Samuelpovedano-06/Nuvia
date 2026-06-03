@@ -155,20 +155,29 @@ export default function AdminPanelScreen() {
   useEffect(() => {
     if (user && user.rol !== 'admin') {
       navigate('/');
-    } else {
-      fetchData();
+      return;
     }
+
+    // Carga inicial
+    fetchData(true);
+
+    // Polling de estadísticas cada 4 segundos
+    const interval = setInterval(() => {
+      fetchData(false);
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [user, navigate]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (mostrarLoading = true) => {
+    if (mostrarLoading) setLoading(true);
     try {
       const statsData = await ApiService.getAdminStats();
       setStats(statsData);
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (mostrarLoading) setLoading(false);
     }
   };
 

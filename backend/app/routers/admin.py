@@ -37,8 +37,10 @@ def get_admin_stats(db: Session = Depends(get_db), _=Depends(require_admin)):
     total_users = db.query(Usuaria).count()
     total_ciclos = db.query(Ciclo).count()
     
-    # 2. Registros de hoy (síntomas)
-    registros_hoy = db.query(RegistroSintoma).filter(RegistroSintoma.fecha == hoy).count()
+    # 2. Registros de hoy (usuarias únicas con registro diario o síntomas hoy)
+    usuarias_diario = db.query(RegistroDiario.id_usuaria).filter(RegistroDiario.fecha == hoy)
+    usuarias_sintoma = db.query(RegistroSintoma.id_usuaria).filter(RegistroSintoma.fecha == hoy)
+    registros_hoy = usuarias_diario.union(usuarias_sintoma).distinct().count()
     
     # 3. Crecimiento Semanal (Usuarias nuevas esta semana vs semana pasada)
     users_esta_semana = db.query(Usuaria).filter(Usuaria.fecha_registro >= hace_una_semana).count()
