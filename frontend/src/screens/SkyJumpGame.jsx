@@ -58,7 +58,7 @@ const MARGEN_LATERAL = 8;
 // Devuelve (w,h) reales para cada tipo de plataforma
 function platSize(tipo) {
   if (tipo === 'nube') return { w: NUBE_W, h: NUBE_H };
-  if (tipo === 'avion') return { w: AVION_W, h: AVION_H };
+  if (tipo === 'avion' || tipo === 'compresa') return { w: AVION_W, h: AVION_H };
   return { w: PLAT_W, h: PLAT_H };
 }
 
@@ -201,12 +201,14 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
       let tipo = 'normal';
       const r = Math.random();
       const probNube = (y >= ALTURA_NUBE) ? 0.13 : 0;
+      const probCompresa = 0.10;
       // Si la anterior fue móvil, mayor probabilidad de continuar la racha
       const probMovil = (y > 500)
         ? (prevTipoRef.current === 'movil' ? 0.60 : 0.28)
         : 0;
       if (r < probNube) tipo = 'nube';
-      else if (r < probNube + probMovil) tipo = 'movil';
+      else if (r < probNube + probCompresa) tipo = 'compresa';
+      else if (r < probNube + probCompresa + probMovil) tipo = 'movil';
       prevTipoRef.current = tipo;
 
       const sz = platSize(tipo);
@@ -244,7 +246,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
 
       // Power-up: estrella o flor encima de la plataforma (no en plataformas portal,
       // y no en nubes — la nube se rompe al primer toque). Se adosa a la plataforma.
-      if (!esPortal && tipoFinal !== 'nube' && y >= ALTURA_OBJETOS && Math.random() < 0.07) {
+      if (!esPortal && tipoFinal !== 'nube' && y >= ALTURA_OBJETOS && Math.random() < 0.14) {
         plat.objeto = {
           tipo: Math.random() < 0.55 ? 'estrella' : 'flor',
           usado: false,
@@ -601,7 +603,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
           let src = SP.plataforma;
           if (pl.esPortal) src = SP.plataforma_portal;
           else if (pl.tipo === 'nube') src = SP.nube;
-          else if (pl.tipo === 'avion') src = SP.avion;
+          else if (pl.tipo === 'avion' || pl.tipo === 'compresa') src = SP.avion;
           return (
             <img
               key={pl.id}
