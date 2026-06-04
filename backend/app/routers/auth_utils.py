@@ -14,7 +14,7 @@ load_dotenv()
 
 SECRET_KEY  = os.getenv("SECRET_KEY", "nuvia_secret")
 ALGORITHM   = os.getenv("ALGORITHM", "HS256")
-EXPIRE_MIN  = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+EXPIRE_MIN  = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 525600))  # 1 año por defecto
 
 # Fixed: Removed passlib and used bcrypt directly for better compatibility
 oauth2_scheme   = OAuth2PasswordBearer(tokenUrl="/auth/login")
