@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X } from 'lucide-react';
+import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import SkyJumpGame from './SkyJumpGame';
@@ -79,6 +79,8 @@ export default function GameScreen() {
   const [enSkyJump, setEnSkyJump] = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
+  const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
+  const [showAjustes, setShowAjustes] = useState(false);
 
   const { user } = useContext(AuthContext);
 
@@ -144,6 +146,7 @@ export default function GameScreen() {
         spriteCaida={spriteOk.caida ? SPRITE_CAIDA : SPRITE_FALLBACK}
         spriteCompresa={spriteOk.compresa ? SPRITE_COMPRESA : null}
         mostrarColisiones={mostrarColisiones}
+        sensPct={tiltSensPct}
       />
     );
   }
@@ -293,15 +296,47 @@ export default function GameScreen() {
       {/* Selector de Juegos */}
       {mostrarJuegos && (
         <Overlay>
-          <div style={{ alignSelf: 'stretch', display: 'flex', justifyContent: 'space-between', padding: '24px 24px 0' }}>
+          <div style={{ alignSelf: 'stretch', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 24px 0' }}>
             <h2 style={{ margin: 0, color: 'var(--primary)', fontSize: '22px' }}>Minijuegos</h2>
-            <button onClick={() => setMostrarJuegos(false)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0 }}>
-              <X size={28} />
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                onClick={() => setShowAjustes(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'white', border: '1.5px solid var(--primary)', borderRadius: '10px', padding: '6px 12px', fontSize: '13px', color: 'var(--primary)', fontWeight: 600, cursor: 'pointer' }}
+              >
+                <Settings size={14} /> Ajustes
+              </button>
+              <button onClick={() => setMostrarJuegos(false)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0 }}>
+                <X size={28} />
+              </button>
+            </div>
           </div>
 
+          {showAjustes && (
+            <div style={{ padding: '14px 24px 0', width: '100%', maxWidth: '400px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.95)', borderRadius: '14px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)' }}>Sensibilidad al inclinar (todos los juegos)</span>
+                <input
+                  type="range" min="1" max="100" step="1"
+                  value={tiltSensPct}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setTiltSensPct(v);
+                    localStorage.setItem('nuvia_tilt_sens', String(v));
+                  }}
+                  className="custom-range"
+                  style={{ '--value': `${tiltSensPct}%` }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-light)' }}>
+                  <span>Lento</span>
+                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{tiltSensPct}%</span>
+                  <span>Rápido</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', padding: '30px 24px', width: '100%', maxWidth: '400px'
+            display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', padding: '20px 24px 30px', width: '100%', maxWidth: '400px'
           }}>
             {/* Juego 1: Esquiva-compresas */}
             <div
@@ -311,11 +346,7 @@ export default function GameScreen() {
               <img
                 src="/juego/caratula-esquiva.png"
                 alt="Esquiva-compresas"
-                style={{
-                  width: '100px', height: '100px', borderRadius: '22px',
-                  objectFit: 'cover', boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
-                  border: '1.5px solid #ddd6fe'
-                }}
+                style={{ width: '100px', height: '100px', borderRadius: '22px', objectFit: 'cover', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #ddd6fe' }}
               />
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Esquiva<br />compresas
@@ -331,17 +362,9 @@ export default function GameScreen() {
                 width: '100px', height: '100px', borderRadius: '22px',
                 background: 'linear-gradient(180deg, #BAE6FD 0%, #FBCFE8 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
-                border: '1.5px solid #ddd6fe',
-                fontSize: '40px',
-                overflow: 'hidden',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #ddd6fe', overflow: 'hidden',
               }}>
-                <img
-                  src="/juego/Sky_Jump/plataforma.png"
-                  alt=""
-                  style={{ width: '70%', height: '70%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}
-                  onError={(e) => { e.currentTarget.outerHTML = '☁️'; }}
-                />
+                <img src="/juego/Sky_Jump/plataforma.png" alt="" style={{ width: '70%', height: '70%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }} onError={(e) => { e.currentTarget.outerHTML = '☁️'; }} />
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Sky Jump
@@ -378,7 +401,7 @@ export default function GameScreen() {
 
 
 // ─────────────────────── Mini-juego: Esquivar compresas ───────────────────────
-function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones }) {
+function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones, sensPct }) {
   const areaRef = useRef(null);
   const [tamPantalla, setTamPantalla] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -409,7 +432,9 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
   const ultimoSpawnRef = useRef(0);
   const ultimoTickRef = useRef(0);
   const idCounterRef = useRef(1);
-  const tiltRef = useRef(0); // Inclinación izquierda/derecha
+  const tiltRef = useRef(0);
+  const sensRef = useRef(sensPct ?? 50);
+  useEffect(() => { sensRef.current = sensPct ?? 50; }, [sensPct]);
 
   // Para forzar re-render del DOM con la posición actual sin reiniciar el loop
   const [, setRerender] = useState(0);
@@ -463,7 +488,7 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
 
       // Controles: acelerómetro pisa el touch si hay
       if (Math.abs(tiltRef.current) > 2) {
-        const TILT_FACTOR = 0.11;
+        const TILT_FACTOR = 0.11 * Math.max(0.1, Math.min(2.0, sensRef.current / 50));
         const V_HORIZONTAL_MAX = 0.6;
         playerVxRef.current = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, tiltRef.current * TILT_FACTOR));
       } else {
