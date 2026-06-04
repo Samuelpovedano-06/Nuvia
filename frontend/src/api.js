@@ -53,9 +53,13 @@ export const ApiService = {
   },
 
   getMe: async () => {
-    let res = await fetch(`${baseUrl}/auth/me`, { headers: getHeaders() });
+    let res;
+    try {
+      res = await fetch(`${baseUrl}/auth/me`, { headers: getHeaders() });
+    } catch {
+      throw new Error('Error de red');  // sin conexión → no cerrar sesión
+    }
     if (res.status === 401) {
-      // Intentar renovar el access token con el refresh token
       try {
         await ApiService.refreshAccessToken();
         res = await fetch(`${baseUrl}/auth/me`, { headers: getHeaders() });
@@ -63,7 +67,8 @@ export const ApiService = {
         throw new Error('Sesión expirada');
       }
     }
-    if (!res.ok) throw new Error('Sesión expirada');
+    if (res.status === 401) throw new Error('Sesión expirada');
+    if (!res.ok) throw new Error('Error de red');  // 500, 503… → no cerrar sesión
     return await res.json();
   },
 

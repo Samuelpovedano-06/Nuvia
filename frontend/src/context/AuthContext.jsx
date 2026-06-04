@@ -3,7 +3,6 @@ import { ApiService } from '../api';
 
 export const AuthContext = createContext();
 
-// Mapa juego → clave local. Si añadimos más juegos basta con extender este mapa.
 const RECORDS_LOCAL_KEYS = {
   esquivar_compresas: 'nuvia_esquivar_record',
   sky_jump: 'nuvia_skyjump_record',
@@ -21,43 +20,51 @@ async function syncRecordsToLocal() {
         localStorage.setItem(key, String(puntos));
       }
     }
-  } catch (_) {
-    // Si falla (sin conexión) dejamos lo que haya en local; en el próximo login se sincroniza.
-  }
+  } catch (_) {}
+}
+
+function getCachedUser() {
+  try {
+    const raw = localStorage.getItem('nuvia_user_cache');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
 }
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [sessionExpired, setSessionExpired] = useState(false);
+  const cachedUser = getCachedUser();
+
+  // Si hay token + usuario cacheado: arrancar sesión inmediatamente sin spinner
+  const [user, setUser] = useState(cachedUser && localStorage.getItem('token') ? cachedUser : null);
+  const [loading, setLoading] = useState(!(cachedUser && localStorage.getItem('token')));
+  const [sessionExpired] = useState(false);
+
+  const setUserAndCache = (data) => {
+    if (data) {
+      localStorage.setItem('nuvia_user_cache', JSON.stringify(data));
+    } else {
+      localStorage.removeItem('nuvia_user_cache');
+    }
+    setUser(data);
+  };
 
   const getMe = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      setUser(null);
+      setUserAndCache(null);
       setLoading(false);
       return;
     }
 
     try {
       const data = await ApiService.getMe();
-      // Si es pareja y se quedó sin vínculos, limpiar el selectedPartnerId cacheado
-      // (la otra parte cortó el vínculo → evitamos 403 al pedir sus datos)
       if (data?.rol === 'pareja' && !data?.tiene_vinculos) {
         localStorage.removeItem('selectedPartnerId');
         localStorage.removeItem('showUsChat');
       }
-      setUser(data);
-      // Bajar los récords del servidor a local para que si pierde la conexión
-      // los siga teniendo en el dispositivo.
+      setUserAndCache(data);
       syncRecordsToLocal();
     } catch (e) {
-      // El token existía pero el servidor lo rechazó → la sesión caducó
-      if (localStorage.getItem('token')) {
-        setSessionExpired(true);
-      }
-      setUser(null);
-      ApiService.logout();
+      // Cualquier error (red, servidor, token) → conservar sesión, nunca cerrar automáticamente
     } finally {
       setLoading(false);
     }
@@ -71,7 +78,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, role) => {
     await ApiService.login(email, password, role);
-    setSessionExpired(false);
     await getMe();
   };
 
@@ -82,7 +88,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     ApiService.logout();
-    setUser(null);
+    setUserAndCache(null);
   };
 
   return (
