@@ -112,7 +112,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
     const medir = () => {
       if (areaRef.current) {
         const r = areaRef.current.getBoundingClientRect();
-        setTam({ w: r.width, h: r.height - 75 });
+        setTam({ w: r.width, h: r.height });
       }
     };
     medir();
@@ -568,7 +568,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
         onMouseDown={onMove}
         onMouseMove={(e) => { if (e.buttons === 1) onMove(e); }}
         style={{
-          position: 'absolute', inset: 0,
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: '75px',
           overflow: 'hidden',
           touchAction: 'none',
         }}
