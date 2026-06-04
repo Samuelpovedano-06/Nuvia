@@ -65,7 +65,7 @@ function platSize(tipo) {
 function rand(min, max) { return min + Math.random() * (max - min); }
 function ri(min, max) { return Math.floor(rand(min, max)); }
 
-export default function SkyJumpGame({ onSalir }) {
+export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
   const areaRef = useRef(null);
   const [tam, setTam] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -766,9 +766,17 @@ export default function SkyJumpGame({ onSalir }) {
           <p style={{ color: 'var(--text-light)', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
             Juego en pausa. ¡Tómate un respiro!
           </p>
-          <button onClick={togglePausa} style={btn}>
-            <Play size={18} fill="white" /> Reanudar
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '18px', width: '100%', maxWidth: '240px' }}>
+            <button onClick={togglePausa} style={{ ...btn, justifyContent: 'center' }}>
+              <Play size={18} fill="white" /> Reanudar
+            </button>
+            <button onClick={onVolverAlListado} style={{ ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+              Volver atrás
+            </button>
+            <button onClick={onSalir} style={{ ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+              Salir
+            </button>
+          </div>
         </Overlay>}
         {estado === 'inicio' && <Overlay>
           <h2 style={{ color: 'var(--primary)', margin: 0 }}>Sky Jump</h2>
@@ -798,11 +806,14 @@ export default function SkyJumpGame({ onSalir }) {
               ¡Nuevo récord!
             </p>
           )}
-          <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
-            <button onClick={empezar} style={btn}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '18px', width: '100%', maxWidth: '240px' }}>
+            <button onClick={empezar} style={{ ...btn, justifyContent: 'center' }}>
               <RefreshCw size={18} /> Otra vez
             </button>
-            <button onClick={onSalir} style={{ ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)' }}>
+            <button onClick={onVolverAlListado} style={{ ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+              Volver atrás
+            </button>
+            <button onClick={onSalir} style={{ ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
               Salir
             </button>
           </div>

@@ -121,6 +121,10 @@ export default function GameScreen() {
     return (
       <EsquivarJuego
         onSalir={() => setEnJuego(false)}
+        onVolverAlListado={() => {
+          setEnJuego(false);
+          setMostrarJuegos(true);
+        }}
         spriteCaida={spriteOk.caida ? SPRITE_CAIDA : SPRITE_FALLBACK}
         spriteCompresa={spriteOk.compresa ? SPRITE_COMPRESA : null}
       />
@@ -128,7 +132,15 @@ export default function GameScreen() {
   }
 
   if (enSkyJump) {
-    return <SkyJumpGame onSalir={() => setEnSkyJump(false)} />;
+    return (
+      <SkyJumpGame
+        onSalir={() => setEnSkyJump(false)}
+        onVolverAlListado={() => {
+          setEnSkyJump(false);
+          setMostrarJuegos(true);
+        }}
+      />
+    );
   }
 
   return (
@@ -348,7 +360,7 @@ export default function GameScreen() {
 
 
 // ─────────────────────── Mini-juego: Esquivar compresas ───────────────────────
-function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
+function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa }) {
   const areaRef = useRef(null);
   const [tamPantalla, setTamPantalla] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -374,6 +386,7 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
 
   // Estado del jugador y obstáculos en refs (para que el loop no se reinicie)
   const playerXRef = useRef(180);     // px desde el centro del player
+  const playerVxRef = useRef(0);
   const obstaculosRef = useRef([]);   // [{ x, y, vy, w, h, id }]
   const ultimoSpawnRef = useRef(0);
   const ultimoTickRef = useRef(0);
@@ -430,12 +443,18 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
         });
       }
 
-      // Movimiento de jugador por acelerómetro
+      // Controles: acelerómetro pisa el touch si hay
       if (Math.abs(tiltRef.current) > 2) {
-        const tiltSpeed = tiltRef.current * 0.4 * (dt / 16);
-        playerXRef.current += tiltSpeed;
-        playerXRef.current = Math.max(MASCOTA_TAMANO_JUEGO / 2, Math.min(tamPantalla.w - MASCOTA_TAMANO_JUEGO / 2, playerXRef.current));
+        const TILT_FACTOR = 0.08;
+        const V_HORIZONTAL_MAX = 0.45;
+        playerVxRef.current = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, tiltRef.current * TILT_FACTOR));
+      } else {
+        playerVxRef.current *= 0.94;
       }
+
+      // Aplicar movimiento
+      playerXRef.current += playerVxRef.current * dt;
+      playerXRef.current = Math.max(MASCOTA_TAMANO_JUEGO / 2, Math.min(tamPantalla.w - MASCOTA_TAMANO_JUEGO / 2, playerXRef.current));
 
       // Movimiento de obstáculos + colisiones
       const px = playerXRef.current;
@@ -495,6 +514,7 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
     ultimoSpawnRef.current = 0;
     ultimoTickRef.current = 0;
     playerXRef.current = tamPantalla.w / 2;
+    playerVxRef.current = 0;
     setPuntos(0);
     setVidas(3);
     setEstado('jugando');
@@ -511,11 +531,14 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
 
   // Controles: arrastrar o pulsar para mover al jugador
   const onTouch = (e) => {
+    if (estado !== 'jugando') return;
     const t = e.touches ? e.touches[0] : e;
     if (!areaRef.current) return;
     const r = areaRef.current.getBoundingClientRect();
     const x = t.clientX - r.left;
-    playerXRef.current = Math.max(MASCOTA_TAMANO_JUEGO / 2, Math.min(tamPantalla.w - MASCOTA_TAMANO_JUEGO / 2, x));
+    const diff = x - playerXRef.current;
+    const V_HORIZONTAL_MAX = 0.45;
+    playerVxRef.current = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, diff * 0.005));
   };
 
   return (
@@ -564,7 +587,6 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
         </div>
       </div>
 
-      {/* Área de juego */}
       <div
         ref={areaRef}
         onTouchStart={onTouch}
@@ -622,7 +644,6 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
             objectFit: 'contain',
             pointerEvents: 'none',
             filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.25))',
-            transition: 'left 0.05s linear',
           }}
         />
 
@@ -652,9 +673,17 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
             <p style={{ color: 'var(--text-light)', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
               Tómate un respiro.
             </p>
-            <button onClick={togglePausa} style={botonPrincipal}>
-              <Play size={18} fill="white" /> Reanudar
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '18px', width: '100%', maxWidth: '240px' }}>
+              <button onClick={togglePausa} style={{ ...botonPrincipal, justifyContent: 'center' }}>
+                <Play size={18} fill="white" /> Reanudar
+              </button>
+              <button onClick={onVolverAlListado} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+                Volver atrás
+              </button>
+              <button onClick={onSalir} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+                Salir
+              </button>
+            </div>
           </Overlay>
         )}
 
@@ -670,11 +699,14 @@ function EsquivarJuego({ onSalir, spriteCaida, spriteCompresa }) {
                 ¡Nuevo récord!
               </p>
             )}
-            <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
-              <button onClick={empezar} style={botonPrincipal}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '18px', width: '100%', maxWidth: '240px' }}>
+              <button onClick={empezar} style={{ ...botonPrincipal, justifyContent: 'center' }}>
                 <RefreshCw size={18} /> Otra vez
               </button>
-              <button onClick={onSalir} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)' }}>
+              <button onClick={onVolverAlListado} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+                Volver atrás
+              </button>
+              <button onClick={onSalir} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
                 Salir
               </button>
             </div>
