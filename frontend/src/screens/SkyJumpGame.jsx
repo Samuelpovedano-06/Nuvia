@@ -65,7 +65,7 @@ function platSize(tipo) {
 function rand(min, max) { return min + Math.random() * (max - min); }
 function ri(min, max) { return Math.floor(rand(min, max)); }
 
-export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
+export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisiones }) {
   const areaRef = useRef(null);
   const [tam, setTam] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -345,11 +345,11 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
           if (pl.usada) continue;
           const plTop = pl.y + pl.h;
           // Ignorar plataformas fuera del área visible (detrás de la barra inferior)
-          if (plTop < camYRef.current + 30) continue;
-          // Hitbox muy acortado: el CENTRO del player tiene que estar en el 40% central de la plataforma.
-          const dentroX = p.x >= pl.x + pl.w * 0.3 && p.x <= pl.x + pl.w * 0.7;
+          if (plTop <= camYRef.current) continue;
+          // Centro del player dentro del 50% central de la plataforma
+          const dentroX = p.x >= pl.x + pl.w * 0.25 && p.x <= pl.x + pl.w * 0.75;
           const prevY = p.y - p.vy * dt;
-          if (dentroX && p.y <= plTop && prevY >= plTop - 2) {
+          if (dentroX && p.y <= plTop && prevY >= plTop - 4) {
             p.y = plTop;
             p.vy = V_SALTO;
 
@@ -605,21 +605,43 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
           if (pl.esPortal) src = SP.plataforma_portal;
           else if (pl.tipo === 'nube') src = SP.nube;
           else if (pl.tipo === 'avion') src = SP.avion;
+
+          const contactWidth = pl.w * 0.5;
+          const contactLeft = pl.x + pl.w * 0.25;
+          const contactTop = toScreen(pl.y + pl.h, 0);
+
           return (
-            <img
-              key={pl.id}
-              src={src}
-              alt=""
-              style={{
-                position: 'absolute',
-                left: `${pl.x}px`, top: `${yS}px`,
-                width: `${pl.w}px`, height: `${pl.h}px`,
-                objectFit: 'contain',
-                pointerEvents: 'none',
-                transform: pl.tipo === 'avion' && pl.vx < 0 ? 'scaleX(-1)' : 'none',
-                filter: pl.tipo === 'avion' ? 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))' : 'none',
-              }}
-            />
+            <React.Fragment key={pl.id}>
+              <img
+                src={src}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  left: `${pl.x}px`, top: `${yS}px`,
+                  width: `${pl.w}px`, height: `${pl.h}px`,
+                  objectFit: 'contain',
+                  pointerEvents: 'none',
+                  transform: pl.tipo === 'avion' && pl.vx < 0 ? 'scaleX(-1)' : 'none',
+                  filter: pl.tipo === 'avion' ? 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))' : 'none',
+                }}
+              />
+              {mostrarColisiones && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${contactLeft}px`,
+                    top: `${contactTop}px`,
+                    width: `${contactWidth}px`,
+                    height: '4px',
+                    backgroundColor: '#FF2E93',
+                    borderRadius: '2px',
+                    boxShadow: '0 0 8px #FF2E93',
+                    pointerEvents: 'none',
+                    zIndex: 10,
+                  }}
+                />
+              )}
+            </React.Fragment>
           );
         })}
 
@@ -746,21 +768,39 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
 
         {/* Player */}
         {estado !== 'inicio' && (
-          <img
-            src={playerSpriteSrc}
-            alt="Nuvia"
-            style={{
-              position: 'absolute',
-              left: `${playerRef.current.x - PLAYER_W / 2}px`,
-              top: `${toScreen(playerRef.current.y, PLAYER_H)}px`,
-              width: `${PLAYER_W}px`, height: `${PLAYER_H}px`,
-              objectFit: 'contain',
-              pointerEvents: 'none',
-              transform: playerRef.current.dir < 0 ? 'scaleX(-1)' : 'none',
-              filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.3))',
-              zIndex: 20,
-            }}
-          />
+          <>
+            <img
+              src={playerSpriteSrc}
+              alt="Nuvia"
+              style={{
+                position: 'absolute',
+                left: `${playerRef.current.x - PLAYER_W / 2}px`,
+                top: `${toScreen(playerRef.current.y, PLAYER_H)}px`,
+                width: `${PLAYER_W}px`, height: `${PLAYER_H}px`,
+                objectFit: 'contain',
+                pointerEvents: 'none',
+                transform: playerRef.current.dir < 0 ? 'scaleX(-1)' : 'none',
+                filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.3))',
+                zIndex: 20,
+              }}
+            />
+            {mostrarColisiones && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${playerRef.current.x - 10}px`,
+                  top: `${toScreen(playerRef.current.y, 0) - 2}px`,
+                  width: '20px',
+                  height: '4px',
+                  backgroundColor: '#FF2E93',
+                  borderRadius: '2px',
+                  boxShadow: '0 0 8px #FF2E93',
+                  pointerEvents: 'none',
+                  zIndex: 30,
+                }}
+              />
+            )}
+          </>
         )}
 
         {/* Overlays */}

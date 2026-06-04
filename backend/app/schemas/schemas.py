@@ -196,6 +196,7 @@ class AdminConfigUpdate(BaseModel):
     min_dias_ciclo: Optional[int] = None
     max_dias_periodo: Optional[int] = None
     min_dias_periodo: Optional[int] = None
+    mostrar_colisiones: Optional[bool] = None
 
 class AdminConfigOut(BaseModel):
     id: int
@@ -204,6 +205,7 @@ class AdminConfigOut(BaseModel):
     min_dias_ciclo: int
     max_dias_periodo: int
     min_dias_periodo: int
+    mostrar_colisiones: bool
     ultima_actualizacion: datetime
 
     class Config:

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiService } from '../api';
-import { ChevronLeft, Zap, Shield, Save, RefreshCw, AlertTriangle, Check } from 'lucide-react';
+import { ChevronLeft, Zap, Shield, Save, RefreshCw, AlertTriangle, Check, Gamepad2 } from 'lucide-react';
 
 export default function AdminConfigScreen() {
   const navigate = useNavigate();
@@ -13,7 +13,8 @@ export default function AdminConfigScreen() {
     max_dias_ciclo: 45,
     min_dias_ciclo: 21,
     max_dias_periodo: 10,
-    min_dias_periodo: 3
+    min_dias_periodo: 3,
+    mostrar_colisiones: false
   });
 
   const [errors, setErrors] = useState({
@@ -177,6 +178,38 @@ export default function AdminConfigScreen() {
           </div>
         </div>
         {errors.periodo && <p style={{ color: '#F6416C', fontSize: '11px', marginTop: '5px' }}>{errors.periodo}</p>}
+      </div>
+
+      {/* Colisión en Juegos */}
+      <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ background: '#ECEFF1', padding: '10px', borderRadius: '12px', color: '#607D8B' }}>
+            <Gamepad2 size={20} />
+          </div>
+          <div>
+            <h4 style={{ margin: 0 }}>Colisión en juegos</h4>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)' }}>Visualización de hitboxes para depuración</p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px' }}>Mostrar líneas de colisión</span>
+          </div>
+          <div 
+            onClick={() => setConfig({...config, mostrar_colisiones: !config.mostrar_colisiones})}
+            style={{ 
+              width: '45px', height: '24px', background: config.mostrar_colisiones ? 'var(--primary)' : '#ccc', 
+              borderRadius: '12px', position: 'relative', transition: 'background 0.3s', cursor: 'pointer'
+            }}
+          >
+            <div style={{ 
+              width: '20px', height: '20px', background: 'white', borderRadius: '50%', 
+              position: 'absolute', left: config.mostrar_colisiones ? '23px' : '2px', top: '2px',
+              transition: 'left 0.3s'
+            }}></div>
+          </div>
+        </div>
       </div>
 
       {/* Seguridad y Mantenimiento */}

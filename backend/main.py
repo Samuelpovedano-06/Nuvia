@@ -14,6 +14,7 @@ def run_migrations():
     migrations = [
         "ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS min_dias_periodo INTEGER DEFAULT 3",
         "ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS max_dias_periodo INTEGER DEFAULT 10",
+        "ALTER TABLE configuracion_sistema ADD COLUMN IF NOT EXISTS mostrar_colisiones BOOLEAN DEFAULT FALSE",
         "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS mi_codigo VARCHAR(10) UNIQUE",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS solicitud_id UUID",

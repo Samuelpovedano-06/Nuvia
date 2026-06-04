@@ -77,6 +77,17 @@ export default function GameScreen() {
   const [enJuego, setEnJuego] = useState(false);
   const [enSkyJump, setEnSkyJump] = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
+  const [mostrarColisiones, setMostrarColisiones] = useState(false);
+
+  useEffect(() => {
+    ApiService.getPublicStatus()
+      .then(res => {
+        if (res && res.mostrar_colisiones) {
+          setMostrarColisiones(true);
+        }
+      })
+      .catch(err => console.error("Error al obtener config de colisiones:", err));
+  }, []);
 
   const habitacion = HABITACIONES.find(h => h.id === habitacionId) || HABITACIONES[0];
 
@@ -127,6 +138,7 @@ export default function GameScreen() {
         }}
         spriteCaida={spriteOk.caida ? SPRITE_CAIDA : SPRITE_FALLBACK}
         spriteCompresa={spriteOk.compresa ? SPRITE_COMPRESA : null}
+        mostrarColisiones={mostrarColisiones}
       />
     );
   }
@@ -139,6 +151,7 @@ export default function GameScreen() {
           setEnSkyJump(false);
           setMostrarJuegos(true);
         }}
+        mostrarColisiones={mostrarColisiones}
       />
     );
   }
@@ -360,7 +373,7 @@ export default function GameScreen() {
 
 
 // ─────────────────────── Mini-juego: Esquivar compresas ───────────────────────
-function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa }) {
+function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones }) {
   const areaRef = useRef(null);
   const [tamPantalla, setTamPantalla] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -646,6 +659,43 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
             filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.25))',
           }}
         />
+
+        {/* Hitbox del Jugador */}
+        {mostrarColisiones && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${playerXRef.current - (MASCOTA_TAMANO_JUEGO * 0.6) / 2}px`,
+              top: `${(tamPantalla.h * 0.25) + (MASCOTA_TAMANO_JUEGO * 0.1)}px`,
+              width: `${MASCOTA_TAMANO_JUEGO * 0.6}px`,
+              height: `${MASCOTA_TAMANO_JUEGO * 0.8}px`,
+              border: '2px dashed #EF4444',
+              background: 'rgba(239, 68, 68, 0.25)',
+              pointerEvents: 'none',
+              zIndex: 999,
+              borderRadius: '4px',
+            }}
+          />
+        )}
+
+        {/* Hitbox de las Compresas */}
+        {mostrarColisiones && obstaculosRef.current.map(o => (
+          <div
+            key={`hitbox-${o.id}`}
+            style={{
+              position: 'absolute',
+              left: `${o.x + 12}px`,
+              top: `${o.y + 25}px`,
+              width: `${o.w - 24}px`,
+              height: `${o.h - 50}px`,
+              border: '2px dashed #EF4444',
+              background: 'rgba(239, 68, 68, 0.25)',
+              pointerEvents: 'none',
+              zIndex: 999,
+              borderRadius: '4px',
+            }}
+          />
+        ))}
 
         {/* Pantalla de inicio */}
         {estado === 'inicio' && (
