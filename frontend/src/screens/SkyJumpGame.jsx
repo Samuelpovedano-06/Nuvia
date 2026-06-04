@@ -42,7 +42,7 @@ const GRAVEDAD = 0.0022;        // px/ms² (más caída → exige timing)
 const V_SALTO = 0.99;           // altura máxima ≈ 223 px → margen sobre SEP_MAX
 const V_SALTO_ESTRELLA = 1.7;   // turbo estrella
 const V_HORIZONTAL_MAX = 0.6;
-const TILT_FACTOR = 0.03;
+const TILT_FACTOR = 0.018;
 
 // Plataforma y objetos
 const PLAT_W = 180, PLAT_H = 46;
@@ -344,6 +344,8 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
         for (const pl of platsRef.current) {
           if (pl.usada) continue;
           const plTop = pl.y + pl.h;
+          // Ignorar plataformas fuera del área visible (detrás de la barra inferior)
+          if (plTop < camYRef.current + 30) continue;
           // Hitbox muy acortado: el CENTRO del player tiene que estar en el 40% central de la plataforma.
           const dentroX = p.x >= pl.x + pl.w * 0.3 && p.x <= pl.x + pl.w * 0.7;
           const prevY = p.y - p.vy * dt;
@@ -598,7 +600,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
         {platsRef.current.map(pl => {
           if (pl.usada) return null;
           const yS = toScreen(pl.y, pl.h);
-          if (yS < -pl.h - 10 || yS > H + 10) return null;
+          if (yS < -pl.h - 10 || yS > H - 20) return null;
           let src = SP.plataforma;
           if (pl.esPortal) src = SP.plataforma_portal;
           else if (pl.tipo === 'nube') src = SP.nube;
