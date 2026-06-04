@@ -146,7 +146,8 @@ export default function GameScreen() {
         spriteCaida={spriteOk.caida ? SPRITE_CAIDA : SPRITE_FALLBACK}
         spriteCompresa={spriteOk.compresa ? SPRITE_COMPRESA : null}
         mostrarColisiones={mostrarColisiones}
-        sensPct={tiltSensPct}
+        globalSensPct={tiltSensPct}
+        onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
       />
     );
   }
@@ -160,6 +161,8 @@ export default function GameScreen() {
           setMostrarJuegos(true);
         }}
         mostrarColisiones={mostrarColisiones}
+        globalSensPct={tiltSensPct}
+        onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
       />
     );
   }
@@ -400,8 +403,37 @@ export default function GameScreen() {
 }
 
 
+// ─── Panel sensibilidad reutilizable ───
+function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS, label }) {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.95)', borderRadius: '14px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+      {/* Sección general — desactivada visualmente cuando hay específica activa */}
+      <div style={{ opacity: useS ? 0.35 : 1, pointerEvents: useS ? 'none' : 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>General</span>
+          {useS && <span style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>no activa aquí</span>}
+        </div>
+        <input type="range" min="1" max="100" step="1" value={gPct} onChange={(e) => onG?.(Number(e.target.value))} className="custom-range" style={{ '--value': `${gPct}%` }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-light)' }}>
+          <span>Lento</span><span style={{ fontWeight: 700, color: 'var(--primary)' }}>{gPct}%</span><span>Rápido</span>
+        </div>
+      </div>
+      {/* Toggle específica */}
+      <button onClick={onToggleS} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: useS ? 'var(--primary)' : 'white', color: useS ? 'white' : 'var(--primary)', border: '1.5px solid var(--primary)', borderRadius: '10px', padding: '6px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+        {useS ? '✓ ' : ''}Específica {label}
+      </button>
+      {useS && <>
+        <input type="range" min="1" max="100" step="1" value={sPct} onChange={(e) => onS(Number(e.target.value))} className="custom-range" style={{ '--value': `${sPct}%` }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-light)' }}>
+          <span>Lento</span><span style={{ fontWeight: 700, color: 'var(--primary)' }}>{sPct}%</span><span>Rápido</span>
+        </div>
+      </>}
+    </div>
+  );
+}
+
 // ─────────────────────── Mini-juego: Esquivar compresas ───────────────────────
-function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones, sensPct }) {
+function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones, globalSensPct, onGlobalSensChange }) {
   const areaRef = useRef(null);
   const [tamPantalla, setTamPantalla] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -433,8 +465,13 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
   const ultimoTickRef = useRef(0);
   const idCounterRef = useRef(1);
   const tiltRef = useRef(0);
-  const sensRef = useRef(sensPct ?? 50);
-  useEffect(() => { sensRef.current = sensPct ?? 50; }, [sensPct]);
+  const [specificSensPct, setSpecificSensPct] = useState(() => Number(localStorage.getItem('nuvia_compresas_specific_sens') || 50));
+  const [useSpecific, setUseSpecific] = useState(() => localStorage.getItem('nuvia_compresas_use_specific') === 'true');
+  const [showAjustes, setShowAjustes] = useState(false);
+  const sensRef = useRef((useSpecific ? Number(localStorage.getItem('nuvia_compresas_specific_sens') || 50) : (globalSensPct ?? 50)));
+  useEffect(() => {
+    sensRef.current = useSpecific ? specificSensPct : (globalSensPct ?? 50);
+  }, [globalSensPct, specificSensPct, useSpecific]);
 
   // Para forzar re-render del DOM con la posición actual sin reiniciar el loop
   const [, setRerender] = useState(0);
@@ -735,9 +772,18 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
               Mueve a Nuvia con el dedo y esquiva las compresas que caen.
               Cada una esquivada te da un punto. ¡Tienes 3 vidas!
             </p>
-            <button onClick={empezar} style={botonPrincipal}>
-              <Play size={18} fill="white" /> Empezar
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px', width: '100%', maxWidth: '220px' }}>
+              <button onClick={empezar} style={{ ...botonPrincipal, justifyContent: 'center' }}>
+                <Play size={18} fill="white" /> Empezar
+              </button>
+              <button onClick={onVolverAlListado} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+                Volver atrás
+              </button>
+              <button onClick={() => setShowAjustes(v => !v)} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+                <Settings size={16} /> {showAjustes ? 'Cerrar ajustes' : 'Ajustes'}
+              </button>
+              {showAjustes && <PanelSens gPct={globalSensPct ?? 50} onG={onGlobalSensChange} sPct={specificSensPct} onS={(v) => { setSpecificSensPct(v); localStorage.setItem('nuvia_compresas_specific_sens', String(v)); }} useS={useSpecific} onToggleS={() => { const n = !useSpecific; setUseSpecific(n); localStorage.setItem('nuvia_compresas_use_specific', String(n)); }} label="Compresas" />}
+            </div>
             {recordLocal > 0 && (
               <p style={{ marginTop: '14px', fontSize: '13px', color: 'var(--text-light)' }}>
                 Récord: <strong style={{ color: 'var(--primary)' }}>{recordLocal}</strong>
@@ -757,6 +803,10 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
               <button onClick={togglePausa} style={{ ...botonPrincipal, justifyContent: 'center' }}>
                 <Play size={18} fill="white" /> Reanudar
               </button>
+              <button onClick={() => setShowAjustes(v => !v)} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+                <Settings size={16} /> {showAjustes ? 'Cerrar ajustes' : 'Ajustes'}
+              </button>
+              {showAjustes && <PanelSens gPct={globalSensPct ?? 50} onG={onGlobalSensChange} sPct={specificSensPct} onS={(v) => { setSpecificSensPct(v); localStorage.setItem('nuvia_compresas_specific_sens', String(v)); }} useS={useSpecific} onToggleS={() => { const n = !useSpecific; setUseSpecific(n); localStorage.setItem('nuvia_compresas_use_specific', String(n)); }} label="Compresas" />}
               <button onClick={onVolverAlListado} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
                 Volver atrás
               </button>
@@ -783,6 +833,10 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
               <button onClick={empezar} style={{ ...botonPrincipal, justifyContent: 'center' }}>
                 <RefreshCw size={18} /> Otra vez
               </button>
+              <button onClick={() => setShowAjustes(v => !v)} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+                <Settings size={16} /> {showAjustes ? 'Cerrar ajustes' : 'Ajustes'}
+              </button>
+              {showAjustes && <PanelSens gPct={globalSensPct ?? 50} onG={onGlobalSensChange} sPct={specificSensPct} onS={(v) => { setSpecificSensPct(v); localStorage.setItem('nuvia_compresas_specific_sens', String(v)); }} useS={useSpecific} onToggleS={() => { const n = !useSpecific; setUseSpecific(n); localStorage.setItem('nuvia_compresas_use_specific', String(n)); }} label="Compresas" />}
               <button onClick={onVolverAlListado} style={{ ...botonPrincipal, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
                 Volver atrás
               </button>
