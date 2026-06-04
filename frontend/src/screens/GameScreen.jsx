@@ -445,8 +445,8 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
 
       // Controles: acelerómetro pisa el touch si hay
       if (Math.abs(tiltRef.current) > 2) {
-        const TILT_FACTOR = 0.08;
-        const V_HORIZONTAL_MAX = 0.45;
+        const TILT_FACTOR = 0.16;
+        const V_HORIZONTAL_MAX = 0.85;
         playerVxRef.current = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, tiltRef.current * TILT_FACTOR));
       } else {
         playerVxRef.current *= 0.94;
@@ -537,8 +537,8 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
     const r = areaRef.current.getBoundingClientRect();
     const x = t.clientX - r.left;
     const diff = x - playerXRef.current;
-    const V_HORIZONTAL_MAX = 0.45;
-    playerVxRef.current = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, diff * 0.005));
+    const V_HORIZONTAL_MAX = 0.85;
+    playerVxRef.current = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, diff * 0.015));
   };
 
   return (
