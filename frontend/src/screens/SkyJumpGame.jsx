@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Play, RefreshCw, Pause } from 'lucide-react';
+import { ChevronLeft, Play, RefreshCw, Pause, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 
 const JUEGO_ID = 'sky_jump';
@@ -42,7 +42,8 @@ const GRAVEDAD = 0.0022;        // px/ms² (más caída → exige timing)
 const V_SALTO = 0.99;           // altura máxima ≈ 223 px → margen sobre SEP_MAX
 const V_SALTO_ESTRELLA = 1.7;   // turbo estrella
 const V_HORIZONTAL_MAX = 0.6;
-const TILT_FACTOR = 0.014;
+const SENS_MIN = 0.005, SENS_MAX = 0.030;
+const pctToFactor = (pct) => SENS_MIN + (pct - 1) / 99 * (SENS_MAX - SENS_MIN);
 
 // Plataforma y objetos
 const PLAT_W = 180, PLAT_H = 46;
@@ -71,6 +72,9 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
   const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'pausa' | 'gameover'
   const [score, setScore] = useState(0);
   const [recordLocal, setRecordLocal] = useState(() => Number(localStorage.getItem(RECORD_LOCAL_KEY) || 0));
+  const [sensPct, setSensPct] = useState(() => Number(localStorage.getItem('nuvia_skyjump_sens') || 37));
+  const [showAjustes, setShowAjustes] = useState(false);
+  const sensibilidadRef = useRef(0.005 + (37 - 1) / 99 * 0.025);
 
   // Refs del juego (no fuerzan re-render)
   const playerRef = useRef({ x: 180, y: 80, vx: 0, vy: 0, dir: 1, flotando: 0 });
@@ -126,6 +130,12 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
     window.addEventListener('deviceorientation', handle);
     return () => window.removeEventListener('deviceorientation', handle);
   }, []);
+
+  // Sincronizar sensibilidad con ref y localStorage
+  useEffect(() => {
+    sensibilidadRef.current = pctToFactor(sensPct);
+    localStorage.setItem('nuvia_skyjump_sens', String(sensPct));
+  }, [sensPct]);
 
   // Activar modo portal: marca todas las plataformas como no-portal y desactiva
   // el spawn de futuros portales.
@@ -276,7 +286,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
 
       // Controles: acelerómetro con inercia suave (lerp hacia el objetivo)
       if (Math.abs(tiltRef.current) > 2) {
-        const targetVx = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, tiltRef.current * TILT_FACTOR));
+        const targetVx = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, tiltRef.current * sensibilidadRef.current));
         p.vx += (targetVx - p.vx) * Math.min(1, dt * 0.008);
       } else {
         p.vx *= 0.94;
@@ -814,6 +824,29 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
             <button onClick={togglePausa} style={{ ...btn, justifyContent: 'center' }}>
               <Play size={18} fill="white" /> Reanudar
             </button>
+            <button onClick={() => setShowAjustes(v => !v)} style={{ ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
+              <Settings size={16} /> Ajustes
+            </button>
+            {showAjustes && (
+              <div style={{ background: 'rgba(255,255,255,0.95)', borderRadius: '14px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)' }}>
+                  Sensibilidad al inclinar
+                </span>
+                <input
+                  type="range"
+                  min="1" max="100" step="1"
+                  value={sensPct}
+                  onChange={(e) => setSensPct(Number(e.target.value))}
+                  className="custom-range"
+                  style={{ '--value': `${sensPct}%` }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-light)' }}>
+                  <span>Suave</span>
+                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{sensPct}%</span>
+                  <span>Rápida</span>
+                </div>
+              </div>
+            )}
             <button onClick={onVolverAlListado} style={{ ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', justifyContent: 'center' }}>
               Volver atrás
             </button>
