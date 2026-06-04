@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from datetime import datetime, timedelta
 import random
 import string
@@ -7,7 +8,7 @@ from app.database.connection import get_db
 from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja
 from sqlalchemy import or_
 from app.schemas.schemas import UsuariaCreate, UsuariaLogin, UsuariaOut, Token, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest
-from app.routers.auth_utils import hash_password, verify_password, create_access_token, get_current_user
+from app.routers.auth_utils import hash_password, verify_password, create_access_token, create_refresh_token, verify_refresh_token, get_current_user
 from app.utils.email import enviar_otp_email
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
@@ -72,13 +73,34 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
         # Pareja pura no tiene vista de usuaria
         return {"error": "Como pareja, accede desde el panel de Pareja."}
     
-    token = create_access_token(data={"sub": str(usuaria.id_usuaria)})
-    
+    token         = create_access_token(data={"sub": str(usuaria.id_usuaria)})
+    refresh_token = create_refresh_token(data={"sub": str(usuaria.id_usuaria)})
+
     # Actualizar último acceso
     usuaria.ultimo_acceso = datetime.now()
     db.commit()
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+@router.post("/refresh")
+def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Renueva el access token usando un refresh token válido."""
+    refresh = payload.refresh_token
+    if not refresh:
+        raise HTTPException(status_code=400, detail="refresh_token requerido")
+    user_id = verify_refresh_token(refresh)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Refresh token inválido o expirado")
+    import uuid
+    user = db.query(Usuaria).filter(Usuaria.id_usuaria == uuid.UUID(user_id)).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuario no encontrado")
+    new_token = create_access_token(data={"sub": user_id})
+    return {"access_token": new_token, "token_type": "bearer"}
 
 
 @router.post("/forgot-password")

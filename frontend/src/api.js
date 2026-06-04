@@ -22,6 +22,7 @@ export const ApiService = {
     if (!res.ok) throw new Error(data.detail || 'Error al iniciar sesión');
     if (data.error) throw new Error(data.error);
     localStorage.setItem('token', data.access_token);
+    if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
     localStorage.setItem('plataforma', role || 'usuaria');
     return data;
   },
@@ -37,14 +38,38 @@ export const ApiService = {
     return data;
   },
 
+  refreshAccessToken: async () => {
+    const refresh = localStorage.getItem('refresh_token');
+    if (!refresh) throw new Error('Sin refresh token');
+    const res = await fetch(`${baseUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refresh })
+    });
+    if (!res.ok) throw new Error('Refresh expirado');
+    const data = await res.json();
+    localStorage.setItem('token', data.access_token);
+    return data.access_token;
+  },
+
   getMe: async () => {
-    const res = await fetch(`${baseUrl}/auth/me`, { headers: getHeaders() });
+    let res = await fetch(`${baseUrl}/auth/me`, { headers: getHeaders() });
+    if (res.status === 401) {
+      // Intentar renovar el access token con el refresh token
+      try {
+        await ApiService.refreshAccessToken();
+        res = await fetch(`${baseUrl}/auth/me`, { headers: getHeaders() });
+      } catch {
+        throw new Error('Sesión expirada');
+      }
+    }
     if (!res.ok) throw new Error('Sesión expirada');
     return await res.json();
   },
 
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
   },
 
   // Password Reset

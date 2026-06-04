@@ -12,9 +12,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY  = os.getenv("SECRET_KEY", "nuvia_secret")
-ALGORITHM   = os.getenv("ALGORITHM", "HS256")
-EXPIRE_MIN  = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 525600))  # 1 año por defecto
+SECRET_KEY         = os.getenv("SECRET_KEY", "nuvia_secret")
+ALGORITHM          = os.getenv("ALGORITHM", "HS256")
+EXPIRE_MIN         = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 1440))    # 1 día
+REFRESH_EXPIRE_MIN = int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", 129600)) # 90 días
 
 # Fixed: Removed passlib and used bcrypt directly for better compatibility
 oauth2_scheme   = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -33,8 +34,25 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=EXPIRE_MIN))
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": "access"})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=REFRESH_EXPIRE_MIN)
+    to_encode.update({"exp": expire, "type": "refresh"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_refresh_token(token: str) -> Optional[str]:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            return None
+        return payload.get("sub")
+    except JWTError:
+        return None
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Usuaria:
