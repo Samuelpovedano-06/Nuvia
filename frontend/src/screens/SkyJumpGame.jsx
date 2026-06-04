@@ -346,8 +346,9 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
           const plTop = pl.y + pl.h;
           // Ignorar plataformas fuera del área visible (detrás de la barra inferior)
           if (plTop <= camYRef.current) continue;
-          // Centro del player dentro del 50% central de la plataforma
-          const dentroX = p.x >= pl.x + pl.w * 0.25 && p.x <= pl.x + pl.w * 0.75;
+          // Colisión de caja: el ancho de contacto de 40px del player intersecta con el 50% central de la plataforma
+          const playerCollW = 40;
+          const dentroX = (p.x + playerCollW / 2 >= pl.x + pl.w * 0.25) && (p.x - playerCollW / 2 <= pl.x + pl.w * 0.75);
           const prevY = p.y - p.vy * dt;
           if (dentroX && p.y <= plTop && prevY >= plTop - 4) {
             p.y = plTop;
@@ -788,9 +789,9 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
               <div
                 style={{
                   position: 'absolute',
-                  left: `${playerRef.current.x - 10}px`,
+                  left: `${playerRef.current.x - 20}px`,
                   top: `${toScreen(playerRef.current.y, 0) - 2}px`,
-                  width: '20px',
+                  width: '40px',
                   height: '4px',
                   backgroundColor: '#FF2E93',
                   borderRadius: '2px',

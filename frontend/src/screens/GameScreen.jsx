@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X } from 'lucide-react';
 import { ApiService } from '../api';
+import { AuthContext } from '../context/AuthContext';
 import SkyJumpGame from './SkyJumpGame';
 
 const JUEGO_ID = 'esquivar_compresas';
@@ -79,15 +80,19 @@ export default function GameScreen() {
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
 
+  const { user } = useContext(AuthContext);
+
   useEffect(() => {
     ApiService.getPublicStatus()
       .then(res => {
-        if (res && res.mostrar_colisiones) {
+        if (res && res.mostrar_colisiones && user?.rol === 'admin') {
           setMostrarColisiones(true);
+        } else {
+          setMostrarColisiones(false);
         }
       })
       .catch(err => console.error("Error al obtener config de colisiones:", err));
-  }, []);
+  }, [user]);
 
   const habitacion = HABITACIONES.find(h => h.id === habitacionId) || HABITACIONES[0];
 
