@@ -72,11 +72,38 @@ const BottomNav = () => {
   );
 };
 
+const IMAGENES_PRECARGA = [
+  '/logo.png',
+  '/juego/sala.png',
+  '/juego/dormitorio.png',
+  '/juego/bano.png',
+  '/juego/compresa.png',
+  '/juego/mascota-idle.png',
+  '/juego/mascota-jump.png',
+  '/juego/mascota-caida.png',
+  '/juego/Sky_Jump/fondo_plantas.png',
+  '/juego/Sky_Jump/fondo_nubes.png',
+  '/juego/Sky_Jump/fondo_nubes_1.png',
+  '/juego/Sky_Jump/fondo_nubes_2.png',
+  '/juego/Sky_Jump/plataforma.png',
+  '/juego/Sky_Jump/nube.png',
+];
+
+function precargarImagenes() {
+  IMAGENES_PRECARGA.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
+}
+
 function App() {
   const { user, loading, getMe, logout } = useContext(AuthContext);
   const [maintenance, setMaintenance] = useState(false);
   const [showRejectionPopup, setShowRejectionPopup] = useState(false);
   const [desvinculacion, setDesvinculacion] = useState(null);
+
+  // Precargar imágenes en caché del navegador al iniciar la app
+  useEffect(() => { precargarImagenes(); }, []);
 
   // Polling para actualizaciones en tiempo real (cada 10 segundos)
   useEffect(() => {
