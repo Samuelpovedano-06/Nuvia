@@ -172,7 +172,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
     prevTipoRef.current = 'normal';
     enModoPortalRef.current = false;
     portalActivadoEnYRef.current = null;
-    proxYRef.current = 80;
+    proxYRef.current = 50 + SEP_MIN;
     fallTimerRef.current = 0;
 
     // Plataforma inicial bajo el player
@@ -274,9 +274,10 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
       const w = tam.w, h = tam.h;
       const p = playerRef.current;
 
-      // Controles: acelerómetro pisa el touch si hay
+      // Controles: acelerómetro con inercia suave (lerp hacia el objetivo)
       if (Math.abs(tiltRef.current) > 2) {
-        p.vx = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, tiltRef.current * TILT_FACTOR));
+        const targetVx = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, tiltRef.current * TILT_FACTOR));
+        p.vx += (targetVx - p.vx) * Math.min(1, dt * 0.008);
       } else {
         p.vx *= 0.94;
       }
