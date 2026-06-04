@@ -42,7 +42,7 @@ const GRAVEDAD = 0.0022;        // px/ms² (más caída → exige timing)
 const V_SALTO = 0.99;           // altura máxima ≈ 223 px → margen sobre SEP_MAX
 const V_SALTO_ESTRELLA = 1.7;   // turbo estrella
 const V_HORIZONTAL_MAX = 0.6;
-const TILT_FACTOR = 0.018;
+const TILT_FACTOR = 0.014;
 
 // Plataforma y objetos
 const PLAT_W = 180, PLAT_H = 46;
@@ -63,7 +63,7 @@ function platSize(tipo) {
 }
 
 function rand(min, max) { return min + Math.random() * (max - min); }
-function ri(min, max) { return Math.floor(rand(min, max)); }
+
 
 export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisiones }) {
   const areaRef = useRef(null);
@@ -452,7 +452,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
 
   // ─── Render ───
   const camY = camYRef.current;
-  const W = tam.w, H = tam.h;
+  const H = tam.h;
   // pantalla: y_screen = H - (y_world - camY) - elemento.h
   const toScreen = (yWorld, elemH = 0) => H - (yWorld - camY) - elemH;
 
