@@ -41,8 +41,8 @@ const PLAYER_W = 60, PLAYER_H = 70;
 const GRAVEDAD = 0.0022;        // px/ms² (más caída → exige timing)
 const V_SALTO = 0.99;           // altura máxima ≈ 223 px → margen sobre SEP_MAX
 const V_SALTO_ESTRELLA = 1.7;   // turbo estrella
-const V_HORIZONTAL_MAX = 0.45;
-const TILT_FACTOR = 0.045;
+const V_HORIZONTAL_MAX = 0.6;
+const TILT_FACTOR = 0.11;
 
 // Plataforma y objetos
 const PLAT_W = 180, PLAT_H = 46;
@@ -146,7 +146,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
     const x = t.clientX - r.left;
     const p = playerRef.current;
     const diff = x - p.x;
-    p.vx = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, diff * 0.005));
+    p.vx = Math.max(-V_HORIZONTAL_MAX, Math.min(V_HORIZONTAL_MAX, diff * 0.009));
   };
 
   const togglePausa = () => {
