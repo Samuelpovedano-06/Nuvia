@@ -112,7 +112,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado }) {
     const medir = () => {
       if (areaRef.current) {
         const r = areaRef.current.getBoundingClientRect();
-        setTam({ w: r.width, h: r.height });
+        setTam({ w: r.width, h: r.height - 75 });
       }
     };
     medir();
