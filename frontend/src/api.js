@@ -192,6 +192,23 @@ export const ApiService = {
     return data;
   },
 
+  crearComunicado: async (titulo, contenido) => {
+    const res = await fetch(`${baseUrl}/admin/comunicado`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ titulo, contenido })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al crear el comunicado');
+    return data;
+  },
+
+  getLatestComunicado: async () => {
+    const res = await fetch(`${baseUrl}/admin/comunicado/latest`, { headers: getHeaders() });
+    if (!res.ok) return null;
+    return await res.json();
+  },
+
   getLogs: async () => {
     const res = await fetch(`${baseUrl}/admin/logs`, { headers: getHeaders() });
     if (!res.ok) return [];

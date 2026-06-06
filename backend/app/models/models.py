@@ -294,3 +294,11 @@ class ConsejoFavorito(Base):
     id_articulo  = Column(UUID(as_uuid=True), ForeignKey("consejos_articulos.id", ondelete="CASCADE"), primary_key=True)
     id_usuaria   = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
     created_at   = Column(DateTime, server_default=func.now())
+
+
+class ComunicadoGeneral(Base):
+    __tablename__ = "comunicados_generales"
+    id         = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    titulo     = Column(String(200), nullable=False)
+    contenido  = Column(Text, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())

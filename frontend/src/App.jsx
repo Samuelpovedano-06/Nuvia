@@ -101,6 +101,7 @@ function App() {
   const [maintenance, setMaintenance] = useState(false);
   const [showRejectionPopup, setShowRejectionPopup] = useState(false);
   const [desvinculacion, setDesvinculacion] = useState(null);
+  const [comunicado, setComunicado] = useState(null);
 
   // Precargar imágenes en caché del navegador al iniciar la app
   useEffect(() => { precargarImagenes(); }, []);
@@ -133,6 +134,34 @@ function App() {
     const id = setInterval(fetchDesv, 10000);
     return () => { cancel = true; clearInterval(id); };
   }, [user]);
+
+  // Polling para comunicado general (cada 12 segundos)
+  useEffect(() => {
+    if (!user) return;
+    let cancel = false;
+    const fetchLatestComunicado = async () => {
+      try {
+        const data = await ApiService.getLatestComunicado();
+        if (cancel) return;
+        if (data && data.id) {
+          const seenId = localStorage.getItem('nuvia_seen_comunicado');
+          if (seenId !== data.id) {
+            setComunicado(data);
+          }
+        }
+      } catch (_) {}
+    };
+    fetchLatestComunicado();
+    const id = setInterval(fetchLatestComunicado, 12000);
+    return () => { cancel = true; clearInterval(id); };
+  }, [user]);
+
+  const handleConfirmarComunicado = () => {
+    if (comunicado) {
+      localStorage.setItem('nuvia_seen_comunicado', comunicado.id);
+      setComunicado(null);
+    }
+  };
 
   const handleCerrarDesvinculacion = async () => {
     if (!desvinculacion) return;
@@ -403,6 +432,164 @@ function App() {
                   <X size={18} /> Rechazar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GLOBAL: Comunicado General */}
+      {comunicado && (
+        <div className="cute-modal-overlay">
+          <div className="cute-modal-container">
+            {/* Top Close (X) */}
+            <button
+              onClick={handleConfirmarComunicado}
+              className="cute-modal-close"
+            >
+              <X size={22} />
+            </button>
+
+            {/* Character on top */}
+            <div style={{ position: 'relative', marginTop: '-66px', marginBottom: '10px', display: 'flex', justifyContent: 'center' }}>
+              {/* Spikes */}
+              {Array.from({ length: 16 }).map((_, idx) => {
+                const angle = (idx * 360) / 16;
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      width: '4px',
+                      height: '10px',
+                      background: '#5a3b5c',
+                      transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-44px)`,
+                      zIndex: 1
+                    }}
+                  />
+                );
+              })}
+              {/* Circle Body */}
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  background: '#c098cc',
+                  border: '4px solid #5a3b5c',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  zIndex: 2,
+                  boxShadow: '0 4px 0px rgba(90, 59, 92, 0.15)'
+                }}
+              >
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '6px' }}>
+                  <div style={{ width: '8px', height: '8px', background: '#5a3b5c', borderRadius: '50%' }}></div>
+                  <div style={{ width: '8px', height: '8px', background: '#5a3b5c', borderRadius: '50%' }}></div>
+                </div>
+                <div
+                  style={{
+                    width: '22px',
+                    height: '11px',
+                    borderBottom: '4px solid #5a3b5c',
+                    borderRadius: '0 0 20px 20px'
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Pill Header */}
+            <div className="cute-modal-header-pill">
+              <span className="cute-modal-header-text">Comunicado</span>
+            </div>
+
+            {/* Body */}
+            <div className="cute-modal-body">
+              <div className="cute-modal-section-title">
+                <span style={{ fontSize: '18px' }}>💡</span>
+                <span>{comunicado.titulo}</span>
+              </div>
+              <div className="cute-modal-section-desc">
+                {comunicado.contenido}
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', width: '100%', marginTop: '4px' }}>
+              <button
+                onClick={handleConfirmarComunicado}
+                className="cute-spiky-button"
+                style={{
+                  position: 'relative',
+                  background: '#ebddeb',
+                  color: '#5a3b5c',
+                  border: '3px solid #5a3b5c',
+                  borderRadius: '16px',
+                  padding: '10px 24px',
+                  fontSize: '15px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  minWidth: '110px',
+                  transition: 'transform 0.1s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {/* Spikes */}
+                <span style={{ position: 'absolute', top: '-6px', left: '15%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', top: '-6px', left: '38%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', top: '-6px', left: '62%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', top: '-6px', left: '85%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '15%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '38%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '62%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '85%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', left: '-6px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '3px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', right: '-6px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '3px', background: '#5a3b5c' }}></span>
+                Cerrar
+              </button>
+
+              <button
+                onClick={handleConfirmarComunicado}
+                className="cute-spiky-button"
+                style={{
+                  position: 'relative',
+                  background: '#5a3b5c',
+                  color: '#ffffff',
+                  border: '3px solid #5a3b5c',
+                  borderRadius: '16px',
+                  padding: '10px 24px',
+                  fontSize: '15px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 0px rgba(90, 59, 92, 0.2)',
+                  outline: 'none',
+                  minWidth: '110px',
+                  transition: 'transform 0.1s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {/* Spikes */}
+                <span style={{ position: 'absolute', top: '-6px', left: '15%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', top: '-6px', left: '38%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', top: '-6px', left: '62%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', top: '-6px', left: '85%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '15%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '38%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '62%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', bottom: '-6px', left: '85%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', left: '-6px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '3px', background: '#5a3b5c' }}></span>
+                <span style={{ position: 'absolute', right: '-6px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '3px', background: '#5a3b5c' }}></span>
+                Confirmar
+              </button>
             </div>
           </div>
         </div>

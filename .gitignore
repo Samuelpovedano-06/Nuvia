@@ -28,3 +28,5 @@ backend/__pycache__/main.cpython-313.pyc
 backend/seed_extended_sintomas.py
 backend/recreate_db_uuid.py
 ./frontend/.env
+backend/__pycache__/main.cpython-313.pyc
+/backend/__pycache__

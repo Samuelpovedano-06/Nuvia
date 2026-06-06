@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Send, Headphones, User, PlusCircle, Search, X } from 'lucide-react';
+import { ChevronLeft, Send, Headphones, User, PlusCircle, Search, X, Megaphone } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -21,6 +21,36 @@ export default function AdminSupportScreen() {
   const [mensajes, setMensajes] = useState([]);
   const [nuevo, setNuevo] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  // Comunicado general
+  const [mostrarComunicado, setMostrarComunicado] = useState(false);
+  const [comunicadoTitulo, setComunicadoTitulo] = useState('');
+  const [comunicadoContenido, setComunicadoContenido] = useState('');
+  const [enviandoComunicado, setEnviandoComunicado] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const mostrarToast = (m, tipo = 'ok') => {
+    setToast({ m, tipo });
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const enviarComunicado = async () => {
+    const tit = comunicadoTitulo.trim();
+    const cont = comunicadoContenido.trim();
+    if (!tit || !cont || enviandoComunicado) return;
+    setEnviandoComunicado(true);
+    try {
+      await ApiService.crearComunicado(tit, cont);
+      mostrarToast('Comunicado enviado con éxito a todos los usuarios');
+      setComunicadoTitulo('');
+      setComunicadoContenido('');
+      setMostrarComunicado(false);
+    } catch (e) {
+      mostrarToast(e.message || 'No se pudo enviar el comunicado', 'error');
+    } finally {
+      setEnviandoComunicado(false);
+    }
+  };
 
   // Modal "Nueva conversación"
   const [mostrarPicker, setMostrarPicker] = useState(false);
@@ -228,29 +258,52 @@ export default function AdminSupportScreen() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ background: '#F3E5F5', padding: '12px', borderRadius: '50%', color: 'var(--primary)', display: 'flex' }}>
-            <Headphones size={22} />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '20px',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 auto', minWidth: '200px' }}>
+            <div style={{ background: '#F3E5F5', padding: '12px', borderRadius: '50%', color: 'var(--primary)', display: 'flex', flexShrink: 0 }}>
+              <Headphones size={22} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ margin: 0, fontSize: '22px' }}>Atención al cliente</h2>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>
+                {conversaciones.length} {conversaciones.length === 1 ? 'conversación' : 'conversaciones'}
+              </p>
+            </div>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ margin: 0, fontSize: '22px' }}>Atención al cliente</h2>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-light)' }}>
-              {conversaciones.length} {conversaciones.length === 1 ? 'conversación' : 'conversaciones'}
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <button
+              onClick={() => setMostrarComunicado(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: 'white', color: 'var(--primary)',
+                border: '1.5px solid var(--primary)', borderRadius: '12px', padding: '9px 14px',
+                fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+            >
+              <Megaphone size={16} /> Comunicado
+            </button>
+            <button
+              onClick={abrirPicker}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: 'var(--primary)', color: 'white',
+                border: 'none', borderRadius: '12px', padding: '10px 14px',
+                fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(176, 91, 181, 0.25)'
+              }}
+            >
+              <PlusCircle size={16} /> Nueva
+            </button>
           </div>
-          <button
-            onClick={abrirPicker}
-            style={{
-              flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: 'var(--primary)', color: 'white',
-              border: 'none', borderRadius: '12px', padding: '10px 14px',
-              fontWeight: 700, fontSize: '13px', cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(176, 91, 181, 0.25)'
-            }}
-          >
-            <PlusCircle size={16} /> Nueva
-          </button>
         </div>
 
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -405,6 +458,110 @@ export default function AdminSupportScreen() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL: Comunicado General */}
+      {mostrarComunicado && (
+        <div
+          onClick={() => setMostrarComunicado(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2000, padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card"
+            style={{
+              width: '100%', maxWidth: '480px',
+              display: 'flex', flexDirection: 'column',
+              padding: '24px', boxSizing: 'border-box'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <Megaphone size={20} color="var(--primary)" />
+              <h3 style={{ margin: 0, flex: 1, fontSize: '18px', color: 'var(--primary)', fontWeight: '700' }}>Enviar Comunicado General</h3>
+              <button
+                onClick={() => setMostrarComunicado(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', display: 'flex' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '16px', lineHeight: 1.4 }}>
+              Este mensaje se enviará en tiempo real en un modal spiky premium a todos los usuarios del sistema (tanto usuarias como parejas).
+            </p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--primary)', marginBottom: '6px' }}>Título del Comunicado</label>
+              <input
+                type="text"
+                value={comunicadoTitulo}
+                onChange={(e) => setComunicadoTitulo(e.target.value)}
+                placeholder="Ej. ¡Nueva actualización disponible!"
+                style={{
+                  width: '100%', padding: '12px', border: '1px solid rgba(155, 108, 152, 0.2)',
+                  borderRadius: '12px', outline: 'none', fontSize: '14px',
+                  color: 'var(--text-dark)', background: '#Fdfbff'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--primary)', marginBottom: '6px' }}>Contenido / Mensaje</label>
+              <textarea
+                value={comunicadoContenido}
+                onChange={(e) => setComunicadoContenido(e.target.value)}
+                placeholder="Escribe el mensaje detallado aquí..."
+                rows={4}
+                style={{
+                  width: '100%', padding: '12px', border: '1px solid rgba(155, 108, 152, 0.2)',
+                  borderRadius: '12px', outline: 'none', fontSize: '14px',
+                  color: 'var(--text-dark)', background: '#Fdfbff', resize: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setMostrarComunicado(false)}
+                style={{
+                  flex: 1, padding: '12px', border: '1px solid rgba(155, 108, 152, 0.2)',
+                  borderRadius: '12px', background: 'white', color: 'var(--text-light)',
+                  fontWeight: '700', fontSize: '14px', cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={enviarComunicado}
+                disabled={enviandoComunicado || !comunicadoTitulo.trim() || !comunicadoContenido.trim()}
+                style={{
+                  flex: 1, padding: '12px', border: 'none',
+                  borderRadius: '12px', background: 'var(--primary)', color: 'white',
+                  fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+                  opacity: (enviandoComunicado || !comunicadoTitulo.trim() || !comunicadoContenido.trim()) ? 0.6 : 1
+                }}
+              >
+                {enviandoComunicado ? 'Enviando...' : 'Confirmar y Enviar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+          background: toast.tipo === 'error' ? 'linear-gradient(135deg, #F6416C, #C03060)' : 'linear-gradient(135deg, var(--primary), #F6416C)',
+          color: 'white', padding: '12px 20px', borderRadius: 16,
+          fontSize: 14, fontWeight: 600, zIndex: 2500,
+          boxShadow: '0 6px 24px rgba(176,91,181,0.35)'
+        }}>{toast.m}</div>
       )}
     </div>
   );

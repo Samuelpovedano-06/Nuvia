@@ -176,6 +176,12 @@ def run_migrations():
             updated_at  TIMESTAMP DEFAULT NOW(),
             PRIMARY KEY (id_usuaria, juego)
         )""",
+        """CREATE TABLE IF NOT EXISTS comunicados_generales (
+            id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            titulo     VARCHAR(200) NOT NULL,
+            contenido  TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
     ]
     with engine.connect() as conn:
         for sql in migrations:

@@ -4,8 +4,9 @@ from sqlalchemy import func
 from typing import List
 from uuid import UUID
 from datetime import date, datetime, timedelta
+from pydantic import BaseModel
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, RegistroDiario, ConfiguracionSistema, BaneForo
+from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, RegistroDiario, ConfiguracionSistema, BaneForo, ComunicadoGeneral
 from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut, AdminConfigOut, AdminConfigUpdate
 from app.routers.auth_utils import get_current_user, hash_password
 
@@ -239,4 +240,44 @@ def get_public_status(response: Response, db: Session = Depends(get_db)):
         "min_dias_periodo": config.min_dias_periodo if config.min_dias_periodo is not None else 3,
         "max_dias_periodo": config.max_dias_periodo if config.max_dias_periodo is not None else 10,
         "mostrar_colisiones": config.mostrar_colisiones if getattr(config, "mostrar_colisiones", None) is not None else False
+    }
+
+
+class ComunicadoGeneralCreate(BaseModel):
+    titulo: str
+    contenido: str
+
+
+@router.post("/comunicado", status_code=201)
+def crear_comunicado(datos: ComunicadoGeneralCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+    """Crea y difunde un comunicado general a todos los usuarios."""
+    if not datos.titulo.strip() or not datos.contenido.strip():
+        raise HTTPException(status_code=400, detail="El título y el contenido no pueden estar vacíos")
+    
+    nuevo = ComunicadoGeneral(
+        titulo=datos.titulo.strip(),
+        contenido=datos.contenido.strip()
+    )
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+    return {
+        "id": str(nuevo.id),
+        "titulo": nuevo.titulo,
+        "contenido": nuevo.contenido,
+        "created_at": nuevo.created_at.isoformat()
+    }
+
+
+@router.get("/comunicado/latest")
+def obtener_ultimo_comunicado(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Obtiene el último comunicado general registrado en el sistema."""
+    ultimo = db.query(ComunicadoGeneral).order_by(ComunicadoGeneral.created_at.desc()).first()
+    if not ultimo:
+        return None
+    return {
+        "id": str(ultimo.id),
+        "titulo": ultimo.titulo,
+        "contenido": ultimo.contenido,
+        "created_at": ultimo.created_at.isoformat()
     }
