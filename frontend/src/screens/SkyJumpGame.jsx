@@ -291,6 +291,27 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
 
       platsRef.current.push(plat);
 
+      // Si la plataforma tiene un objeto, generamos otra vacía paralela para dar opción a esquivarlo
+      if (plat.objeto) {
+        const sz2 = platSize('normal');
+        let x2;
+        if (x + szFinal.w / 2 < w / 2) {
+          x2 = w - MARGEN_LATERAL - sz2.w - rand(0, 10);
+        } else {
+          x2 = MARGEN_LATERAL + rand(0, 10);
+        }
+        const y2 = y + rand(-15, 15);
+        platsRef.current.push({
+          id: `p${y2.toFixed(0)}_${Math.random().toString(36).slice(2, 6)}_evadir`,
+          x: x2, y: y2, vx: 0,
+          tipo: 'normal',
+          usada: false,
+          esPortal: false,
+          w: sz2.w, h: sz2.h,
+          objeto: null,
+        });
+      }
+
       if (esPortal) {
         ultPortalSpawnYRef.current = y;
         if (primerPortalYRef.current == null) primerPortalYRef.current = y;
@@ -438,10 +459,10 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
         setScore(Math.floor((p.y - 50) / PX_POR_METRO));
       }
 
-      // Enemigo: si pasó el PRIMER portal sin cogerlo, spawn justo debajo del
+      // Enemigo: si pasó el PRIMER portal sin cogerlo y superó los 205 metros, spawn justo debajo del
       // viewport para que se vea aparecer subiendo.
       if (!enModoPortalRef.current && enemigoRef.current === null && primerPortalYRef.current != null) {
-        if (p.y > primerPortalYRef.current + 100) {
+        if (p.y >= 205 * PX_POR_METRO && p.y > primerPortalYRef.current + 100) {
           enemigoRef.current = {
             y: camYRef.current - 20,
             vy: 0.28,
@@ -468,7 +489,13 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
 
       // Limpiar plataformas: por abajo, y aviones que ya cruzaron
       platsRef.current = platsRef.current.filter(pl => {
-        if (pl.y < camYRef.current - 200) return false;
+        if (pl.y < camYRef.current - 200) {
+          if (pl.esPortal && !enModoPortalRef.current) {
+            // Si el jugador pasó de largo el portal sin entrar, permitimos que se genere otro
+            ultPortalSpawnYRef.current = null;
+          }
+          return false;
+        }
         if (pl.tipo === 'avion') {
           if (pl.x < -pl.w - 50 || pl.x > w + 50) return false;
         }
@@ -514,8 +541,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
     const layers = [];
     if (enModoPortalRef.current && portalActivadoEnYRef.current != null) {
       const yP = portalActivadoEnYRef.current;
-      layers.push({ src: SP.fondo_nubes_portal, y0: yP, y1: yP + H, tile: null });
-      layers.push({ src: SP.fondo_nubes_portal_arriba, y0: yP + H, y1: Infinity, tile: H });
+      layers.push({ src: SP.fondo_nubes_portal, y0: yP, y1: Infinity, tile: H });
     } else {
       layers.push({ src: SP.fondo_plantas, y0: 0, y1: M30, tile: null });
       layers.push({ src: SP.fondo_nubes, y0: M30, y1: M100, tile: H });
@@ -547,7 +573,6 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
   // Sprite del player según vy/flor
   const playerSpriteSrc = (() => {
     const p = playerRef.current;
-    if (p.flotando > 0) return SP.player_idle;
     if (p.vy > 0.05) return SP.player_jump;
     if (p.vy < -0.05) return SP.player_caida;
     return SP.player_idle;

@@ -128,7 +128,7 @@ function App() {
         if (Array.isArray(data) && data.length > 0) {
           setDesvinculacion(prev => prev ?? data[0]);
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     fetchDesv();
     const id = setInterval(fetchDesv, 10000);
@@ -149,7 +149,7 @@ function App() {
             setComunicado(data);
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     };
     fetchLatestComunicado();
     const id = setInterval(fetchLatestComunicado, 12000);
@@ -167,7 +167,7 @@ function App() {
     if (!desvinculacion) return;
     const id = desvinculacion.id;
     // Marcamos primero en backend para que el siguiente fetch no la traiga
-    try { await ApiService.marcarDesvinculacionVista(id); } catch (_) {}
+    try { await ApiService.marcarDesvinculacionVista(id); } catch (_) { }
     setDesvinculacion(null);
   };
 
@@ -220,7 +220,7 @@ function App() {
       try {
         const status = await ApiService.getPublicStatus();
         setMaintenance(status.modo_mantenimiento);
-      } catch (_) {}
+      } catch (_) { }
     };
     checkStatus();
     // Polling cada 15s para que el mantenimiento se aplique a tiempo real:
@@ -287,33 +287,33 @@ function App() {
         // Pareja sin vínculos: solo puede ir a Home, Pareja y Perfil
         const isUnlinkedPareja = user?.rol === 'pareja' && !user?.tiene_vinculos;
         const guardPareja = (el) => isUnlinkedPareja ? <Navigate to="/" /> : el;
-      return (
-      <Routes>
-        <Route path="/login" element={!user ? <LoginScreen /> : <Navigate to="/" />} />
-        <Route path="/register" element={!user ? <RegisterScreen /> : <Navigate to="/" />} />
+        return (
+          <Routes>
+            <Route path="/login" element={!user ? <LoginScreen /> : <Navigate to="/" />} />
+            <Route path="/register" element={!user ? <RegisterScreen /> : <Navigate to="/" />} />
 
-        {/* Rutas protegidas */}
-        <Route path="/" element={user ? <HomeScreen /> : <Navigate to="/login" />} />
-        <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
-        <Route path="/sintomas" element={user ? guardPareja(<SymptomsScreen />) : <Navigate to="/login" />} />
-        <Route path="/calendar" element={user ? guardPareja(<CalendarScreen />) : <Navigate to="/login" />} />
-        <Route path="/juego" element={user ? guardPareja(<GameScreen />) : <Navigate to="/login" />} />
-        <Route path="/wellness" element={user ? guardPareja(<WellnessScreen />) : <Navigate to="/login" />} />
-        <Route path="/comunidad" element={user ? guardPareja(<CommunityScreen />) : <Navigate to="/login" />} />
-        <Route path="/consejos" element={user ? guardPareja(<ConsejosScreen />) : <Navigate to="/login" />} />
-        <Route path="/consejos/:id" element={user ? guardPareja(<ConsejoDetailScreen />) : <Navigate to="/login" />} />
-        <Route path="/admin/consejos" element={user?.rol === 'admin' ? <AdminConsejosScreen /> : <Navigate to="/" />} />
-        <Route path="/admin/reportes" element={user?.rol === 'admin' ? <AdminReportesScreen /> : <Navigate to="/" />} />
-        <Route path="/pareja" element={user ? <PartnerScreen /> : <Navigate to="/login" />} />
-        <Route path="/soporte" element={user ? <SupportChatScreen /> : <Navigate to="/login" />} />
-        <Route path="/admin/soporte" element={user?.rol === 'admin' ? <AdminSupportScreen /> : <Navigate to="/" />} />
-        <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
-        <Route path="/admin/users" element={user?.rol === 'admin' ? <AdminUsersScreen /> : <Navigate to="/" />} />
-        <Route path="/admin/config" element={user?.rol === 'admin' ? <AdminConfigScreen /> : <Navigate to="/" />} />
+            {/* Rutas protegidas */}
+            <Route path="/" element={user ? <HomeScreen /> : <Navigate to="/login" />} />
+            <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
+            <Route path="/sintomas" element={user ? guardPareja(<SymptomsScreen />) : <Navigate to="/login" />} />
+            <Route path="/calendar" element={user ? guardPareja(<CalendarScreen />) : <Navigate to="/login" />} />
+            <Route path="/juego" element={user ? guardPareja(<GameScreen />) : <Navigate to="/login" />} />
+            <Route path="/wellness" element={user ? guardPareja(<WellnessScreen />) : <Navigate to="/login" />} />
+            <Route path="/comunidad" element={user ? guardPareja(<CommunityScreen />) : <Navigate to="/login" />} />
+            <Route path="/consejos" element={user ? guardPareja(<ConsejosScreen />) : <Navigate to="/login" />} />
+            <Route path="/consejos/:id" element={user ? guardPareja(<ConsejoDetailScreen />) : <Navigate to="/login" />} />
+            <Route path="/admin/consejos" element={user?.rol === 'admin' ? <AdminConsejosScreen /> : <Navigate to="/" />} />
+            <Route path="/admin/reportes" element={user?.rol === 'admin' ? <AdminReportesScreen /> : <Navigate to="/" />} />
+            <Route path="/pareja" element={user ? <PartnerScreen /> : <Navigate to="/login" />} />
+            <Route path="/soporte" element={user ? <SupportChatScreen /> : <Navigate to="/login" />} />
+            <Route path="/admin/soporte" element={user?.rol === 'admin' ? <AdminSupportScreen /> : <Navigate to="/" />} />
+            <Route path="/admin" element={user?.rol === 'admin' ? <AdminPanelScreen /> : <Navigate to="/" />} />
+            <Route path="/admin/users" element={user?.rol === 'admin' ? <AdminUsersScreen /> : <Navigate to="/" />} />
+            <Route path="/admin/config" element={user?.rol === 'admin' ? <AdminConfigScreen /> : <Navigate to="/" />} />
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-      );
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        );
       })()}
       <MascotaNuvia user={user} />
       <BottomNav />
@@ -365,10 +365,10 @@ function App() {
             <p style={{ color: 'var(--text-light)', marginBottom: '25px', lineHeight: '1.5' }}>
               Tu pareja no ha aceptado la solicitud de vinculación en este momento. Puedes volver a intentarlo más tarde o con otro código.
             </p>
-            <button 
+            <button
               onClick={handleCloseRejection}
-              style={{ 
-                width: '100%', background: 'var(--primary)', color: 'white', border: 'none', 
+              style={{
+                width: '100%', background: 'var(--primary)', color: 'white', border: 'none',
                 padding: '15px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer'
               }}
             >
@@ -385,10 +385,10 @@ function App() {
           background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           zIndex: 1001, padding: '20px'
         }}>
-          <div className="card" style={{ 
-            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)', 
-            color: 'white', 
-            padding: '25px', 
+          <div className="card" style={{
+            background: 'linear-gradient(135deg, #FF9A9E 0%, #F6416C 100%)',
+            color: 'white',
+            padding: '25px',
             maxWidth: '400px',
             width: '100%',
             position: 'relative',
@@ -397,7 +397,7 @@ function App() {
             boxShadow: '0 10px 25px rgba(246, 65, 108, 0.3)'
           }}>
             <div style={{ position: 'absolute', right: '-10px', top: '-10px', opacity: 0.2 }}>
-               <Heart size={120} fill="white" />
+              <Heart size={120} fill="white" />
             </div>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -409,22 +409,22 @@ function App() {
                 Si aceptas, podrá ver tu ciclo y acompañarte en tu proceso. Siempre podrás revocar este acceso.
               </p>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button 
+                <button
                   onClick={handleAcceptRequest}
                   disabled={requestLoading}
-                  style={{ 
-                    flex: 1, background: 'white', color: '#F6416C', border: 'none', 
+                  style={{
+                    flex: 1, background: 'white', color: '#F6416C', border: 'none',
                     padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                   }}
                 >
                   <Check size={18} /> Aceptar
                 </button>
-                <button 
+                <button
                   onClick={handleRejectRequest}
                   disabled={requestLoading}
-                  style={{ 
-                    flex: 1, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', 
+                  style={{
+                    flex: 1, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none',
                     padding: '12px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                   }}
