@@ -137,7 +137,7 @@ function App() {
 
   // Polling para comunicado general (cada 12 segundos)
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.rol === 'admin') return;
     let cancel = false;
     const fetchLatestComunicado = async () => {
       try {
