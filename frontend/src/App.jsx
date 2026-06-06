@@ -519,42 +519,7 @@ function App() {
             </div>
 
             {/* Buttons */}
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', width: '100%', marginTop: '4px' }}>
-              <button
-                onClick={handleConfirmarComunicado}
-                className="cute-spiky-button"
-                style={{
-                  position: 'relative',
-                  background: '#ebddeb',
-                  color: '#5a3b5c',
-                  border: '3px solid #5a3b5c',
-                  borderRadius: '16px',
-                  padding: '10px 24px',
-                  fontSize: '15px',
-                  fontWeight: '800',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  minWidth: '110px',
-                  transition: 'transform 0.1s',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {/* Spikes */}
-                <span style={{ position: 'absolute', top: '-6px', left: '15%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', top: '-6px', left: '38%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', top: '-6px', left: '62%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', top: '-6px', left: '85%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', bottom: '-6px', left: '15%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', bottom: '-6px', left: '38%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', bottom: '-6px', left: '62%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', bottom: '-6px', left: '85%', width: '3px', height: '6px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', left: '-6px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '3px', background: '#5a3b5c' }}></span>
-                <span style={{ position: 'absolute', right: '-6px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '3px', background: '#5a3b5c' }}></span>
-                Cerrar
-              </button>
-
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '4px' }}>
               <button
                 onClick={handleConfirmarComunicado}
                 className="cute-spiky-button"
