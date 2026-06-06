@@ -386,7 +386,10 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
           if (plTop <= camYRef.current) continue;
           // Colisión de caja: el ancho de contacto de 40px del player intersecta con el 50% central de la plataforma
           const playerCollW = 40;
-          const dentroX = (p.x + playerCollW / 2 >= pl.x + pl.w * 0.25) && (p.x - playerCollW / 2 <= pl.x + pl.w * 0.75);
+          const esAvion = pl.tipo === 'avion';
+          const leftPct = esAvion ? 0.15 : 0.30;
+          const rightPct = esAvion ? 0.85 : 0.70;
+          const dentroX = (p.x + playerCollW / 2 >= pl.x + pl.w * leftPct) && (p.x - playerCollW / 2 <= pl.x + pl.w * rightPct);
           const prevY = p.y - p.vy * dt;
           if (dentroX && p.y <= plTop && prevY >= plTop - 4) {
             p.y = plTop;
@@ -645,8 +648,9 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
           else if (pl.tipo === 'nube') src = SP.nube;
           else if (pl.tipo === 'avion') src = SP.avion;
 
-          const contactWidth = pl.w * 0.5;
-          const contactLeft = pl.x + pl.w * 0.25;
+          const esAvion = pl.tipo === 'avion';
+          const contactWidth = pl.w * (esAvion ? 0.70 : 0.40);
+          const contactLeft = pl.x + pl.w * (esAvion ? 0.15 : 0.30);
           const contactTop = toScreen(pl.y + pl.h, 0);
 
           return (
