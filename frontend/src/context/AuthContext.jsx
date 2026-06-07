@@ -33,9 +33,8 @@ function getCachedUser() {
 export const AuthProvider = ({ children }) => {
   const cachedUser = getCachedUser();
 
-  // Si hay token + usuario cacheado: arrancar sesión inmediatamente sin spinner
   const [user, setUser] = useState(cachedUser && localStorage.getItem('token') ? cachedUser : null);
-  const [loading, setLoading] = useState(!(cachedUser && localStorage.getItem('token')));
+  const [loading, setLoading] = useState(true);
   const [sessionExpired] = useState(false);
 
   const setUserAndCache = (data) => {
