@@ -192,6 +192,9 @@ def run_migrations():
         "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Ovario Izquierdo', 'Fisico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Ovario Izquierdo')",
         # Corregir categoría si se insertaron con tilde por error
         "UPDATE sintomas SET categoria = 'Fisico' WHERE nombre_sintoma IN ('Dolor Ovario Derecho', 'Dolor Ovario Izquierdo') AND categoria = 'Físico'",
+        # Calambres y espasmos
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Calambres', 'Fisico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Calambres')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Espasmos', 'Fisico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Espasmos')",
         # Duraciones predichas en tabla predicciones (para que el calendario las use)
         "ALTER TABLE predicciones ADD COLUMN IF NOT EXISTS duracion_ciclo_predicha INTEGER",
         "ALTER TABLE predicciones ADD COLUMN IF NOT EXISTS duracion_periodo_predicha INTEGER",

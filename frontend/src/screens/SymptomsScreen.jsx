@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Save, Utensils, Droplets, Heart, FileText, Lightbulb, Sparkles, Egg, Cloud, Shield, ShieldOff } from 'lucide-react';
+import { ChevronLeft, Save, Utensils, Droplets, Heart, FileText, Lightbulb, Sparkles, Egg, Cloud, Shield, ShieldOff, Zap } from 'lucide-react';
 import { ApiService } from '../api';
 
 // Componente para dibujar las caritas EXACTAS de la imagen usando SVG
@@ -124,6 +124,19 @@ const SINTOMA_STYLE = {
   'Manchada':        { face: 'pena',        color: '#9b6c98', tip: 'Lleva contigo lo necesario, ¡que nada te pille por sorpresa!' },
   'Insomnio':        { face: 'despierta',   color: '#9b6c98', tip: 'Evita las pantallas 1h antes de dormir y lee un libro.' },
   'Libido Alta':     { face: 'enamorada',   color: '#9b6c98', tip: '¡Disfruta de este pico de vitalidad y conexión!' },
+  'Calambres': { icon: <Zap size={24} />, color: '#9b6c98', tip: 'Estira suavemente el músculo y aplica calor para aliviar el calambre.' },
+  'Espasmos': {
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {/* Onda muscular principal */}
+        <path d="M2 12 C4 7 6 17 8 12 C10 7 12 17 14 12 C16 7 18 17 20 12" />
+        {/* Líneas de vibración encima y debajo indicando espasmo */}
+        <path d="M2 9 C4 6.5 6 13 8 9" strokeWidth="1" opacity="0.45" />
+        <path d="M2 15 C4 12.5 6 19 8 15" strokeWidth="1" opacity="0.45" />
+      </svg>
+    ),
+    color: '#9b6c98', tip: 'Respira profundo y estira lentamente la zona para calmar el espasmo.'
+  },
   'Dolor Ovario Derecho': {
     icon: (
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
