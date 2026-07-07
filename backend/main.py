@@ -201,6 +201,114 @@ def run_migrations():
         # Activación/desactivación de cuentas
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE",
         "UPDATE usuarias SET activo = TRUE WHERE activo IS NULL",
+        # Peso y altura en configuración de usuario
+        "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS peso NUMERIC(5,1)",
+        "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS altura INTEGER",
+
+        # ── Clasificaciones de Consejos ──────────────────────────────────────────
+        "INSERT INTO consejos_clasificaciones (nombre, descripcion, activa, orden) SELECT 'Remedios', 'Remedios naturales para aliviar los sintomas del ciclo menstrual', TRUE, 10 WHERE NOT EXISTS (SELECT 1 FROM consejos_clasificaciones WHERE nombre = 'Remedios')",
+        "INSERT INTO consejos_clasificaciones (nombre, descripcion, activa, orden) SELECT 'Tratamientos', 'Medicamentos recomendables para el manejo del ciclo y sus sintomas', TRUE, 11 WHERE NOT EXISTS (SELECT 1 FROM consejos_clasificaciones WHERE nombre = 'Tratamientos')",
+
+        # ── Artículos de Remedios ────────────────────────────────────────────────
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Calor local para los colicos',
+          'Aplica calor en el abdomen para relajar los espasmos y reducir el dolor',
+          'Coloca una bolsa de agua caliente o almohadilla termica sobre el abdomen inferior durante 15-20 minutos. El calor relaja la musculatura uterina, mejora la circulacion local y reduce significativamente la intensidad de los colicos. Puedes repetirlo varias veces al dia. Es uno de los remedios mas eficaces y sin efectos secundarios.',
+          TRUE, 1
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Remedios'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Calor local para los colicos')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Te de jengibre para nauseas y colicos',
+          'El jengibre tiene propiedades antiinflamatorias naturales que alivian las molestias menstruales',
+          'Hierve 2 cm de jengibre fresco rallado en 250 ml de agua durante 10 minutos. Cuela, anade miel al gusto y bebe tibio. El jengibre bloquea las prostaglandinas, las mismas moleculas que provocan los colicos. Beber 2-3 tazas al dia durante el periodo ayuda con las nauseas, los calambres y la inflamacion general.',
+          TRUE, 2
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Remedios'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Te de jengibre para nauseas y colicos')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Magnesio para calambres y tension',
+          'El magnesio relaja la musculatura y reduce los calambres menstruales de forma natural',
+          'El magnesio es clave para la relajacion muscular. Puedes obtenerlo de alimentos como espinacas, almendras, semillas de calabaza y chocolate negro (mas del 70%). Como suplemento, 300-400 mg de magnesio al dia en la semana previa y durante el periodo puede reducir los calambres, la retencion de liquidos y la irritabilidad.',
+          TRUE, 3
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Remedios'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Magnesio para calambres y tension')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Infusion de manzanilla',
+          'La manzanilla tiene efecto antiespasmódico y calmante sobre el utero',
+          'Prepara una infusion con 2 bolsitas o una cucharada de flores secas de manzanilla en agua recien hervida. Deja reposar 5 minutos y bebe caliente. La manzanilla contiene flavonoides que relajan el musculo uterino y reducen la inflamacion. Tomar 2-3 tazas al dia durante el periodo es un remedio clasico y seguro.',
+          TRUE, 4
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Remedios'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Infusion de manzanilla')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Ejercicio suave: yoga y caminar',
+          'El movimiento libera endorfinas que actuan como analgesicos naturales',
+          'Aunque pueda parecer contradictorio, el ejercicio moderado durante el periodo reduce el dolor. El yoga menstrual, caminar 20-30 minutos o nadar suavemente liberan endorfinas que actuan como calmantes naturales y mejoran la circulacion pelvica. Evita ejercicios de alta intensidad los primeros dias si el dolor es fuerte.',
+          TRUE, 5
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Remedios'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Ejercicio suave: yoga y caminar')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Bano tibio con sales de Epsom',
+          'Un bano caliente con sales relaja la musculatura pelvica y alivia la tension',
+          'Llena la banera con agua tibia (no demasiado caliente) y anade 2 tazas de sales de Epsom (sulfato de magnesio). Sumerge durante 15-20 minutos. El magnesio se absorbe por la piel y relaja los musculos. El calor del agua mejora la circulacion en la zona pelvica y reduce los espasmos. Ideal antes de dormir.',
+          TRUE, 6
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Remedios'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Bano tibio con sales de Epsom')""",
+
+        # ── Artículos de Tratamientos ────────────────────────────────────────────
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Ibuprofeno (antiinflamatorio)',
+          'Uno de los analgesicos mas eficaces para los colicos menstruales',
+          'El ibuprofeno es un antiinflamatorio no esteroideo (AINE) que bloquea la produccion de prostaglandinas, las responsables principales de los colicos. Dosis habitual: 400-600 mg cada 6-8 horas con comida. No superar 2400 mg al dia. Especialmente eficaz si se empieza a tomar 1-2 dias antes del inicio del periodo. No recomendado si tienes problemas gastricos, renales o alergias a los AINEs. Consulta siempre a tu medico.',
+          TRUE, 1
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Tratamientos'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Ibuprofeno (antiinflamatorio)')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Paracetamol (analgesico)',
+          'Alternativa al ibuprofeno para el dolor menstrual, especialmente si hay problemas gastricos',
+          'El paracetamol es un analgesico y antipiretico recomendado cuando el ibuprofeno produce molestias gastricas o no esta contraindicado. Dosis habitual: 500-1000 mg cada 4-6 horas, sin superar 4 gramos al dia ni combinarlo con alcohol. Aunque es menos potente que los AINEs para los colicos, es una opcion segura para la mayoria de personas. Consulta a tu medico ante cualquier duda.',
+          TRUE, 2
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Tratamientos'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Paracetamol (analgesico)')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Acido mefenamico (antiespasmódico)',
+          'AINE especialmente indicado para la dismenorrea (dolor menstrual intenso)',
+          'El acido mefenamico es un antiinflamatorio con efecto antiespasmódico especialmente eficaz para la dismenorrea primaria. Reduce tanto el dolor como el flujo excesivo. Requiere prescripcion medica en muchos paises. La dosis habitual es de 500 mg cada 8 horas con alimentos. Como otros AINEs, no es adecuado si hay problemas gastricos, renales o renales. Consulta siempre con tu ginecólogo.',
+          TRUE, 3
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Tratamientos'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Acido mefenamico (antiespasmódico)')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Anticonceptivos hormonales',
+          'Regulan el ciclo, reducen el dolor y alivian el sindrome premenstrual',
+          'Los anticonceptivos orales combinados (pastillas), el parche, el anillo vaginal o el DIU hormonal pueden reducir significativamente los colicos, el flujo abundante y los sintomas del sindrome premenstrual al regular los niveles hormonales. Son especialmente utiles en casos de endometriosis o sindrome de ovario poliquistico. Requieren prescripcion y seguimiento medico. Habla con tu ginecologo para valorar la mejor opcion segun tu situacion.',
+          TRUE, 4
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Tratamientos'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Anticonceptivos hormonales')""",
+
+        """INSERT INTO consejos_articulos (id_clasificacion, titulo, resumen, cuerpo, activo, orden)
+        SELECT c.id,
+          'Suplementos de hierro',
+          'Esenciales si tienes reglas abundantes para prevenir la anemia ferropenica',
+          'Las reglas abundantes pueden provocar perdida significativa de hierro y derivar en anemia ferropenica (cansancio extremo, palidez, mareos). Los suplementos de hierro como el sulfato ferroso (100-200 mg al dia) ayudan a reponer las reservas. Tomalo con vitamina C (zumo de naranja) para mejorar la absorcion y evita tomarlo con lacteos o cafe. Confirma con un analisis de sangre si tienes deficit antes de empezar la suplementacion.',
+          TRUE, 5
+        FROM consejos_clasificaciones c WHERE c.nombre = 'Tratamientos'
+        AND NOT EXISTS (SELECT 1 FROM consejos_articulos WHERE titulo = 'Suplementos de hierro')""",
     ]
     with engine.connect() as conn:
         for sql in migrations:

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text, Boolean, LargeBinary
+from sqlalchemy import Column, Integer, String, Date, DateTime, Text, SmallInteger, ForeignKey, func, UUID, text, Boolean, LargeBinary, Numeric
 from sqlalchemy.orm import relationship
 from app.database.connection import Base
 import uuid
@@ -117,6 +117,8 @@ class ConfiguracionUsuaria(Base):
     duracion_periodo   = Column(SmallInteger, server_default="5")
     fecha_nacimiento   = Column(Date, nullable=True)
     modo_oscuro        = Column(SmallInteger, server_default="0")
+    peso               = Column(Numeric(5, 1), nullable=True)
+    altura             = Column(Integer, nullable=True)
     google_token       = Column(Text, nullable=True)
     google_refresh_token = Column(Text, nullable=True)
     google_token_expiry = Column(DateTime, nullable=True)

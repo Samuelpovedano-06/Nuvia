@@ -232,6 +232,13 @@ export default function ProfileScreen() {
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear() - 25);
   const [viewMode, setViewMode] = useState('days'); // 'days', 'years'
 
+  const [peso, setPeso] = useState('');
+  const [altura, setAltura] = useState('');
+  const [editingPeso, setEditingPeso] = useState(false);
+  const [editingAltura, setEditingAltura] = useState(false);
+  const [pesoInput, setPesoInput] = useState('');
+  const [alturaInput, setAlturaInput] = useState('');
+
   // Estados de configuración
   const [modoOscuro, setModoOscuro] = useState(0);
   const [isCycleEditable, setIsCycleEditable] = useState(false);
@@ -360,6 +367,8 @@ export default function ProfileScreen() {
         if (config) {
           if (config.duracion_ciclo) setCycleDuration(config.duracion_ciclo);
           if (config.duracion_periodo) setPeriodDuration(config.duracion_periodo);
+          if (config.peso != null) { setPeso(config.peso); setPesoInput(String(config.peso)); }
+          if (config.altura != null) { setAltura(config.altura); setAlturaInput(String(config.altura)); }
           if (config.fecha_nacimiento) {
             setFechaNacimiento(config.fecha_nacimiento);
             const d = new Date(config.fecha_nacimiento);
@@ -457,6 +466,28 @@ export default function ProfileScreen() {
         console.error("Error al guardar periodo:", err);
       }
     }, 600);
+  };
+
+  const handleSavePeso = async () => {
+    const val = parseFloat(pesoInput);
+    if (!isNaN(val) && val > 0 && val < 500) {
+      setPeso(val);
+      setEditingPeso(false);
+      try { await ApiService.updateConfig({ peso: val }); } catch (_) {}
+    } else {
+      setEditingPeso(false);
+    }
+  };
+
+  const handleSaveAltura = async () => {
+    const val = parseInt(alturaInput);
+    if (!isNaN(val) && val > 0 && val < 300) {
+      setAltura(val);
+      setEditingAltura(false);
+      try { await ApiService.updateConfig({ altura: val }); } catch (_) {}
+    } else {
+      setEditingAltura(false);
+    }
   };
 
   const handleSaveFechaNacimiento = async (val) => {
@@ -673,6 +704,72 @@ export default function ProfileScreen() {
           </div>
         )}
         
+        {/* Peso */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
+          <span style={{ color: 'var(--text-light)' }}>Peso</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {editingPeso ? (
+              <input
+                type="number"
+                step="0.1"
+                min="1"
+                max="499"
+                value={pesoInput}
+                onChange={e => setPesoInput(e.target.value)}
+                onBlur={handleSavePeso}
+                onKeyDown={e => { if (e.key === 'Enter') handleSavePeso(); if (e.key === 'Escape') setEditingPeso(false); }}
+                autoFocus
+                style={{ width: '70px', border: '1px solid var(--primary)', borderRadius: '8px', padding: '4px 8px', fontSize: '14px', textAlign: 'right', outline: 'none' }}
+              />
+            ) : (
+              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
+                {peso ? `${peso} kg` : '—'}
+              </span>
+            )}
+            {!editingPeso && (
+              <button
+                onClick={() => { setPesoInput(peso ? String(peso) : ''); setEditingPeso(true); }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Altura */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
+          <span style={{ color: 'var(--text-light)' }}>Altura</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {editingAltura ? (
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="299"
+                value={alturaInput}
+                onChange={e => setAlturaInput(e.target.value)}
+                onBlur={handleSaveAltura}
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveAltura(); if (e.key === 'Escape') setEditingAltura(false); }}
+                autoFocus
+                style={{ width: '70px', border: '1px solid var(--primary)', borderRadius: '8px', padding: '4px 8px', fontSize: '14px', textAlign: 'right', outline: 'none' }}
+              />
+            ) : (
+              <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
+                {altura ? `${altura} cm` : '—'}
+              </span>
+            )}
+            {!editingAltura && (
+              <button
+                onClick={() => { setAlturaInput(altura ? String(altura) : ''); setEditingAltura(true); }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', display: 'flex', padding: 0 }}
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Mi Código */}
         {user?.mi_codigo && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '14px' }}>

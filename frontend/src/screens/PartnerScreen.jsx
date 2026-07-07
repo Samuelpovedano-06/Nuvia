@@ -30,6 +30,11 @@ const PartnerScreen = () => {
   const [nuevoMensaje, setNuevoMensaje] = useState('');
   const [imagenAdjunta, setImagenAdjunta] = useState(null); // { dataUrl }
   const [enviandoMensaje, setEnviandoMensaje] = useState(false);
+  const [partnerFotoUrl, setPartnerFotoUrl] = useState(null);
+  const partnerFotoUrlRef = React.useRef(null);
+  const [partnerFotos, setPartnerFotos] = useState({});
+  const loadedIdsRef = React.useRef(new Set());
+  const partnerBlobsRef = React.useRef({});
   const [showChat, setShowChat] = useState(localStorage.getItem('showUsChat') === 'true');
   const [imagenPreview, setImagenPreview] = useState(null); // url para overlay
   const chatEndRef = React.useRef(null);
@@ -71,8 +76,25 @@ const PartnerScreen = () => {
   useEffect(() => {
     fetchVinculos();
     const interval = setInterval(fetchVinculos, 10000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      Object.values(partnerBlobsRef.current).forEach(url => URL.revokeObjectURL(url));
+    };
   }, [user]);
+
+  useEffect(() => {
+    if (vinculos.length === 0) return;
+    const getVid = v => isPareja ? v.id_usuaria : (v.other_id || v.id_pareja);
+    vinculos.forEach(v => {
+      const vid = getVid(v);
+      if (!vid || loadedIdsRef.current.has(vid)) return;
+      loadedIdsRef.current.add(vid);
+      ApiService.getFotoPerfil(vid).then(url => {
+        partnerBlobsRef.current[vid] = url;
+        setPartnerFotos(prev => ({ ...prev, [vid]: url }));
+      }).catch(() => {});
+    });
+  }, [vinculos]);
 
   useEffect(() => {
     if (selectedId) {
@@ -81,7 +103,25 @@ const PartnerScreen = () => {
       ultimoIdRef.current = null;
       fetchMensajes();
       const interval = setInterval(fetchMensajes, 3000);
-      return () => clearInterval(interval);
+
+      // Cargar foto del partner (silencioso si no tiene)
+      if (partnerFotoUrlRef.current) {
+        URL.revokeObjectURL(partnerFotoUrlRef.current);
+        partnerFotoUrlRef.current = null;
+      }
+      setPartnerFotoUrl(null);
+      ApiService.getFotoPerfil(selectedId).then(url => {
+        partnerFotoUrlRef.current = url;
+        setPartnerFotoUrl(url);
+      }).catch(() => {});
+
+      return () => {
+        clearInterval(interval);
+        if (partnerFotoUrlRef.current) {
+          URL.revokeObjectURL(partnerFotoUrlRef.current);
+          partnerFotoUrlRef.current = null;
+        }
+      };
     }
   }, [selectedId]);
 
@@ -357,8 +397,10 @@ const PartnerScreen = () => {
                 return (
                   <div key={v.id} className="card" style={{ padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', border: isViewing ? '1.5px solid var(--primary)' : '1.5px solid transparent' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold' }}>
-                        {v.nombre?.charAt(0).toUpperCase()}
+                      <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold', overflow: 'hidden' }}>
+                        {partnerFotos[vid]
+                          ? <img src={partnerFotos[vid]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : v.nombre?.charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-dark)' }}>{v.nombre}</div>
@@ -530,8 +572,10 @@ const PartnerScreen = () => {
                           marginBottom: '5px', transition: 'all 0.2s'
                         }}
                       >
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isActive ? 'var(--primary)' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? 'white' : '#999', fontWeight: 'bold' }}>
-                          {v.nombre?.charAt(0).toUpperCase()}
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isActive ? 'var(--primary)' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? 'white' : '#999', fontWeight: 'bold', overflow: 'hidden' }}>
+                          {partnerFotos[vvid]
+                            ? <img src={partnerFotos[vvid]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : v.nombre?.charAt(0).toUpperCase()}
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: '700', fontSize: '14px', color: isActive ? 'var(--primary)' : 'var(--text-dark)' }}>{v.nombre}</div>
@@ -557,8 +601,13 @@ const PartnerScreen = () => {
                 onClick={() => setShowSidebar(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px 8px', borderRadius: '8px' }}
               >
-                <div style={{ background: 'var(--primary)', color: 'white', padding: '6px', borderRadius: '8px', display: 'flex' }}>
-                  <Users size={16} />
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', overflow: 'hidden', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {partnerFotoUrl
+                    ? <img src={partnerFotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <span style={{ color: 'white', fontWeight: '700', fontSize: '15px' }}>
+                        {vinculos.find(v => getOtherId(v) === selectedId)?.nombre?.charAt(0).toUpperCase()}
+                      </span>
+                  }
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--text-dark)', fontWeight: '700' }}>
@@ -582,52 +631,72 @@ const PartnerScreen = () => {
                 <MessageCircle size={40} style={{ marginBottom: '10px' }} />
                 <p style={{ fontSize: '13px' }}>Di algo bonito...</p>
               </div>
-            ) : mensajes.map(m => {
-              const isMe = m.id_remitente === user.id_usuaria;
-              const tieneImagen = m.tiene_imagen;
-              const tieneTexto = !!(m.contenido && m.contenido.trim());
-              return (
-                <div key={m.id} style={{
-                  alignSelf: isMe ? 'flex-end' : 'flex-start',
-                  maxWidth: '80%',
-                  padding: '8px 10px 22px',
-                  borderRadius: isMe ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
-                  background: isMe ? 'var(--primary)' : 'white',
-                  color: isMe ? 'white' : 'var(--text-dark)',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-                  position: 'relative',
-                }}>
-                  {m.es_compartido && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      fontSize: '10px', fontWeight: '700', opacity: 0.85,
-                      paddingBottom: '6px', marginBottom: '6px',
-                      borderBottom: `1px solid ${isMe ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)'}`,
-                      padding: '0 4px 6px'
-                    }}>
-                      <MessageCircle size={11} /> Enviado desde Chats Secretos
-                    </div>
-                  )}
-                  {tieneTexto && (
-                    <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4', overflowWrap: 'break-word', wordBreak: 'break-word', padding: '0 4px', marginBottom: tieneImagen ? '8px' : 0 }}>{m.contenido}</p>
-                  )}
-                  {tieneImagen && (
-                    <AuthImage
-                      src={ApiService.imagenChatUrl(m.id)}
-                      onClick={() => setImagenPreview(ApiService.imagenChatUrl(m.id))}
-                      style={{ maxWidth: '260px', maxHeight: '320px', width: '100%', borderRadius: '12px', display: 'block', cursor: 'pointer' }}
-                    />
-                  )}
-                  <span style={{
-                    fontSize: '9px', opacity: 0.7,
-                    position: 'absolute', bottom: '6px',
-                    [isMe ? 'right' : 'left']: '12px'
+            ) : (() => {
+              const getVid = v => isPareja ? v.id_usuaria : (v.other_id || v.id_pareja);
+              const partnerNombre = vinculos.find(v => getVid(v) === selectedId)?.nombre || '';
+              return mensajes.map(m => {
+                const isMe = m.id_remitente === user.id_usuaria;
+                const tieneImagen = m.tiene_imagen;
+                const tieneTexto = !!(m.contenido && m.contenido.trim());
+
+                const bubble = (
+                  <div key={m.id} style={{
+                    maxWidth: '80%',
+                    padding: '8px 10px 22px',
+                    borderRadius: isMe ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
+                    background: isMe ? 'var(--primary)' : 'white',
+                    color: isMe ? 'white' : 'var(--text-dark)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                    position: 'relative',
                   }}>
-                    {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              );
-            })}
+                    {m.es_compartido && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                        fontSize: '10px', fontWeight: '700', opacity: 0.85,
+                        paddingBottom: '6px', marginBottom: '6px',
+                        borderBottom: `1px solid ${isMe ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)'}`,
+                        padding: '0 4px 6px'
+                      }}>
+                        <MessageCircle size={11} /> Enviado desde Chats Secretos
+                      </div>
+                    )}
+                    {tieneTexto && (
+                      <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.4', overflowWrap: 'break-word', wordBreak: 'break-word', padding: '0 4px', marginBottom: tieneImagen ? '8px' : 0 }}>{m.contenido}</p>
+                    )}
+                    {tieneImagen && (
+                      <AuthImage
+                        src={ApiService.imagenChatUrl(m.id)}
+                        onClick={() => setImagenPreview(ApiService.imagenChatUrl(m.id))}
+                        style={{ maxWidth: '260px', maxHeight: '320px', width: '100%', borderRadius: '12px', display: 'block', cursor: 'pointer' }}
+                      />
+                    )}
+                    <span style={{
+                      fontSize: '9px', opacity: 0.7,
+                      position: 'absolute', bottom: '6px',
+                      [isMe ? 'right' : 'left']: '12px'
+                    }}>
+                      {new Date(m.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+
+                if (isMe) {
+                  return <div key={m.id} style={{ alignSelf: 'flex-end' }}>{bubble}</div>;
+                }
+
+                return (
+                  <div key={m.id} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0, overflow: 'hidden', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {partnerFotoUrl
+                        ? <img src={partnerFotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary)' }}>{partnerNombre.charAt(0).toUpperCase()}</span>
+                      }
+                    </div>
+                    {bubble}
+                  </div>
+                );
+              });
+            })()}
             <div ref={chatEndRef} />
           </div>
 

@@ -154,6 +154,8 @@ class ConfiguracionUpdate(BaseModel):
     fecha_nacimiento: Optional[date] = None
     modo_oscuro: Optional[int] = None
     codigo_pareja: Optional[str] = None  # usado solo para enviar solicitud de vinculación
+    peso: Optional[float] = None
+    altura: Optional[int] = None
 
 class ConfiguracionOut(BaseModel):
     id_usuaria: UUID
@@ -162,6 +164,8 @@ class ConfiguracionOut(BaseModel):
     duracion_periodo: int
     fecha_nacimiento: Optional[date] = None
     modo_oscuro: int
+    peso: Optional[float] = None
+    altura: Optional[int] = None
 
     class Config:
         from_attributes = True

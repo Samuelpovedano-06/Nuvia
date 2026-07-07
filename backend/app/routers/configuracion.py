@@ -17,6 +17,8 @@ def _serialize_config(c: ConfiguracionUsuaria) -> dict:
         "duracion_periodo": c.duracion_periodo or 5,
         "fecha_nacimiento": c.fecha_nacimiento,
         "modo_oscuro": c.modo_oscuro or 0,
+        "peso": float(c.peso) if c.peso is not None else None,
+        "altura": c.altura,
     }
 
 

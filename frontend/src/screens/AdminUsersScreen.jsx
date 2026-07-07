@@ -308,13 +308,13 @@ export default function AdminUsersScreen() {
                   disabled={togglingId === u.id_usuaria}
                   title={u.activo === false ? 'Activar cuenta' : 'Desactivar cuenta'}
                   style={{ flex: 1, minWidth: '70px', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600,
-                    background: u.activo === false ? '#f0fdf4' : '#f8fafc',
-                    color:      u.activo === false ? '#16a34a' : '#64748b',
+                    background: u.activo === false ? '#f8fafc' : '#f0fdf4',
+                    color:      u.activo === false ? '#64748b' : '#16a34a',
                     opacity: togglingId === u.id_usuaria ? 0.5 : 1
                   }}
                 >
                   {u.activo === false ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
-                  {u.activo === false ? 'Activar' : 'Desactivar'}
+                  {u.activo === false ? 'Desactivado' : 'Activo'}
                 </button>
               )}
               {u.id_usuaria !== user?.id_usuaria && (
