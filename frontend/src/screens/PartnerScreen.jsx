@@ -83,10 +83,9 @@ const PartnerScreen = () => {
   }, [user]);
 
   useEffect(() => {
-    if (vinculos.length === 0) return;
-    const getVid = v => isPareja ? v.id_usuaria : (v.other_id || v.id_pareja);
+    if (vinculos.length === 0 || !user) return;
     vinculos.forEach(v => {
-      const vid = getVid(v);
+      const vid = getOtherId(v);
       if (!vid || loadedIdsRef.current.has(vid)) return;
       loadedIdsRef.current.add(vid);
       ApiService.getFotoPerfil(vid).then(url => {
@@ -94,7 +93,7 @@ const PartnerScreen = () => {
         setPartnerFotos(prev => ({ ...prev, [vid]: url }));
       }).catch(() => {});
     });
-  }, [vinculos]);
+  }, [vinculos, user]);
 
   useEffect(() => {
     if (selectedId) {
@@ -392,7 +391,7 @@ const PartnerScreen = () => {
             <div style={{ marginTop: '20px' }}>
               <h3 style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '12px', paddingLeft: '5px' }}>Vínculos Activos</h3>
               {panelVinculos.map(v => {
-                const vid = isPareja ? v.id_usuaria : (v.other_id || v.id_pareja);
+                const vid = getOtherId(v);
                 const isViewing = selectedId === vid;
                 return (
                   <div key={v.id} className="card" style={{ padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', border: isViewing ? '1.5px solid var(--primary)' : '1.5px solid transparent' }}>
