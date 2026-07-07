@@ -124,6 +124,40 @@ const SINTOMA_STYLE = {
   'Manchada':        { face: 'pena',        color: '#9b6c98', tip: 'Lleva contigo lo necesario, ¡que nada te pille por sorpresa!' },
   'Insomnio':        { face: 'despierta',   color: '#9b6c98', tip: 'Evita las pantallas 1h antes de dormir y lee un libro.' },
   'Libido Alta':     { face: 'enamorada',   color: '#9b6c98', tip: '¡Disfruta de este pico de vitalidad y conexión!' },
+  'Dolor Ovario Derecho': {
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {/* Útero */}
+        <path d="M9 19Q8 15 12 13Q16 15 15 19Q14 21 12 21Q10 21 9 19Z" />
+        {/* Trompa izquierda + ovario (sano) */}
+        <path d="M9.5 15C7.5 14 5.5 14.5 4.5 16" />
+        <ellipse cx="3.8" cy="17.2" rx="1.4" ry="1.8" />
+        {/* Trompa derecha + ovario (dolor, relleno) */}
+        <path d="M14.5 15C16.5 14 18.5 14.5 19.5 16" />
+        <ellipse cx="20.2" cy="17.2" rx="1.4" ry="1.8" fill="currentColor" opacity="0.65" />
+        {/* Destello de dolor */}
+        <path d="M22 12.5l-.6 1.4.8.2-.7 1.4" strokeWidth="1.4" />
+      </svg>
+    ),
+    color: '#9b6c98', tip: 'Aplica calor suave en el lado derecho y descansa un momento.'
+  },
+  'Dolor Ovario Izquierdo': {
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {/* Útero */}
+        <path d="M9 19Q8 15 12 13Q16 15 15 19Q14 21 12 21Q10 21 9 19Z" />
+        {/* Trompa izquierda + ovario (dolor, relleno) */}
+        <path d="M9.5 15C7.5 14 5.5 14.5 4.5 16" />
+        <ellipse cx="3.8" cy="17.2" rx="1.4" ry="1.8" fill="currentColor" opacity="0.65" />
+        {/* Destello de dolor */}
+        <path d="M2 12.5l.6 1.4-.8.2.7 1.4" strokeWidth="1.4" />
+        {/* Trompa derecha + ovario (sano) */}
+        <path d="M14.5 15C16.5 14 18.5 14.5 19.5 16" />
+        <ellipse cx="20.2" cy="17.2" rx="1.4" ry="1.8" />
+      </svg>
+    ),
+    color: '#9b6c98', tip: 'Aplica calor suave en el lado izquierdo y descansa un momento.'
+  },
   'Default':         { face: 'feliz',       color: '#9b6c98', tip: 'Recuerda que cada ciclo es único. ¡Vas muy bien!' }
 };
 
