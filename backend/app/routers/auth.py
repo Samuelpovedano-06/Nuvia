@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import random
 import string
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja
+from app.models.models import Usuaria, ConfiguracionUsuaria, Pareja, SeguimientoForo
 from sqlalchemy import or_
 from app.schemas.schemas import UsuariaCreate, UsuariaLogin, UsuariaOut, Token, ForgotPasswordRequest, VerifyOTPRequest, ResetPasswordRequest
 from app.routers.auth_utils import hash_password, verify_password, create_access_token, create_refresh_token, verify_refresh_token, get_current_user
@@ -226,6 +226,25 @@ def clear_nota_chat(
     current_user.nota_chat_expires_at = None
     db.commit()
     return {"ok": True}
+
+
+@router.get("/notas/siguiendo")
+def get_notas_siguiendo(
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    """Devuelve las notas activas de los usuarios que sigo en el foro."""
+    now = datetime.now()
+    seguidos_ids = [r[0] for r in db.query(SeguimientoForo.id_seguido)
+                    .filter(SeguimientoForo.id_seguidor == current_user.id_usuaria).all()]
+    if not seguidos_ids:
+        return []
+    usuarios = db.query(Usuaria).filter(
+        Usuaria.id_usuaria.in_(seguidos_ids),
+        Usuaria.nota_chat != None,
+        Usuaria.nota_chat_expires_at > now
+    ).all()
+    return [{"nota": u.nota_chat, "avatar_seed": str(u.id_usuaria)[:12]} for u in usuarios]
 
 
 @router.get("/nota/{id_usuaria}")

@@ -99,6 +99,14 @@ export const ApiService = {
     } catch { return null; }
   },
 
+  getNotasSiguiendo: async () => {
+    try {
+      const res = await fetch(`${baseUrl}/auth/notas/siguiendo`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch { return []; }
+  },
+
   getMe: async () => {
     let res;
     try {

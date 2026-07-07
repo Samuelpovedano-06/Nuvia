@@ -279,6 +279,13 @@ export default function CommunityScreen() {
   const [bloqueadosList, setBloqueadosList] = useState([]);
   const [bloqueadosLoading, setBloqueadosLoading] = useState(false);
 
+  // Notas estilo Instagram
+  const [miNota, setMiNota] = useState(user?.nota_chat || null);
+  const [notasSiguiendo, setNotasSiguiendo] = useState([]);
+  const [editandoNota, setEditandoNota] = useState(false);
+  const [notaInput, setNotaInput] = useState('');
+  const [savingNota, setSavingNota] = useState(false);
+
   const abrirBloqueados = async () => {
     setShowBloqueados(true);
     setBloqueadosLoading(true);
@@ -329,6 +336,42 @@ export default function CommunityScreen() {
     const t = setInterval(fetchAvisos, 5000);
     return () => clearInterval(t);
   }, []);
+
+  // Sync propia nota con user context
+  useEffect(() => { setMiNota(user?.nota_chat || null); }, [user?.nota_chat]);
+
+  // Cargar notas de seguidos al montar y cada 30s
+  useEffect(() => {
+    const load = async () => {
+      const data = await ApiService.getNotasSiguiendo();
+      setNotasSiguiendo(data);
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleSaveNota = async () => {
+    if (!notaInput.trim()) return;
+    setSavingNota(true);
+    try {
+      await ApiService.setNotaChat(notaInput.trim());
+      setMiNota(notaInput.trim());
+      setEditandoNota(false);
+    } catch { mostrarToast('Error al guardar nota', 'error'); }
+    finally { setSavingNota(false); }
+  };
+
+  const handleClearNota = async () => {
+    setSavingNota(true);
+    try {
+      await ApiService.clearNotaChat();
+      setMiNota(null);
+      setNotaInput('');
+      setEditandoNota(false);
+    } catch { mostrarToast('Error al borrar nota', 'error'); }
+    finally { setSavingNota(false); }
+  };
 
   const cerrarAviso = async (av) => {
     try {
@@ -553,8 +596,58 @@ export default function CommunityScreen() {
           </div>
         </div>
 
-        {/* Acciones (Bloqueadas / Reportes) — debajo del título, encima de los tabs */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+        {/* Fila de Notas estilo Instagram */}
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {/* Tu nota */}
+          <div
+            onClick={() => { setNotaInput(miNota || ''); setEditandoNota(true); }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, cursor: 'pointer', width: '68px' }}
+          >
+            <div style={{ height: '36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', width: '100%', marginBottom: '4px' }}>
+              {miNota ? (
+                <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                  {miNota}
+                </div>
+              ) : (
+                <div style={{ fontSize: '10px', color: '#94a3b8', textAlign: 'center' }}>Añade una nota</div>
+              )}
+            </div>
+            <div style={{ position: 'relative' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '50%', padding: '2.5px', boxSizing: 'border-box', display: 'flex', background: miNota ? 'linear-gradient(135deg, #B05BB5, #F6416C)' : '#d1d5db' }}>
+                <div style={{ flex: 1, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary)' }}>{user?.nombre?.charAt(0).toUpperCase() || '?'}</span>
+                </div>
+              </div>
+              {!miNota && (
+                <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', border: '2px solid white' }}>+</div>
+              )}
+            </div>
+            <div style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '4px', textAlign: 'center' }}>Tu nota</div>
+          </div>
+
+          {/* Notas de seguidos */}
+          {notasSiguiendo.map((n, i) => {
+            const av = getAvatar(n.avatar_seed);
+            return (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: '68px' }}>
+                <div style={{ height: '36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', width: '100%', marginBottom: '4px' }}>
+                  <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                    {n.nota}
+                  </div>
+                </div>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', padding: '2.5px', boxSizing: 'border-box', display: 'flex', background: 'linear-gradient(135deg, #B05BB5, #F6416C)' }}>
+                  <div style={{ flex: 1, borderRadius: '50%', background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>
+                    {av.emoji}
+                  </div>
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '4px', textAlign: 'center' }}>Anónima</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Acciones (Bloqueadas / Reportes / Nueva publicación) */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px', alignItems: 'center' }}>
           <button
             onClick={abrirBloqueados}
             style={{
@@ -590,6 +683,18 @@ export default function CommunityScreen() {
               )}
             </button>
           )}
+          <button
+            onClick={() => setShowCreate(true)}
+            style={{
+              marginLeft: 'auto', background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
+              border: 'none', borderRadius: '14px', padding: '8px 14px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px',
+              color: 'white', fontWeight: '700', fontSize: '13px',
+              boxShadow: '0 3px 10px rgba(176,91,181,0.3)'
+            }}
+          >
+            <span style={{ fontSize: '15px' }}>✍️</span> Nueva
+          </button>
         </div>
 
         {/* Tabs */}
@@ -653,19 +758,6 @@ export default function CommunityScreen() {
         )}
       </div>
 
-      {/* FAB — fuera del screen-container para evitar problemas de stacking context */}
-      {!showCreate && !activePost && (
-      <button onClick={() => setShowCreate(true)} style={{
-        position: 'fixed', bottom: '90px', right: '20px', zIndex: 1200,
-        background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
-        color: 'white', border: 'none', borderRadius: '20px',
-        padding: '12px 20px', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: '8px',
-        boxShadow: '0 4px 20px rgba(176,91,181,0.4)'
-      }}>
-        <span style={{ fontSize: '18px' }}></span> Nueva publicación
-      </button>
-      )}
 
       {/* Post Detail Overlay */}
       {activePost && (
@@ -1177,6 +1269,50 @@ export default function CommunityScreen() {
           {toast.mensaje}
         </div>
       )}
+      {/* Modal editar nota */}
+      {editandoNota && (
+        <div
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '20px' }}
+          onClick={() => setEditandoNota(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 -5px 30px rgba(0,0,0,0.12)' }}
+          >
+            <h3 style={{ margin: '0 0 4px', fontSize: '17px', color: 'var(--text-dark)' }}>Tu nota</h3>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-light)' }}>Visible en la comunidad durante 24 horas</p>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                maxLength={60}
+                value={notaInput}
+                onChange={e => setNotaInput(e.target.value)}
+                placeholder="¿Qué estás haciendo?"
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveNota(); if (e.key === 'Escape') setEditandoNota(false); }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 48px 12px 14px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontSize: '15px', outline: 'none', fontFamily: 'inherit' }}
+              />
+              <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#94a3b8' }}>
+                {notaInput.length}/60
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+              {miNota && (
+                <button onClick={handleClearNota} disabled={savingNota} style={{ padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #fee2e2', background: '#fff5f5', color: '#ef4444', fontWeight: '700', cursor: 'pointer', fontSize: '13px', flexShrink: 0 }}>
+                  Borrar
+                </button>
+              )}
+              <button onClick={() => setEditandoNota(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+                Cancelar
+              </button>
+              <button onClick={handleSaveNota} disabled={!notaInput.trim() || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: !notaInput.trim() ? 0.6 : 1 }}>
+                {savingNota ? '...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes nuviaToastIn {
           from { opacity: 0; transform: translate(-50%, 20px); }
