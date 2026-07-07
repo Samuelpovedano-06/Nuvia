@@ -187,9 +187,14 @@ def run_migrations():
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS foto_perfil_mime VARCHAR(50)",
         # Duración de periodo predicha al crear un ciclo
         "ALTER TABLE ciclos ADD COLUMN IF NOT EXISTS duracion_periodo_predicha INTEGER",
-        # Nuevos síntomas físicos
-        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Ovario Derecho', 'Físico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Ovario Derecho')",
-        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Ovario Izquierdo', 'Físico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Ovario Izquierdo')",
+        # Nuevos síntomas físicos (categoría sin tilde para coincidir con el filtro del frontend)
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Ovario Derecho', 'Fisico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Ovario Derecho')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Ovario Izquierdo', 'Fisico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Ovario Izquierdo')",
+        # Corregir categoría si se insertaron con tilde por error
+        "UPDATE sintomas SET categoria = 'Fisico' WHERE nombre_sintoma IN ('Dolor Ovario Derecho', 'Dolor Ovario Izquierdo') AND categoria = 'Físico'",
+        # Duraciones predichas en tabla predicciones (para que el calendario las use)
+        "ALTER TABLE predicciones ADD COLUMN IF NOT EXISTS duracion_ciclo_predicha INTEGER",
+        "ALTER TABLE predicciones ADD COLUMN IF NOT EXISTS duracion_periodo_predicha INTEGER",
     ]
     with engine.connect() as conn:
         for sql in migrations:

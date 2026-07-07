@@ -96,12 +96,14 @@ class HistorialEstado(Base):
 class Prediccion(Base):
     __tablename__ = "predicciones"
 
-    id_prediccion         = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_usuaria            = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    proxima_menstruacion  = Column(Date)
-    prediccion_ovulacion  = Column(Date)
-    ventana_fertil_inicio = Column(Date)
-    ventana_fertil_fin    = Column(Date)
+    id_prediccion             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria                = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    proxima_menstruacion      = Column(Date)
+    prediccion_ovulacion      = Column(Date)
+    ventana_fertil_inicio     = Column(Date)
+    ventana_fertil_fin        = Column(Date)
+    duracion_ciclo_predicha   = Column(Integer, nullable=True)
+    duracion_periodo_predicha = Column(Integer, nullable=True)
 
     usuaria = relationship("Usuaria", back_populates="predicciones")
 

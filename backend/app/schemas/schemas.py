@@ -137,6 +137,8 @@ class PrediccionOut(BaseModel):
     ventana_fertil_inicio: Optional[date]
     ventana_fertil_fin: Optional[date]
     prediccion_ovulacion: Optional[date]
+    duracion_ciclo_predicha: Optional[int] = None
+    duracion_periodo_predicha: Optional[int] = None
 
     class Config:
         from_attributes = True

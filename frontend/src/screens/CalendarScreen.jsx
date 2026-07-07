@@ -130,6 +130,7 @@ export default function CalendarScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [ciclos, setCiclos] = useState([]);
   const [config, setConfig] = useState(null);
+  const [prediccion, setPrediccion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState(1);
   const [diaActual, setDiaActual] = useState(1);
@@ -143,7 +144,12 @@ export default function CalendarScreen() {
         ]);
         setCiclos(ciclosData);
         setConfig(configData);
-        
+
+        try {
+          const predData = await ApiService.getPrediccion(targetId);
+          setPrediccion(predData);
+        } catch (_) {}
+
         if (ciclosData.length > 0) {
           const duracion = configData?.duracion_ciclo || 28;
           const hoy = new Date();
@@ -224,34 +230,23 @@ export default function CalendarScreen() {
       inicioUltimo.setHours(0,0,0,0);
       dObj.setHours(0,0,0,0);
 
-      // Clamp defensivo: si la BD tiene valores corruptos (>45 o <21 para ciclo,
-      // >10 o <3 para periodo) usamos los estándar para no romper el render.
-      const rawDuracion = config.duracion_ciclo || 28;
+      // Usar valores del algoritmo de predicción si están disponibles; si no, config del usuario
+      const rawDuracion = prediccion?.duracion_ciclo_predicha || config.duracion_ciclo || 28;
       const duracion = (rawDuracion >= 21 && rawDuracion <= 45) ? rawDuracion : 28;
-      const rawDurP = config?.duracion_periodo || 5;
-      const duracionP = (rawDurP >= 3 && rawDurP <= 10) ? rawDurP : 5;
+      const rawDurP = prediccion?.duracion_periodo_predicha || config?.duracion_periodo || 5;
+      const duracionP = (rawDurP >= 1 && rawDurP <= 15) ? rawDurP : 5;
 
       const diffTime = dObj.getTime() - inicioUltimo.getTime();
       const diffDays = Math.floor(diffTime / 86400000);
 
       let diaCiclo = ((diffDays % duracion) + duracion) % duracion + 1;
 
-      const ovulacionBase = duracion - 14;
-      const inicioFertilBase = ovulacionBase - 3;
-      const ventanaInicio = Math.max(duracionP + 4, inicioFertilBase);
-      const ovulacion = ventanaInicio + 3;
+      // Todas las fases se derivan de UN solo conjunto de valores coherente
+      const ovulacion = duracion - 14;
+      const ventanaInicio = ovulacion - 3;
       const ventanaFin = ovulacion + 1;
 
-      // Para el ciclo cerrado más reciente usamos la duración PREDICHA original
-      // (guardada al crear el ciclo) en vez de la actual del config, que ya fue
-      // actualizada por el algoritmo. Así el día 5 sigue mostrando el círculo
-      // punteado aunque el algoritmo haya ajustado duracion_periodo a 4.
-      const esCicloActualCerrado = !!ultimoCiclo.fecha_fin && diffDays >= 0 && diffDays < duracion;
-      const duracionPPrediccion = esCicloActualCerrado
-        ? (ultimoCiclo.duracion_periodo_predicha || duracionP)
-        : duracionP;
-
-      if (diaCiclo <= duracionPPrediccion) return 'prediccion-periodo';
+      if (diaCiclo <= duracionP) return 'prediccion-periodo';
       if (diaCiclo < ventanaInicio) return 'folicular';
       if (diaCiclo === ovulacion) return 'ovulacion';
       if (diaCiclo >= ventanaInicio && diaCiclo <= ventanaFin) return 'fertil';
