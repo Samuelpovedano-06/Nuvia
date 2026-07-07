@@ -78,11 +78,16 @@ const PartnerScreen = () => {
     const interval = setInterval(fetchVinculos, 10000);
     return () => {
       clearInterval(interval);
-      // Limpiar estado y refs para que las fotos se re-carguen cuando user cambia
-      loadedIdsRef.current = new Set();
-      setPartnerFotos({});
-      Object.values(partnerBlobsRef.current).forEach(url => { if (url) URL.revokeObjectURL(url); });
+      // Solo revocar y re-programar los IDs que tenían foto válida.
+      // Los que devolvieron null (sin foto / 404) se dejan en loadedIdsRef para no re-spamear.
+      Object.entries(partnerBlobsRef.current).forEach(([id, url]) => {
+        if (url) {
+          URL.revokeObjectURL(url);
+          loadedIdsRef.current.delete(id);
+        }
+      });
       partnerBlobsRef.current = {};
+      setPartnerFotos({});
     };
   }, [user]);
 

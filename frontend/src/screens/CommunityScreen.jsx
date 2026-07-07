@@ -428,6 +428,8 @@ export default function CommunityScreen() {
       // Actualiza es_seguido en TODOS los posts del mismo autor (no solo el abierto)
       setPosts(prev => prev.map(p => p.id_autor === idAutor ? { ...p, es_seguido: res.siguiendo } : p));
       if (activePost) setActivePost(p => ({ ...p, es_seguido: res.siguiendo }));
+      // Refrescar notas inmediatamente al seguir/dejar de seguir
+      ApiService.getNotasSiguiendo().then(data => setNotasSiguiendo(data)).catch(() => {});
     } catch (err) {
       console.error('Error seguir:', err);
       alert('No se pudo seguir al usuario');

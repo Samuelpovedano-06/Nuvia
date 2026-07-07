@@ -241,7 +241,8 @@ def get_notas_siguiendo(
         return []
     usuarios = db.query(Usuaria).filter(
         Usuaria.id_usuaria.in_(seguidos_ids),
-        Usuaria.nota_chat != None,
+        Usuaria.nota_chat.isnot(None),
+        Usuaria.nota_chat_expires_at.isnot(None),
         Usuaria.nota_chat_expires_at > now
     ).all()
     return [{"nota": u.nota_chat, "avatar_seed": str(u.id_usuaria)[:12]} for u in usuarios]

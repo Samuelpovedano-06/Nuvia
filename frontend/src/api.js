@@ -102,9 +102,9 @@ export const ApiService = {
   getNotasSiguiendo: async () => {
     try {
       const res = await fetch(`${baseUrl}/auth/notas/siguiendo`, { headers: getHeaders() });
-      if (!res.ok) return [];
+      if (!res.ok) { console.warn('[notas/siguiendo] HTTP', res.status); return []; }
       return await res.json();
-    } catch { return []; }
+    } catch (e) { console.warn('[notas/siguiendo] error', e); return []; }
   },
 
   getMe: async () => {

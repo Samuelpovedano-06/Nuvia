@@ -160,7 +160,18 @@ function ArticulosTab({ onEdit, onNew }) {
   return (
     <div>
       <button onClick={onNew} style={btnPrimario}><Plus size={16} /> Nuevo artículo</button>
-      {loading ? <p style={{ marginTop: 16 }}>Cargando...</p> : (
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', gap: 16 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%',
+            border: '4px solid rgba(176,91,181,0.15)',
+            borderTopColor: 'var(--primary)',
+            animation: 'nuviaSpin 0.8s linear infinite'
+          }} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)' }}>Cargando artículos…</span>
+          <style>{`@keyframes nuviaSpin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      ) : (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {articulos.length === 0 && <p style={{ color: 'var(--text-light)' }}>Sin artículos.</p>}
           {articulos.map(a => (
