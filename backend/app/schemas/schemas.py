@@ -38,6 +38,7 @@ class UsuariaOut(BaseModel):
     tiene_vinculos: Optional[bool] = False
     baneado: Optional[bool] = False
     tiene_foto: Optional[bool] = False
+    activo: Optional[bool] = True
 
     class Config:
         from_attributes = True

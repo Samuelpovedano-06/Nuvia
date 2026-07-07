@@ -23,6 +23,7 @@ class Usuaria(Base):
     ultimo_acceso    = Column(DateTime, nullable=True)
     foto_perfil      = Column(LargeBinary, nullable=True)
     foto_perfil_mime = Column(String(50), nullable=True)
+    activo           = Column(Boolean, nullable=False, server_default=text("true"))
 
     @property
     def tiene_foto(self):

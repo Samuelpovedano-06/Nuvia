@@ -198,6 +198,9 @@ def run_migrations():
         # Duraciones predichas en tabla predicciones (para que el calendario las use)
         "ALTER TABLE predicciones ADD COLUMN IF NOT EXISTS duracion_ciclo_predicha INTEGER",
         "ALTER TABLE predicciones ADD COLUMN IF NOT EXISTS duracion_periodo_predicha INTEGER",
+        # Activación/desactivación de cuentas
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE",
+        "UPDATE usuarias SET activo = TRUE WHERE activo IS NULL",
     ]
     with engine.connect() as conn:
         for sql in migrations:

@@ -64,6 +64,12 @@ def login(datos: UsuariaLogin, db: Session = Depends(get_db)):
             detail="Email o contraseña incorrectos",
         )
 
+    if usuaria.activo is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Esta cuenta ha sido desactivada. Contacta con el soporte.",
+        )
+
     # Validaciones de plataforma
     plataforma = datos.plataforma or "usuaria"
 

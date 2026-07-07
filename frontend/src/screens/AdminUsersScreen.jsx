@@ -4,7 +4,7 @@ import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import {
   ChevronLeft, Users, Trash2, Edit, UserPlus, X, Save, Eye, EyeOff, Search, Shield, Heart, AlertTriangle,
-  Activity, Lightbulb, Droplets, Lock, Ban, Check
+  Activity, Lightbulb, Droplets, Lock, Ban, Check, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 export default function AdminUsersScreen() {
@@ -28,6 +28,8 @@ export default function AdminUsersScreen() {
   const [loadingBanes, setLoadingBanes] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  const [togglingId, setTogglingId] = useState(null);
 
   // Modal Desbanear
   const [showDesbanearModal, setShowDesbanearModal] = useState(false);
@@ -177,6 +179,18 @@ export default function AdminUsersScreen() {
     }
   };
 
+  const handleToggleActivo = async (u) => {
+    setTogglingId(u.id_usuaria);
+    try {
+      await ApiService.toggleActivoAdmin(u.id_usuaria);
+      fetchUsers();
+    } catch (err) {
+      alert(err.message || 'No se pudo cambiar el estado');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const confirmDeleteUser = async () => {
     if (!userToDelete) return;
     setSubmitting(true);
@@ -261,6 +275,7 @@ export default function AdminUsersScreen() {
                   {u.rol === 'admin' && <span style={{ fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Admin</span>}
                   {u.rol === 'pareja' && <span style={{ fontSize: '10px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Pareja</span>}
                   {u.baneado && <span style={{ fontSize: '10px', background: '#fee2e2', color: '#b91c1c', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Baneada</span>}
+                  {u.activo === false && <span style={{ fontSize: '10px', background: '#f1f5f9', color: '#64748b', padding: '2px 6px', borderRadius: '10px', textTransform: 'uppercase', flexShrink: 0 }}>Inactiva</span>}
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
               </div>
@@ -286,6 +301,21 @@ export default function AdminUsersScreen() {
                     <Ban size={16} /> Banear
                   </button>
                 )
+              )}
+              {u.id_usuaria !== user?.id_usuaria && (
+                <button
+                  onClick={() => handleToggleActivo(u)}
+                  disabled={togglingId === u.id_usuaria}
+                  title={u.activo === false ? 'Activar cuenta' : 'Desactivar cuenta'}
+                  style={{ flex: 1, minWidth: '70px', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600,
+                    background: u.activo === false ? '#f0fdf4' : '#f8fafc',
+                    color:      u.activo === false ? '#16a34a' : '#64748b',
+                    opacity: togglingId === u.id_usuaria ? 0.5 : 1
+                  }}
+                >
+                  {u.activo === false ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
+                  {u.activo === false ? 'Activar' : 'Desactivar'}
+                </button>
               )}
               {u.id_usuaria !== user?.id_usuaria && (
                 <button onClick={() => handleOpenDeleteModal(u)} title="Eliminar" style={{ flex: 1, minWidth: '70px', background: '#fee2e2', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>

@@ -190,6 +190,21 @@ def delete_user_admin(id_usuaria: UUID, db: Session = Depends(get_db), current_u
     db.commit()
     return None
 
+@router.patch("/users/{id_usuaria}/toggle-activo", response_model=UsuariaOut)
+def toggle_user_activo(id_usuaria: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(require_admin)):
+    """Activa o desactiva una cuenta de usuaria."""
+    if id_usuaria == current_user.id_usuaria:
+        raise HTTPException(status_code=400, detail="No puedes desactivarte a ti mismo")
+
+    usuaria = db.query(Usuaria).filter(Usuaria.id_usuaria == id_usuaria).first()
+    if not usuaria:
+        raise HTTPException(status_code=404, detail="Usuaria no encontrada")
+
+    usuaria.activo = not (usuaria.activo if usuaria.activo is not None else True)
+    db.commit()
+    db.refresh(usuaria)
+    return usuaria
+
 @router.get("/config", response_model=AdminConfigOut)
 def get_system_config(db: Session = Depends(get_db), _=Depends(require_admin)):
     """Obtiene la configuración global del sistema."""

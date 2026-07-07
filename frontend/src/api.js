@@ -167,6 +167,15 @@ export const ApiService = {
     return data;
   },
 
+  toggleActivoAdmin: async (id) => {
+    const res = await fetch(`${baseUrl}/admin/users/${id}/toggle-activo`, {
+      method: 'PATCH',
+      headers: getHeaders()
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Error'); }
+    return res.json();
+  },
+
   deleteUserAdmin: async (id) => {
     const res = await fetch(`${baseUrl}/admin/users/${id}`, {
       method: 'DELETE',
