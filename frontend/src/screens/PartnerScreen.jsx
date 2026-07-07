@@ -35,6 +35,11 @@ const PartnerScreen = () => {
   const [partnerFotos, setPartnerFotos] = useState({});
   const loadedIdsRef = React.useRef(new Set());
   const partnerBlobsRef = React.useRef({});
+  const [partnerNotas, setPartnerNotas] = useState({});
+  const [miNota, setMiNota] = useState(null);
+  const [editandoNota, setEditandoNota] = useState(false);
+  const [notaInput, setNotaInput] = useState('');
+  const [savingNota, setSavingNota] = useState(false);
   const [showChat, setShowChat] = useState(localStorage.getItem('showUsChat') === 'true');
   const [imagenPreview, setImagenPreview] = useState(null); // url para overlay
   const chatEndRef = React.useRef(null);
@@ -83,6 +88,10 @@ const PartnerScreen = () => {
   }, [user]);
 
   useEffect(() => {
+    setMiNota(user?.nota_chat || null);
+  }, [user?.nota_chat]);
+
+  useEffect(() => {
     if (vinculos.length === 0 || !user) return;
     vinculos.forEach(v => {
       const vid = getOtherId(v);
@@ -91,6 +100,14 @@ const PartnerScreen = () => {
       ApiService.getFotoPerfil(vid).then(url => {
         partnerBlobsRef.current[vid] = url;
         setPartnerFotos(prev => ({ ...prev, [vid]: url }));
+      }).catch(() => {});
+    });
+    // Cargar/actualizar notas de partners en cada ciclo de vinculos
+    vinculos.forEach(v => {
+      const vid = getOtherId(v);
+      if (!vid) return;
+      ApiService.getNotaPartner(vid).then(nota => {
+        setPartnerNotas(prev => ({ ...prev, [vid]: nota }));
       }).catch(() => {});
     });
   }, [vinculos, user]);
@@ -278,6 +295,34 @@ const PartnerScreen = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveNota = async () => {
+    if (!notaInput.trim()) return;
+    setSavingNota(true);
+    try {
+      await ApiService.setNotaChat(notaInput.trim());
+      setMiNota(notaInput.trim());
+      setEditandoNota(false);
+    } catch (err) {
+      alert(err.message || 'Error al guardar nota');
+    } finally {
+      setSavingNota(false);
+    }
+  };
+
+  const handleClearNota = async () => {
+    setSavingNota(true);
+    try {
+      await ApiService.clearNotaChat();
+      setMiNota(null);
+      setNotaInput('');
+      setEditandoNota(false);
+    } catch (err) {
+      alert(err.message || 'Error al borrar nota');
+    } finally {
+      setSavingNota(false);
     }
   };
 
@@ -554,13 +599,36 @@ const PartnerScreen = () => {
                   <h3 style={{ margin: 0, fontSize: '18px' }}>Conversaciones</h3>
                   <X size={20} onClick={() => setShowSidebar(false)} style={{ cursor: 'pointer' }} />
                 </div>
+
+                {/* Mi nota */}
+                <div style={{ padding: '12px 14px', borderBottom: '1px solid #f5f5f5' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.5px', marginBottom: '8px' }}>TU NOTA · 24H</div>
+                  {miNota ? (
+                    <div
+                      onClick={() => { setNotaInput(miNota); setEditandoNota(true); }}
+                      style={{ background: 'rgba(176,91,181,0.06)', borderRadius: '12px', padding: '10px 12px', cursor: 'pointer', border: '1px solid rgba(176,91,181,0.12)' }}
+                    >
+                      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-dark)', fontStyle: 'italic', lineHeight: '1.4' }}>"{miNota}"</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setNotaInput(''); setEditandoNota(true); }}
+                      style={{ width: '100%', background: 'none', border: '1.5px dashed #e2e8f0', borderRadius: '12px', padding: '10px 12px', cursor: 'pointer', color: '#94a3b8', fontSize: '13px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <span style={{ fontSize: '15px' }}>✏️</span>
+                      <span>Añade una nota...</span>
+                    </button>
+                  )}
+                </div>
+
                 <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
                   {chatPartners.map(v => {
                     const vvid = getOtherId(v);
                     const isActive = selectedId === vvid;
+                    const notaPartner = partnerNotas[vvid];
                     return (
-                      <div 
-                        key={v.id} 
+                      <div
+                        key={v.id}
                         onClick={() => {
                           handleSelect(vvid);
                           setShowSidebar(false);
@@ -571,13 +639,16 @@ const PartnerScreen = () => {
                           marginBottom: '5px', transition: 'all 0.2s'
                         }}
                       >
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isActive ? 'var(--primary)' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? 'white' : '#999', fontWeight: 'bold', overflow: 'hidden' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isActive ? 'var(--primary)' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? 'white' : '#999', fontWeight: 'bold', overflow: 'hidden', flexShrink: 0 }}>
                           {partnerFotos[vvid]
                             ? <img src={partnerFotos[vvid]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             : v.nombre?.charAt(0).toUpperCase()}
                         </div>
-                        <div style={{ flex: 1 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: '700', fontSize: '14px', color: isActive ? 'var(--primary)' : 'var(--text-dark)' }}>{v.nombre}</div>
+                          {notaPartner && (
+                            <div style={{ fontSize: '11px', color: '#b05bba', fontStyle: 'italic', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>"{notaPartner}"</div>
+                          )}
                           <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>{isActive ? 'Chat activo' : 'Hacer clic para hablar'}</div>
                         </div>
                       </div>
@@ -756,6 +827,52 @@ const PartnerScreen = () => {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal Nota de Chat */}
+      {editandoNota && (
+        <div
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '20px' }}
+          onClick={() => setEditandoNota(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 -5px 30px rgba(0,0,0,0.12)', animation: 'fadeIn 0.2s ease' }}
+          >
+            <h3 style={{ margin: '0 0 6px', fontSize: '17px', color: 'var(--text-dark)' }}>Tu nota</h3>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-light)' }}>
+              Tu pareja podrá verla durante 24 horas
+            </p>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                maxLength={60}
+                value={notaInput}
+                onChange={e => setNotaInput(e.target.value)}
+                placeholder="¿Qué estás haciendo?"
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveNota(); if (e.key === 'Escape') setEditandoNota(false); }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 48px 12px 14px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontSize: '15px', outline: 'none', fontFamily: 'inherit' }}
+              />
+              <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#94a3b8' }}>
+                {notaInput.length}/60
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+              {miNota && (
+                <button onClick={handleClearNota} disabled={savingNota} style={{ padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #fee2e2', background: '#fff5f5', color: '#ef4444', fontWeight: '700', cursor: 'pointer', fontSize: '13px', flexShrink: 0 }}>
+                  Borrar
+                </button>
+              )}
+              <button onClick={() => setEditandoNota(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+                Cancelar
+              </button>
+              <button onClick={handleSaveNota} disabled={!notaInput.trim() || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: !notaInput.trim() ? 0.6 : 1 }}>
+                {savingNota ? '...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -71,6 +71,34 @@ export const ApiService = {
     return URL.createObjectURL(await res.blob());
   },
 
+  setNotaChat: async (texto) => {
+    const res = await fetch(`${baseUrl}/auth/me/nota`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ texto })
+    });
+    if (!res.ok) throw new Error('Error al guardar nota');
+    return res.json();
+  },
+
+  clearNotaChat: async () => {
+    const res = await fetch(`${baseUrl}/auth/me/nota`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    if (!res.ok) throw new Error('Error al borrar nota');
+    return res.json();
+  },
+
+  getNotaPartner: async (id) => {
+    try {
+      const res = await fetch(`${baseUrl}/auth/nota/${id}`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.nota || null;
+    } catch { return null; }
+  },
+
   getMe: async () => {
     let res;
     try {

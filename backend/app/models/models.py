@@ -24,6 +24,8 @@ class Usuaria(Base):
     foto_perfil      = Column(LargeBinary, nullable=True)
     foto_perfil_mime = Column(String(50), nullable=True)
     activo           = Column(Boolean, nullable=False, server_default=text("true"))
+    nota_chat        = Column(String(60), nullable=True)
+    nota_chat_expires_at = Column(DateTime, nullable=True)
 
     @property
     def tiene_foto(self):

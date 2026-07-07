@@ -39,6 +39,7 @@ class UsuariaOut(BaseModel):
     baneado: Optional[bool] = False
     tiene_foto: Optional[bool] = False
     activo: Optional[bool] = True
+    nota_chat: Optional[str] = None
 
     class Config:
         from_attributes = True

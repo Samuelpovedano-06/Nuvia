@@ -205,6 +205,10 @@ def run_migrations():
         "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS peso NUMERIC(5,1)",
         "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS altura INTEGER",
 
+        # Notas de chat (estilo Instagram, 24h)
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_chat VARCHAR(60)",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_chat_expires_at TIMESTAMP",
+
         # ── Clasificaciones de Consejos ──────────────────────────────────────────
         "INSERT INTO consejos_clasificaciones (nombre, descripcion, activa, orden) SELECT 'Remedios', 'Remedios naturales para aliviar los sintomas del ciclo menstrual', TRUE, 10 WHERE NOT EXISTS (SELECT 1 FROM consejos_clasificaciones WHERE nombre = 'Remedios')",
         "INSERT INTO consejos_clasificaciones (nombre, descripcion, activa, orden) SELECT 'Tratamientos', 'Medicamentos recomendables para el manejo del ciclo y sus sintomas', TRUE, 11 WHERE NOT EXISTS (SELECT 1 FROM consejos_clasificaciones WHERE nombre = 'Tratamientos')",

@@ -189,7 +189,65 @@ def get_me(db: Session = Depends(get_db),
     ).first() is not None
     current_user.tiene_vinculos = tiene_vinculos
 
+    # Limpiar nota expirada
+    if current_user.nota_chat_expires_at and current_user.nota_chat_expires_at < datetime.now():
+        current_user.nota_chat = None
+        current_user.nota_chat_expires_at = None
+        db.commit()
+
     return current_user
+
+
+class NotaChatRequest(BaseModel):
+    texto: str
+
+
+@router.put("/me/nota")
+def set_nota_chat(
+    datos: NotaChatRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    texto = datos.texto.strip()[:60]
+    if not texto:
+        raise HTTPException(status_code=400, detail="La nota no puede estar vacía")
+    current_user.nota_chat = texto
+    current_user.nota_chat_expires_at = datetime.now() + timedelta(hours=24)
+    db.commit()
+    return {"ok": True, "nota": current_user.nota_chat}
+
+
+@router.delete("/me/nota")
+def clear_nota_chat(
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    current_user.nota_chat = None
+    current_user.nota_chat_expires_at = None
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/nota/{id_usuaria}")
+def get_nota_partner(
+    id_usuaria: UUID,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    partner = db.query(Usuaria).filter(Usuaria.id_usuaria == id_usuaria).first()
+    if not partner:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    vinculo = db.query(Pareja).filter(
+        or_(
+            (Pareja.id_usuaria == current_user.id_usuaria) & (Pareja.id_pareja == id_usuaria),
+            (Pareja.id_usuaria == id_usuaria) & (Pareja.id_pareja == current_user.id_usuaria)
+        )
+    ).first()
+    if not vinculo and current_user.id_usuaria != id_usuaria:
+        raise HTTPException(status_code=403, detail="No tienes acceso a esta nota")
+    if partner.nota_chat_expires_at and partner.nota_chat_expires_at < datetime.now():
+        return {"nota": None}
+    return {"nota": partner.nota_chat}
 
 
 @router.put("/me/foto", status_code=200)
