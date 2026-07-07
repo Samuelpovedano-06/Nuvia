@@ -242,7 +242,16 @@ export default function CalendarScreen() {
       const ovulacion = ventanaInicio + 3;
       const ventanaFin = ovulacion + 1;
 
-      if (diaCiclo <= duracionP) return 'prediccion-periodo';
+      // Para el ciclo cerrado más reciente usamos la duración PREDICHA original
+      // (guardada al crear el ciclo) en vez de la actual del config, que ya fue
+      // actualizada por el algoritmo. Así el día 5 sigue mostrando el círculo
+      // punteado aunque el algoritmo haya ajustado duracion_periodo a 4.
+      const esCicloActualCerrado = !!ultimoCiclo.fecha_fin && diffDays >= 0 && diffDays < duracion;
+      const duracionPPrediccion = esCicloActualCerrado
+        ? (ultimoCiclo.duracion_periodo_predicha || duracionP)
+        : duracionP;
+
+      if (diaCiclo <= duracionPPrediccion) return 'prediccion-periodo';
       if (diaCiclo < ventanaInicio) return 'folicular';
       if (diaCiclo === ovulacion) return 'ovulacion';
       if (diaCiclo >= ventanaInicio && diaCiclo <= ventanaFin) return 'fertil';

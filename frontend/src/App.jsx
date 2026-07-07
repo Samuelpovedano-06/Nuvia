@@ -144,8 +144,8 @@ function App() {
         const data = await ApiService.getLatestComunicado();
         if (cancel) return;
         if (data && data.id) {
-          const seenId = localStorage.getItem('nuvia_seen_comunicado');
-          if (seenId !== data.id) {
+          const seen = JSON.parse(localStorage.getItem('nuvia_seen_comunicados') || '[]');
+          if (!seen.includes(data.id)) {
             setComunicado(data);
           }
         }
@@ -158,7 +158,11 @@ function App() {
 
   const handleConfirmarComunicado = () => {
     if (comunicado) {
-      localStorage.setItem('nuvia_seen_comunicado', comunicado.id);
+      const seen = JSON.parse(localStorage.getItem('nuvia_seen_comunicados') || '[]');
+      if (!seen.includes(comunicado.id)) {
+        localStorage.setItem('nuvia_seen_comunicados', JSON.stringify([...seen, comunicado.id]));
+      }
+      ApiService.marcarComunicadoVisto(comunicado.id).catch(() => {});
       setComunicado(null);
     }
   };

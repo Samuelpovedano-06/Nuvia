@@ -182,6 +182,14 @@ def run_migrations():
             contenido  TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT NOW()
         )""",
+        # Foto de perfil de usuario
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS foto_perfil BYTEA",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS foto_perfil_mime VARCHAR(50)",
+        # Duración de periodo predicha al crear un ciclo
+        "ALTER TABLE ciclos ADD COLUMN IF NOT EXISTS duracion_periodo_predicha INTEGER",
+        # Nuevos síntomas físicos
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Ovario Derecho', 'Físico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Ovario Derecho')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Ovario Izquierdo', 'Físico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Ovario Izquierdo')",
     ]
     with engine.connect() as conn:
         for sql in migrations:

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import Response
+from uuid import UUID
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -182,3 +184,32 @@ def get_me(db: Session = Depends(get_db),
     current_user.tiene_vinculos = tiene_vinculos
 
     return current_user
+
+
+@router.put("/me/foto", status_code=200)
+async def subir_foto_perfil(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user)
+):
+    """Sube o reemplaza la foto de perfil de la usuaria autenticada."""
+    contenido = await file.read()
+    if len(contenido) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="La foto no puede superar 5 MB")
+    current_user.foto_perfil = contenido
+    current_user.foto_perfil_mime = file.content_type or "image/jpeg"
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/foto/{id_usuaria}")
+def get_foto_perfil(
+    id_usuaria: UUID,
+    db: Session = Depends(get_db),
+    _: Usuaria = Depends(get_current_user)
+):
+    """Devuelve la foto de perfil de cualquier usuaria (requiere auth)."""
+    usuaria = db.query(Usuaria).filter(Usuaria.id_usuaria == id_usuaria).first()
+    if not usuaria or not usuaria.foto_perfil:
+        raise HTTPException(status_code=404, detail="Sin foto de perfil")
+    return Response(content=usuaria.foto_perfil, media_type=usuaria.foto_perfil_mime or "image/jpeg")

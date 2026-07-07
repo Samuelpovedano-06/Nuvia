@@ -212,6 +212,10 @@ export default function ProfileScreen() {
   const { user, logout, getMe } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const [fotoUrl, setFotoUrl] = useState(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const fileInputRef = useRef(null);
+
   const [ciclos, setCiclos] = useState([]);
   const [loadingCiclos, setLoadingCiclos] = useState(true);
 
@@ -335,6 +339,12 @@ export default function ProfileScreen() {
       setExporting(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.tiene_foto) {
+      ApiService.getFotoPerfil(user.id_usuaria).then(url => { if (url) setFotoUrl(url); }).catch(() => {});
+    }
+  }, [user?.id_usuaria, user?.tiene_foto]);
 
   useEffect(() => {
     ApiService.getCiclos()
@@ -482,14 +492,49 @@ export default function ProfileScreen() {
         </button>
       </div>
 
-      {/* Avatar */}
+      {/* Avatar / Foto de perfil */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <div style={{
-          width: '100px', height: '100px', background: 'var(--primary-light)', borderRadius: '50%',
-          margin: '0 auto 16px', display: 'flex', justifyContent: 'center', alignItems: 'center',
-          fontSize: '42px', color: 'white', fontWeight: '500'
-        }}>
-          {user?.nombre?.charAt(0).toUpperCase() || 'U'}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setSubiendoFoto(true);
+            try {
+              await ApiService.subirFotoPerfil(file);
+              await getMe();
+              const url = await ApiService.getFotoPerfil(user.id_usuaria);
+              if (url) setFotoUrl(url);
+            } catch (_) {}
+            finally { setSubiendoFoto(false); e.target.value = ''; }
+          }}
+        />
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            width: '100px', height: '100px', borderRadius: '50%',
+            margin: '0 auto 8px', cursor: 'pointer', position: 'relative',
+            background: fotoUrl ? 'transparent' : 'var(--primary-light)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            fontSize: '42px', color: 'white', fontWeight: '500',
+            overflow: 'hidden',
+            boxShadow: '0 2px 12px rgba(176,91,181,0.18)'
+          }}
+        >
+          {fotoUrl
+            ? <img src={fotoUrl} alt="foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : (user?.nombre?.charAt(0).toUpperCase() || 'U')
+          }
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            background: 'rgba(0,0,0,0.38)', padding: '4px 0',
+            fontSize: '10px', color: 'white', fontWeight: '600', letterSpacing: '0.3px'
+          }}>
+            {subiendoFoto ? '...' : 'Cambiar'}
+          </div>
         </div>
         <h2 style={{ fontSize: '24px', marginBottom: '4px' }}>{user?.nombre}</h2>
         <p style={{ color: 'var(--text-light)', fontSize: '15px' }}>{user?.email}</p>
@@ -674,12 +719,17 @@ export default function ProfileScreen() {
         </div>
 
         {/* Frecuencia Periodo (antes Duración Ciclo) */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', opacity: isCycleEditable ? 1 : 0.6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '14px', opacity: isCycleEditable ? 1 : 0.6 }}>
           <span style={{ color: 'var(--text-light)' }}>Frecuencia del periodo</span>
           <span style={{ fontWeight: '600', color: durationSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
             {durationSaved ? '✓ Guardado' : `Cada ${cycleDuration} días`}
           </span>
         </div>
+        {!isCycleEditable && (
+          <p style={{ fontSize: '11px', color: 'var(--text-light)', margin: '0 0 8px 0', opacity: 0.7 }}>
+            Predicción para tu próximo ciclo · se ajusta automáticamente
+          </p>
+        )}
         <input
           type="range"
           min={systemRanges.min_dias_ciclo}
@@ -702,12 +752,17 @@ export default function ProfileScreen() {
         </div>
 
         {/* Duración Periodo */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', opacity: isCycleEditable ? 1 : 0.6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '14px', opacity: isCycleEditable ? 1 : 0.6 }}>
           <span style={{ color: 'var(--text-light)' }}>Duración del periodo</span>
           <span style={{ fontWeight: '600', color: periodSaved ? '#4CAF50' : 'var(--primary)', transition: 'color 0.3s' }}>
             {periodSaved ? '✓ Guardado' : `${periodDuration} días`}
           </span>
         </div>
+        {!isCycleEditable && (
+          <p style={{ fontSize: '11px', color: 'var(--text-light)', margin: '0 0 8px 0', opacity: 0.7 }}>
+            Predicción para tu próximo ciclo · se ajusta automáticamente
+          </p>
+        )}
         <input
           type="range"
           min={systemRanges.min_dias_periodo}

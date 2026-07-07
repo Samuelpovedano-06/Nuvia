@@ -52,6 +52,25 @@ export const ApiService = {
     return data.access_token;
   },
 
+  subirFotoPerfil: async (file) => {
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${baseUrl}/auth/me/foto`, {
+      method: 'PUT',
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+      body: formData,
+    });
+    if (!res.ok) throw new Error('No se pudo subir la foto');
+    return res.json();
+  },
+
+  getFotoPerfil: async (idUsuaria) => {
+    const res = await fetch(`${baseUrl}/auth/foto/${idUsuaria}`, { headers: getHeaders() });
+    if (!res.ok) return null;
+    return URL.createObjectURL(await res.blob());
+  },
+
   getMe: async () => {
     let res;
     try {
@@ -207,6 +226,13 @@ export const ApiService = {
     const res = await fetch(`${baseUrl}/admin/comunicado/latest`, { headers: getHeaders() });
     if (!res.ok) return null;
     return await res.json();
+  },
+
+  marcarComunicadoVisto: async (id) => {
+    await fetch(`${baseUrl}/admin/comunicado/${id}/marcar_visto`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
   },
 
   getLogs: async () => {

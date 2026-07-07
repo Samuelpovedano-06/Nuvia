@@ -202,7 +202,10 @@ export default function HomeScreen() {
           setLoadingData(false);
           return;
         }
-        await ApiService.crearCiclo({ fecha_inicio: hoy }, targetId);
+        await ApiService.crearCiclo({
+          fecha_inicio: hoy,
+          duracion_periodo_predicha: userConfig?.duracion_periodo || 5
+        }, targetId);
       }
 
       // Recalcular predicciones tras crear o cerrar un ciclo (silencioso — si no

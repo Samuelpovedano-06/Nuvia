@@ -37,6 +37,7 @@ class UsuariaOut(BaseModel):
     nombre_solicitante: Optional[str] = None
     tiene_vinculos: Optional[bool] = False
     baneado: Optional[bool] = False
+    tiene_foto: Optional[bool] = False
 
     class Config:
         from_attributes = True
@@ -65,6 +66,7 @@ class CicloCreate(BaseModel):
     fecha_fin: Optional[date] = None
     duracion: Optional[int] = None
     regularidad_estimado: Optional[str] = None
+    duracion_periodo_predicha: Optional[int] = None
 
 class CicloUpdate(BaseModel):
     fecha_fin: Optional[date] = None
@@ -78,6 +80,7 @@ class CicloOut(BaseModel):
     fecha_fin: Optional[date]
     duracion: Optional[int]
     regularidad_estimado: Optional[str]
+    duracion_periodo_predicha: Optional[int] = None
 
     class Config:
         from_attributes = True

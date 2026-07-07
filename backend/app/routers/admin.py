@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel
 from app.database.connection import get_db
-from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, RegistroDiario, ConfiguracionSistema, BaneForo, ComunicadoGeneral
+from app.models.models import Usuaria, ConfiguracionUsuaria, Ciclo, RegistroSintoma, RegistroDiario, ConfiguracionSistema, BaneForo, ComunicadoGeneral, ComunicadoVisto
 from app.schemas.schemas import UsuariaOut, UsuariaCreate, AdminStatsOut, AdminConfigOut, AdminConfigUpdate
 from app.routers.auth_utils import get_current_user, hash_password
 
@@ -271,8 +271,23 @@ def crear_comunicado(datos: ComunicadoGeneralCreate, db: Session = Depends(get_d
 
 @router.get("/comunicado/latest")
 def obtener_ultimo_comunicado(db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
-    """Obtiene el último comunicado general registrado en el sistema."""
-    ultimo = db.query(ComunicadoGeneral).order_by(ComunicadoGeneral.created_at.desc()).first()
+    """Obtiene el comunicado más reciente que el usuario aún no ha visto y que existe desde que se registró."""
+    fecha_registro = current_user.fecha_registro
+
+    ultimo = (
+        db.query(ComunicadoGeneral)
+        .filter(ComunicadoGeneral.created_at > fecha_registro)
+        .filter(
+            ~db.query(ComunicadoVisto)
+            .filter(
+                ComunicadoVisto.comunicado_id == ComunicadoGeneral.id,
+                ComunicadoVisto.id_usuaria == current_user.id_usuaria,
+            )
+            .exists()
+        )
+        .order_by(ComunicadoGeneral.created_at.desc())
+        .first()
+    )
     if not ultimo:
         return None
     return {
@@ -281,3 +296,16 @@ def obtener_ultimo_comunicado(db: Session = Depends(get_db), current_user: Usuar
         "contenido": ultimo.contenido,
         "created_at": ultimo.created_at.isoformat()
     }
+
+
+@router.post("/comunicado/{comunicado_id}/marcar_visto", status_code=204)
+def marcar_comunicado_visto(comunicado_id: UUID, db: Session = Depends(get_db), current_user: Usuaria = Depends(get_current_user)):
+    """Marca un comunicado como visto para el usuario actual."""
+    ya_visto = db.query(ComunicadoVisto).filter_by(
+        comunicado_id=comunicado_id,
+        id_usuaria=current_user.id_usuaria,
+    ).first()
+    if not ya_visto:
+        db.add(ComunicadoVisto(comunicado_id=comunicado_id, id_usuaria=current_user.id_usuaria))
+        db.commit()
+    return Response(status_code=204)

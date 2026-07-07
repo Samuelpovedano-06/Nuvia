@@ -18,9 +18,15 @@ class Usuaria(Base):
     
     # Campo temporal para el nombre de quien solicita (no persistente)
     nombre_solicitante = None
-    otp_expiry     = Column(DateTime, nullable=True)
-    fecha_registro = Column(DateTime, server_default=func.now())
-    ultimo_acceso  = Column(DateTime, nullable=True)
+    otp_expiry       = Column(DateTime, nullable=True)
+    fecha_registro   = Column(DateTime, server_default=func.now())
+    ultimo_acceso    = Column(DateTime, nullable=True)
+    foto_perfil      = Column(LargeBinary, nullable=True)
+    foto_perfil_mime = Column(String(50), nullable=True)
+
+    @property
+    def tiene_foto(self):
+        return self.foto_perfil is not None
 
     # Relaciones
     ciclos            = relationship("Ciclo",                back_populates="usuaria", cascade="all, delete")
@@ -35,12 +41,13 @@ class Usuaria(Base):
 class Ciclo(Base):
     __tablename__ = "ciclos"
 
-    id_ciclo             = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    id_usuaria           = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
-    fecha_inicio         = Column(Date, nullable=False)
-    fecha_fin            = Column(Date)
-    duracion             = Column(Integer)
-    regularidad_estimado = Column(String(50))
+    id_ciclo                 = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id_usuaria               = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria"), nullable=False)
+    fecha_inicio             = Column(Date, nullable=False)
+    fecha_fin                = Column(Date)
+    duracion                 = Column(Integer)
+    regularidad_estimado     = Column(String(50))
+    duracion_periodo_predicha = Column(Integer, nullable=True)
 
     usuaria = relationship("Usuaria", back_populates="ciclos")
 
@@ -302,3 +309,10 @@ class ComunicadoGeneral(Base):
     titulo     = Column(String(200), nullable=False)
     contenido  = Column(Text, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
+
+
+class ComunicadoVisto(Base):
+    __tablename__ = "comunicados_vistos"
+    comunicado_id = Column(UUID(as_uuid=True), ForeignKey("comunicados_generales.id", ondelete="CASCADE"), primary_key=True)
+    id_usuaria    = Column(UUID(as_uuid=True), ForeignKey("usuarias.id_usuaria", ondelete="CASCADE"), primary_key=True)
+    created_at    = Column(DateTime, server_default=func.now())
