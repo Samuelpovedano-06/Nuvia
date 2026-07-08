@@ -296,7 +296,6 @@ export default function CommunityScreen() {
   const [showBuscarMusica, setShowBuscarMusica] = useState(false);
   const [showTramoSelector, setShowTramoSelector] = useState(false);
   const previewStopRef = useRef(null);
-  const audioRef = useRef(null);
   const ytIframeRef = useRef(null);
   const [reproduciendo, setReproduciendo] = useState(null); // preview_url activo
 
@@ -410,52 +409,28 @@ export default function CommunityScreen() {
     setBuscandoMusica(false);
   };
 
-  const isYouTube = (preview) => preview?.startsWith('youtube:');
-  const ytVideoId  = (preview) => preview?.replace('youtube:', '');
+  const ytVideoId = (preview) => preview?.replace('youtube:', '');
 
   const togglePreview = (preview, offset = 0) => {
     if (!preview) return;
     if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; }
 
     if (reproduciendo === preview) {
-      if (isYouTube(preview)) {
-        if (ytIframeRef.current) ytIframeRef.current.src = '';
-      } else {
-        audioRef.current?.pause();
-      }
+      if (ytIframeRef.current) ytIframeRef.current.src = '';
       setReproduciendo(null);
       return;
     }
 
-    if (isYouTube(preview)) {
-      const vid = ytVideoId(preview);
-      if (ytIframeRef.current) {
-        ytIframeRef.current.src = `https://www.youtube-nocookie.com/embed/${vid}?start=${Math.floor(offset)}&autoplay=1&controls=0&disablekb=1&fs=0&modestbranding=1`;
-      }
-      setReproduciendo(preview);
-      previewStopRef.current = setTimeout(() => {
-        if (ytIframeRef.current) ytIframeRef.current.src = '';
-        setReproduciendo(null);
-        previewStopRef.current = null;
-      }, 3500);
-    } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = preview;
-        audioRef.current.oncanplay = () => {
-          audioRef.current.currentTime = offset || 0;
-          audioRef.current.play().catch(() => {});
-          audioRef.current.oncanplay = null;
-          previewStopRef.current = setTimeout(() => {
-            audioRef.current?.pause();
-            setReproduciendo(null);
-            previewStopRef.current = null;
-          }, 3000);
-        };
-        audioRef.current.load();
-      }
-      setReproduciendo(preview);
+    const vid = ytVideoId(preview);
+    if (ytIframeRef.current) {
+      ytIframeRef.current.src = `https://www.youtube-nocookie.com/embed/${vid}?start=${Math.floor(offset)}&autoplay=1&controls=0&disablekb=1&fs=0&modestbranding=1`;
     }
+    setReproduciendo(preview);
+    previewStopRef.current = setTimeout(() => {
+      if (ytIframeRef.current) ytIframeRef.current.src = '';
+      setReproduciendo(null);
+      previewStopRef.current = null;
+    }, 30500);
   };
 
   const cerrarAviso = async (av) => {
@@ -692,9 +667,14 @@ export default function CommunityScreen() {
           >
             <div style={{ minHeight: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', marginBottom: '4px', gap: '3px' }}>
               {miMusica && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '3px 5px', width: '100%', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
-                  {miMusica.artwork && <img src={miMusica.artwork} alt="" style={{ width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0 }} />}
-                  <span style={{ fontSize: '9px', color: '#6366f1', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>♪ {miMusica.titulo}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '10px', padding: '3px 5px 3px 3px', width: '100%', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.10)', overflow: 'hidden' }}>
+                  <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#1a1a1a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', animation: 'vinylSpin 3s linear infinite' }}>
+                    {miMusica.artwork ? <img src={miMusica.artwork} alt="" style={{ width: '16px', height: '16px', borderRadius: '50%', display: 'block' }} /> : <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#9b6c98' }} />}
+                    <div style={{ position: 'absolute', width: '5px', height: '5px', borderRadius: '50%', background: '#1a1a1a', border: '1.5px solid rgba(255,255,255,0.5)' }} />
+                  </div>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <span style={{ fontSize: '8px', color: '#6366f1', fontWeight: '700', whiteSpace: 'nowrap', display: 'inline-block', animation: 'musicMarquee 3s ease-in-out infinite alternate' }}>♪ {miMusica.titulo}</span>
+                  </div>
                 </div>
               )}
               {miNota ? (
@@ -727,12 +707,15 @@ export default function CommunityScreen() {
                   {n.musica_titulo && (
                     <button
                       onClick={() => togglePreview(n.musica_preview, n.musica_offset || 0)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '3px 5px', width: '100%', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', cursor: n.musica_preview ? 'pointer' : 'default' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'white', border: `1.5px solid ${reproduciendo === n.musica_preview ? '#F6416C' : '#e2e8f0'}`, borderRadius: '10px', padding: '3px 5px 3px 3px', width: '100%', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.10)', cursor: 'pointer', overflow: 'hidden' }}
                     >
-                      {n.musica_artwork && <img src={n.musica_artwork} alt="" style={{ width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0 }} />}
-                      <span style={{ fontSize: '9px', color: reproduciendo === n.musica_preview ? '#F6416C' : '#6366f1', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {reproduciendo === n.musica_preview ? '▶ ' : '♪ '}{n.musica_titulo}
-                      </span>
+                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#1a1a1a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', animation: `vinylSpin ${reproduciendo === n.musica_preview ? '1.5s' : '4s'} linear infinite` }}>
+                        {n.musica_artwork ? <img src={n.musica_artwork} alt="" style={{ width: '16px', height: '16px', borderRadius: '50%', display: 'block' }} /> : <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#9b6c98' }} />}
+                        <div style={{ position: 'absolute', width: '5px', height: '5px', borderRadius: '50%', background: '#1a1a1a', border: '1.5px solid rgba(255,255,255,0.5)' }} />
+                      </div>
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <span style={{ fontSize: '8px', color: reproduciendo === n.musica_preview ? '#F6416C' : '#374151', fontWeight: '700', whiteSpace: 'nowrap', display: 'inline-block', animation: 'musicMarquee 3s ease-in-out infinite alternate' }}>♪ {n.musica_titulo}</span>
+                      </div>
                     </button>
                   )}
                   <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
@@ -1373,8 +1356,6 @@ export default function CommunityScreen() {
           {toast.mensaje}
         </div>
       )}
-      {/* Audio invisible para previews de iTunes */}
-      <audio ref={audioRef} onEnded={() => setReproduciendo(null)} style={{ display: 'none' }} />
       {/* Iframe invisible para clips de YouTube */}
       <iframe ref={ytIframeRef} style={{ display: 'none', position: 'absolute', width: 0, height: 0, border: 'none' }} allow="autoplay; encrypted-media" title="yt-clip" />
 
@@ -1382,7 +1363,7 @@ export default function CommunityScreen() {
       {editandoNota && (
         <div
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '20px' }}
-          onClick={() => { setEditandoNota(false); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; } }}
+          onClick={() => { setEditandoNota(false); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); if (ytIframeRef.current) ytIframeRef.current.src=''; setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; } }}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -1393,7 +1374,6 @@ export default function CommunityScreen() {
 
             {/* Música seleccionada */}
             {musicaSeleccionada && (() => {
-              const esYT = isYouTube(musicaSeleccionada.preview);
               const fmtSec = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
               return (
               <div style={{ marginBottom: '12px' }}>
@@ -1403,75 +1383,42 @@ export default function CommunityScreen() {
                     <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.titulo}</div>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.artista}{musicaSeleccionada.duracion ? ` · ${musicaSeleccionada.duracion}` : ''}</div>
                   </div>
-                  {musicaSeleccionada.preview && !esYT && (
-                    <button onClick={() => togglePreview(musicaSeleccionada.preview, offsetMusica)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '14px', flexShrink: 0 }}>
-                      {reproduciendo === musicaSeleccionada.preview ? '⏸' : '▶'}
-                    </button>
-                  )}
                   <button onClick={() => setShowTramoSelector(s => !s)} title="Elegir tramo" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', color: 'white', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
-                    ✂️ {fmtSec(offsetMusica)}–{fmtSec(offsetMusica+3)}
+                    ✂️ {fmtSec(offsetMusica)}
                   </button>
-                  <button onClick={() => { setMusicaSeleccionada(null); setOffsetMusica(0); setShowTramoSelector(false); audioRef.current?.pause(); if (ytIframeRef.current) ytIframeRef.current.src=''; setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current=null; } }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '16px', flexShrink: 0 }}>×</button>
+                  <button onClick={() => { setMusicaSeleccionada(null); setOffsetMusica(0); setShowTramoSelector(false); if (ytIframeRef.current) ytIframeRef.current.src=''; setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current=null; } }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '16px', flexShrink: 0 }}>×</button>
                 </div>
                 {/* Selector de tramo */}
                 {showTramoSelector && (
                   <div style={{ background: '#4f46e5', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
-                    {esYT ? (
-                      <>
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginBottom: '8px', fontWeight: '600' }}>
-                          Reproduce la canción y anota en qué segundo quieres el clip de 3 seg:
-                        </div>
-                        <div style={{ borderRadius: '8px', overflow: 'hidden', marginBottom: '10px', lineHeight: 0 }}>
-                          <iframe
-                            src={`https://www.youtube-nocookie.com/embed/${ytVideoId(musicaSeleccionada.preview)}?controls=1&modestbranding=1`}
-                            style={{ width: '100%', height: '160px', border: 'none' }}
-                            allow="autoplay; encrypted-media"
-                            title="preview"
-                          />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Inicio clip:</span>
-                          <input
-                            type="number" min={0} max={9999} placeholder="min"
-                            value={Math.floor(offsetMusica/60)}
-                            onChange={e => setOffsetMusica(Number(e.target.value)*60 + (offsetMusica%60))}
-                            style={{ width: '52px', padding: '5px 6px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', textAlign: 'center' }}
-                          />
-                          <span style={{ color: 'white', fontWeight: '700' }}>:</span>
-                          <input
-                            type="number" min={0} max={59} placeholder="seg"
-                            value={offsetMusica%60}
-                            onChange={e => setOffsetMusica(Math.floor(offsetMusica/60)*60 + Math.min(59, Number(e.target.value)))}
-                            style={{ width: '52px', padding: '5px 6px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', textAlign: 'center' }}
-                          />
-                          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>→ clip {fmtSec(offsetMusica)}–{fmtSec(offsetMusica+3)}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', fontWeight: '600' }}>
-                          Elige el inicio del clip de 3 seg (dentro del preview de 30s de Apple):
-                        </div>
-                        <input
-                          type="range" min={0} max={27} value={offsetMusica}
-                          onChange={e => {
-                            const v = Number(e.target.value);
-                            setOffsetMusica(v);
-                            if (audioRef.current && reproduciendo === musicaSeleccionada.preview) {
-                              if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; }
-                              audioRef.current.currentTime = v;
-                              previewStopRef.current = setTimeout(() => { audioRef.current?.pause(); setReproduciendo(null); previewStopRef.current = null; }, 3000);
-                            }
-                          }}
-                          style={{ width: '100%', accentColor: 'white', cursor: 'pointer' }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-                          <span>0:00</span>
-                          <span style={{ color: 'white', fontWeight: '700' }}>{fmtSec(offsetMusica)} – {fmtSec(offsetMusica+3)}</span>
-                          <span>0:27</span>
-                        </div>
-                      </>
-                    )}
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginBottom: '8px', fontWeight: '600' }}>
+                      Reproduce y elige dónde empieza el clip de 30 seg:
+                    </div>
+                    <div style={{ borderRadius: '8px', overflow: 'hidden', marginBottom: '10px', lineHeight: 0 }}>
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${ytVideoId(musicaSeleccionada.preview)}?controls=1&modestbranding=1`}
+                        style={{ width: '100%', height: '160px', border: 'none' }}
+                        allow="autoplay; encrypted-media"
+                        title="preview"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Inicio:</span>
+                      <input
+                        type="number" min={0} max={9999} placeholder="min"
+                        value={Math.floor(offsetMusica/60)}
+                        onChange={e => setOffsetMusica(Number(e.target.value)*60 + (offsetMusica%60))}
+                        style={{ width: '52px', padding: '5px 6px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', textAlign: 'center' }}
+                      />
+                      <span style={{ color: 'white', fontWeight: '700' }}>:</span>
+                      <input
+                        type="number" min={0} max={59} placeholder="seg"
+                        value={offsetMusica%60}
+                        onChange={e => setOffsetMusica(Math.floor(offsetMusica/60)*60 + Math.min(59, Number(e.target.value)))}
+                        style={{ width: '52px', padding: '5px 6px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', textAlign: 'center' }}
+                      />
+                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>→ hasta {fmtSec(offsetMusica+30)}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1512,7 +1459,7 @@ export default function CommunityScreen() {
                   {resultadosMusica.map((r, i) => (
                     <button
                       key={i}
-                      onClick={() => { setMusicaSeleccionada(r); setOffsetMusica(0); setShowTramoSelector(true); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); if (ytIframeRef.current) ytIframeRef.current.src=''; if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current=null; } setReproduciendo(null); }}
+                      onClick={() => { setMusicaSeleccionada(r); setOffsetMusica(0); setShowTramoSelector(true); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); if (ytIframeRef.current) ytIframeRef.current.src=''; if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current=null; } setReproduciendo(null); }}
                       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '10px', border: '1.5px solid #f0f0f5', background: 'white', cursor: 'pointer', textAlign: 'left' }}
                     >
                       {r.artwork && <img src={r.artwork} alt="" style={{ width: '38px', height: '38px', borderRadius: '6px', flexShrink: 0 }} />}
@@ -1565,7 +1512,7 @@ export default function CommunityScreen() {
                   Borrar
                 </button>
               )}
-              <button onClick={() => { setEditandoNota(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; } }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+              <button onClick={() => { setEditandoNota(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); if (ytIframeRef.current) ytIframeRef.current.src=''; setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; } }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
                 Cancelar
               </button>
               <button onClick={handleSaveNota} disabled={!notaInput.trim() || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: !notaInput.trim() ? 0.6 : 1 }}>
@@ -1580,6 +1527,14 @@ export default function CommunityScreen() {
         @keyframes nuviaToastIn {
           from { opacity: 0; transform: translate(-50%, 20px); }
           to   { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes vinylSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes musicMarquee {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-55px); }
         }
       `}</style>
     </>
