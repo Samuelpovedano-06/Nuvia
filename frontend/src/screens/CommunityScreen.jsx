@@ -291,9 +291,16 @@ export default function CommunityScreen() {
 
   // Notas estilo Instagram
   const [miNota, setMiNota] = useState(user?.nota_chat || null);
-  const [miMusica, setMiMusica] = useState(null); // { titulo, artista, preview, artwork }
+  const [miMusica, setMiMusica] = useState(
+    user?.nota_musica_preview
+      ? { titulo: user.nota_musica_titulo, artista: user.nota_musica_artista,
+          preview: user.nota_musica_preview, artwork: user.nota_musica_artwork,
+          offset: user.nota_musica_offset || 0 }
+      : null
+  );
   const [notasSiguiendo, setNotasSiguiendo] = useState([]);
   const [editandoNota, setEditandoNota] = useState(false);
+  const [confirmarEliminarNota, setConfirmarEliminarNota] = useState(false);
   const [notaInput, setNotaInput] = useState('');
   const [savingNota, setSavingNota] = useState(false);
   // Música en la nota
@@ -367,12 +374,12 @@ export default function CommunityScreen() {
   // Sync propia nota con user context
   useEffect(() => {
     setMiNota(user?.nota_chat || null);
-    if (user?.nota_musica_titulo) {
-      setMiMusica({ titulo: user.nota_musica_titulo, artista: user.nota_musica_artista, preview: user.nota_musica_preview, artwork: user.nota_musica_artwork });
-    } else {
-      setMiMusica(null);
-    }
-  }, [user?.nota_chat, user?.nota_musica_titulo]);
+    setMiMusica(user?.nota_musica_preview
+      ? { titulo: user.nota_musica_titulo, artista: user.nota_musica_artista,
+          preview: user.nota_musica_preview, artwork: user.nota_musica_artwork,
+          offset: user.nota_musica_offset || 0 }
+      : null);
+  }, [user?.nota_chat, user?.nota_musica_titulo, user?.nota_musica_preview, user?.nota_musica_offset]);
 
   // Cargar notas de seguidos al montar y cada 30s
   useEffect(() => {
@@ -385,23 +392,30 @@ export default function CommunityScreen() {
     return () => clearInterval(t);
   }, []);
 
-  // YouTube IFrame API — player montado directo en el DOM (fuera de React) para que
-  // el navegador lo cuente como respuesta a gesto del usuario y no bloquee autoplay.
+  // YouTube IFrame API — el iframe se crea manualmente con allow="autoplay" (necesario
+  // para que Chrome's Permissions Policy permita el audio cuando se llama desde JS externo).
+  // Se monta fuera del árbol de React para que los re-renders no lo destruyan.
   useEffect(() => {
     const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;bottom:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
-    const playerDiv = document.createElement('div');
-    playerDiv.id = 'yt-bg-player-nuvia';
-    container.appendChild(playerDiv);
+    container.style.cssText = 'position:fixed;bottom:-9999px;left:-9999px;width:200px;height:150px;overflow:hidden;pointer-events:none;';
+
+    // Crear el iframe nosotros con allow="autoplay" ANTES de dárselo a YT.Player
+    const iframe = document.createElement('iframe');
+    iframe.id = 'yt-bg-player-nuvia';
+    iframe.src = 'https://www.youtube.com/embed/?enablejsapi=1&playsinline=1&controls=0&rel=0&fs=0';
+    iframe.style.cssText = 'width:200px;height:150px;border:none;';
+    iframe.setAttribute('allow', 'autoplay; encrypted-media');
+    iframe.setAttribute('allowfullscreen', '');
+    container.appendChild(iframe);
     document.body.appendChild(container);
 
     const initPlayer = () => {
-      ytPlayerRef.current = new window.YT.Player('yt-bg-player-nuvia', {
-        width: '1', height: '1',
-        playerVars: { playsinline: 1, controls: 0, rel: 0, fs: 0 },
+      // Pasamos el elemento iframe directamente: el API reutiliza el iframe existente
+      // manteniendo sus atributos allow="autoplay".
+      ytPlayerRef.current = new window.YT.Player(iframe, {
         events: {
           onReady: () => { ytReadyRef.current = true; },
-          onError:  () => {},
+          onError: () => {},
         },
       });
     };
@@ -448,6 +462,7 @@ export default function CommunityScreen() {
       setNotaInput('');
       setMusicaSeleccionada(null);
       setEditandoNota(false);
+      setConfirmarEliminarNota(false);
     } catch { mostrarToast('Error al borrar nota', 'error'); }
     finally { setSavingNota(false); }
   };
@@ -731,7 +746,16 @@ export default function CommunityScreen() {
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {/* Tu nota */}
           <div
-            onClick={() => { setNotaInput(miNota || ''); setMusicaSeleccionada(miMusica); setOffsetMusica(miMusica?.offset ?? 0); setBusquedaMusica(''); setResultadosMusica([]); setShowBuscarMusica(false); setShowTramoSelector(false); setReproduciendo(null); setEditandoNota(true); }}
+            onClick={() => {
+            if (miNota) {
+              setConfirmarEliminarNota(true);
+            } else {
+              setNotaInput(''); setMusicaSeleccionada(null); setOffsetMusica(0);
+              setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]);
+              setShowBuscarMusica(false); setShowTramoSelector(false);
+              setEditandoNota(true);
+            }
+          }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, cursor: 'pointer', width: '68px' }}
           >
             <div style={{ minHeight: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', marginBottom: '4px', gap: '3px' }}>
@@ -1597,16 +1621,37 @@ export default function CommunityScreen() {
               </span>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
-              {miNota && (
-                <button onClick={handleClearNota} disabled={savingNota} style={{ padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #fee2e2', background: '#fff5f5', color: '#ef4444', fontWeight: '700', cursor: 'pointer', fontSize: '13px', flexShrink: 0 }}>
-                  Borrar
-                </button>
-              )}
               <button onClick={() => { setEditandoNota(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
                 Cancelar
               </button>
               <button onClick={handleSaveNota} disabled={!notaInput.trim() || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: !notaInput.trim() ? 0.6 : 1 }}>
-                {savingNota ? '...' : 'Guardar'}
+                {savingNota ? '...' : 'Publicar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmación eliminar nota */}
+      {confirmarEliminarNota && (
+        <div
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+          onClick={() => setConfirmarEliminarNota(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '20px', padding: '28px 24px', width: '100%', maxWidth: '340px', textAlign: 'center' }}>
+            <div style={{ fontSize: '36px', marginBottom: '12px' }}>🗑️</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: '17px', color: 'var(--text-dark)' }}>¿Eliminar nota?</h3>
+            <p style={{ margin: '0 0 24px', fontSize: '13px', color: 'var(--text-light)' }}>Se borrará tu nota y la música asociada. No se puede deshacer.</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setConfirmarEliminarNota(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setConfirmarEliminarNota(false); handleClearNota(); }}
+                disabled={savingNota}
+                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#ef4444', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}
+              >
+                {savingNota ? '...' : 'Eliminar'}
               </button>
             </div>
           </div>
