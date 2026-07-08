@@ -198,13 +198,14 @@ def get_me(db: Session = Depends(get_db),
         current_user.nota_musica_artista  = None
         current_user.nota_musica_preview  = None
         current_user.nota_musica_artwork  = None
+        current_user.nota_musica_offset   = None
         db.commit()
 
     return current_user
 
 
 class NotaChatRequest(BaseModel):
-    texto: str
+    texto: Optional[str] = ""
     musica_titulo:  Optional[str] = None
     musica_artista: Optional[str] = None
     musica_preview: Optional[str] = None
@@ -218,9 +219,9 @@ def set_nota_chat(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
-    texto = datos.texto.strip()[:60]
-    if not texto:
-        raise HTTPException(status_code=400, detail="La nota no puede estar vacía")
+    texto = (datos.texto or "").strip()[:60]
+    if not texto and not datos.musica_preview:
+        raise HTTPException(status_code=400, detail="La nota debe tener texto o música")
     current_user.nota_chat            = texto
     current_user.nota_chat_expires_at = datetime.now() + timedelta(hours=24)
     current_user.nota_musica_titulo   = (datos.musica_titulo or "")[:100] or None

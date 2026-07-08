@@ -381,6 +381,16 @@ export default function CommunityScreen() {
       : null);
   }, [user?.nota_chat, user?.nota_musica_titulo, user?.nota_musica_preview, user?.nota_musica_offset]);
 
+  // Auto-expirar la propia nota en el frontend cuando llegan las 24h
+  useEffect(() => {
+    if (!user?.nota_chat_expires_at) return;
+    const expiresAt = new Date(user.nota_chat_expires_at).getTime();
+    const delay = expiresAt - Date.now();
+    if (delay <= 0) { setMiNota(null); setMiMusica(null); return; }
+    const t = setTimeout(() => { setMiNota(null); setMiMusica(null); }, delay);
+    return () => clearTimeout(t);
+  }, [user?.nota_chat_expires_at]);
+
   // Cargar notas de seguidos al montar y cada 30s
   useEffect(() => {
     const load = async () => {
@@ -441,12 +451,12 @@ export default function CommunityScreen() {
   }, []);
 
   const handleSaveNota = async () => {
-    if (!notaInput.trim()) return;
+    if (!notaInput.trim() && !musicaSeleccionada) return;
     setSavingNota(true);
     try {
       const musica = musicaSeleccionada ? { ...musicaSeleccionada, offset: offsetMusica } : null;
       await ApiService.setNotaChat(notaInput.trim(), musica);
-      setMiNota(notaInput.trim());
+      setMiNota(notaInput.trim() || null);
       setMiMusica(musica);
       setEditandoNota(false);
     } catch { mostrarToast('Error al guardar nota', 'error'); }
@@ -747,15 +757,20 @@ export default function CommunityScreen() {
           {/* Tu nota */}
           <div
             onClick={() => {
-            if (miNota) {
-              setConfirmarEliminarNota(true);
-            } else {
-              setNotaInput(''); setMusicaSeleccionada(null); setOffsetMusica(0);
-              setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]);
-              setShowBuscarMusica(false); setShowTramoSelector(false);
-              setEditandoNota(true);
-            }
-          }}
+              if (miNota || miMusica) {
+                if (miMusica?.preview) {
+                  togglePreview(miMusica.preview, miMusica.offset || 0, {
+                    titulo: miMusica.titulo, artista: miMusica.artista, artwork: miMusica.artwork,
+                  });
+                }
+                setConfirmarEliminarNota(true);
+              } else {
+                setNotaInput(''); setMusicaSeleccionada(null); setOffsetMusica(0);
+                setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]);
+                setShowBuscarMusica(false); setShowTramoSelector(false);
+                setEditandoNota(true);
+              }
+            }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, cursor: 'pointer', width: '68px' }}
           >
             <div style={{ minHeight: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', marginBottom: '4px', gap: '3px' }}>
@@ -774,17 +789,17 @@ export default function CommunityScreen() {
                 <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
                   {miNota}
                 </div>
-              ) : (
+              ) : (!miMusica && (
                 <div style={{ fontSize: '10px', color: '#94a3b8', textAlign: 'center' }}>Añade una nota</div>
-              )}
+              ))}
             </div>
             <div style={{ position: 'relative' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '50%', padding: '2.5px', boxSizing: 'border-box', display: 'flex', background: miNota ? 'linear-gradient(135deg, #B05BB5, #F6416C)' : '#d1d5db' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '50%', padding: '2.5px', boxSizing: 'border-box', display: 'flex', background: (miNota || miMusica) ? 'linear-gradient(135deg, #B05BB5, #F6416C)' : '#d1d5db' }}>
                 <div style={{ flex: 1, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary)' }}>{user?.nombre?.charAt(0).toUpperCase() || '?'}</span>
                 </div>
               </div>
-              {!miNota && (
+              {!miNota && !miMusica && (
                 <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', border: '2px solid white' }}>+</div>
               )}
             </div>
@@ -1449,8 +1464,8 @@ export default function CommunityScreen() {
           {toast.mensaje}
         </div>
       )}
-      {/* Mini player — sólo UI, el audio lo maneja el player de YT montado en el DOM */}
-      {miniPlayer && (
+      {/* Mini player — no mostrar si el sheet de "tu nota" está abierto (ya tiene controles) */}
+      {miniPlayer && !confirmarEliminarNota && (
         <div style={{ position: 'fixed', bottom: '72px', left: '12px', right: '12px', background: 'linear-gradient(135deg,#1a1a2e,#16213e)', borderRadius: '18px', padding: '12px 16px', boxShadow: '0 8px 32px rgba(0,0,0,0.45)', zIndex: 4000, display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, position: 'relative', overflow: 'hidden', animation: 'vinylSpin 2s linear infinite' }}>
             {miniPlayer.artwork
@@ -1624,7 +1639,7 @@ export default function CommunityScreen() {
               <button onClick={() => { setEditandoNota(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
                 Cancelar
               </button>
-              <button onClick={handleSaveNota} disabled={!notaInput.trim() || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: !notaInput.trim() ? 0.6 : 1 }}>
+              <button onClick={handleSaveNota} disabled={(!notaInput.trim() && !musicaSeleccionada) || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: (!notaInput.trim() && !musicaSeleccionada) ? 0.6 : 1 }}>
                 {savingNota ? '...' : 'Publicar'}
               </button>
             </div>
@@ -1632,31 +1647,93 @@ export default function CommunityScreen() {
         </div>
       )}
 
-      {/* Confirmación eliminar nota */}
-      {confirmarEliminarNota && (
-        <div
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
-          onClick={() => setConfirmarEliminarNota(false)}
-        >
-          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '20px', padding: '28px 24px', width: '100%', maxWidth: '340px', textAlign: 'center' }}>
-            <div style={{ fontSize: '36px', marginBottom: '12px' }}>🗑️</div>
-            <h3 style={{ margin: '0 0 8px', fontSize: '17px', color: 'var(--text-dark)' }}>¿Eliminar nota?</h3>
-            <p style={{ margin: '0 0 24px', fontSize: '13px', color: 'var(--text-light)' }}>Se borrará tu nota y la música asociada. No se puede deshacer.</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setConfirmarEliminarNota(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
-                Cancelar
-              </button>
-              <button
-                onClick={() => { setConfirmarEliminarNota(false); handleClearNota(); }}
-                disabled={savingNota}
-                style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#ef4444', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}
-              >
-                {savingNota ? '...' : 'Eliminar'}
-              </button>
+      {/* Sheet "Tu nota activa" */}
+      {confirmarEliminarNota && (() => {
+        const dark = document.body.classList.contains('dark-mode');
+        const sheetBg   = dark ? '#1a1a1a' : 'white';
+        const cardBg    = dark ? '#2a2a2a' : '#f5f3ff';
+        const cardBorder= dark ? '#3a3a3a' : '#e9d5ff';
+        const labelCol  = dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+        const textCol   = dark ? '#f0f0f0' : '#1a1a1a';
+        const handleCol = dark ? 'rgba(255,255,255,0.15)' : '#e2e8f0';
+        const cancelBg  = dark ? '#2a2a2a' : 'white';
+        const cancelBdr = dark ? '#3a3a3a' : '#e2e8f0';
+        const cancelTxt = dark ? 'rgba(255,255,255,0.6)' : 'var(--text-light)';
+        return (
+          <div
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 3200, display: 'flex', alignItems: 'flex-end' }}
+            onClick={() => { setConfirmarEliminarNota(false); stopPlayback(); }}
+          >
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', borderRadius: '24px 24px 0 0', overflow: 'hidden', background: sheetBg }}>
+
+              {/* Handle */}
+              <div style={{ padding: '12px 20px 0', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '4px', background: handleCol, borderRadius: '2px' }} />
+              </div>
+
+              <div style={{ padding: '16px 20px 24px' }}>
+                {/* Etiqueta */}
+                <div style={{ fontSize: '11px', fontWeight: '700', color: labelCol, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Tu nota</div>
+
+                {/* Texto de la nota — solo si hay texto */}
+                {miNota && (
+                  <div style={{ background: cardBg, border: `1.5px solid ${cardBorder}`, borderRadius: '14px', padding: '13px 16px', marginBottom: '14px', fontSize: '15px', fontWeight: '500', color: textCol }}>
+                    {miNota}
+                  </div>
+                )}
+
+                {/* Card de música */}
+                {miMusica && (
+                  <div style={{ background: cardBg, border: `1.5px solid ${cardBorder}`, borderRadius: '16px', padding: '14px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      {/* Vinilo */}
+                      <div style={{ width: '52px', height: '52px', borderRadius: '50%', flexShrink: 0, position: 'relative', animation: `vinylSpin ${reproduciendo === miMusica.preview ? '4s' : '8s'} linear infinite` }}>
+                        {miMusica.artwork
+                          ? <img src={miMusica.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }} />
+                          : <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'linear-gradient(135deg,#9b6c98,#F6416C)' }} />}
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '11px', height: '11px', borderRadius: '50%', background: dark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)', border: '2px solid rgba(155,108,152,0.6)' }} />
+                      </div>
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: textCol, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{miMusica.titulo}</div>
+                        <div style={{ fontSize: '12px', color: labelCol, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{miMusica.artista}</div>
+                      </div>
+                      {/* Play/pausa */}
+                      <button
+                        onClick={() => togglePreview(miMusica.preview, miMusica.offset || 0, { titulo: miMusica.titulo, artista: miMusica.artista, artwork: miMusica.artwork })}
+                        style={{ width: '42px', height: '42px', borderRadius: '50%', background: reproduciendo === miMusica.preview ? 'rgba(176,91,181,0.15)' : (dark ? 'rgba(255,255,255,0.08)' : 'rgba(155,108,152,0.1)'), border: `1.5px solid ${reproduciendo === miMusica.preview ? 'var(--primary)' : cardBorder}`, color: 'var(--primary)', fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                      >
+                        {reproduciendo === miMusica.preview ? '⏸' : '▶'}
+                      </button>
+                    </div>
+                    {/* Barra de progreso */}
+                    {reproduciendo === miMusica.preview && (
+                      <div style={{ marginTop: '12px' }}>
+                        <div style={{ height: '3px', background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(155,108,152,0.15)', borderRadius: '2px' }}>
+                          <div style={{ height: '100%', width: `${(miniPlayerSecs / 30) * 100}%`, background: 'linear-gradient(90deg,#9b6c98,#F6416C)', borderRadius: '2px', transition: 'width 0.5s linear' }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '10px', color: labelCol }}>
+                          <span>{Math.floor(miniPlayerSecs)}s</span><span>30s</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Botones */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => { setConfirmarEliminarNota(false); stopPlayback(); }} style={{ flex: 1, padding: '13px', borderRadius: '14px', border: `1.5px solid ${cancelBdr}`, background: cancelBg, color: cancelTxt, fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+                    Cerrar
+                  </button>
+                  <button onClick={() => { stopPlayback(); handleClearNota(); }} disabled={savingNota} style={{ flex: 1, padding: '13px', borderRadius: '14px', border: 'none', background: 'linear-gradient(135deg,#ef4444,#dc2626)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+                    {savingNota ? '...' : '🗑 Eliminar nota'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <style>{`
         @keyframes nuviaToastIn {
