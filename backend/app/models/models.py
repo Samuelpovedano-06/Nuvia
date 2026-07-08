@@ -24,8 +24,12 @@ class Usuaria(Base):
     foto_perfil      = Column(LargeBinary, nullable=True)
     foto_perfil_mime = Column(String(50), nullable=True)
     activo           = Column(Boolean, nullable=False, server_default=text("true"))
-    nota_chat        = Column(String(60), nullable=True)
+    nota_chat            = Column(String(60), nullable=True)
     nota_chat_expires_at = Column(DateTime, nullable=True)
+    nota_musica_titulo   = Column(String(100), nullable=True)
+    nota_musica_artista  = Column(String(100), nullable=True)
+    nota_musica_preview  = Column(String(500), nullable=True)
+    nota_musica_artwork  = Column(String(500), nullable=True)
 
     @property
     def tiene_foto(self):
@@ -121,6 +125,7 @@ class ConfiguracionUsuaria(Base):
     modo_oscuro        = Column(SmallInteger, server_default="0")
     peso               = Column(Numeric(5, 1), nullable=True)
     altura             = Column(Integer, nullable=True)
+    metodo_anticonceptivo = Column(String(50), nullable=True)
     google_token       = Column(Text, nullable=True)
     google_refresh_token = Column(Text, nullable=True)
     google_token_expiry = Column(DateTime, nullable=True)

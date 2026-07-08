@@ -19,6 +19,7 @@ def _serialize_config(c: ConfiguracionUsuaria) -> dict:
         "modo_oscuro": c.modo_oscuro or 0,
         "peso": float(c.peso) if c.peso is not None else None,
         "altura": c.altura,
+        "metodo_anticonceptivo": c.metodo_anticonceptivo,
     }
 
 

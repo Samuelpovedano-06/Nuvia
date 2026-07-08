@@ -40,6 +40,10 @@ class UsuariaOut(BaseModel):
     tiene_foto: Optional[bool] = False
     activo: Optional[bool] = True
     nota_chat: Optional[str] = None
+    nota_musica_titulo:  Optional[str] = None
+    nota_musica_artista: Optional[str] = None
+    nota_musica_preview: Optional[str] = None
+    nota_musica_artwork: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -157,6 +161,7 @@ class ConfiguracionUpdate(BaseModel):
     codigo_pareja: Optional[str] = None  # usado solo para enviar solicitud de vinculación
     peso: Optional[float] = None
     altura: Optional[int] = None
+    metodo_anticonceptivo: Optional[str] = None
 
 class ConfiguracionOut(BaseModel):
     id_usuaria: UUID
@@ -167,6 +172,7 @@ class ConfiguracionOut(BaseModel):
     modo_oscuro: int
     peso: Optional[float] = None
     altura: Optional[int] = None
+    metodo_anticonceptivo: Optional[str] = None
 
     class Config:
         from_attributes = True

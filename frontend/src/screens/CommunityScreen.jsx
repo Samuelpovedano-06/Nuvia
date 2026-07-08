@@ -281,10 +281,19 @@ export default function CommunityScreen() {
 
   // Notas estilo Instagram
   const [miNota, setMiNota] = useState(user?.nota_chat || null);
+  const [miMusica, setMiMusica] = useState(null); // { titulo, artista, preview, artwork }
   const [notasSiguiendo, setNotasSiguiendo] = useState([]);
   const [editandoNota, setEditandoNota] = useState(false);
   const [notaInput, setNotaInput] = useState('');
   const [savingNota, setSavingNota] = useState(false);
+  // Música en la nota
+  const [musicaSeleccionada, setMusicaSeleccionada] = useState(null);
+  const [busquedaMusica, setBusquedaMusica] = useState('');
+  const [resultadosMusica, setResultadosMusica] = useState([]);
+  const [buscandoMusica, setBuscandoMusica] = useState(false);
+  const [showBuscarMusica, setShowBuscarMusica] = useState(false);
+  const audioRef = useRef(null);
+  const [reproduciendo, setReproduciendo] = useState(null); // preview_url activo
 
   const abrirBloqueados = async () => {
     setShowBloqueados(true);
@@ -338,7 +347,14 @@ export default function CommunityScreen() {
   }, []);
 
   // Sync propia nota con user context
-  useEffect(() => { setMiNota(user?.nota_chat || null); }, [user?.nota_chat]);
+  useEffect(() => {
+    setMiNota(user?.nota_chat || null);
+    if (user?.nota_musica_titulo) {
+      setMiMusica({ titulo: user.nota_musica_titulo, artista: user.nota_musica_artista, preview: user.nota_musica_preview, artwork: user.nota_musica_artwork });
+    } else {
+      setMiMusica(null);
+    }
+  }, [user?.nota_chat, user?.nota_musica_titulo]);
 
   // Cargar notas de seguidos al montar y cada 30s
   useEffect(() => {
@@ -355,8 +371,9 @@ export default function CommunityScreen() {
     if (!notaInput.trim()) return;
     setSavingNota(true);
     try {
-      await ApiService.setNotaChat(notaInput.trim());
+      await ApiService.setNotaChat(notaInput.trim(), musicaSeleccionada || null);
       setMiNota(notaInput.trim());
+      setMiMusica(musicaSeleccionada);
       setEditandoNota(false);
     } catch { mostrarToast('Error al guardar nota', 'error'); }
     finally { setSavingNota(false); }
@@ -367,10 +384,32 @@ export default function CommunityScreen() {
     try {
       await ApiService.clearNotaChat();
       setMiNota(null);
+      setMiMusica(null);
       setNotaInput('');
+      setMusicaSeleccionada(null);
       setEditandoNota(false);
     } catch { mostrarToast('Error al borrar nota', 'error'); }
     finally { setSavingNota(false); }
+  };
+
+  const handleBuscarMusica = async (q) => {
+    setBusquedaMusica(q);
+    if (!q.trim()) { setResultadosMusica([]); return; }
+    setBuscandoMusica(true);
+    const res = await ApiService.searchMusicItunes(q);
+    setResultadosMusica(res);
+    setBuscandoMusica(false);
+  };
+
+  const togglePreview = (preview) => {
+    if (!preview) return;
+    if (reproduciendo === preview) {
+      audioRef.current?.pause();
+      setReproduciendo(null);
+    } else {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = preview; audioRef.current.play().catch(() => {}); }
+      setReproduciendo(preview);
+    }
   };
 
   const cerrarAviso = async (av) => {
@@ -602,10 +641,16 @@ export default function CommunityScreen() {
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {/* Tu nota */}
           <div
-            onClick={() => { setNotaInput(miNota || ''); setEditandoNota(true); }}
+            onClick={() => { setNotaInput(miNota || ''); setMusicaSeleccionada(miMusica); setBusquedaMusica(''); setResultadosMusica([]); setShowBuscarMusica(false); setReproduciendo(null); setEditandoNota(true); }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, cursor: 'pointer', width: '68px' }}
           >
-            <div style={{ height: '36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', width: '100%', marginBottom: '4px' }}>
+            <div style={{ minHeight: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', marginBottom: '4px', gap: '3px' }}>
+              {miMusica && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '3px 5px', width: '100%', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                  {miMusica.artwork && <img src={miMusica.artwork} alt="" style={{ width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0 }} />}
+                  <span style={{ fontSize: '9px', color: '#6366f1', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>♪ {miMusica.titulo}</span>
+                </div>
+              )}
               {miNota ? (
                 <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
                   {miNota}
@@ -632,7 +677,18 @@ export default function CommunityScreen() {
             const av = getAvatar(n.avatar_seed);
             return (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: '68px' }}>
-                <div style={{ height: '36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', width: '100%', marginBottom: '4px' }}>
+                <div style={{ minHeight: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', marginBottom: '4px', gap: '3px' }}>
+                  {n.musica_titulo && (
+                    <button
+                      onClick={() => togglePreview(n.musica_preview)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '3px 5px', width: '100%', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', cursor: n.musica_preview ? 'pointer' : 'default' }}
+                    >
+                      {n.musica_artwork && <img src={n.musica_artwork} alt="" style={{ width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0 }} />}
+                      <span style={{ fontSize: '9px', color: reproduciendo === n.musica_preview ? '#F6416C' : '#6366f1', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {reproduciendo === n.musica_preview ? '▶ ' : '♪ '}{n.musica_titulo}
+                      </span>
+                    </button>
+                  )}
                   <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
                     {n.nota}
                   </div>
@@ -1271,18 +1327,87 @@ export default function CommunityScreen() {
           {toast.mensaje}
         </div>
       )}
+      {/* Audio invisible para previews */}
+      <audio ref={audioRef} onEnded={() => setReproduciendo(null)} style={{ display: 'none' }} />
+
       {/* Modal editar nota */}
       {editandoNota && (
         <div
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '20px' }}
-          onClick={() => setEditandoNota(false)}
+          onClick={() => { setEditandoNota(false); setShowBuscarMusica(false); audioRef.current?.pause(); setReproduciendo(null); }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ background: 'white', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 -5px 30px rgba(0,0,0,0.12)' }}
+            style={{ background: 'white', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 -5px 30px rgba(0,0,0,0.12)', maxHeight: '90vh', overflowY: 'auto' }}
           >
             <h3 style={{ margin: '0 0 4px', fontSize: '17px', color: 'var(--text-dark)' }}>Tu nota</h3>
             <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-light)' }}>Visible en la comunidad durante 24 horas</p>
+
+            {/* Música seleccionada */}
+            {musicaSeleccionada && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px' }}>
+                {musicaSeleccionada.artwork && <img src={musicaSeleccionada.artwork} alt="" style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0 }} />}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.titulo}</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.artista}</div>
+                </div>
+                {musicaSeleccionada.preview && (
+                  <button onClick={() => togglePreview(musicaSeleccionada.preview)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '14px', flexShrink: 0 }}>
+                    {reproduciendo === musicaSeleccionada.preview ? '⏸' : '▶'}
+                  </button>
+                )}
+                <button onClick={() => { setMusicaSeleccionada(null); audioRef.current?.pause(); setReproduciendo(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '16px', flexShrink: 0 }}>×</button>
+              </div>
+            )}
+
+            {/* Buscador de música */}
+            {showBuscarMusica ? (
+              <div style={{ marginBottom: '14px' }}>
+                <div style={{ position: 'relative', marginBottom: '10px' }}>
+                  <input
+                    type="text"
+                    value={busquedaMusica}
+                    onChange={e => handleBuscarMusica(e.target.value)}
+                    placeholder="Busca una canción o artista…"
+                    autoFocus
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 36px 10px 12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }}
+                  />
+                  <button onClick={() => { setShowBuscarMusica(false); setBusquedaMusica(''); setResultadosMusica([]); }} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#94a3b8' }}>×</button>
+                </div>
+                {buscandoMusica && <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-light)', padding: '8px' }}>Buscando…</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
+                  {resultadosMusica.map((r, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setMusicaSeleccionada(r); setShowBuscarMusica(false); setBusquedaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '10px', border: '1.5px solid #f0f0f5', background: 'white', cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      {r.artwork && <img src={r.artwork} alt="" style={{ width: '38px', height: '38px', borderRadius: '6px', flexShrink: 0 }} />}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.titulo}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.artista}</div>
+                      </div>
+                      {r.preview && (
+                        <button
+                          onClick={e => { e.stopPropagation(); togglePreview(r.preview); }}
+                          style={{ background: '#f5f5fa', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', flexShrink: 0 }}
+                        >
+                          {reproduciendo === r.preview ? '⏸' : '▶'}
+                        </button>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowBuscarMusica(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px dashed #c4b5fd', background: '#faf5ff', color: '#7c3aed', fontWeight: '600', fontSize: '13px', cursor: 'pointer', marginBottom: '14px' }}
+              >
+                <span style={{ fontSize: '16px' }}>🎵</span> {musicaSeleccionada ? 'Cambiar canción' : 'Añadir música'}
+              </button>
+            )}
+
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
@@ -1290,8 +1415,8 @@ export default function CommunityScreen() {
                 value={notaInput}
                 onChange={e => setNotaInput(e.target.value)}
                 placeholder="¿Qué estás haciendo?"
-                autoFocus
-                onKeyDown={e => { if (e.key === 'Enter') handleSaveNota(); if (e.key === 'Escape') setEditandoNota(false); }}
+                autoFocus={!showBuscarMusica}
+                onKeyDown={e => { if (e.key === 'Enter' && !showBuscarMusica) handleSaveNota(); if (e.key === 'Escape') setEditandoNota(false); }}
                 style={{ width: '100%', boxSizing: 'border-box', padding: '12px 48px 12px 14px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontSize: '15px', outline: 'none', fontFamily: 'inherit' }}
               />
               <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#94a3b8' }}>
@@ -1304,7 +1429,7 @@ export default function CommunityScreen() {
                   Borrar
                 </button>
               )}
-              <button onClick={() => setEditandoNota(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+              <button onClick={() => { setEditandoNota(false); audioRef.current?.pause(); setReproduciendo(null); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
                 Cancelar
               </button>
               <button onClick={handleSaveNota} disabled={!notaInput.trim() || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: !notaInput.trim() ? 0.6 : 1 }}>

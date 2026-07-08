@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import Response
 from uuid import UUID
+from typing import Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -189,10 +190,14 @@ def get_me(db: Session = Depends(get_db),
     ).first() is not None
     current_user.tiene_vinculos = tiene_vinculos
 
-    # Limpiar nota expirada
+    # Limpiar nota expirada (texto + música)
     if current_user.nota_chat_expires_at and current_user.nota_chat_expires_at < datetime.now():
-        current_user.nota_chat = None
+        current_user.nota_chat            = None
         current_user.nota_chat_expires_at = None
+        current_user.nota_musica_titulo   = None
+        current_user.nota_musica_artista  = None
+        current_user.nota_musica_preview  = None
+        current_user.nota_musica_artwork  = None
         db.commit()
 
     return current_user
@@ -200,6 +205,10 @@ def get_me(db: Session = Depends(get_db),
 
 class NotaChatRequest(BaseModel):
     texto: str
+    musica_titulo:  Optional[str] = None
+    musica_artista: Optional[str] = None
+    musica_preview: Optional[str] = None
+    musica_artwork: Optional[str] = None
 
 
 @router.put("/me/nota")
@@ -211,8 +220,12 @@ def set_nota_chat(
     texto = datos.texto.strip()[:60]
     if not texto:
         raise HTTPException(status_code=400, detail="La nota no puede estar vacía")
-    current_user.nota_chat = texto
+    current_user.nota_chat            = texto
     current_user.nota_chat_expires_at = datetime.now() + timedelta(hours=24)
+    current_user.nota_musica_titulo   = (datos.musica_titulo or "")[:100] or None
+    current_user.nota_musica_artista  = (datos.musica_artista or "")[:100] or None
+    current_user.nota_musica_preview  = (datos.musica_preview or "")[:500] or None
+    current_user.nota_musica_artwork  = (datos.musica_artwork or "")[:500] or None
     db.commit()
     return {"ok": True, "nota": current_user.nota_chat}
 
@@ -222,8 +235,12 @@ def clear_nota_chat(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
-    current_user.nota_chat = None
+    current_user.nota_chat            = None
     current_user.nota_chat_expires_at = None
+    current_user.nota_musica_titulo   = None
+    current_user.nota_musica_artista  = None
+    current_user.nota_musica_preview  = None
+    current_user.nota_musica_artwork  = None
     db.commit()
     return {"ok": True}
 
@@ -233,7 +250,7 @@ def get_notas_siguiendo(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user)
 ):
-    """Devuelve las notas activas de los usuarios que sigo en el foro."""
+    """Devuelve las notas activas (texto + música) de los usuarios que sigo en el foro."""
     now = datetime.now()
     seguidos_ids = [r[0] for r in db.query(SeguimientoForo.id_seguido)
                     .filter(SeguimientoForo.id_seguidor == current_user.id_usuaria).all()]
@@ -245,7 +262,14 @@ def get_notas_siguiendo(
         Usuaria.nota_chat_expires_at.isnot(None),
         Usuaria.nota_chat_expires_at > now
     ).all()
-    return [{"nota": u.nota_chat, "avatar_seed": str(u.id_usuaria)[:12]} for u in usuarios]
+    return [{
+        "nota":            u.nota_chat,
+        "avatar_seed":     str(u.id_usuaria)[:12],
+        "musica_titulo":   u.nota_musica_titulo,
+        "musica_artista":  u.nota_musica_artista,
+        "musica_preview":  u.nota_musica_preview,
+        "musica_artwork":  u.nota_musica_artwork,
+    } for u in usuarios]
 
 
 @router.get("/nota/{id_usuaria}")

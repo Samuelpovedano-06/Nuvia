@@ -171,6 +171,25 @@ const SINTOMA_STYLE = {
     ),
     color: '#9b6c98', tip: 'Aplica calor suave en el lado izquierdo y descansa un momento.'
   },
+  'Dolor Irradiado': {
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {/* Cuerpo central */}
+        <ellipse cx="12" cy="13" rx="4" ry="5" />
+        {/* Flechas de irradiación */}
+        <path d="M12 4v3M12 17v3M4 13H7M17 13h3" strokeWidth="2" />
+        <path d="M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M6.3 19.7l2.1-2.1M15.6 8.4l2.1-2.1" strokeWidth="1.4" />
+      </svg>
+    ),
+    color: '#9b6c98', tip: 'El dolor irradiado puede extenderse a la espalda baja o piernas. Aplica calor y descansa.'
+  },
+  // Olores
+  'Olor Metálico':    { icon: <span style={{ fontSize: 22 }}>🔩</span>, color: '#7c6c9b', tip: 'El olor metálico durante la menstruación es normal por la sangre.' },
+  'Olor Ácido':       { icon: <span style={{ fontSize: 22 }}>🍋</span>, color: '#7c6c9b', tip: 'Un ligero olor ácido es normal; el pH vaginal es naturalmente ácido.' },
+  'Olor Intenso':     { icon: <span style={{ fontSize: 22 }}>💨</span>, color: '#7c6c9b', tip: 'Un olor fuerte puede indicar cambio hormonal. Mantén buena higiene íntima.' },
+  'Olor a Pescado':   { icon: <span style={{ fontSize: 22 }}>🐟</span>, color: '#c0496e', tip: 'El olor a pescado puede ser señal de vaginosis bacteriana. Consulta a tu médico.' },
+  'Olor Dulce':       { icon: <span style={{ fontSize: 22 }}>🍬</span>, color: '#7c6c9b', tip: 'Un olor ligeramente dulce puede ser normal. Monitorea si cambia de pronto.' },
+  'Sin Olor Inusual': { icon: <span style={{ fontSize: 22 }}>✅</span>, color: '#4caf7d', tip: '¡Genial! Sin olores inusuales, tu equilibrio vaginal parece estupendo.' },
   'Default':         { face: 'feliz',       color: '#9b6c98', tip: 'Recuerda que cada ciclo es único. ¡Vas muy bien!' }
 };
 
@@ -317,6 +336,7 @@ export default function SymptomsScreen() {
   const categorias = {
     'Fisico': sintomasCatalogo.filter(s => s.categoria === 'Fisico'),
     'Emocional': sintomasCatalogo.filter(s => s.categoria === 'Emocional'),
+    'Olor': sintomasCatalogo.filter(s => s.categoria === 'Olor'),
     'Otros': sintomasCatalogo.filter(s => s.categoria === 'Otros' || !s.categoria)
   };
 
@@ -474,7 +494,7 @@ export default function SymptomsScreen() {
           sintomas.length > 0 && (
             <div key={nombreCat}>
               <h3 style={{ fontSize: '18px', marginBottom: '16px', borderLeft: '4px solid var(--primary)', paddingLeft: '12px' }}>
-                {nombreCat === 'Fisico' ? 'Físicos' : nombreCat}
+                {nombreCat === 'Fisico' ? 'Físicos' : nombreCat === 'Olor' ? '🌸 Olor' : nombreCat}
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                 {sintomas.map(s => {

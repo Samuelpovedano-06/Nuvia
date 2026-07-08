@@ -46,6 +46,14 @@ def calcular_prediccion(db: Session = Depends(get_db),
     ).first()
     cfg_ciclo   = cfg.duracion_ciclo   if cfg and cfg.duracion_ciclo   else 28
     cfg_periodo = cfg.duracion_periodo if cfg and cfg.duracion_periodo else 5
+    metodo      = (cfg.metodo_anticonceptivo or "ninguno") if cfg else "ninguno"
+
+    # Métodos que hacen el ciclo artificialmente regular (la config tiene más peso)
+    METODOS_REGULAR   = {"pildora_combinada", "parche", "anillo"}
+    # Métodos que hacen el ciclo impredecible (sangrado irregular → usar solo config)
+    METODOS_IRREGULAR = {"minipildora", "implante", "inyeccion"}
+    # DIU hormonal: periodo muy corto o ausente
+    METODO_DIU_H      = "diu_hormonal"
 
     # — Duración del ciclo: gaps entre inicios consecutivos, del más reciente al más antiguo —
     ciclos_asc = sorted(ciclos, key=lambda c: c.fecha_inicio)
@@ -55,17 +63,35 @@ def calcular_prediccion(db: Session = Depends(get_db),
         if 21 <= diff <= 45:
             gaps.append(diff)
 
-    duracion_ciclo_predicha = _weighted_avg(gaps) if gaps else cfg_ciclo
-
-    # — Duración real del período: solo ciclos con fecha_fin (más recientes primero) —
+    # — Duración real del período —
     periodos = []
-    for c in ciclos:  # ya ordenados desc por fecha_inicio
+    for c in ciclos:
         if c.fecha_fin:
             dur_p = (c.fecha_fin - c.fecha_inicio).days + 1
             if 1 <= dur_p <= 15:
                 periodos.append(dur_p)
 
-    duracion_periodo_predicha = _weighted_avg(periodos) if periodos else cfg_periodo
+    # — Aplicar ajuste según método anticonceptivo —
+    if metodo in METODOS_IRREGULAR:
+        # Sangrado impredecible → confiar solo en la configuración manual
+        duracion_ciclo_predicha  = cfg_ciclo
+        duracion_periodo_predicha = cfg_periodo
+    elif metodo in METODOS_REGULAR:
+        # Ciclos artificialmente regulares → anclar al valor configurado (añadir 2 copias como peso)
+        gaps_anclados    = gaps + [cfg_ciclo, cfg_ciclo] if gaps else [cfg_ciclo]
+        periodos_anclados = periodos + [cfg_periodo] if periodos else [cfg_periodo]
+        duracion_ciclo_predicha   = _weighted_avg(gaps_anclados)
+        duracion_periodo_predicha = _weighted_avg(periodos_anclados)
+    elif metodo == METODO_DIU_H:
+        # El ciclo puede mantenerse pero el período es muy corto/ausente
+        duracion_ciclo_predicha   = _weighted_avg(gaps) if gaps else cfg_ciclo
+        # Limitar la duración predicha del periodo a max 3 días (DIU hormonal lo acorta)
+        raw_periodo = _weighted_avg(periodos) if periodos else cfg_periodo
+        duracion_periodo_predicha = min(raw_periodo, 3)
+    else:
+        # Algoritmo estándar (ninguno / DIU de cobre)
+        duracion_ciclo_predicha   = _weighted_avg(gaps) if gaps else cfg_ciclo
+        duracion_periodo_predicha = _weighted_avg(periodos) if periodos else cfg_periodo
 
     # — Derivar todas las fechas del próximo ciclo desde un único conjunto de valores —
     ultimo = ciclos[0]

@@ -7,6 +7,18 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Lock, Settings, User, LogOut, Pencil, Check, Moon, Sun, Download, FileBarChart, FileText, Activity, Utensils, Headphones } from 'lucide-react';
 import { ApiService } from '../api';
 
+const METODOS_ANTICONCEPTIVOS = [
+  { value: 'ninguno',           label: 'Sin método hormonal',   emoji: '⭕', desc: 'Ciclo natural' },
+  { value: 'pildora_combinada', label: 'Píldora combinada',     emoji: '💊', desc: 'Ciclos regulares artificiales' },
+  { value: 'minipildora',       label: 'Minipíldora',           emoji: '🔵', desc: 'Sangrado irregular' },
+  { value: 'diu_hormonal',      label: 'DIU hormonal',          emoji: '🌀', desc: 'Mirena · Kyleena' },
+  { value: 'diu_cobre',         label: 'DIU de cobre',          emoji: '🟤', desc: 'No hormonal' },
+  { value: 'parche',            label: 'Parche anticonceptivo', emoji: '🩹', desc: 'Ciclos regulares artificiales' },
+  { value: 'anillo',            label: 'Anillo vaginal',        emoji: '💍', desc: 'NuvaRing · ciclos regulares' },
+  { value: 'implante',          label: 'Implante subdérmico',   emoji: '💉', desc: 'Sangrado irregular' },
+  { value: 'inyeccion',         label: 'Inyección hormonal',    emoji: '🩺', desc: 'Sangrado muy irregular' },
+];
+
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -238,6 +250,8 @@ export default function ProfileScreen() {
   const [editingAltura, setEditingAltura] = useState(false);
   const [pesoInput, setPesoInput] = useState('');
   const [alturaInput, setAlturaInput] = useState('');
+  const [metodoAnticonceptivo, setMetodoAnticonceptivo] = useState('ninguno');
+  const [showMetodoModal, setShowMetodoModal] = useState(false);
 
   // Estados de configuración
   const [modoOscuro, setModoOscuro] = useState(0);
@@ -369,6 +383,7 @@ export default function ProfileScreen() {
           if (config.duracion_periodo) setPeriodDuration(config.duracion_periodo);
           if (config.peso != null) { setPeso(config.peso); setPesoInput(String(config.peso)); }
           if (config.altura != null) { setAltura(config.altura); setAlturaInput(String(config.altura)); }
+          if (config.metodo_anticonceptivo) setMetodoAnticonceptivo(config.metodo_anticonceptivo);
           if (config.fecha_nacimiento) {
             setFechaNacimiento(config.fecha_nacimiento);
             const d = new Date(config.fecha_nacimiento);
@@ -488,6 +503,12 @@ export default function ProfileScreen() {
     } else {
       setEditingAltura(false);
     }
+  };
+
+  const handleSaveMetodo = async (value) => {
+    setMetodoAnticonceptivo(value);
+    setShowMetodoModal(false);
+    try { await ApiService.updateConfig({ metodo_anticonceptivo: value }); } catch (_) {}
   };
 
   const handleSaveFechaNacimiento = async (val) => {
@@ -770,6 +791,21 @@ export default function ProfileScreen() {
           </div>
         </div>
 
+        {/* Método anticonceptivo */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '14px' }}>
+          <span style={{ color: 'var(--text-light)' }}>Anticonceptivo</span>
+          <button
+            onClick={() => setShowMetodoModal(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', padding: 0 }}
+          >
+            <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
+              {METODOS_ANTICONCEPTIVOS.find(m => m.value === metodoAnticonceptivo)?.emoji || '⭕'}{' '}
+              {METODOS_ANTICONCEPTIVOS.find(m => m.value === metodoAnticonceptivo)?.label || 'Sin método'}
+            </span>
+            <Pencil size={14} color="var(--text-light)" />
+          </button>
+        </div>
+
         {/* Mi Código */}
         {user?.mi_codigo && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '14px' }}>
@@ -970,6 +1006,46 @@ export default function ProfileScreen() {
           <ChevronRight size={18} color="#cbd5e1" />
         </div>
       </div>
+
+      {/* MODAL: Método anticonceptivo */}
+      {showMetodoModal && (
+        <div
+          onClick={() => setShowMetodoModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'white', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '80vh', overflowY: 'auto' }}
+          >
+            <h3 style={{ margin: '0 0 4px', fontSize: '17px', fontWeight: '800', color: 'var(--text-dark)' }}>Método anticonceptivo</h3>
+            <p style={{ margin: '0 0 18px', fontSize: '13px', color: 'var(--text-light)' }}>Nuvia ajusta las predicciones según tu método</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {METODOS_ANTICONCEPTIVOS.map(m => (
+                <button
+                  key={m.value}
+                  onClick={() => handleSaveMetodo(m.value)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 14px', borderRadius: '14px', border: 'none',
+                    background: metodoAnticonceptivo === m.value ? 'rgba(176,91,181,0.1)' : '#f8f8fc',
+                    cursor: 'pointer', textAlign: 'left',
+                    outline: metodoAnticonceptivo === m.value ? '2px solid var(--primary)' : 'none'
+                  }}
+                >
+                  <span style={{ fontSize: '22px', flexShrink: 0 }}>{m.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-dark)' }}>{m.label}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-light)' }}>{m.desc}</div>
+                  </div>
+                  {metodoAnticonceptivo === m.value && (
+                    <Check size={16} color="var(--primary)" style={{ flexShrink: 0 }} />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE EXPORTACIÓN */}
       {showExportModal && (

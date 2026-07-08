@@ -209,6 +209,26 @@ def run_migrations():
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_chat VARCHAR(60)",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_chat_expires_at TIMESTAMP",
 
+        # Música en notas estilo Instagram
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_titulo VARCHAR(100)",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_artista VARCHAR(100)",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_preview VARCHAR(500)",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_artwork VARCHAR(500)",
+
+        # Método anticonceptivo en configuración
+        "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS metodo_anticonceptivo VARCHAR(50)",
+
+        # Dolor irradiado
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Dolor Irradiado', 'Fisico' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Dolor Irradiado')",
+
+        # Categoría Olor — olores vaginales/menstruales más comunes
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Olor Metálico', 'Olor' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Olor Metálico')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Olor Ácido', 'Olor' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Olor Ácido')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Olor Intenso', 'Olor' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Olor Intenso')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Olor a Pescado', 'Olor' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Olor a Pescado')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Olor Dulce', 'Olor' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Olor Dulce')",
+        "INSERT INTO sintomas (id_sintoma, nombre_sintoma, categoria) SELECT gen_random_uuid(), 'Sin Olor Inusual', 'Olor' WHERE NOT EXISTS (SELECT 1 FROM sintomas WHERE nombre_sintoma = 'Sin Olor Inusual')",
+
         # ── Clasificaciones de Consejos ──────────────────────────────────────────
         "INSERT INTO consejos_clasificaciones (nombre, descripcion, activa, orden) SELECT 'Remedios', 'Remedios naturales para aliviar los sintomas del ciclo menstrual', TRUE, 10 WHERE NOT EXISTS (SELECT 1 FROM consejos_clasificaciones WHERE nombre = 'Remedios')",
         "INSERT INTO consejos_clasificaciones (nombre, descripcion, activa, orden) SELECT 'Tratamientos', 'Medicamentos recomendables para el manejo del ciclo y sus sintomas', TRUE, 11 WHERE NOT EXISTS (SELECT 1 FROM consejos_clasificaciones WHERE nombre = 'Tratamientos')",

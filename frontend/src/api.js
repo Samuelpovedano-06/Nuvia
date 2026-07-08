@@ -71,14 +71,36 @@ export const ApiService = {
     return URL.createObjectURL(await res.blob());
   },
 
-  setNotaChat: async (texto) => {
+  setNotaChat: async (texto, musica = null) => {
+    const body = { texto };
+    if (musica) {
+      body.musica_titulo  = musica.titulo;
+      body.musica_artista = musica.artista;
+      body.musica_preview = musica.preview;
+      body.musica_artwork = musica.artwork;
+    }
     const res = await fetch(`${baseUrl}/auth/me/nota`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify({ texto })
+      body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error('Error al guardar nota');
     return res.json();
+  },
+
+  searchMusicItunes: async (query) => {
+    try {
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=8&country=ES`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.results || []).map(r => ({
+        titulo:  r.trackName,
+        artista: r.artistName,
+        preview: r.previewUrl,
+        artwork: r.artworkUrl100,
+      }));
+    } catch { return []; }
   },
 
   clearNotaChat: async () => {

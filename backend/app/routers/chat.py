@@ -262,6 +262,25 @@ def avisos_mascota(db: Session = Depends(get_db), current_user: Usuaria = Depend
             if descartado_at_d and (datetime.now() - descartado_at_d) < timedelta(days=1):
                 descartados.add(tipo_d)
 
+    # Método anticonceptivo — suprime avisos inapropiados según el método
+    cfg_anticon = db.query(ConfiguracionUsuaria).filter(
+        ConfiguracionUsuaria.id_usuaria == current_user.id_usuaria
+    ).first()
+    metodo_anticon = (cfg_anticon.metodo_anticonceptivo or "ninguno") if cfg_anticon else "ninguno"
+    _METODOS_IRREGULAR = {"minipildora", "implante", "inyeccion"}
+    _METODOS_HORMONAL  = {"pildora_combinada", "parche", "anillo", "minipildora",
+                          "implante", "inyeccion", "diu_hormonal"}
+    # Métodos con ciclo impredecible → no avisar de retraso ni irregularidad
+    if metodo_anticon in _METODOS_IRREGULAR:
+        descartados.add("regla_retrasada")
+        descartados.add("ciclo_irregular")
+    # Cualquier método hormonal → la irregularidad del ciclo es esperada
+    if metodo_anticon in _METODOS_HORMONAL:
+        descartados.add("ciclo_irregular")
+    # DIU hormonal → el ciclo puede ausentarse, no alertar de ciclo abierto
+    if metodo_anticon == "diu_hormonal":
+        descartados.add("ciclo_abierto")
+
     avisos = []
     admin_ids = {a.id_usuaria for a in db.query(Usuaria.id_usuaria).filter(Usuaria.rol == "admin").all()}
 
