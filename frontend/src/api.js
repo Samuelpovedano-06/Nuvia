@@ -78,6 +78,7 @@ export const ApiService = {
       body.musica_artista = musica.artista;
       body.musica_preview = musica.preview;
       body.musica_artwork = musica.artwork;
+      body.musica_offset  = musica.offset ?? 0;
     }
     const res = await fetch(`${baseUrl}/auth/me/nota`, {
       method: 'PUT',
@@ -88,17 +89,20 @@ export const ApiService = {
     return res.json();
   },
 
-  searchMusicItunes: async (query) => {
+  searchMusicItunes: async (query, artista = '') => {
     try {
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=8&country=ES`;
+      // Combinar canción + artista en el término para mayor precisión
+      const term = [query.trim(), artista.trim()].filter(Boolean).join(' ');
+      if (!term) return [];
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&limit=25`;
       const res = await fetch(url);
       if (!res.ok) return [];
       const data = await res.json();
-      return (data.results || []).map(r => ({
+      return (data.results || []).filter(r => r.previewUrl).map(r => ({
         titulo:  r.trackName,
         artista: r.artistName,
         preview: r.previewUrl,
-        artwork: r.artworkUrl100,
+        artwork: (r.artworkUrl100 || '').replace('100x100', '300x300'),
       }));
     } catch { return []; }
   },

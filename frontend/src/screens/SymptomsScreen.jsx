@@ -184,12 +184,12 @@ const SINTOMA_STYLE = {
     color: '#9b6c98', tip: 'El dolor irradiado puede extenderse a la espalda baja o piernas. Aplica calor y descansa.'
   },
   // Olores
-  'Olor Metálico':    { icon: <span style={{ fontSize: 22 }}>🔩</span>, color: '#7c6c9b', tip: 'El olor metálico durante la menstruación es normal por la sangre.' },
-  'Olor Ácido':       { icon: <span style={{ fontSize: 22 }}>🍋</span>, color: '#7c6c9b', tip: 'Un ligero olor ácido es normal; el pH vaginal es naturalmente ácido.' },
-  'Olor Intenso':     { icon: <span style={{ fontSize: 22 }}>💨</span>, color: '#7c6c9b', tip: 'Un olor fuerte puede indicar cambio hormonal. Mantén buena higiene íntima.' },
-  'Olor a Pescado':   { icon: <span style={{ fontSize: 22 }}>🐟</span>, color: '#c0496e', tip: 'El olor a pescado puede ser señal de vaginosis bacteriana. Consulta a tu médico.' },
-  'Olor Dulce':       { icon: <span style={{ fontSize: 22 }}>🍬</span>, color: '#7c6c9b', tip: 'Un olor ligeramente dulce puede ser normal. Monitorea si cambia de pronto.' },
-  'Sin Olor Inusual': { icon: <span style={{ fontSize: 22 }}>✅</span>, color: '#4caf7d', tip: '¡Genial! Sin olores inusuales, tu equilibrio vaginal parece estupendo.' },
+  'Olor Metálico':    { icon: <span style={{ fontSize: 22, filter: 'grayscale(1) sepia(1) hue-rotate(250deg) saturate(3) brightness(0.8)' }}>🔩</span>, color: '#9b6c98', tip: 'El olor metálico durante la menstruación es normal por la sangre.' },
+  'Olor Ácido':       { icon: <span style={{ fontSize: 22, filter: 'grayscale(1) sepia(1) hue-rotate(250deg) saturate(3) brightness(0.8)' }}>🍋</span>, color: '#9b6c98', tip: 'Un ligero olor ácido es normal; el pH vaginal es naturalmente ácido.' },
+  'Olor Intenso':     { icon: <span style={{ fontSize: 22, filter: 'grayscale(1) sepia(1) hue-rotate(250deg) saturate(3) brightness(0.8)' }}>💨</span>, color: '#9b6c98', tip: 'Un olor fuerte puede indicar cambio hormonal. Mantén buena higiene íntima.' },
+  'Olor a Pescado':   { icon: <span style={{ fontSize: 22, filter: 'grayscale(1) sepia(1) hue-rotate(250deg) saturate(3) brightness(0.8)' }}>🐟</span>, color: '#9b6c98', tip: 'El olor a pescado puede ser señal de vaginosis bacteriana. Consulta a tu médico.' },
+  'Olor Dulce':       { icon: <span style={{ fontSize: 22, filter: 'grayscale(1) sepia(1) hue-rotate(250deg) saturate(3) brightness(0.8)' }}>🍬</span>, color: '#9b6c98', tip: 'Un olor ligeramente dulce puede ser normal. Monitorea si cambia de pronto.' },
+  'Sin Olor Inusual': { icon: <span style={{ fontSize: 22, filter: 'grayscale(1) sepia(1) hue-rotate(250deg) saturate(3) brightness(0.8)' }}>❌</span>, color: '#9b6c98', tip: '¡Genial! Sin olores inusuales, tu equilibrio vaginal parece estupendo.' },
   'Default':         { face: 'feliz',       color: '#9b6c98', tip: 'Recuerda que cada ciclo es único. ¡Vas muy bien!' }
 };
 
@@ -494,7 +494,7 @@ export default function SymptomsScreen() {
           sintomas.length > 0 && (
             <div key={nombreCat}>
               <h3 style={{ fontSize: '18px', marginBottom: '16px', borderLeft: '4px solid var(--primary)', paddingLeft: '12px' }}>
-                {nombreCat === 'Fisico' ? 'Físicos' : nombreCat === 'Olor' ? '🌸 Olor' : nombreCat}
+                {nombreCat === 'Fisico' ? 'Físicos' : nombreCat}
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                 {sintomas.map(s => {

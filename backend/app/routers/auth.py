@@ -209,6 +209,7 @@ class NotaChatRequest(BaseModel):
     musica_artista: Optional[str] = None
     musica_preview: Optional[str] = None
     musica_artwork: Optional[str] = None
+    musica_offset:  Optional[int] = None
 
 
 @router.put("/me/nota")
@@ -226,6 +227,7 @@ def set_nota_chat(
     current_user.nota_musica_artista  = (datos.musica_artista or "")[:100] or None
     current_user.nota_musica_preview  = (datos.musica_preview or "")[:500] or None
     current_user.nota_musica_artwork  = (datos.musica_artwork or "")[:500] or None
+    current_user.nota_musica_offset   = max(0, min(29, int(datos.musica_offset or 0)))
     db.commit()
     return {"ok": True, "nota": current_user.nota_chat}
 
@@ -241,6 +243,7 @@ def clear_nota_chat(
     current_user.nota_musica_artista  = None
     current_user.nota_musica_preview  = None
     current_user.nota_musica_artwork  = None
+    current_user.nota_musica_offset   = None
     db.commit()
     return {"ok": True}
 
@@ -269,6 +272,7 @@ def get_notas_siguiendo(
         "musica_artista":  u.nota_musica_artista,
         "musica_preview":  u.nota_musica_preview,
         "musica_artwork":  u.nota_musica_artwork,
+        "musica_offset":   u.nota_musica_offset or 0,
     } for u in usuarios]
 
 

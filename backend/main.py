@@ -214,6 +214,7 @@ def run_migrations():
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_artista VARCHAR(100)",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_preview VARCHAR(500)",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_artwork VARCHAR(500)",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS nota_musica_offset SMALLINT",
 
         # Método anticonceptivo en configuración
         "ALTER TABLE configuracion_usuaria ADD COLUMN IF NOT EXISTS metodo_anticonceptivo VARCHAR(50)",

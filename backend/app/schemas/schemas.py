@@ -44,6 +44,7 @@ class UsuariaOut(BaseModel):
     nota_musica_artista: Optional[str] = None
     nota_musica_preview: Optional[str] = None
     nota_musica_artwork: Optional[str] = None
+    nota_musica_offset:  Optional[int] = None
 
     class Config:
         from_attributes = True

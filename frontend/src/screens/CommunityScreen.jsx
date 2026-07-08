@@ -287,11 +287,15 @@ export default function CommunityScreen() {
   const [notaInput, setNotaInput] = useState('');
   const [savingNota, setSavingNota] = useState(false);
   // Música en la nota
-  const [musicaSeleccionada, setMusicaSeleccionada] = useState(null);
+  const [musicaSeleccionada, setMusicaSeleccionada] = useState(null); // { titulo, artista, preview, artwork, offset }
+  const [offsetMusica, setOffsetMusica] = useState(0);  // segundo de inicio (0-29)
   const [busquedaMusica, setBusquedaMusica] = useState('');
+  const [artistaMusica, setArtistaMusica] = useState('');
   const [resultadosMusica, setResultadosMusica] = useState([]);
   const [buscandoMusica, setBuscandoMusica] = useState(false);
   const [showBuscarMusica, setShowBuscarMusica] = useState(false);
+  const [showTramoSelector, setShowTramoSelector] = useState(false);
+  const previewStopRef = useRef(null);
   const audioRef = useRef(null);
   const [reproduciendo, setReproduciendo] = useState(null); // preview_url activo
 
@@ -371,9 +375,10 @@ export default function CommunityScreen() {
     if (!notaInput.trim()) return;
     setSavingNota(true);
     try {
-      await ApiService.setNotaChat(notaInput.trim(), musicaSeleccionada || null);
+      const musica = musicaSeleccionada ? { ...musicaSeleccionada, offset: offsetMusica } : null;
+      await ApiService.setNotaChat(notaInput.trim(), musica);
       setMiNota(notaInput.trim());
-      setMiMusica(musicaSeleccionada);
+      setMiMusica(musica);
       setEditandoNota(false);
     } catch { mostrarToast('Error al guardar nota', 'error'); }
     finally { setSavingNota(false); }
@@ -392,22 +397,43 @@ export default function CommunityScreen() {
     finally { setSavingNota(false); }
   };
 
-  const handleBuscarMusica = async (q) => {
-    setBusquedaMusica(q);
-    if (!q.trim()) { setResultadosMusica([]); return; }
+  const handleBuscarMusica = async (q, artista) => {
+    const cancion = q ?? busquedaMusica;
+    const art = artista ?? artistaMusica;
+    setBusquedaMusica(cancion);
+    if (artista !== undefined) setArtistaMusica(artista);
+    if (!cancion.trim() && !art.trim()) { setResultadosMusica([]); return; }
     setBuscandoMusica(true);
-    const res = await ApiService.searchMusicItunes(q);
+    const res = await ApiService.searchMusicItunes(cancion, art);
     setResultadosMusica(res);
     setBuscandoMusica(false);
   };
 
-  const togglePreview = (preview) => {
+  const togglePreview = (preview, offset = 0) => {
     if (!preview) return;
+    if (previewStopRef.current) {
+      clearTimeout(previewStopRef.current);
+      previewStopRef.current = null;
+    }
     if (reproduciendo === preview) {
       audioRef.current?.pause();
       setReproduciendo(null);
     } else {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = preview; audioRef.current.play().catch(() => {}); }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = preview;
+        audioRef.current.oncanplay = () => {
+          audioRef.current.currentTime = offset || 0;
+          audioRef.current.play().catch(() => {});
+          audioRef.current.oncanplay = null;
+          previewStopRef.current = setTimeout(() => {
+            audioRef.current?.pause();
+            setReproduciendo(null);
+            previewStopRef.current = null;
+          }, 3000);
+        };
+        audioRef.current.load();
+      }
       setReproduciendo(preview);
     }
   };
@@ -641,7 +667,7 @@ export default function CommunityScreen() {
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '16px', paddingBottom: '4px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {/* Tu nota */}
           <div
-            onClick={() => { setNotaInput(miNota || ''); setMusicaSeleccionada(miMusica); setBusquedaMusica(''); setResultadosMusica([]); setShowBuscarMusica(false); setReproduciendo(null); setEditandoNota(true); }}
+            onClick={() => { setNotaInput(miNota || ''); setMusicaSeleccionada(miMusica); setOffsetMusica(miMusica?.offset ?? 0); setBusquedaMusica(''); setResultadosMusica([]); setShowBuscarMusica(false); setShowTramoSelector(false); setReproduciendo(null); setEditandoNota(true); }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, cursor: 'pointer', width: '68px' }}
           >
             <div style={{ minHeight: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', marginBottom: '4px', gap: '3px' }}>
@@ -680,7 +706,7 @@ export default function CommunityScreen() {
                 <div style={{ minHeight: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', marginBottom: '4px', gap: '3px' }}>
                   {n.musica_titulo && (
                     <button
-                      onClick={() => togglePreview(n.musica_preview)}
+                      onClick={() => togglePreview(n.musica_preview, n.musica_offset || 0)}
                       style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '3px 5px', width: '100%', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', cursor: n.musica_preview ? 'pointer' : 'default' }}
                     >
                       {n.musica_artwork && <img src={n.musica_artwork} alt="" style={{ width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0 }} />}
@@ -1334,7 +1360,7 @@ export default function CommunityScreen() {
       {editandoNota && (
         <div
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 3100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '20px' }}
-          onClick={() => { setEditandoNota(false); setShowBuscarMusica(false); audioRef.current?.pause(); setReproduciendo(null); }}
+          onClick={() => { setEditandoNota(false); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; } }}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -1345,41 +1371,90 @@ export default function CommunityScreen() {
 
             {/* Música seleccionada */}
             {musicaSeleccionada && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px' }}>
-                {musicaSeleccionada.artwork && <img src={musicaSeleccionada.artwork} alt="" style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0 }} />}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.titulo}</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.artista}</div>
-                </div>
-                {musicaSeleccionada.preview && (
-                  <button onClick={() => togglePreview(musicaSeleccionada.preview)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '14px', flexShrink: 0 }}>
-                    {reproduciendo === musicaSeleccionada.preview ? '⏸' : '▶'}
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', borderRadius: showTramoSelector ? '12px 12px 0 0' : '12px', padding: '10px 12px' }}>
+                  {musicaSeleccionada.artwork && <img src={musicaSeleccionada.artwork} alt="" style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0 }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.titulo}</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.artista}</div>
+                  </div>
+                  {musicaSeleccionada.preview && (
+                    <button onClick={() => togglePreview(musicaSeleccionada.preview, offsetMusica)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '14px', flexShrink: 0 }}>
+                      {reproduciendo === musicaSeleccionada.preview ? '⏸' : '▶'}
+                    </button>
+                  )}
+                  <button onClick={() => setShowTramoSelector(s => !s)} title="Elegir tramo" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', color: 'white', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
+                    ✂️ {`0:${String(offsetMusica).padStart(2,'0')}–0:${String(offsetMusica+3).padStart(2,'0')}`}
                   </button>
+                  <button onClick={() => { setMusicaSeleccionada(null); setOffsetMusica(0); setShowTramoSelector(false); audioRef.current?.pause(); setReproduciendo(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '16px', flexShrink: 0 }}>×</button>
+                </div>
+                {/* Selector de tramo */}
+                {showTramoSelector && (
+                  <div style={{ background: '#4f46e5', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', fontWeight: '600' }}>
+                      Elige el inicio del clip de 3 seg:
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={27}
+                      value={offsetMusica}
+                      onChange={e => {
+                        const v = Number(e.target.value);
+                        setOffsetMusica(v);
+                        if (audioRef.current && reproduciendo === musicaSeleccionada.preview) {
+                          if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; }
+                          audioRef.current.currentTime = v;
+                          previewStopRef.current = setTimeout(() => { audioRef.current?.pause(); setReproduciendo(null); previewStopRef.current = null; }, 3000);
+                        }
+                      }}
+                      style={{ width: '100%', accentColor: 'white', cursor: 'pointer' }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
+                      <span>0:00</span>
+                      <span style={{ color: 'white', fontWeight: '700' }}>0:{String(offsetMusica).padStart(2,'0')} – 0:{String(offsetMusica + 3).padStart(2,'0')}</span>
+                      <span>0:27</span>
+                    </div>
+                  </div>
                 )}
-                <button onClick={() => { setMusicaSeleccionada(null); audioRef.current?.pause(); setReproduciendo(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '16px', flexShrink: 0 }}>×</button>
               </div>
             )}
 
             {/* Buscador de música */}
             {showBuscarMusica ? (
               <div style={{ marginBottom: '14px' }}>
-                <div style={{ position: 'relative', marginBottom: '10px' }}>
+                <div style={{ position: 'relative', marginBottom: '6px' }}>
                   <input
                     type="text"
                     value={busquedaMusica}
-                    onChange={e => handleBuscarMusica(e.target.value)}
-                    placeholder="Busca una canción o artista…"
+                    onChange={e => handleBuscarMusica(e.target.value, undefined)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleBuscarMusica(busquedaMusica, artistaMusica); }}
+                    placeholder="Nombre de la canción…"
                     autoFocus
                     style={{ width: '100%', boxSizing: 'border-box', padding: '10px 36px 10px 12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }}
                   />
-                  <button onClick={() => { setShowBuscarMusica(false); setBusquedaMusica(''); setResultadosMusica([]); }} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#94a3b8' }}>×</button>
+                  <button onClick={() => { setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); }} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#94a3b8' }}>×</button>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                  <input
+                    type="text"
+                    value={artistaMusica}
+                    onChange={e => { setArtistaMusica(e.target.value); }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleBuscarMusica(busquedaMusica, artistaMusica); }}
+                    placeholder="Artista (opcional)…"
+                    style={{ flex: 1, boxSizing: 'border-box', padding: '8px 12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '13px', outline: 'none', fontFamily: 'inherit' }}
+                  />
+                  <button
+                    onClick={() => handleBuscarMusica(busquedaMusica, artistaMusica)}
+                    style={{ padding: '8px 14px', borderRadius: '12px', background: 'var(--primary)', border: 'none', color: 'white', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >Buscar</button>
                 </div>
                 {buscandoMusica && <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-light)', padding: '8px' }}>Buscando…</div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
                   {resultadosMusica.map((r, i) => (
                     <button
                       key={i}
-                      onClick={() => { setMusicaSeleccionada(r); setShowBuscarMusica(false); setBusquedaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); }}
+                      onClick={() => { setMusicaSeleccionada(r); setOffsetMusica(0); setShowTramoSelector(true); setShowBuscarMusica(false); setBusquedaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); }}
                       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '10px', border: '1.5px solid #f0f0f5', background: 'white', cursor: 'pointer', textAlign: 'left' }}
                     >
                       {r.artwork && <img src={r.artwork} alt="" style={{ width: '38px', height: '38px', borderRadius: '6px', flexShrink: 0 }} />}
@@ -1389,7 +1464,7 @@ export default function CommunityScreen() {
                       </div>
                       {r.preview && (
                         <button
-                          onClick={e => { e.stopPropagation(); togglePreview(r.preview); }}
+                          onClick={e => { e.stopPropagation(); togglePreview(r.preview, 0); }}
                           style={{ background: '#f5f5fa', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', flexShrink: 0 }}
                         >
                           {reproduciendo === r.preview ? '⏸' : '▶'}
@@ -1429,7 +1504,7 @@ export default function CommunityScreen() {
                   Borrar
                 </button>
               )}
-              <button onClick={() => { setEditandoNota(false); audioRef.current?.pause(); setReproduciendo(null); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+              <button onClick={() => { setEditandoNota(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; } }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
                 Cancelar
               </button>
               <button onClick={handleSaveNota} disabled={!notaInput.trim() || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: !notaInput.trim() ? 0.6 : 1 }}>

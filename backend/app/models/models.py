@@ -30,6 +30,7 @@ class Usuaria(Base):
     nota_musica_artista  = Column(String(100), nullable=True)
     nota_musica_preview  = Column(String(500), nullable=True)
     nota_musica_artwork  = Column(String(500), nullable=True)
+    nota_musica_offset   = Column(SmallInteger, nullable=True)
 
     @property
     def tiene_foto(self):
