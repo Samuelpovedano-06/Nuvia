@@ -307,9 +307,11 @@ export default function CommunityScreen() {
   const [showTramoSelector, setShowTramoSelector] = useState(false);
   const previewStopRef = useRef(null);
   const ytTimeRef      = useRef(null);
+  const ytPlayerRef    = useRef(null);
+  const ytReadyRef     = useRef(false);
   const [reproduciendo,  setReproduciendo]  = useState(null);
-  const [miniPlayer,     setMiniPlayer]     = useState(null); // { titulo, artista, artwork, preview, offset, key }
-  const [miniPlayerSecs, setMiniPlayerSecs] = useState(0);   // 0-30
+  const [miniPlayer,     setMiniPlayer]     = useState(null);
+  const [miniPlayerSecs, setMiniPlayerSecs] = useState(0);
 
   const abrirBloqueados = async () => {
     setShowBloqueados(true);
@@ -383,6 +385,47 @@ export default function CommunityScreen() {
     return () => clearInterval(t);
   }, []);
 
+  // YouTube IFrame API — player montado directo en el DOM (fuera de React) para que
+  // el navegador lo cuente como respuesta a gesto del usuario y no bloquee autoplay.
+  useEffect(() => {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;bottom:-9999px;left:-9999px;width:1px;height:1px;overflow:hidden;';
+    const playerDiv = document.createElement('div');
+    playerDiv.id = 'yt-bg-player-nuvia';
+    container.appendChild(playerDiv);
+    document.body.appendChild(container);
+
+    const initPlayer = () => {
+      ytPlayerRef.current = new window.YT.Player('yt-bg-player-nuvia', {
+        width: '1', height: '1',
+        playerVars: { playsinline: 1, controls: 0, rel: 0, fs: 0 },
+        events: {
+          onReady: () => { ytReadyRef.current = true; },
+          onError:  () => {},
+        },
+      });
+    };
+
+    if (window.YT?.Player) {
+      initPlayer();
+    } else {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => { if (prev) prev(); initPlayer(); };
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+    }
+
+    return () => {
+      ytReadyRef.current = false;
+      try { ytPlayerRef.current?.destroy(); } catch {}
+      ytPlayerRef.current = null;
+      try { document.body.removeChild(container); } catch {}
+    };
+  }, []);
+
   const handleSaveNota = async () => {
     if (!notaInput.trim()) return;
     setSavingNota(true);
@@ -426,6 +469,7 @@ export default function CommunityScreen() {
   const stopPlayback = () => {
     if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; }
     if (ytTimeRef.current)      { clearInterval(ytTimeRef.current);     ytTimeRef.current = null; }
+    try { if (ytReadyRef.current) ytPlayerRef.current?.pauseVideo(); } catch {}
     setReproduciendo(null); setMiniPlayer(null); setMiniPlayerSecs(0);
   };
 
@@ -433,11 +477,27 @@ export default function CommunityScreen() {
     if (!preview) return;
     if (reproduciendo === preview) { stopPlayback(); return; }
     stopPlayback();
+    const vid = ytVideoId(preview);
+    if (!vid) return;
+    // loadVideoById + playVideo se llaman sincrónicamente dentro del handler del click
+    // → el navegador los cuenta como gesto del usuario y permite el autoplay con sonido.
+    if (ytReadyRef.current && ytPlayerRef.current) {
+      ytPlayerRef.current.loadVideoById({ videoId: vid, startSeconds: Math.floor(offset) });
+    }
     setReproduciendo(preview);
-    setMiniPlayer({ preview, offset, titulo: datos.titulo || '', artista: datos.artista || '', artwork: datos.artwork || '', key: Date.now() });
+    setMiniPlayer({ preview, offset, titulo: datos.titulo || '', artista: datos.artista || '', artwork: datos.artwork || '' });
     setMiniPlayerSecs(0);
     previewStopRef.current = setTimeout(stopPlayback, 30000);
     ytTimeRef.current = setInterval(() => {
+      try {
+        if (ytReadyRef.current && ytPlayerRef.current?.getCurrentTime) {
+          const t = ytPlayerRef.current.getCurrentTime();
+          const elapsed = Math.max(0, t - Math.floor(offset));
+          setMiniPlayerSecs(Math.min(30, elapsed));
+          if (elapsed >= 30) stopPlayback();
+          return;
+        }
+      } catch {}
       setMiniPlayerSecs(s => { if (s >= 29.5) { stopPlayback(); return 30; } return s + 0.5; });
     }, 500);
   };
@@ -1365,24 +1425,14 @@ export default function CommunityScreen() {
           {toast.mensaje}
         </div>
       )}
-      {/* Mini player — iframe con opacity 0.01 (visible para el browser = autoplay OK) */}
+      {/* Mini player — sólo UI, el audio lo maneja el player de YT montado en el DOM */}
       {miniPlayer && (
         <div style={{ position: 'fixed', bottom: '72px', left: '12px', right: '12px', background: 'linear-gradient(135deg,#1a1a2e,#16213e)', borderRadius: '18px', padding: '12px 16px', boxShadow: '0 8px 32px rgba(0,0,0,0.45)', zIndex: 4000, display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Vinilo girando — el iframe está debajo con opacity casi 0 */}
-          <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
-            <iframe
-              key={miniPlayer.key}
-              src={`https://www.youtube-nocookie.com/embed/${ytVideoId(miniPlayer.preview)}?start=${Math.floor(miniPlayer.offset)}&autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&mute=0`}
-              style={{ position: 'absolute', width: '400%', height: '400%', top: '-150%', left: '-150%', border: 'none', opacity: 0.01, pointerEvents: 'none' }}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              title="music"
-            />
-            <div style={{ position: 'absolute', inset: 0, zIndex: 1, animation: 'vinylSpin 2s linear infinite' }}>
-              {miniPlayer.artwork
-                ? <img src={miniPlayer.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                : <div style={{ width: '100%', height: '100%', background: '#9b6c98' }} />}
-            </div>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: '2px solid rgba(255,255,255,0.35)', zIndex: 2 }} />
+          <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, position: 'relative', overflow: 'hidden', animation: 'vinylSpin 2s linear infinite' }}>
+            {miniPlayer.artwork
+              ? <img src={miniPlayer.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              : <div style={{ width: '100%', height: '100%', background: '#9b6c98' }} />}
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: '2px solid rgba(255,255,255,0.35)' }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{miniPlayer.titulo}</div>
