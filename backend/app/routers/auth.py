@@ -227,7 +227,7 @@ def set_nota_chat(
     current_user.nota_musica_artista  = (datos.musica_artista or "")[:100] or None
     current_user.nota_musica_preview  = (datos.musica_preview or "")[:500] or None
     current_user.nota_musica_artwork  = (datos.musica_artwork or "")[:500] or None
-    current_user.nota_musica_offset   = max(0, min(29, int(datos.musica_offset or 0)))
+    current_user.nota_musica_offset   = max(0, min(32767, int(datos.musica_offset or 0)))
     db.commit()
     return {"ok": True, "nota": current_user.nota_chat}
 
@@ -296,6 +296,72 @@ def get_nota_partner(
     if partner.nota_chat_expires_at and partner.nota_chat_expires_at < datetime.now():
         return {"nota": None}
     return {"nota": partner.nota_chat}
+
+
+@router.get("/buscar-musica")
+async def buscar_musica_youtube(
+    q: str = "",
+    artista: str = "",
+    current_user: Usuaria = Depends(get_current_user)
+):
+    """Busca música en YouTube usando InnerTube API (sin API key)."""
+    import asyncio
+    import requests as req_lib
+    term = f"{q} {artista}".strip()
+    if not term:
+        return []
+
+    def _search():
+        try:
+            url = "https://www.youtube.com/youtubei/v1/search"
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            }
+            body = {
+                "context": {"client": {"clientName": "WEB", "clientVersion": "2.20231121.08.00"}},
+                "query": term,
+            }
+            r = req_lib.post(url, json=body, headers=headers, timeout=8)
+            r.raise_for_status()
+            data = r.json()
+            resultados = []
+            sections = (
+                data.get("contents", {})
+                .get("twoColumnSearchResultsRenderer", {})
+                .get("primaryContents", {})
+                .get("sectionListRenderer", {})
+                .get("contents", [])
+            )
+            for section in sections:
+                items = section.get("itemSectionRenderer", {}).get("contents", [])
+                for item in items:
+                    vr = item.get("videoRenderer")
+                    if not vr:
+                        continue
+                    vid_id = vr.get("videoId", "")
+                    title = (vr.get("title", {}).get("runs") or [{}])[0].get("text", "")
+                    channel = (vr.get("ownerText", {}).get("runs") or [{}])[0].get("text", "")
+                    length_text = vr.get("lengthText", {}).get("simpleText", "")
+                    thumbnails = vr.get("thumbnail", {}).get("thumbnails") or []
+                    artwork = thumbnails[-1]["url"] if thumbnails else f"https://img.youtube.com/vi/{vid_id}/mqdefault.jpg"
+                    if vid_id and title:
+                        resultados.append({
+                            "titulo":   title,
+                            "artista":  channel,
+                            "video_id": vid_id,
+                            "artwork":  artwork,
+                            "duracion": length_text,
+                        })
+                    if len(resultados) >= 12:
+                        break
+                if len(resultados) >= 12:
+                    break
+            return resultados
+        except Exception:
+            return []
+
+    return await asyncio.to_thread(_search)
 
 
 @router.put("/me/foto", status_code=200)

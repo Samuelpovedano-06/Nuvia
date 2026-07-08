@@ -297,6 +297,7 @@ export default function CommunityScreen() {
   const [showTramoSelector, setShowTramoSelector] = useState(false);
   const previewStopRef = useRef(null);
   const audioRef = useRef(null);
+  const ytIframeRef = useRef(null);
   const [reproduciendo, setReproduciendo] = useState(null); // preview_url activo
 
   const abrirBloqueados = async () => {
@@ -404,20 +405,39 @@ export default function CommunityScreen() {
     if (artista !== undefined) setArtistaMusica(artista);
     if (!cancion.trim() && !art.trim()) { setResultadosMusica([]); return; }
     setBuscandoMusica(true);
-    const res = await ApiService.searchMusicItunes(cancion, art);
+    const res = await ApiService.searchMusicYoutube(cancion, art);
     setResultadosMusica(res);
     setBuscandoMusica(false);
   };
 
+  const isYouTube = (preview) => preview?.startsWith('youtube:');
+  const ytVideoId  = (preview) => preview?.replace('youtube:', '');
+
   const togglePreview = (preview, offset = 0) => {
     if (!preview) return;
-    if (previewStopRef.current) {
-      clearTimeout(previewStopRef.current);
-      previewStopRef.current = null;
-    }
+    if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; }
+
     if (reproduciendo === preview) {
-      audioRef.current?.pause();
+      if (isYouTube(preview)) {
+        if (ytIframeRef.current) ytIframeRef.current.src = '';
+      } else {
+        audioRef.current?.pause();
+      }
       setReproduciendo(null);
+      return;
+    }
+
+    if (isYouTube(preview)) {
+      const vid = ytVideoId(preview);
+      if (ytIframeRef.current) {
+        ytIframeRef.current.src = `https://www.youtube-nocookie.com/embed/${vid}?start=${Math.floor(offset)}&autoplay=1&controls=0&disablekb=1&fs=0&modestbranding=1`;
+      }
+      setReproduciendo(preview);
+      previewStopRef.current = setTimeout(() => {
+        if (ytIframeRef.current) ytIframeRef.current.src = '';
+        setReproduciendo(null);
+        previewStopRef.current = null;
+      }, 3500);
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -1353,8 +1373,10 @@ export default function CommunityScreen() {
           {toast.mensaje}
         </div>
       )}
-      {/* Audio invisible para previews */}
+      {/* Audio invisible para previews de iTunes */}
       <audio ref={audioRef} onEnded={() => setReproduciendo(null)} style={{ display: 'none' }} />
+      {/* Iframe invisible para clips de YouTube */}
+      <iframe ref={ytIframeRef} style={{ display: 'none', position: 'absolute', width: 0, height: 0, border: 'none' }} allow="autoplay; encrypted-media" title="yt-clip" />
 
       {/* Modal editar nota */}
       {editandoNota && (
@@ -1370,55 +1392,91 @@ export default function CommunityScreen() {
             <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-light)' }}>Visible en la comunidad durante 24 horas</p>
 
             {/* Música seleccionada */}
-            {musicaSeleccionada && (
+            {musicaSeleccionada && (() => {
+              const esYT = isYouTube(musicaSeleccionada.preview);
+              const fmtSec = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+              return (
               <div style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', borderRadius: showTramoSelector ? '12px 12px 0 0' : '12px', padding: '10px 12px' }}>
                   {musicaSeleccionada.artwork && <img src={musicaSeleccionada.artwork} alt="" style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0 }} />}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.titulo}</div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.artista}</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{musicaSeleccionada.artista}{musicaSeleccionada.duracion ? ` · ${musicaSeleccionada.duracion}` : ''}</div>
                   </div>
-                  {musicaSeleccionada.preview && (
+                  {musicaSeleccionada.preview && !esYT && (
                     <button onClick={() => togglePreview(musicaSeleccionada.preview, offsetMusica)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '14px', flexShrink: 0 }}>
                       {reproduciendo === musicaSeleccionada.preview ? '⏸' : '▶'}
                     </button>
                   )}
                   <button onClick={() => setShowTramoSelector(s => !s)} title="Elegir tramo" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', color: 'white', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
-                    ✂️ {`0:${String(offsetMusica).padStart(2,'0')}–0:${String(offsetMusica+3).padStart(2,'0')}`}
+                    ✂️ {fmtSec(offsetMusica)}–{fmtSec(offsetMusica+3)}
                   </button>
-                  <button onClick={() => { setMusicaSeleccionada(null); setOffsetMusica(0); setShowTramoSelector(false); audioRef.current?.pause(); setReproduciendo(null); }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '16px', flexShrink: 0 }}>×</button>
+                  <button onClick={() => { setMusicaSeleccionada(null); setOffsetMusica(0); setShowTramoSelector(false); audioRef.current?.pause(); if (ytIframeRef.current) ytIframeRef.current.src=''; setReproduciendo(null); if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current=null; } }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontSize: '16px', flexShrink: 0 }}>×</button>
                 </div>
                 {/* Selector de tramo */}
                 {showTramoSelector && (
                   <div style={{ background: '#4f46e5', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', fontWeight: '600' }}>
-                      Elige el inicio del clip de 3 seg:
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={27}
-                      value={offsetMusica}
-                      onChange={e => {
-                        const v = Number(e.target.value);
-                        setOffsetMusica(v);
-                        if (audioRef.current && reproduciendo === musicaSeleccionada.preview) {
-                          if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; }
-                          audioRef.current.currentTime = v;
-                          previewStopRef.current = setTimeout(() => { audioRef.current?.pause(); setReproduciendo(null); previewStopRef.current = null; }, 3000);
-                        }
-                      }}
-                      style={{ width: '100%', accentColor: 'white', cursor: 'pointer' }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-                      <span>0:00</span>
-                      <span style={{ color: 'white', fontWeight: '700' }}>0:{String(offsetMusica).padStart(2,'0')} – 0:{String(offsetMusica + 3).padStart(2,'0')}</span>
-                      <span>0:27</span>
-                    </div>
+                    {esYT ? (
+                      <>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.9)', marginBottom: '8px', fontWeight: '600' }}>
+                          Reproduce la canción y anota en qué segundo quieres el clip de 3 seg:
+                        </div>
+                        <div style={{ borderRadius: '8px', overflow: 'hidden', marginBottom: '10px', lineHeight: 0 }}>
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${ytVideoId(musicaSeleccionada.preview)}?controls=1&modestbranding=1`}
+                            style={{ width: '100%', height: '160px', border: 'none' }}
+                            allow="autoplay; encrypted-media"
+                            title="preview"
+                          />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Inicio clip:</span>
+                          <input
+                            type="number" min={0} max={9999} placeholder="min"
+                            value={Math.floor(offsetMusica/60)}
+                            onChange={e => setOffsetMusica(Number(e.target.value)*60 + (offsetMusica%60))}
+                            style={{ width: '52px', padding: '5px 6px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', textAlign: 'center' }}
+                          />
+                          <span style={{ color: 'white', fontWeight: '700' }}>:</span>
+                          <input
+                            type="number" min={0} max={59} placeholder="seg"
+                            value={offsetMusica%60}
+                            onChange={e => setOffsetMusica(Math.floor(offsetMusica/60)*60 + Math.min(59, Number(e.target.value)))}
+                            style={{ width: '52px', padding: '5px 6px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', textAlign: 'center' }}
+                          />
+                          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>→ clip {fmtSec(offsetMusica)}–{fmtSec(offsetMusica+3)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginBottom: '8px', fontWeight: '600' }}>
+                          Elige el inicio del clip de 3 seg (dentro del preview de 30s de Apple):
+                        </div>
+                        <input
+                          type="range" min={0} max={27} value={offsetMusica}
+                          onChange={e => {
+                            const v = Number(e.target.value);
+                            setOffsetMusica(v);
+                            if (audioRef.current && reproduciendo === musicaSeleccionada.preview) {
+                              if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current = null; }
+                              audioRef.current.currentTime = v;
+                              previewStopRef.current = setTimeout(() => { audioRef.current?.pause(); setReproduciendo(null); previewStopRef.current = null; }, 3000);
+                            }
+                          }}
+                          style={{ width: '100%', accentColor: 'white', cursor: 'pointer' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
+                          <span>0:00</span>
+                          <span style={{ color: 'white', fontWeight: '700' }}>{fmtSec(offsetMusica)} – {fmtSec(offsetMusica+3)}</span>
+                          <span>0:27</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+              );
+            })()}
 
             {/* Buscador de música */}
             {showBuscarMusica ? (
@@ -1454,7 +1512,7 @@ export default function CommunityScreen() {
                   {resultadosMusica.map((r, i) => (
                     <button
                       key={i}
-                      onClick={() => { setMusicaSeleccionada(r); setOffsetMusica(0); setShowTramoSelector(true); setShowBuscarMusica(false); setBusquedaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); setReproduciendo(null); }}
+                      onClick={() => { setMusicaSeleccionada(r); setOffsetMusica(0); setShowTramoSelector(true); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); audioRef.current?.pause(); if (ytIframeRef.current) ytIframeRef.current.src=''; if (previewStopRef.current) { clearTimeout(previewStopRef.current); previewStopRef.current=null; } setReproduciendo(null); }}
                       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '10px', border: '1.5px solid #f0f0f5', background: 'white', cursor: 'pointer', textAlign: 'left' }}
                     >
                       {r.artwork && <img src={r.artwork} alt="" style={{ width: '38px', height: '38px', borderRadius: '6px', flexShrink: 0 }} />}
@@ -1463,12 +1521,15 @@ export default function CommunityScreen() {
                         <div style={{ fontSize: '11px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.artista}</div>
                       </div>
                       {r.preview && (
-                        <button
+                        <div
+                          role="button"
+                          tabIndex={0}
                           onClick={e => { e.stopPropagation(); togglePreview(r.preview, 0); }}
-                          style={{ background: '#f5f5fa', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', flexShrink: 0 }}
+                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); togglePreview(r.preview, 0); } }}
+                          style={{ background: '#f5f5fa', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', flexShrink: 0 }}
                         >
                           {reproduciendo === r.preview ? '⏸' : '▶'}
-                        </button>
+                        </div>
                       )}
                     </button>
                   ))}

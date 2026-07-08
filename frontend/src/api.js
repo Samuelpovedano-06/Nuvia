@@ -89,20 +89,22 @@ export const ApiService = {
     return res.json();
   },
 
-  searchMusicItunes: async (query, artista = '') => {
+  searchMusicYoutube: async (query, artista = '') => {
     try {
-      // Combinar canción + artista en el término para mayor precisión
-      const term = [query.trim(), artista.trim()].filter(Boolean).join(' ');
-      if (!term) return [];
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&limit=25`;
-      const res = await fetch(url);
+      const q = query.trim();
+      const a = artista.trim();
+      if (!q && !a) return [];
+      const params = new URLSearchParams({ q, ...(a ? { artista: a } : {}) });
+      const res = await fetch(`${baseUrl}/auth/buscar-musica?${params}`, { headers: getHeaders() });
       if (!res.ok) return [];
       const data = await res.json();
-      return (data.results || []).filter(r => r.previewUrl).map(r => ({
-        titulo:  r.trackName,
-        artista: r.artistName,
-        preview: r.previewUrl,
-        artwork: (r.artworkUrl100 || '').replace('100x100', '300x300'),
+      return (data || []).map(r => ({
+        titulo:   r.titulo,
+        artista:  r.artista,
+        preview:  `youtube:${r.video_id}`,
+        artwork:  r.artwork || `https://img.youtube.com/vi/${r.video_id}/mqdefault.jpg`,
+        video_id: r.video_id,
+        duracion: r.duracion,
       }));
     } catch { return []; }
   },
