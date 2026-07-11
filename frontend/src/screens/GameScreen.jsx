@@ -88,9 +88,26 @@ export default function GameScreen({ onGameActiveChange }) {
 
   const { user } = useContext(AuthContext);
 
+  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop;
+
   useEffect(() => {
-    onGameActiveChange?.(enJuego || enSkyJump || enSkyHop || enFoodDrop);
-  }, [enJuego, enSkyJump, enSkyHop, enFoodDrop]);
+    onGameActiveChange?.(inAnyGame);
+  }, [inAnyGame]);
+
+  // Botón físico "atrás" del móvil: salir del juego limpiamente para que la barra inferior reaparezca
+  useEffect(() => {
+    if (!inAnyGame) return;
+    window.history.pushState({ nuviaGame: true }, '');
+    const onPop = () => {
+      setEnJuego(false);
+      setEnSkyJump(false);
+      setEnSkyHop(false);
+      setEnFoodDrop(false);
+      setMostrarJuegos(true);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [inAnyGame]);
 
   useEffect(() => {
     ApiService.getPublicStatus()
