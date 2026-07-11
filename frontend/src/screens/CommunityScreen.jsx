@@ -826,9 +826,11 @@ export default function CommunityScreen() {
                       </div>
                     </button>
                   )}
-                  <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
-                    {n.nota}
-                  </div>
+                  {n.nota && (
+                    <div style={{ background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '4px 6px', fontSize: '10px', lineHeight: '1.2', color: '#374151', width: '100%', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                      {n.nota}
+                    </div>
+                  )}
                 </div>
                 <div style={{ width: '52px', height: '52px', borderRadius: '50%', padding: '2.5px', boxSizing: 'border-box', display: 'flex', background: 'linear-gradient(135deg, #B05BB5, #F6416C)' }}>
                   <div style={{ flex: 1, borderRadius: '50%', background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>
@@ -1465,24 +1467,39 @@ export default function CommunityScreen() {
         </div>
       )}
       {/* Mini player — no mostrar si el sheet de "tu nota" está abierto (ya tiene controles) */}
-      {miniPlayer && !confirmarEliminarNota && (
-        <div style={{ position: 'fixed', bottom: '72px', left: '12px', right: '12px', background: 'linear-gradient(135deg,#1a1a2e,#16213e)', borderRadius: '18px', padding: '12px 16px', boxShadow: '0 8px 32px rgba(0,0,0,0.45)', zIndex: 4000, display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, position: 'relative', overflow: 'hidden', animation: 'vinylSpin 2s linear infinite' }}>
-            {miniPlayer.artwork
-              ? <img src={miniPlayer.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              : <div style={{ width: '100%', height: '100%', background: '#9b6c98' }} />}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: '2px solid rgba(255,255,255,0.35)' }} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{miniPlayer.titulo}</div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{miniPlayer.artista}</div>
-            <div style={{ marginTop: '6px', height: '3px', background: 'rgba(255,255,255,0.15)', borderRadius: '2px' }}>
-              <div style={{ height: '100%', width: `${(miniPlayerSecs / 30) * 100}%`, background: 'linear-gradient(90deg,#9b6c98,#F6416C)', borderRadius: '2px', transition: 'width 0.5s linear' }} />
+      {miniPlayer && !confirmarEliminarNota && (() => {
+        const dark = document.body.classList.contains('dark-mode');
+        const bg      = dark ? '#1e1e1e' : 'white';
+        const shadow  = dark ? '0 8px 32px rgba(0,0,0,0.6)' : '0 8px 32px rgba(155,108,152,0.25)';
+        const titleC  = dark ? '#f0f0f0' : '#1a1a1a';
+        const subC    = dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
+        const stopBg  = dark ? 'rgba(255,255,255,0.08)' : 'rgba(155,108,152,0.1)';
+        const stopBdr = dark ? 'rgba(255,255,255,0.12)' : '#e9d5ff';
+        const stopC   = dark ? 'rgba(255,255,255,0.7)' : '#9b6c98';
+        const trackBg = dark ? 'rgba(255,255,255,0.1)' : 'rgba(155,108,152,0.15)';
+        const holeBg  = dark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
+        return (
+          <div style={{ position: 'fixed', bottom: '72px', left: '12px', right: '12px', background: bg, borderRadius: '18px', padding: '12px 14px', boxShadow: shadow, zIndex: 4000, display: 'flex', alignItems: 'center', gap: '12px', border: dark ? '1px solid #2e2e2e' : '1.5px solid #f3e8ff' }}>
+            {/* Vinilo */}
+            <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, position: 'relative', overflow: 'hidden', animation: 'vinylSpin 4s linear infinite' }}>
+              {miniPlayer.artwork
+                ? <img src={miniPlayer.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#9b6c98,#F6416C)' }} />}
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '10px', height: '10px', borderRadius: '50%', background: holeBg, border: '2px solid rgba(155,108,152,0.5)' }} />
             </div>
+            {/* Info + barra */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: titleC, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{miniPlayer.titulo}</div>
+              <div style={{ fontSize: '11px', color: subC, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{miniPlayer.artista}</div>
+              <div style={{ marginTop: '6px', height: '3px', background: trackBg, borderRadius: '2px' }}>
+                <div style={{ height: '100%', width: `${(miniPlayerSecs / 30) * 100}%`, background: 'linear-gradient(90deg,#9b6c98,#F6416C)', borderRadius: '2px', transition: 'width 0.5s linear' }} />
+              </div>
+            </div>
+            {/* Parar */}
+            <button onClick={stopPlayback} style={{ background: stopBg, border: `1.5px solid ${stopBdr}`, borderRadius: '50%', width: '32px', height: '32px', color: stopC, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⏹</button>
           </div>
-          <button onClick={stopPlayback} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', color: 'white', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⏹</button>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal editar nota */}
       {editandoNota && (
