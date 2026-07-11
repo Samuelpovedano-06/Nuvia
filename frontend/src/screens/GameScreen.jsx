@@ -4,6 +4,7 @@ import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Set
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import SkyJumpGame from './SkyJumpGame';
+import SkyHopGame  from './SkyHopGame';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -77,6 +78,7 @@ export default function GameScreen() {
   const [fondoOk, setFondoOk] = useState({});
   const [enJuego, setEnJuego] = useState(false);
   const [enSkyJump, setEnSkyJump] = useState(false);
+  const [enSkyHop,  setEnSkyHop]  = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
@@ -156,13 +158,19 @@ export default function GameScreen() {
     return (
       <SkyJumpGame
         onSalir={() => setEnSkyJump(false)}
-        onVolverAlListado={() => {
-          setEnSkyJump(false);
-          setMostrarJuegos(true);
-        }}
+        onVolverAlListado={() => { setEnSkyJump(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
         globalSensPct={tiltSensPct}
         onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
+      />
+    );
+  }
+
+  if (enSkyHop) {
+    return (
+      <SkyHopGame
+        onSalir={() => setEnSkyHop(false)}
+        onVolverAlListado={() => { setEnSkyHop(false); setMostrarJuegos(true); }}
       />
     );
   }
@@ -371,6 +379,24 @@ export default function GameScreen() {
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Sky Jump
+              </span>
+            </div>
+
+            {/* Juego 3: Sky Hop */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnSkyHop(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: 'linear-gradient(180deg, #BAE6FD 0%, #E0F2FE 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #ddd6fe', overflow: 'hidden',
+              }}>
+                <img src="/juego/Sky_Jump/nube.png" alt="" style={{ width: '80%', height: '55%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))' }} />
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Sky Hop
               </span>
             </div>
           </div>
