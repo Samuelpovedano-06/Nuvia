@@ -289,8 +289,8 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
     };
   }, [handleMove]);
 
-  const btn = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px', background: 'linear-gradient(135deg,var(--primary,#b05bb5) 0%,#F6416C 100%)', color: 'white', border: 'none', borderRadius: 14, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 14px rgba(176,91,181,0.35)' };
-  const btnSec = { ...btn, background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', boxShadow: 'none' };
+  const btn = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
+  const btnSec = { ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)' };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden', userSelect: 'none', touchAction: 'none' }}>
@@ -360,21 +360,30 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
 
       {/* Menu overlay */}
       {phase === 'menu' && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'rgba(255,255,255,0.93)', borderRadius: 24, padding: '28px 24px', width: 'min(85%,320px)', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', textAlign: 'center' }}>
-            <img src={SP.idle} alt="" style={{ width: 64, height: 72, objectFit: 'contain', marginBottom: 8 }} onError={e => e.currentTarget.style.display = 'none'} />
-            <h2 style={{ margin: '0 0 4px', color: 'var(--primary,#b05bb5)', fontSize: 22, fontWeight: 800 }}>Food Drop</h2>
-            <p style={{ color: '#64748b', fontSize: 13, lineHeight: 1.6, margin: '8px 0 18px' }}>
-              Atrapa los alimentos saludables y esquiva los dañinos.<br />
-              Si pierdes 8 comidas o coges algo malo, ¡se acabó!
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={startGame} style={btn}><Play size={16} fill="white" /> Jugar</button>
-              <button onClick={onVolverAlListado} style={btnSec}>Volver atrás</button>
-              <button onClick={onSalir} style={btnSec}>Salir</button>
-            </div>
-            {record > 0 && <p style={{ marginTop: 14, fontSize: 13, color: '#64748b', margin: '14px 0 0' }}>Récord: <strong style={{ color: 'var(--primary,#b05bb5)' }}>{record}</strong></p>}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <h2 style={{ color: 'var(--primary,#b05bb5)', margin: 0 }}>Food Drop</h2>
+          <p style={{ color: '#64748b', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
+            Atrapa los alimentos saludables y esquiva los dañinos.<br />
+            Si pierdes 8 comidas o coges algo malo, ¡se acabó!
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '240px' }}>
+            <button onClick={startGame} style={{ ...btn, justifyContent: 'center' }}><Play size={16} fill="white" /> Empezar</button>
+            <button onClick={onVolverAlListado} style={{ ...btnSec, justifyContent: 'center' }}>Volver atrás</button>
+            <button onClick={() => setShowAjustes(v => !v)} style={{ ...btnSec, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Settings size={14} /> {showAjustes ? 'Cerrar ajustes' : 'Ajustes'}
+            </button>
+            {showAjustes && (
+              <PanelSens
+                gPct={globalSensPct ?? 50}
+                onG={onGlobalSensChange}
+                sPct={specificPct}
+                onS={v => { setSpecificPct(v); localStorage.setItem('nuvia_fooddrop_specific_sens', String(v)); }}
+                useS={useSpecific}
+                onToggleS={() => { const n = !useSpecific; setUseSpecific(n); localStorage.setItem('nuvia_fooddrop_use_specific', String(n)); }}
+              />
+            )}
           </div>
+          {record > 0 && <p style={{ marginTop: '14px', fontSize: '13px', color: '#64748b' }}>Récord: <strong style={{ color: 'var(--primary,#b05bb5)' }}>{record}</strong></p>}
         </div>
       )}
 

@@ -478,28 +478,24 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
 
   if (phase === 'menu') {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'linear-gradient(180deg, #DDD6FE 0%, #A78BFA 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden' }}>
         <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'relative', background: 'rgba(255,255,255,0.92)', borderRadius: 24, padding: '28px 24px', width: 'min(85%, 320px)', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }}>
-          <img src={SP.idle} alt="" style={{ width: 62, height: 70, objectFit: 'contain', marginBottom: 8 }} />
-          <h2 style={{ margin: '0 0 4px', color: 'var(--primary, #b05bb5)', fontSize: 22, fontWeight: 800 }}>Sky Hop</h2>
-          <p style={{ color: '#64748b', fontSize: 13, lineHeight: 1.6, margin: '8px 0 18px' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <h2 style={{ color: 'var(--primary,#b05bb5)', margin: 0 }}>Sky Hop</h2>
+          <p style={{ color: '#64748b', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
             Toca izquierda o derecha para saltar de plataforma en plataforma.<br />
             Las nubes te harán caer. Las estrellas dan tiempo extra.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-            <button onClick={startGame} style={{ padding: '13px', background: 'linear-gradient(135deg,var(--primary,#b05bb5) 0%,#F6416C 100%)', color: 'white', border: 'none', borderRadius: 14, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 14px rgba(176,91,181,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Play size={16} fill="white" /> Jugar
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '220px' }}>
+            <button onClick={startGame} style={{ padding: '12px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Play size={18} fill="white" /> Empezar
             </button>
-            <button onClick={handleExit} style={{ padding: '11px', background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            <button onClick={handleExit} style={{ padding: '12px 24px', background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', borderRadius: '999px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               Volver atrás
-            </button>
-            <button onClick={onSalir} style={{ padding: '11px', background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-              Salir
             </button>
           </div>
           {record > 0 && (
-            <p style={{ marginTop: 14, fontSize: 13, color: '#64748b', margin: '14px 0 0' }}>
+            <p style={{ marginTop: '14px', fontSize: '13px', color: '#64748b' }}>
               Récord: <strong style={{ color: 'var(--primary,#b05bb5)' }}>{record}</strong>
             </p>
           )}
