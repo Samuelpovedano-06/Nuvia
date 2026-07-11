@@ -171,6 +171,7 @@ export default function GameScreen() {
       <SkyHopGame
         onSalir={() => setEnSkyHop(false)}
         onVolverAlListado={() => { setEnSkyHop(false); setMostrarJuegos(true); }}
+        mostrarColisiones={mostrarColisiones}
       />
     );
   }
