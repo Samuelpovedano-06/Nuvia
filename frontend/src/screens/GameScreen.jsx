@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
-import SkyJumpGame from './SkyJumpGame';
-import SkyHopGame  from './SkyHopGame';
+import SkyJumpGame  from './SkyJumpGame';
+import SkyHopGame   from './SkyHopGame';
+import FoodDropGame from './FoodDropGame';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -76,9 +77,10 @@ export default function GameScreen({ onGameActiveChange }) {
   const [faseSalto, setFaseSalto] = useState('idle'); // 'idle' | 'por_saltar' | 'saltando'
   const [spriteOk, setSpriteOk] = useState({ idle: null, porSaltar: null, jump: null, caida: null, compresa: null });
   const [fondoOk, setFondoOk] = useState({});
-  const [enJuego, setEnJuego] = useState(false);
-  const [enSkyJump, setEnSkyJump] = useState(false);
-  const [enSkyHop,  setEnSkyHop]  = useState(false);
+  const [enJuego,    setEnJuego]    = useState(false);
+  const [enSkyJump,  setEnSkyJump]  = useState(false);
+  const [enSkyHop,   setEnSkyHop]   = useState(false);
+  const [enFoodDrop, setEnFoodDrop] = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
@@ -87,8 +89,8 @@ export default function GameScreen({ onGameActiveChange }) {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    onGameActiveChange?.(enJuego || enSkyJump || enSkyHop);
-  }, [enJuego, enSkyJump, enSkyHop]);
+    onGameActiveChange?.(enJuego || enSkyJump || enSkyHop || enFoodDrop);
+  }, [enJuego, enSkyJump, enSkyHop, enFoodDrop]);
 
   useEffect(() => {
     ApiService.getPublicStatus()
@@ -176,6 +178,18 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnSkyHop(false)}
         onVolverAlListado={() => { setEnSkyHop(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+      />
+    );
+  }
+
+  if (enFoodDrop) {
+    return (
+      <FoodDropGame
+        onSalir={() => setEnFoodDrop(false)}
+        onVolverAlListado={() => { setEnFoodDrop(false); setMostrarJuegos(true); }}
+        mostrarColisiones={mostrarColisiones}
+        globalSensPct={tiltSensPct}
+        onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
       />
     );
   }
@@ -402,6 +416,25 @@ export default function GameScreen({ onGameActiveChange }) {
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Sky Hop
+              </span>
+            </div>
+
+            {/* Juego 4: Food Drop */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnFoodDrop(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: 'linear-gradient(180deg, #FDF2F8 0%, #FCE7F3 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #fbcfe8', overflow: 'hidden',
+              }}>
+                <img src="/juego/Food_Drop/chocolate.png" alt="" style={{ width: '60%', height: '60%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))' }}
+                     onError={e => { e.currentTarget.outerHTML = '<span style="font-size:40px">🍫</span>'; }} />
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Food Drop
               </span>
             </div>
           </div>
