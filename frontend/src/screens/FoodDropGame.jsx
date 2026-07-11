@@ -313,6 +313,18 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
           </div>
         ))}
 
+        {/* Table with tablecloth */}
+        <div style={{ position: 'absolute', bottom: 0, left: -4, right: -4, height: PLAYER_BOT + 10, zIndex: 15, pointerEvents: 'none', background: 'linear-gradient(180deg,#f5c2e0 0%,#eda8d0 100%)', borderRadius: '8px 8px 0 0', boxShadow: '0 -3px 10px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.45)' }}>
+          {/* cloth folds */}
+          <div style={{ position: 'absolute', top: 0, left: '20%', width: 1, bottom: 0, background: 'rgba(200,80,140,0.15)' }} />
+          <div style={{ position: 'absolute', top: 0, left: '50%', width: 1, bottom: 0, background: 'rgba(200,80,140,0.15)' }} />
+          <div style={{ position: 'absolute', top: 0, left: '80%', width: 1, bottom: 0, background: 'rgba(200,80,140,0.15)' }} />
+          {/* bottom trim */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 4, background: 'rgba(180,60,120,0.2)', borderRadius: '0 0 6px 6px' }} />
+          {/* shadow on floor */}
+          <div style={{ position: 'absolute', bottom: -12, left: '8%', right: '8%', height: 6, background: 'rgba(0,0,0,0.1)', borderRadius: '50%', filter: 'blur(4px)' }} />
+        </div>
+
         {/* Player */}
         <img
           ref={playerRef}

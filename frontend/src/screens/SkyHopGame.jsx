@@ -5,7 +5,7 @@ import { ApiService } from '../api';
 const RECORD_KEY = 'nuvia_skyhop_record';
 const JUEGO_ID   = 'sky_hop';
 const TIMER_MAX  = 60000;
-const STAR_BONUS = 8000;
+const STAR_BONUS = 3000;
 const JUMP_MS    = 320;
 const ROW_H      = 115;
 const ARC_H      = 75;
