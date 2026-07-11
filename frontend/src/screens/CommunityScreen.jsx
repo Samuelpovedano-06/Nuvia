@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2, ChevronLeft, ImagePlus, Ban, Flag, AlertTriangle, ShieldAlert, Check } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Send, X, Trash2, UserPlus, UserCheck, Share2, ChevronLeft, ImagePlus, Ban, Flag, AlertTriangle, ShieldAlert, Check, Plus } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import AuthImage from '../components/AuthImage';
@@ -848,7 +848,7 @@ export default function CommunityScreen() {
         </div>
 
         {/* Acciones (Bloqueadas / Reportes / Nueva publicación) */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center', justifyContent: 'center' }}>
           <button
             onClick={abrirBloqueados}
             style={{
@@ -887,14 +887,14 @@ export default function CommunityScreen() {
           <button
             onClick={() => setShowCreate(true)}
             style={{
-              marginLeft: 'auto', background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
+              background: 'linear-gradient(135deg, var(--primary) 0%, #F6416C 100%)',
               border: 'none', borderRadius: '14px', padding: '8px 14px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: '6px',
               color: 'white', fontWeight: '700', fontSize: '13px',
               boxShadow: '0 3px 10px rgba(176,91,181,0.3)'
             }}
           >
-            <span style={{ fontSize: '15px' }}>✍️</span> Nueva
+            <Plus size={15} /> Nueva
           </button>
         </div>
 
