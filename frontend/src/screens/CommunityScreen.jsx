@@ -1600,8 +1600,8 @@ export default function CommunityScreen() {
                         <div
                           role="button"
                           tabIndex={0}
-                          onClick={e => { e.stopPropagation(); togglePreview(r.preview, 0); }}
-                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); togglePreview(r.preview, 0); } }}
+                          onClick={e => { e.stopPropagation(); togglePreview(r.preview, 0, { titulo: r.titulo, artista: r.artista, artwork: r.artwork }); }}
+                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); togglePreview(r.preview, 0, { titulo: r.titulo, artista: r.artista, artwork: r.artwork }); } }}
                           style={{ background: '#f5f5fa', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', flexShrink: 0 }}
                         >
                           {reproduciendo === r.preview ? '⏸' : '▶'}
