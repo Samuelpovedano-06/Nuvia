@@ -1521,8 +1521,17 @@ export default function CommunityScreen() {
                   const winPct   = 30 / WAVEFORM_DUR;
                   return (
                     <div style={{ background: '#4f46e5', borderRadius: '0 0 12px 12px', padding: '14px 14px 12px' }}>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', marginBottom: '10px', fontWeight: '600' }}>
-                        Arrastra para elegir el clip de 30 seg:
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>
+                          Arrastra para elegir el clip de 30 seg:
+                        </div>
+                        {/* Botón escuchar tramo */}
+                        <button
+                          onClick={() => togglePreview(musicaSeleccionada.preview, offsetMusica, { titulo: musicaSeleccionada.titulo, artista: musicaSeleccionada.artista, artwork: musicaSeleccionada.artwork })}
+                          style={{ display: 'flex', alignItems: 'center', gap: '5px', background: reproduciendo === musicaSeleccionada.preview ? 'rgba(246,65,108,0.35)' : 'rgba(255,255,255,0.18)', border: `1.5px solid ${reproduciendo === musicaSeleccionada.preview ? '#F6416C' : 'rgba(255,255,255,0.3)'}`, borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', color: 'white', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}
+                        >
+                          {reproduciendo === musicaSeleccionada.preview ? '⏸' : '▶'} {reproduciendo === musicaSeleccionada.preview ? `${Math.floor(miniPlayerSecs)}s` : 'Escuchar'}
+                        </button>
                       </div>
                       <div style={{ position: 'relative' }}>
                         {/* Barras de onda */}
@@ -1538,7 +1547,7 @@ export default function CommunityScreen() {
                         {/* Input range invisible encima para el drag */}
                         <input
                           type="range" min={0} max={WAVEFORM_DUR - 30} step={1} value={offsetMusica}
-                          onChange={e => setOffsetMusica(Number(e.target.value))}
+                          onChange={e => { setOffsetMusica(Number(e.target.value)); if (reproduciendo === musicaSeleccionada.preview) stopPlayback(); }}
                           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', margin: 0 }}
                         />
                       </div>
@@ -1636,7 +1645,7 @@ export default function CommunityScreen() {
               </span>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
-              <button onClick={() => { setEditandoNota(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
+              <button onClick={() => { setEditandoNota(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); stopPlayback(); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1.5px solid #e2e8f0', background: 'white', color: 'var(--text-light)', fontWeight: '700', cursor: 'pointer', fontSize: '14px' }}>
                 Cancelar
               </button>
               <button onClick={handleSaveNota} disabled={(!notaInput.trim() && !musicaSeleccionada) || savingNota} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '14px', opacity: (!notaInput.trim() && !musicaSeleccionada) ? 0.6 : 1 }}>
