@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { Play, Pause, ChevronLeft } from 'lucide-react';
 
 const RECORD_KEY = 'nuvia_skyhop_record';
 const TIMER_MAX  = 60000;
 const STAR_BONUS = 8000;
-const JUMP_MS    = 270;
+const JUMP_MS    = 320;
 const ROW_H      = 115;
 const ARC_H      = 75;
 const PL_W       = 54;
@@ -364,7 +365,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       const ease = easeInOut(raw);
 
       const pLeft = (fromX + (toX - fromX) * ease - PL_W / 2) + 'px';
-      const pTop  = (baseY - Math.sin(raw * Math.PI) * ARC_H) + 'px';
+      const pTop  = (baseY - Math.sin(ease * Math.PI) * ARC_H) + 'px';
       pl.style.left = pLeft;
       pl.style.top  = pTop;
       if (playerHitRef.current) { playerHitRef.current.style.left = pLeft; playerHitRef.current.style.top = pTop; }
@@ -457,6 +458,38 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const timerPct = (timer / TIMER_MAX) * 100;
   const timerLow = timer < 10000;
 
+  if (phase === 'menu') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'linear-gradient(180deg, #DDD6FE 0%, #A78BFA 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
+        <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ position: 'relative', background: 'rgba(255,255,255,0.92)', borderRadius: 24, padding: '28px 24px', width: 'min(85%, 320px)', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+          <img src={SP.idle} alt="" style={{ width: 62, height: 70, objectFit: 'contain', marginBottom: 8 }} />
+          <h2 style={{ margin: '0 0 4px', color: 'var(--primary, #b05bb5)', fontSize: 22, fontWeight: 800 }}>Sky Hop</h2>
+          <p style={{ color: '#64748b', fontSize: 13, lineHeight: 1.6, margin: '8px 0 18px' }}>
+            Toca izquierda o derecha para saltar de plataforma en plataforma.<br />
+            Las nubes te harán caer. Las estrellas dan tiempo extra.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+            <button onClick={startGame} style={{ padding: '13px', background: 'linear-gradient(135deg,var(--primary,#b05bb5) 0%,#F6416C 100%)', color: 'white', border: 'none', borderRadius: 14, fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 14px rgba(176,91,181,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Play size={16} fill="white" /> Jugar
+            </button>
+            <button onClick={handleExit} style={{ padding: '11px', background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Volver atrás
+            </button>
+            <button onClick={onSalir} style={{ padding: '11px', background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Salir
+            </button>
+          </div>
+          {record > 0 && (
+            <p style={{ marginTop: 14, fontSize: 13, color: '#64748b', margin: '14px 0 0' }}>
+              Récord: <strong style={{ color: 'var(--primary,#b05bb5)' }}>{record}</strong>
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (!landscape) {
     return (
       <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#87CEEB' }}>
@@ -500,8 +533,8 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       {(phase === 'playing' || phase === 'paused') && (
         <>
           <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 60, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 14px', fontWeight: 800, fontSize: 20, color: '#1e293b' }}>{score}</div>
-          <button onClick={e => { e.stopPropagation(); togglePause(); }} style={{ position: 'absolute', top: 14, left: 12, zIndex: 70, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(8px)', border: 'none', borderRadius: 10, padding: '5px 10px', fontWeight: 700, fontSize: 16, color: '#555', cursor: 'pointer' }}>
-            {phase === 'paused' ? '▶' : '⏸'}
+          <button onClick={e => { e.stopPropagation(); togglePause(); }} style={{ position: 'absolute', top: 14, left: 12, zIndex: 70, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(8px)', border: 'none', borderRadius: 10, padding: '6px 10px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            {phase === 'paused' ? <Play size={18} fill="var(--primary,#b05bb5)" color="var(--primary,#b05bb5)" /> : <Pause size={18} fill="var(--primary,#b05bb5)" color="var(--primary,#b05bb5)" />}
           </button>
         </>
       )}
@@ -572,7 +605,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
           <p style={{ color: '#64748b', textAlign: 'center', fontSize: 14, margin: '8px 24px 18px' }}>Juego en pausa. ¡Tómate un respiro!</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 240 }}>
             <button onClick={e => { e.stopPropagation(); togglePause(); }} style={{ background: 'var(--primary,#b05bb5)', color: 'white', border: 'none', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 6px 16px rgba(176,91,181,0.4)' }}>
-              ▶ Reanudar
+              <Play size={16} fill="white" /> Reanudar
             </button>
             <button onClick={e => { e.stopPropagation(); handleExit(); }} style={{ background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               Volver atrás
@@ -584,27 +617,15 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
         </div>
       )}
 
-      {(phase === 'menu' || phase === 'over') && (
+      {phase === 'over' && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.44)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: 24, padding: '22px 22px 16px', width: 'min(68%, 280px)', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.28)' }}>
-            <img src={phase === 'over' ? SP.fall : SP.idle} alt="" style={{ width: 55, height: 62, objectFit: 'contain', marginBottom: 4 }} />
-            <h2 style={{ margin: '0 0 4px', fontSize: 21, color: 'var(--primary, #b05bb5)', fontWeight: 800 }}>
-              {phase === 'menu' ? 'Sky Hop' : '¡Se acabó!'}
-            </h2>
-            {phase === 'over' ? (
-              <>
-                <div style={{ fontSize: 44, fontWeight: 800, color: '#1e293b', margin: '6px 0 2px' }}>{score}</div>
-                <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 14 }}>Mejor: {Math.max(score, record)}</div>
-              </>
-            ) : (
-              <p style={{ color: '#64748b', fontSize: 11, lineHeight: 1.6, margin: '8px 0 14px' }}>
-                Toca izquierda o derecha para saltar.<br />
-                Las nubes te harán caer.<br />
-                Las estrellas dan tiempo extra.
-              </p>
-            )}
-            <button onClick={e => { e.stopPropagation(); startGame(); }} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg,var(--primary,#b05bb5) 0%,#F6416C 100%)', color: 'white', border: 'none', borderRadius: 13, fontWeight: 800, fontSize: 14, cursor: 'pointer', marginBottom: 7, boxShadow: '0 4px 14px rgba(176,91,181,0.35)' }}>
-              {phase === 'menu' ? 'Jugar' : 'Otra vez'}
+            <img src={SP.fall} alt="" style={{ width: 55, height: 62, objectFit: 'contain', marginBottom: 4 }} />
+            <h2 style={{ margin: '0 0 4px', fontSize: 21, color: 'var(--primary, #b05bb5)', fontWeight: 800 }}>¡Se acabó!</h2>
+            <div style={{ fontSize: 44, fontWeight: 800, color: '#1e293b', margin: '6px 0 2px' }}>{score}</div>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 14 }}>Mejor: {Math.max(score, record)}</div>
+            <button onClick={e => { e.stopPropagation(); startGame(); }} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg,var(--primary,#b05bb5) 0%,#F6416C 100%)', color: 'white', border: 'none', borderRadius: 13, fontWeight: 800, fontSize: 14, cursor: 'pointer', marginBottom: 7, boxShadow: '0 4px 14px rgba(176,91,181,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Play size={14} fill="white" /> Otra vez
             </button>
             <button onClick={e => { e.stopPropagation(); handleExit(); }} style={{ width: '100%', padding: '9px', background: 'transparent', color: '#94a3b8', border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
               Volver

@@ -663,7 +663,7 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
       {/* Header */}
       <div style={{
         padding: '16px 20px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: estado === 'inicio' ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <button
           onClick={onSalir}
