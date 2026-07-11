@@ -3,9 +3,9 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 const RECORD_KEY = 'nuvia_skyhop_record';
 const TIMER_MAX  = 60000;
 const STAR_BONUS = 8000;
-const JUMP_MS    = 320;
+const JUMP_MS    = 270;
 const ROW_H      = 115;
-const ARC_H      = 60;
+const ARC_H      = 75;
 const PL_W       = 54;
 const PL_H       = 64;
 const PLAT_W     = 100;
@@ -35,21 +35,123 @@ function getSlotX(col, n, cw) {
   return cw * SLOT_PCT[n][col];
 }
 
-// Row: n slots (3 or 4), exactly 2 adjacent platforms, rest clouds.
-// 4-col rows ALWAYS use pairStart=1 (pair {1,2}) — the only pair reachable from any 3-col position.
-// 3-col rows use pairStart 0 or 1 randomly — both are safe because alive players in 4-col are always at col 1 or 2.
-function makeRow(id) {
-  const n = id % 2 === 0 ? 3 : 4;
-  const slots = new Array(n).fill('cloud');
-  const pairStart = n === 4 ? 1 : Math.floor(Math.random() * 2);
-  slots[pairStart]     = Math.random() < 0.15 ? 'star' : 'normal';
-  slots[pairStart + 1] = Math.random() < 0.15 ? 'star' : 'normal';
-  return { id, n, slots, pairStart };
+// Safety-guaranteed path generator.
+// Hard rule: every platform in prev row gets ≥1 reachable platform in the next row.
+// Patterns switch every 2-4 rows. Anti-stuck: if the path hasn't moved in 4 rows, force a new direction.
+// Doubles (30%, max 7 consecutive) are placed at OPPOSITE extremes, never adjacent.
+function createRowGenerator() {
+  let prev  = [1];
+  let prevN = 3;
+
+  // Patterns: 'l'=drift left, 'r'=drift right, 'mid'=toward center, 'rnd'=random each row
+  const PATS = ['l', 'r', 'l', 'r', 'mid', 'rnd']; // weighted: drift more common
+  let pat     = PATS[Math.floor(Math.random() * PATS.length)];
+  let patStep = 0;
+  let patLen  = Math.floor(Math.random() * 3) + 2; // 2–4 rows per pattern
+  let dblStrk = 0;
+  let history = []; // normalized positions [0..1] of last few single-platform rows
+
+  function pickNewPat(current) {
+    // Always pick something different
+    let p;
+    do { p = PATS[Math.floor(Math.random() * PATS.length)]; } while (p === current);
+    return p;
+  }
+
+  function chooseDir(lc, rc, n) {
+    const lv  = lc >= 0 && lc < n;
+    const rv  = rc >= 0 && rc < n;
+    if (!lv) return 'r';
+    if (!rv) return 'l';
+    const mid = (n - 1) / 2;
+
+    // 15% wild-card: ignore the pattern and pick the opposite of what it'd normally pick
+    // This prevents the path from being too predictable
+    const wild = Math.random() < 0.15;
+
+    let base;
+    switch (pat) {
+      case 'l':   base = 'l'; break;
+      case 'r':   base = 'r'; break;
+      case 'mid': base = Math.abs(lc - mid) <= Math.abs(rc - mid) ? 'l' : 'r'; break;
+      default:    base = Math.random() < 0.5 ? 'l' : 'r'; break;
+    }
+    return wild ? (base === 'l' ? 'r' : 'l') : base;
+  }
+
+  return function makeRow(id) {
+    const n    = id % 2 === 0 ? 3 : 4;
+    const plat = () => Math.random() < 0.15 ? 'star' : 'normal';
+    const slots = new Array(n).fill('cloud');
+    const placed = new Set();
+
+    // Anti-stuck: if normalized position hasn't varied in last 4 rows, force direction change
+    if (history.length >= 4) {
+      const min = Math.min(...history), max = Math.max(...history);
+      if (max - min < 0.2) {
+        // Stuck — pick an aggressive drift toward the opposite side
+        const avg = (min + max) / 2;
+        pat     = avg < 0.5 ? 'r' : 'l';
+        patLen  = Math.floor(Math.random() * 2) + 2;
+        patStep = 0;
+        history = [];
+      }
+    }
+
+    // MANDATORY: cover every prev platform
+    for (const p of prev) {
+      const lc = prevN === 3 ? p     : p - 1;
+      const rc = prevN === 3 ? p + 1 : p;
+      const lv = lc >= 0 && lc < n;
+      const rv = rc >= 0 && rc < n;
+      if ((lv && placed.has(lc)) || (rv && placed.has(rc))) continue;
+      const d = chooseDir(lc, rc, n);
+      placed.add(d === 'l' ? (lv ? lc : rc) : (rv ? rc : lc));
+    }
+
+    // OPTIONAL double (30%, max 7 consecutive, only if farthest reachable is non-adjacent)
+    if (dblStrk < 7 && placed.size === 1 && Math.random() < 0.30) {
+      const mainC = [...placed][0];
+      let farthest = null, maxDist = 0;
+      for (const p of prev) {
+        for (const c of [prevN === 3 ? p : p - 1, prevN === 3 ? p + 1 : p]) {
+          if (c >= 0 && c < n && !placed.has(c) && Math.abs(c - mainC) > maxDist) {
+            farthest = c; maxDist = Math.abs(c - mainC);
+          }
+        }
+      }
+      if (farthest !== null && maxDist > 1) placed.add(farthest);
+    }
+
+    // Write slots
+    for (const c of placed) slots[c] = plat();
+    dblStrk = placed.size >= 2 ? dblStrk + 1 : 0;
+
+    // Update history with normalized position of single-platform rows
+    if (placed.size === 1) {
+      history.push([...placed][0] / (n - 1));
+      if (history.length > 6) history.shift();
+    } else {
+      history = []; // two-platform rows reset the stuck counter
+    }
+
+    // Advance pattern (short bursts, always change)
+    patStep++;
+    if (patStep >= patLen) {
+      pat     = pickNewPat(pat);
+      patLen  = Math.floor(Math.random() * 3) + 2;
+      patStep = 0;
+    }
+
+    prev  = [...placed];
+    prevN = n;
+    return { id, n, slots };
+  };
 }
 
-function genRows(count = 50) {
-  const arr = [{ id: 0, n: 3, slots: ['normal', 'normal', 'normal'], pairStart: 0 }];
-  for (let i = 1; i < count; i++) arr.push(makeRow(i));
+function genInitialRows(gen, count = 50) {
+  const arr = [{ id: 0, n: 3, slots: ['normal', 'normal', 'normal'] }];
+  for (let i = 1; i < count; i++) arr.push(gen(i));
   return arr;
 }
 
@@ -58,8 +160,11 @@ function easeInOut(t) {
 }
 
 export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColisiones = false }) {
+  const pathGenRef = useRef(null);
+  if (!pathGenRef.current) pathGenRef.current = createRowGenerator();
+
   const [phase,     setPhase]     = useState('menu');
-  const [rows,      setRows]      = useState(genRows);
+  const [rows,      setRows]      = useState(() => genInitialRows(pathGenRef.current));
   const [curRow,    setCurRow]    = useState(0);
   const [curCol,    setCurCol]    = useState(1);
   const [score,     setScore]     = useState(0);
@@ -74,6 +179,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const landscapeRef       = useRef(window.innerWidth > window.innerHeight);
   const playerRef          = useRef(null);
   const playerHitRef       = useRef(null); // debug hitbox mirror of playerRef
+  const queuedDirRef       = useRef(null); // next jump direction queued during animation
   const timerIntv          = useRef(null);
   const animReq            = useRef(null);
   const busyRef            = useRef(false);
@@ -143,6 +249,11 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     (onVolverAlListado || onSalir)?.();
   };
 
+  const togglePause = useCallback(() => {
+    if (phaseRef.current === 'playing') syncPhase('paused');
+    else if (phaseRef.current === 'paused') syncPhase('playing');
+  }, []);
+
   const handleGirar = async () => {
     try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (_) {}
     try {
@@ -190,8 +301,10 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     clearInterval(timerIntv.current);
     cancelAnimationFrame(animReq.current);
     pendingTransformReset.current = false;
+    queuedDirRef.current = null;
     if (contRef.current) contRef.current.style.transform = 'translateY(0)';
-    const fresh = genRows();
+    pathGenRef.current = createRowGenerator();
+    const fresh = genInitialRows(pathGenRef.current);
     syncRows(fresh);
     syncCurRow(0); syncCurCol(1);
     syncScore(0);  syncTimer(TIMER_MAX);
@@ -202,7 +315,8 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   };
 
   const handleJump = useCallback((dir) => {
-    if (phaseRef.current !== 'playing' || busyRef.current) return;
+    if (phaseRef.current !== 'playing') return;
+    if (busyRef.current) { queuedDirRef.current = dir; return; }
 
     const nextIdx = curRowRef.current + 1;
     const nextRow = rowsRef.current[nextIdx];
@@ -290,13 +404,18 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
 
       setSprite('idle');
       busyRef.current = false;
+      const queued = queuedDirRef.current;
+      queuedDirRef.current = null;
 
-      // Generate more rows
+      // Generate more rows using the same path generator (maintains drift continuity)
       const curr = rowsRef.current;
       if (curr.length - nextIdx < 15) {
         const lastId = curr[curr.length - 1].id;
-        syncRows([...curr, ...Array.from({ length: 25 }, (_, i) => makeRow(lastId + i + 1))]);
+        syncRows([...curr, ...Array.from({ length: 25 }, (_, i) => pathGenRef.current(lastId + i + 1))]);
       }
+
+      // Fire queued input immediately after animation completes
+      if (queued) handleJump(queued);
     };
 
     animReq.current = requestAnimationFrame(animate);
@@ -367,22 +486,29 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
 
       {/* Timer bar */}
-      {phase === 'playing' && (
+      {(phase === 'playing' || phase === 'paused') && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 10, background: 'rgba(0,0,0,0.18)', zIndex: 60 }}>
           <div style={{
             height: '100%', width: `${timerPct}%`,
             background: timerLow ? 'linear-gradient(90deg,#ef4444,#f97316)' : 'linear-gradient(90deg,var(--primary,#b05bb5),#F6416C)',
             transition: 'width 0.1s linear', borderRadius: '0 5px 5px 0',
-            animation: timerLow ? 'timerBlink 0.5s ease-in-out infinite' : 'none',
+            animation: timerLow && phase === 'playing' ? 'timerBlink 0.5s ease-in-out infinite' : 'none',
           }} />
         </div>
       )}
 
-      {phase === 'playing' && (
+      {(phase === 'playing' || phase === 'paused') && (
         <>
           <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 60, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 14px', fontWeight: 800, fontSize: 20, color: '#1e293b' }}>{score}</div>
-          <button onClick={e => { e.stopPropagation(); endGame(); }} style={{ position: 'absolute', top: 14, left: 12, zIndex: 70, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(8px)', border: 'none', borderRadius: 10, padding: '5px 10px', fontWeight: 700, fontSize: 13, color: '#555', cursor: 'pointer' }}>✕</button>
+          <button onClick={e => { e.stopPropagation(); togglePause(); }} style={{ position: 'absolute', top: 14, left: 12, zIndex: 70, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(8px)', border: 'none', borderRadius: 10, padding: '5px 10px', fontWeight: 700, fontSize: 16, color: '#555', cursor: 'pointer' }}>
+            {phase === 'paused' ? '▶' : '⏸'}
+          </button>
         </>
+      )}
+
+      {/* Tap divider line (collision debug) */}
+      {mostrarColisiones && (phase === 'playing' || phase === 'paused') && (
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 2, background: 'rgba(239,68,68,0.6)', zIndex: 55, pointerEvents: 'none' }} />
       )}
 
       {/* Platforms container */}
@@ -437,6 +563,24 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       {starFlash && (
         <div style={{ position: 'absolute', top: '15%', left: '50%', background: 'rgba(255,215,0,0.95)', borderRadius: 12, padding: '6px 16px', fontWeight: 800, fontSize: 14, color: '#92400e', zIndex: 70, pointerEvents: 'none', animation: 'fadeUp 0.9s ease forwards' }}>
           +{STAR_BONUS / 1000}s
+        </div>
+      )}
+
+      {phase === 'paused' && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <h2 style={{ color: 'var(--primary, #b05bb5)', margin: 0 }}>Pausa</h2>
+          <p style={{ color: '#64748b', textAlign: 'center', fontSize: 14, margin: '8px 24px 18px' }}>Juego en pausa. ¡Tómate un respiro!</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 240 }}>
+            <button onClick={e => { e.stopPropagation(); togglePause(); }} style={{ background: 'var(--primary,#b05bb5)', color: 'white', border: 'none', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 6px 16px rgba(176,91,181,0.4)' }}>
+              ▶ Reanudar
+            </button>
+            <button onClick={e => { e.stopPropagation(); handleExit(); }} style={{ background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              Volver atrás
+            </button>
+            <button onClick={e => { e.stopPropagation(); onSalir?.(); }} style={{ background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              Salir
+            </button>
+          </div>
         </div>
       )}
 

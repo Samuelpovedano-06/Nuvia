@@ -99,6 +99,7 @@ function precargarImagenes() {
 function App() {
   const { user, loading, getMe, logout } = useContext(AuthContext);
   const [maintenance, setMaintenance] = useState(false);
+  const [gameActive, setGameActive] = useState(false);
   const [showRejectionPopup, setShowRejectionPopup] = useState(false);
   const [desvinculacion, setDesvinculacion] = useState(null);
   const [comunicado, setComunicado] = useState(null);
@@ -301,7 +302,7 @@ function App() {
             <Route path="/profile" element={user ? <ProfileScreen /> : <Navigate to="/login" />} />
             <Route path="/sintomas" element={user ? guardPareja(<SymptomsScreen />) : <Navigate to="/login" />} />
             <Route path="/calendar" element={user ? guardPareja(<CalendarScreen />) : <Navigate to="/login" />} />
-            <Route path="/juego" element={user ? guardPareja(<GameScreen />) : <Navigate to="/login" />} />
+            <Route path="/juego" element={user ? guardPareja(<GameScreen onGameActiveChange={setGameActive} />) : <Navigate to="/login" />} />
             <Route path="/wellness" element={user ? guardPareja(<WellnessScreen />) : <Navigate to="/login" />} />
             <Route path="/comunidad" element={user ? guardPareja(<CommunityScreen />) : <Navigate to="/login" />} />
             <Route path="/consejos" element={user ? guardPareja(<ConsejosScreen />) : <Navigate to="/login" />} />
@@ -320,7 +321,7 @@ function App() {
         );
       })()}
       <MascotaNuvia user={user} />
-      <BottomNav />
+      {!gameActive && <BottomNav />}
       {/* MODAL: la otra parte ha cortado el vínculo */}
       {desvinculacion && (
         <div style={{

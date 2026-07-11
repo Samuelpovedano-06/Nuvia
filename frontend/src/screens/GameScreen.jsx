@@ -70,7 +70,7 @@ const MASCOTA_TAMANO = 140;        // tamaño en la habitación
 const MASCOTA_TAMANO_JUEGO = 75;   // tamaño dentro del minijuego
 const COMPRESA_TAMANO = 95;
 
-export default function GameScreen() {
+export default function GameScreen({ onGameActiveChange }) {
   const navigate = useNavigate();
   const [habitacionId, setHabitacionId] = useState('sala');
   const [faseSalto, setFaseSalto] = useState('idle'); // 'idle' | 'por_saltar' | 'saltando'
@@ -85,6 +85,10 @@ export default function GameScreen() {
   const [showAjustes, setShowAjustes] = useState(false);
 
   const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    onGameActiveChange?.(enJuego || enSkyJump || enSkyHop);
+  }, [enJuego, enSkyJump, enSkyHop]);
 
   useEffect(() => {
     ApiService.getPublicStatus()
