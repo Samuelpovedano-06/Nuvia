@@ -71,6 +71,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
 
   const wrapRef            = useRef(null); // outer wrapper, stable (not animated)
   const contRef            = useRef(null); // platforms container (gets translateY)
+  const landscapeRef       = useRef(window.innerWidth > window.innerHeight);
   const playerRef          = useRef(null);
   const playerHitRef       = useRef(null); // debug hitbox mirror of playerRef
   const timerIntv          = useRef(null);
@@ -100,9 +101,13 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     }
   });
 
-  // Detect orientation changes (the actual lock happens on button press)
+  // Detect orientation changes and keep ref in sync
   useEffect(() => {
-    const check = () => setLandscape(window.innerWidth > window.innerHeight);
+    const check = () => {
+      const v = window.innerWidth > window.innerHeight;
+      landscapeRef.current = v;
+      setLandscape(v);
+    };
     check();
     window.addEventListener('resize', check);
     window.addEventListener('orientationchange', check);
@@ -111,19 +116,6 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       window.removeEventListener('orientationchange', check);
     };
   }, []);
-
-  // Exit fullscreen + unlock when component unmounts
-  useEffect(() => {
-    return () => {
-      try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {}
-      try { screen.orientation?.unlock?.(); } catch (_) {}
-    };
-  }, []);
-
-  const exitFullscreen = () => {
-    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {}
-    try { screen.orientation?.unlock?.(); } catch (_) {}
-  };
 
   const endGame = useCallback(() => {
     clearInterval(timerIntv.current);
@@ -134,7 +126,6 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   }, []);
 
   const handleExit = () => {
-    exitFullscreen();
     (onVolverAlListado || onSalir)?.();
   };
 
@@ -166,19 +157,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     if (playerHitRef.current) { playerHitRef.current.style.left = left; playerHitRef.current.style.top = top; }
   };
 
-  const startGame = async () => {
-    // Request fullscreen + landscape from inside the user gesture (button click)
-    // so the OS rotates the entire screen including status bar
-    try {
-      await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' });
-    } catch (_) {}
-    try {
-      await screen.orientation?.lock?.('landscape');
-      setLandscape(true);
-    } catch (_) {
-      // orientation lock failed (e.g. iOS) — rely on user rotating manually
-    }
-
+  const startGame = () => {
     clearInterval(timerIntv.current);
     cancelAnimationFrame(animReq.current);
     pendingTransformReset.current = false;
@@ -297,12 +276,18 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   // Tap detection on outer wrapper (not animated container)
   const handleTap = useCallback(e => {
     if (phaseRef.current !== 'playing') return;
-    if (e.target.closest('button')) return; // let buttons handle their own events
+    if (e.target.closest('button')) return;
     e.preventDefault();
-    const rect = wrapRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const cx = e.touches?.[0]?.clientX ?? e.clientX;
-    handleJump(cx - rect.left < rect.width / 2 ? 'left' : 'right');
+    // When game is auto-rotated -90deg (portrait device), left/right maps to top/bottom of screen
+    if (!landscapeRef.current) {
+      const cy = e.touches?.[0]?.clientY ?? e.clientY;
+      handleJump(cy < window.innerHeight / 2 ? 'left' : 'right');
+    } else {
+      const rect = wrapRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const cx = e.touches?.[0]?.clientX ?? e.clientX;
+      handleJump(cx - rect.left < rect.width / 2 ? 'left' : 'right');
+    }
   }, [handleJump]);
 
   useEffect(() => {
@@ -330,28 +315,24 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const timerPct = (timer / TIMER_MAX) * 100;
   const timerLow = timer < 10000;
 
-  if (!landscape) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#87CEEB' }}>
-        <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'relative', background: 'rgba(255,255,255,0.92)', borderRadius: 20, padding: '28px 24px', textAlign: 'center', maxWidth: 260 }}>
-          <div style={{ fontSize: 44, marginBottom: 10 }}>🔄</div>
-          <h3 style={{ margin: '0 0 8px', color: 'var(--primary, #b05bb5)' }}>Gira el móvil</h3>
-          <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 16px' }}>Sky Hop se juega en horizontal</p>
-          <button onClick={handleExit} style={{ padding: '10px 20px', background: 'var(--primary, #b05bb5)', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Volver</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       ref={wrapRef}
       onClick={phase === 'playing' ? e => {
-        const rect = wrapRef.current?.getBoundingClientRect();
-        if (rect) handleJump(e.clientX - rect.left < rect.width / 2 ? 'left' : 'right');
+        if (!landscapeRef.current) {
+          handleJump(e.clientY < window.innerHeight / 2 ? 'left' : 'right');
+        } else {
+          const rect = wrapRef.current?.getBoundingClientRect();
+          if (rect) handleJump(e.clientX - rect.left < rect.width / 2 ? 'left' : 'right');
+        }
       } : undefined}
-      style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden', touchAction: 'none', userSelect: 'none' }}
+      style={landscape ? {
+        position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden', touchAction: 'none', userSelect: 'none',
+      } : {
+        position: 'fixed', zIndex: 100, overflow: 'hidden', touchAction: 'none', userSelect: 'none',
+        width: '100vh', height: '100vw', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%) rotate(-90deg)',
+      }}
     >
       <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
 
