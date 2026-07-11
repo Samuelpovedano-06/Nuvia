@@ -35,21 +35,20 @@ export default function HomeScreen() {
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
   const [customAlert, setCustomAlert] = useState({ show: false, message: '' });
 
-  const isUnlinkedPareja = user?.rol === 'pareja' && !user?.tiene_vinculos && !localStorage.getItem('selectedPartnerId');
-  const isPareja = user?.rol === 'pareja';
+  const isPareja = localStorage.getItem('plataforma') === 'pareja';
+  const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
+  const isUnlinkedPareja = isPareja && !targetId;
 
   useEffect(() => {
     const fetchData = async () => {
       // Si es pareja sin vínculos (o sin partner seleccionado), no pedimos nada → muestra estado vacío
-      if (isPareja && !localStorage.getItem('selectedPartnerId')) {
+      if (isPareja && !targetId) {
         setLoadingData(false);
         return;
       }
       try {
         const today = new Date().toISOString().split('T')[0];
         const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
-        const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
 
         const [ciclos, config, sToday, sYesterday, dToday] = await Promise.all([
           ApiService.getCiclos(targetId),
@@ -141,7 +140,6 @@ export default function HomeScreen() {
     setLoadingData(true);
     try {
       const hoy = logDate;
-      const targetId = isPareja ? localStorage.getItem('selectedPartnerId') : null;
 
       const overlap = rawCiclos.find(c => {
         const inicio = new Date(c.fecha_inicio).toISOString().split('T')[0];
