@@ -137,7 +137,7 @@ export default function CalendarScreen() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (isPareja && !targetId) return; // pareja sin vínculo → no pedir nada
+      if (isPareja && !targetId) { setLoading(false); return; }
       try {
         const [ciclosData, configData] = await Promise.all([
           ApiService.getCiclos(targetId),
