@@ -137,6 +137,7 @@ export default function CalendarScreen() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (isPareja && !targetId) return; // pareja sin vínculo → no pedir nada
       try {
         const [ciclosData, configData] = await Promise.all([
           ApiService.getCiclos(targetId),
@@ -256,6 +257,14 @@ export default function CalendarScreen() {
   };
 
   if (loading) return <div className="screen-container"><div className="loader"></div></div>;
+
+  if (isPareja && !targetId) return (
+    <div className="screen-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', padding: '32px 24px' }}>
+      <div style={{ fontSize: '48px', marginBottom: '16px' }}>💑</div>
+      <h3 style={{ margin: '0 0 8px', color: 'var(--text-dark)' }}>Sin pareja vinculada</h3>
+      <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px', maxWidth: '260px' }}>Vincula tu cuenta con tu pareja desde el perfil para ver su calendario.</p>
+    </div>
+  );
 
   const puntosClave = calcPuntosClave(config?.duracion_ciclo || 28);
   const puntosDetalle = getPuntosDetalle(puntosClave, selectedPoint, config?.duracion_ciclo || 28);

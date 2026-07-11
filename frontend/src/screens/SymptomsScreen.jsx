@@ -246,6 +246,7 @@ export default function SymptomsScreen() {
 
   useEffect(() => {
     const init = async () => {
+      if (isPareja && !targetId) return; // pareja sin vínculo → no pedir nada
       try {
         const [catalogo, diario, registros] = await Promise.all([
           ApiService.getSintomas(),
@@ -339,6 +340,14 @@ export default function SymptomsScreen() {
     'Olor': sintomasCatalogo.filter(s => s.categoria === 'Olor'),
     'Otros': sintomasCatalogo.filter(s => s.categoria === 'Otros' || !s.categoria)
   };
+
+  if (isPareja && !targetId) return (
+    <div className="screen-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', padding: '32px 24px' }}>
+      <div style={{ fontSize: '48px', marginBottom: '16px' }}>💑</div>
+      <h3 style={{ margin: '0 0 8px', color: 'var(--text-dark)' }}>Sin pareja vinculada</h3>
+      <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px', maxWidth: '260px' }}>Vincula tu cuenta con tu pareja desde el perfil para ver sus síntomas.</p>
+    </div>
+  );
 
   return (
     <div className="screen-container">

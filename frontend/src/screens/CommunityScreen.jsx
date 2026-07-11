@@ -103,6 +103,10 @@ const CatLabel = ({ id }) => {
   );
 };
 
+// Iconos SVG — evitan que iOS/Android los conviertan en emojis de color
+const IcoPlay  = ({ size = 11, color = 'currentColor' }) => <svg width={size} height={size * 1.1} viewBox="0 0 10 11" fill="none"><polygon points="0,0 10,5.5 0,11" fill={color}/></svg>;
+const IcoPause = ({ size = 11, color = 'currentColor' }) => <svg width={size} height={size * 1.1} viewBox="0 0 10 11" fill="none"><rect x="0" y="0" width="3.5" height="11" rx="1" fill={color}/><rect x="6.5" y="0" width="3.5" height="11" rx="1" fill={color}/></svg>;
+
 const WAVEFORM_DUR = 300; // segundos que representa la onda (5 min)
 const generateWaveform = (seed = '', count = 52) => {
   let h = 5381;
@@ -412,7 +416,7 @@ export default function CommunityScreen() {
     // Crear el iframe nosotros con allow="autoplay" ANTES de dárselo a YT.Player
     const iframe = document.createElement('iframe');
     iframe.id = 'yt-bg-player-nuvia';
-    iframe.src = 'https://www.youtube.com/embed/?enablejsapi=1&playsinline=1&controls=0&rel=0&fs=0';
+    iframe.src = 'https://www.youtube-nocookie.com/embed/?enablejsapi=1&playsinline=1&controls=0&rel=0&fs=0';
     iframe.style.cssText = 'width:200px;height:150px;border:none;';
     iframe.setAttribute('allow', 'autoplay; encrypted-media');
     iframe.setAttribute('allowfullscreen', '');
@@ -1496,7 +1500,9 @@ export default function CommunityScreen() {
               </div>
             </div>
             {/* Parar */}
-            <button onClick={stopPlayback} style={{ background: stopBg, border: `1.5px solid ${stopBdr}`, borderRadius: '50%', width: '32px', height: '32px', color: stopC, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>⏹</button>
+            <button onClick={stopPlayback} style={{ background: stopBg, border: `1.5px solid ${stopBdr}`, borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: '11px', height: '11px', borderRadius: '2px', background: stopC }} />
+            </button>
           </div>
         );
       })()}
@@ -1547,7 +1553,7 @@ export default function CommunityScreen() {
                           onClick={() => togglePreview(musicaSeleccionada.preview, offsetMusica, { titulo: musicaSeleccionada.titulo, artista: musicaSeleccionada.artista, artwork: musicaSeleccionada.artwork })}
                           style={{ display: 'flex', alignItems: 'center', gap: '5px', background: reproduciendo === musicaSeleccionada.preview ? 'rgba(246,65,108,0.35)' : 'rgba(255,255,255,0.18)', border: `1.5px solid ${reproduciendo === musicaSeleccionada.preview ? '#F6416C' : 'rgba(255,255,255,0.3)'}`, borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', color: 'white', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}
                         >
-                          {reproduciendo === musicaSeleccionada.preview ? '⏸' : '▶'} {reproduciendo === musicaSeleccionada.preview ? `${Math.floor(miniPlayerSecs)}s` : 'Escuchar'}
+                          {reproduciendo === musicaSeleccionada.preview ? <IcoPause size={10} /> : <IcoPlay size={10} />} {reproduciendo === musicaSeleccionada.preview ? `${Math.floor(miniPlayerSecs)}s` : 'Escuchar'}
                         </button>
                       </div>
                       <div style={{ position: 'relative' }}>
@@ -1630,7 +1636,7 @@ export default function CommunityScreen() {
                           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); togglePreview(r.preview, 0, { titulo: r.titulo, artista: r.artista, artwork: r.artwork }); } }}
                           style={{ background: '#f5f5fa', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', flexShrink: 0 }}
                         >
-                          {reproduciendo === r.preview ? '⏸' : '▶'}
+                          {reproduciendo === r.preview ? <IcoPause size={11} color="#6366f1" /> : <IcoPlay size={11} color="#6366f1" />}
                         </div>
                       )}
                     </button>
@@ -1729,7 +1735,7 @@ export default function CommunityScreen() {
                         onClick={() => togglePreview(miMusica.preview, miMusica.offset || 0, { titulo: miMusica.titulo, artista: miMusica.artista, artwork: miMusica.artwork })}
                         style={{ width: '42px', height: '42px', borderRadius: '50%', background: reproduciendo === miMusica.preview ? 'rgba(176,91,181,0.15)' : (dark ? 'rgba(255,255,255,0.08)' : 'rgba(155,108,152,0.1)'), border: `1.5px solid ${reproduciendo === miMusica.preview ? 'var(--primary)' : cardBorder}`, color: 'var(--primary)', fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                       >
-                        {reproduciendo === miMusica.preview ? '⏸' : '▶'}
+                        {reproduciendo === miMusica.preview ? <IcoPause size={13} color="var(--primary)" /> : <IcoPlay size={13} color="var(--primary)" />}
                       </button>
                     </div>
                     {/* Barra de progreso */}
