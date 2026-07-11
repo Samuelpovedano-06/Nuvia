@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Play, Pause, ChevronLeft } from 'lucide-react';
+import { ApiService } from '../api';
 
 const RECORD_KEY = 'nuvia_skyhop_record';
+const JUEGO_ID   = 'sky_hop';
 const TIMER_MAX  = 60000;
 const STAR_BONUS = 8000;
 const JUMP_MS    = 320;
@@ -208,6 +210,18 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     }
   });
 
+  // Sync record with server on mount
+  useEffect(() => {
+    ApiService.getRecordsJuego().then(records => {
+      const enServ = Number(records?.[JUEGO_ID] || 0);
+      const enLoc  = Number(localStorage.getItem(RECORD_KEY) || 0);
+      const mejor  = Math.max(enServ, enLoc);
+      setRecord(mejor);
+      localStorage.setItem(RECORD_KEY, String(mejor));
+      if (enLoc > enServ) ApiService.guardarRecordJuego(JUEGO_ID, enLoc);
+    }).catch(() => {});
+  }, []);
+
   // Exit fullscreen + unlock orientation on unmount
   useEffect(() => {
     return () => {
@@ -277,7 +291,11 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   useEffect(() => {
     if (phase !== 'over') return;
     const s = scoreRef.current;
-    if (s > record) { setRecord(s); localStorage.setItem(RECORD_KEY, String(s)); }
+    if (s > record) {
+      setRecord(s);
+      localStorage.setItem(RECORD_KEY, String(s));
+      ApiService.guardarRecordJuego(JUEGO_ID, s);
+    }
   }, [phase]);
 
   const placePlayer = (col, row, cont) => {
