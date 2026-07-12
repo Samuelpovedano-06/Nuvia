@@ -3,91 +3,120 @@ import { Play, Pause } from 'lucide-react';
 import { ApiService } from '../api';
 
 const RECORD_KEY = 'nuvia_cliffjump_record';
-const JUEGO_ID   = 'cliff_jump';
+const JUEGO_ID = 'cliff_jump';
 
 // Layout
-const PLAYER_W   = 50;
-const PLAYER_H   = 58;
-const PLAYER_X   = 90;   // fixed screen X (center of player)
-const GND_OFFSET = 50;   // px from screen bottom to ground surface
-const GND_VIS_H  = 85;   // visual depth of terrain
-const TURF_H     = 14;   // green turf on top
+const PLAYER_W = 50;
+const PLAYER_H = 58;
+const PLAYER_X = 90;    // fixed screen X (center of player)
+const GND_OFFSET = 165;  // px from screen bottom to ground surface (turf top)
+const GND_VIS_H = 85;   // visual depth of terrain (unused in canvas draw, kept for reference)
+const TURF_H = 14;   // green turf on top
+const SPRITE_FOOT_OFFSET = 8;   // transparent px at bottom of mascot sprite
 
-// Physics (parabolic jump formulas from description)
-const H_MAX   = 135;
-const T_VUELO = 0.70;
-const G       = (8 * H_MAX) / (T_VUELO ** 2);  // ≈ 2204 px/s²
-const VY0     = (4 * H_MAX) / T_VUELO;          // ≈ 771 px/s
+// Physics
+const H_MAX = 70;
+const T_VUELO = 0.62;
+const G = (8 * H_MAX) / (T_VUELO ** 2);   // ≈ 2196 px/s² (normal gravity)
+const G_HOLD = 1000;                              // lighter gravity while button held & rising
+const VY0 = (4 * H_MAX) / T_VUELO;           // ≈ 677 px/s
 
 // Speed
 const BASE_SPEED = 180;
-const MAX_SPEED  = 380;
+const MAX_SPEED = 580;
 const SPEED_STEP = 8;    // per successful gap crossed
 
 // Terrain
-const GAP_MIN  = 65;
-const GAP_MAX  = 108;   // ≤ BASE_SPEED * T_VUELO = 126 → always clearable
-const GND_MIN  = 110;
-const GND_MAX  = 220;
+const GAP_MIN = 110;
+const GAP_MAX = 280;
+const GND_MIN = 90;
+const GND_MAX = 280;
 const INIT_GND = 380;
 
+// Obstacles (compresas apiladas)
+const OBS_W = 38;   // ancho del obstáculo
+const COMP_H = 34;   // alto de la compresa
+const OBS_H = COMP_H; // una sola compresa
+
 const SP = {
-  bg:   '/juego/Sky_Jump/fondo_nubes.png',
+  bg: '/juego/Sky_Jump/fondo_nubes.png',
   idle: '/juego/mascota-idle.png',
   jump: '/juego/mascota-jump.png',
   fall: '/juego/mascota-caida.png',
 };
 
 function makeTerrain() {
-  const s = [{ type: 'ground', x: 0, w: INIT_GND }];
+  const segs = [{ type: 'ground', x: 0, w: INIT_GND }];
+  const obs = [];
   let x = INIT_GND;
   for (let i = 0; i < 260; i++) {
-    const gw = GAP_MIN + Math.random() * (GAP_MAX - GAP_MIN);
-    s.push({ type: 'gap', x, w: gw });
+    const progress = Math.max(0, Math.min(1, (i - 50) / 100));
+    const gapFloor = GAP_MIN + (GAP_MAX - GAP_MIN) * progress * 0.85;
+    const gw = gapFloor + Math.random() * (GAP_MAX - gapFloor);
+    segs.push({ type: 'gap', x, w: gw });
     x += gw;
     const pw = GND_MIN + Math.random() * (GND_MAX - GND_MIN);
-    s.push({ type: 'ground', x, w: pw });
+    segs.push({ type: 'ground', x, w: pw });
+    // Obstacle: from gap #5, 60% chance, only on platforms wide enough
+    if (i >= 5 && pw >= GND_MAX * 0.6 && Math.random() < 0.6) {
+      // Center the obstacle on the platform
+      obs.push({ x: x + pw / 2 - OBS_W / 2 });
+    }
     x += pw;
   }
-  return s;
+  return { segs, obs };
 }
 
 export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColisiones }) {
-  const [phase,  setPhase]  = useState('menu');
-  const [score,  setScore]  = useState(0);
+  const [phase, setPhase] = useState('menu');
+  const [score, setScore] = useState(0);
   const [record, setRecord] = useState(() => +(localStorage.getItem(RECORD_KEY) || 0));
 
-  const phaseRef    = useRef('menu');
-  const scoreRef    = useRef(0);
-  const cameraXRef  = useRef(0);
-  const jumpHRef    = useRef(0);   // height above ground (px)
-  const vyRef       = useRef(0);   // vertical velocity (+up)
+  const phaseRef = useRef('menu');
+  const scoreRef = useRef(0);
+  const cameraXRef = useRef(0);
+  const jumpHRef = useRef(0);   // height above ground (px)
+  const vyRef = useRef(0);   // vertical velocity (+up)
   const groundedRef = useRef(true);
-  const inJumpRef   = useRef(false);
-  const wasGapRef   = useRef(false); // passed over a gap during current air phase
-  const speedRef    = useRef(BASE_SPEED);
-  const lastTRef    = useRef(null);
-  const animRef     = useRef(null);
-  const segsRef     = useRef([]);
-  const areaRef     = useRef(null);
-  const canvasRef   = useRef(null);
-  const playerRef   = useRef(null);
+  const inJumpRef = useRef(false);
+  const wasGapRef = useRef(false); // passed over a gap during current air phase
+  const jumpsLeftRef = useRef(2);     // double jump counter
+  const holdingRef = useRef(false); // button held → lighter gravity while rising
+  const speedRef = useRef(BASE_SPEED);
+  const lastTRef = useRef(null);
+  const animRef = useRef(null);
+  const segsRef = useRef([]);
+  const obsRef = useRef([]);
+  const compImgRef = useRef(null);
+  const showHitboxRef = useRef(mostrarColisiones);
+  const areaRef = useRef(null);
+  const canvasRef = useRef(null);
+  const playerRef = useRef(null);
+  const hitboxRef = useRef(null);
 
   const syncPhase = v => { phaseRef.current = v; setPhase(v); };
   const syncScore = v => { scoreRef.current = v; setScore(v); };
 
   useEffect(() => {
     ApiService.getRecordsJuego().then(recs => {
-      const sv   = Number(recs?.[JUEGO_ID] || 0);
-      const loc  = Number(localStorage.getItem(RECORD_KEY) || 0);
+      const sv = Number(recs?.[JUEGO_ID] || 0);
+      const loc = Number(localStorage.getItem(RECORD_KEY) || 0);
       const best = Math.max(sv, loc);
       setRecord(best);
       localStorage.setItem(RECORD_KEY, String(best));
       if (loc > sv) ApiService.guardarRecordJuego(JUEGO_ID, loc);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   useEffect(() => () => cancelAnimationFrame(animRef.current), []);
+
+  useEffect(() => { showHitboxRef.current = mostrarColisiones; }, [mostrarColisiones]);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/juego/compresa.png';
+    compImgRef.current = img;
+  }, []);
 
   const endGame = useCallback(() => {
     cancelAnimationFrame(animRef.current);
@@ -108,27 +137,39 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (canvas.width !== W || canvas.height !== H) {
-      canvas.width  = W;
+      canvas.width = W;
       canvas.height = H;
     }
     ctx.clearRect(0, 0, W, H);
 
-    const camX    = cameraXRef.current;
-    const groundY = H - GND_OFFSET - GND_VIS_H; // top of terrain from canvas top
+    const camX = cameraXRef.current;
+    // groundY = top of turf surface from canvas top = where the player stands
+    const groundY = H - GND_OFFSET;
+
+    // Death line drawn FIRST so terrain blocks cover it where there's ground
+    ctx.save();
+    ctx.setLineDash([10, 7]);
+    ctx.strokeStyle = 'rgba(220,40,40,0.75)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY + 50);
+    ctx.lineTo(W, groundY + 50);
+    ctx.stroke();
+    ctx.restore();
 
     for (const seg of segsRef.current) {
       if (seg.type !== 'ground') continue;
       const sx = seg.x - camX;
       if (sx > W + 4 || sx + seg.w < -4) continue;
 
-      // Dirt body
+      // Dirt body (fills from below turf to bottom of canvas)
       const grad = ctx.createLinearGradient(0, groundY + TURF_H, 0, H);
       grad.addColorStop(0, '#9b6b3a');
       grad.addColorStop(1, '#6b4020');
       ctx.fillStyle = grad;
-      ctx.fillRect(sx, groundY + TURF_H, seg.w, GND_VIS_H - TURF_H + GND_OFFSET);
+      ctx.fillRect(sx, groundY + TURF_H, seg.w, H - groundY - TURF_H);
 
-      // Grass turf
+      // Grass turf (14px green strip at surface level)
       const grassGrad = ctx.createLinearGradient(0, groundY, 0, groundY + TURF_H);
       grassGrad.addColorStop(0, '#72c242');
       grassGrad.addColorStop(1, '#4a9a28');
@@ -137,10 +178,40 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
       ctx.roundRect(sx, groundY, seg.w, TURF_H, [4, 4, 0, 0]);
       ctx.fill();
 
-      // Subtle dirt lines for texture
+      // Subtle dirt texture lines
       ctx.fillStyle = 'rgba(0,0,0,0.07)';
       ctx.fillRect(sx + 10, groundY + TURF_H + 14, seg.w - 20, 1);
       ctx.fillRect(sx + 20, groundY + TURF_H + 28, seg.w - 40, 1);
+    }
+
+    // Draw obstacles (two compresas stacked)
+    const img = compImgRef.current;
+    for (const ob of obsRef.current) {
+      const ox = ob.x - camX;
+      if (ox > W + 10 || ox + OBS_W < -10) continue;
+      const obsTop = groundY - OBS_H;
+      if (img?.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, ox, obsTop, OBS_W, COMP_H);
+      } else {
+        ctx.fillStyle = '#f472b6';
+        ctx.fillRect(ox, obsTop, OBS_W, OBS_H);
+      }
+
+      // Hitbox del obstáculo (solo en modo colisiones)
+      if (showHitboxRef.current) {
+        const hx = ox + 4;
+        const hw = OBS_W - 8;
+        const hy = groundY - (OBS_H - 8);
+        const hh = OBS_H - 8;
+        ctx.save();
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 1.5;
+        ctx.fillStyle = 'rgba(250,204,21,0.18)';
+        ctx.fillRect(hx, hy, hw, hh);
+        ctx.strokeRect(hx, hy, hw, hh);
+        ctx.restore();
+      }
     }
   }, []);
 
@@ -161,43 +232,55 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     const pwx = cameraXRef.current + PLAYER_X;
 
     // Current segment under player center
-    const seg   = segsRef.current.find(s => pwx >= s.x && pwx < s.x + s.w);
+    const seg = segsRef.current.find(s => pwx >= s.x && pwx < s.x + s.w);
     const onGnd = seg?.type === 'ground';
 
     if (groundedRef.current) {
       if (!onGnd) {
-        // Walked into gap — fall
+        // Walked into gap — fall (allow 1 emergency jump)
         groundedRef.current = false;
-        inJumpRef.current   = false;
-        wasGapRef.current   = true;
-        vyRef.current       = 0;
+        inJumpRef.current = false;
+        wasGapRef.current = true;
+        vyRef.current = 0;
+        // jumpsLeftRef stays at 2 — falling off a platform doesn't consume jumps
       }
     } else {
       // Track if we've passed over a gap during this air phase
       if (!onGnd) wasGapRef.current = true;
 
-      // Physics
-      vyRef.current  -= G * dt;
+      // Variable gravity: lighter while holding AND still rising
+      const grav = (holdingRef.current && vyRef.current > 0) ? G_HOLD : G;
+      vyRef.current -= grav * dt;
       jumpHRef.current += vyRef.current * dt;
 
-      if (jumpHRef.current <= 0) {
-        if (onGnd) {
-          // Landed successfully
-          jumpHRef.current = 0;
-          vyRef.current    = 0;
-          groundedRef.current = true;
-          if (inJumpRef.current && wasGapRef.current) {
-            const ns = scoreRef.current + 1;
-            syncScore(ns);
-            speedRef.current = Math.min(BASE_SPEED + ns * SPEED_STEP, MAX_SPEED);
-          }
-          inJumpRef.current = false;
-          wasGapRef.current = false;
-        } else {
-          // Below ground level AND over a gap → game over
-          endGame();
-          return;
+      if (jumpHRef.current <= 0 && onGnd) {
+        // Landed successfully
+        jumpHRef.current = 0;
+        vyRef.current = 0;
+        groundedRef.current = true;
+        jumpsLeftRef.current = 2;
+        if (inJumpRef.current && wasGapRef.current) {
+          const ns = scoreRef.current + 1;
+          syncScore(ns);
+          speedRef.current = Math.min(BASE_SPEED + ns * SPEED_STEP, MAX_SPEED);
         }
+        inJumpRef.current = false;
+        wasGapRef.current = false;
+      } else if (jumpHRef.current <= -50) {
+        // Fallen 50 px below ground surface → game over (matches death line)
+        endGame();
+        return;
+      }
+    }
+
+    // Obstacle collision — front hit kills, landing on top (jumpH ≥ OBS_H - 8) es seguro
+    const playerLeft = PLAYER_X - PLAYER_W / 2 + 6;
+    const playerRight = PLAYER_X + PLAYER_W / 2 - 6;
+    for (const ob of obsRef.current) {
+      const ox = ob.x - cameraXRef.current;
+      if (playerRight > ox + 4 && playerLeft < ox + OBS_W - 4 && jumpHRef.current < OBS_H - 8) {
+        endGame();
+        return;
       }
     }
 
@@ -205,35 +288,50 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     drawTerrain(W, H);
 
     // Update player DOM
+    // Subtract SPRITE_FOOT_OFFSET so the visible feet land exactly on the turf surface
+    const playerBot = GND_OFFSET - SPRITE_FOOT_OFFSET + jumpHRef.current;
     if (playerRef.current) {
-      const bot = GND_OFFSET + Math.max(jumpHRef.current, 0);
-      playerRef.current.style.bottom = bot + 'px';
+      playerRef.current.style.bottom = playerBot + 'px';
       const want = groundedRef.current ? SP.idle : vyRef.current > 0 ? SP.jump : SP.fall;
       if (!playerRef.current.src.endsWith(want)) playerRef.current.src = want;
+    }
+    if (hitboxRef.current) {
+      hitboxRef.current.style.bottom = playerBot + 'px';
     }
 
     animRef.current = requestAnimationFrame(gameLoop);
   }, [drawTerrain, endGame]);
 
   const doJump = useCallback(() => {
-    if (phaseRef.current !== 'playing' || !groundedRef.current) return;
+    if (phaseRef.current !== 'playing') return;
+    if (jumpsLeftRef.current <= 0) return;
+    jumpsLeftRef.current--;
     groundedRef.current = false;
-    inJumpRef.current   = true;
-    vyRef.current       = VY0;
-    jumpHRef.current    = 1; // tiny offset to avoid immediate re-landing check
+    inJumpRef.current = true;
+    vyRef.current = VY0;
+    jumpHRef.current = Math.max(jumpHRef.current, 1); // keep height on double jump
+    holdingRef.current = true;
+  }, []);
+
+  const stopHold = useCallback(() => {
+    holdingRef.current = false;
   }, []);
 
   const startGame = useCallback(() => {
     cancelAnimationFrame(animRef.current);
-    segsRef.current = makeTerrain();
-    cameraXRef.current  = 0;
-    jumpHRef.current    = 0;
-    vyRef.current       = 0;
+    const { segs, obs } = makeTerrain();
+    segsRef.current = segs;
+    obsRef.current = obs;
+    cameraXRef.current = 0;
+    jumpHRef.current = 0;
+    vyRef.current = 0;
     groundedRef.current = true;
-    inJumpRef.current   = false;
-    wasGapRef.current   = false;
-    speedRef.current    = BASE_SPEED;
-    lastTRef.current    = null;
+    inJumpRef.current = false;
+    wasGapRef.current = false;
+    jumpsLeftRef.current = 2;
+    holdingRef.current = false;
+    speedRef.current = BASE_SPEED;
+    lastTRef.current = null;
     syncScore(0);
     syncPhase('playing');
     animRef.current = requestAnimationFrame(gameLoop);
@@ -250,7 +348,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     }
   }, [gameLoop]);
 
-  const btn    = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
+  const btn = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' };
   const btnSec = { ...btn, background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)' };
 
   const Overlay = ({ children }) => (
@@ -264,6 +362,9 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
       ref={areaRef}
       style={{ position: 'fixed', inset: 0, overflow: 'hidden', userSelect: 'none', touchAction: 'none' }}
       onPointerDown={e => { e.preventDefault(); doJump(); }}
+      onPointerUp={stopHold}
+      onPointerLeave={stopHold}
+      onPointerCancel={stopHold}
     >
       {/* Background */}
       <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
@@ -276,11 +377,11 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
         ref={playerRef}
         src={SP.idle}
         alt=""
-        style={{ position: 'absolute', left: PLAYER_X - PLAYER_W / 2, bottom: GND_OFFSET, width: PLAYER_W, height: PLAYER_H, objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', pointerEvents: 'none', zIndex: 20 }}
+        style={{ position: 'absolute', left: PLAYER_X - PLAYER_W / 2, bottom: GND_OFFSET - SPRITE_FOOT_OFFSET, width: PLAYER_W, height: PLAYER_H, objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', pointerEvents: 'none', zIndex: 20 }}
       />
 
       {mostrarColisiones && (
-        <div style={{ position: 'absolute', left: PLAYER_X - PLAYER_W / 2, bottom: GND_OFFSET, width: PLAYER_W, height: PLAYER_H, border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />
+        <div ref={hitboxRef} style={{ position: 'absolute', left: PLAYER_X - PLAYER_W / 2, bottom: GND_OFFSET - SPRITE_FOOT_OFFSET, width: PLAYER_W, height: PLAYER_H, border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />
       )}
 
       {/* Score */}

@@ -475,14 +475,24 @@ export default function GameScreen({ onGameActiveChange }) {
             >
               <div style={{
                 width: '100px', height: '100px', borderRadius: '22px',
-                background: 'linear-gradient(180deg, #BAE6FD 0%, #5da832 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #bae6fd', overflow: 'hidden',
-                position: 'relative',
+                background: 'linear-gradient(180deg, #5b8fd4 0%, #87ceeb 60%, #a8d8f0 100%)',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #bae6fd',
+                overflow: 'hidden', position: 'relative',
               }}>
-                <img src="/juego/mascota-jump.png" alt="" style={{ width: '55%', height: '55%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', position: 'relative', zIndex: 1 }}
-                     onError={e => { e.currentTarget.outerHTML = '<span style="font-size:40px">🏃</span>'; }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%', background: 'linear-gradient(180deg,#72c242,#4a9a28)' }} />
+                {/* Mascota saltando */}
+                <img src="/juego/mascota-jump.png" alt=""
+                  style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', width: '48px', height: '48px', objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
+                  onError={e => { e.currentTarget.style.display = 'none'; }} />
+                {/* Plataforma izquierda */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '42%', zIndex: 1 }}>
+                  <div style={{ height: '10px', background: 'linear-gradient(180deg,#72c242,#4a9a28)', borderRadius: '3px 0 0 0' }} />
+                  <div style={{ height: '22px', background: 'linear-gradient(180deg,#9b6b3a,#6b4020)' }} />
+                </div>
+                {/* Plataforma derecha */}
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '42%', zIndex: 1 }}>
+                  <div style={{ height: '10px', background: 'linear-gradient(180deg,#72c242,#4a9a28)', borderRadius: '0 3px 0 0' }} />
+                  <div style={{ height: '22px', background: 'linear-gradient(180deg,#9b6b3a,#6b4020)' }} />
+                </div>
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Cliff Jump
