@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, Edit2, Trash2, Eye, EyeOff, Sparkles, ImagePlus, X, Save, Database } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Plus, Edit2, Trash2, Eye, EyeOff, Sparkles, ImagePlus, X, Save, Database, Search, SlidersHorizontal } from 'lucide-react';
 import { ApiService } from '../api';
 import AuthImage from '../components/AuthImage';
 
@@ -136,6 +136,10 @@ export default function AdminConsejosScreen() {
 function ArticulosTab({ onEdit, onNew }) {
   const [articulos, setArticulos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showFiltros, setShowFiltros] = useState(false);
+  const [filtroNombre, setFiltroNombre] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
   const imgVersion = React.useRef(Date.now()).current;  // buster constante en este montaje
 
   const cargar = async () => {
@@ -148,9 +152,10 @@ function ArticulosTab({ onEdit, onNew }) {
 
   useEffect(() => { cargar(); }, []);
 
-  const handleDelete = async (a) => {
-    if (!window.confirm(`¿Eliminar "${a.titulo}"? Esta acción no se puede deshacer.`)) return;
-    try { await ApiService.eliminarArticuloConsejo(a.id); cargar(); } catch (e) { alert(e.message); }
+  const handleDelete = (a) => setDeleteTarget(a);
+  const confirmDelete = async () => {
+    try { await ApiService.eliminarArticuloConsejo(deleteTarget.id); cargar(); } catch (e) { alert(e.message); }
+    setDeleteTarget(null);
   };
 
   const handleToggleActivo = async (a) => {
@@ -159,7 +164,38 @@ function ArticulosTab({ onEdit, onNew }) {
 
   return (
     <div>
-      <button onClick={onNew} style={btnPrimario}><Plus size={16} /> Nuevo artículo</button>
+      {deleteTarget && (
+        <ConfirmModal
+          titulo="Eliminar artículo"
+          mensaje={`¿Eliminar "${deleteTarget.titulo}"? Esta acción no se puede deshacer.`}
+          onClose={() => setDeleteTarget(null)}
+          opciones={[
+            { label: 'Eliminar', primary: true, onClick: confirmDelete },
+            { label: 'Cancelar', onClick: () => setDeleteTarget(null) },
+          ]}
+        />
+      )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button onClick={onNew} style={btnPrimario}><Plus size={16} /> Nuevo artículo</button>
+        <button onClick={() => setShowFiltros(v => !v)} style={{ ...btnSec, color: showFiltros ? 'var(--primary)' : 'var(--text-light)', borderColor: showFiltros ? 'var(--primary)' : '#eee' }}>
+          <SlidersHorizontal size={14} /> Filtrar
+        </button>
+      </div>
+      {showFiltros && (
+        <div style={{ marginTop: 8, background: 'white', borderRadius: 12, padding: '12px 14px', border: '1.5px solid #e5d5f0', display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Estado</span>
+            <SelectEstado value={filtroEstado} onChange={setFiltroEstado} opciones={[{ value: 'todos', label: 'Todos' }, { value: 'activo', label: 'Activos' }, { value: 'inactivo', label: 'Inactivos' }]} />
+          </div>
+          <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Nombre</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1.5px solid #eee', borderRadius: 12, padding: '8px 10px', background: 'white' }}>
+              <Search size={13} color="var(--text-light)" />
+              <input value={filtroNombre} onChange={e => setFiltroNombre(e.target.value)} placeholder="Buscar…" style={{ border: 'none', outline: 'none', fontSize: 13, width: '100%', background: 'transparent', color: 'var(--text-dark)', fontFamily: 'inherit' }} />
+            </div>
+          </div>
+        </div>
+      )}
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', gap: 16 }}>
           <div style={{
@@ -173,8 +209,13 @@ function ArticulosTab({ onEdit, onNew }) {
         </div>
       ) : (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {articulos.length === 0 && <p style={{ color: 'var(--text-light)' }}>Sin artículos.</p>}
-          {articulos.map(a => (
+          {(() => {
+            const visibles = articulos.filter(a =>
+              (!filtroNombre || a.titulo.toLowerCase().includes(filtroNombre.toLowerCase())) &&
+              (filtroEstado === 'todos' || (filtroEstado === 'activo' ? a.activo : !a.activo))
+            );
+            if (visibles.length === 0) return <p style={{ color: 'var(--text-light)' }}>Sin resultados.</p>;
+            return visibles.map(a => (
             <div key={a.id} style={{ background: 'white', borderRadius: 12, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
               <div style={{ width: 60, height: 60, borderRadius: 10, background: '#f3e5f5', flexShrink: 0, overflow: 'hidden' }}>
                 {a.tiene_imagen ? <AuthImage src={ApiService.imagenArticuloConsejoUrl(a.id, imgVersion)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 28, textAlign: 'center', paddingTop: 12 }}>✨</div>}
@@ -187,7 +228,8 @@ function ArticulosTab({ onEdit, onNew }) {
               <button onClick={() => onEdit(a)} style={iconBtn}><Edit2 size={16} /></button>
               <button onClick={() => handleDelete(a)} style={{ ...iconBtn, color: '#ef4444' }}><Trash2 size={16} /></button>
             </div>
-          ))}
+          ));
+          })()}
         </div>
       )}
     </div>
@@ -388,12 +430,17 @@ function ArticuloEditor({ data, onClose }) {
 // ─────────── Clasificaciones ───────────
 function ClasificacionesTab({ onEdit, onNew }) {
   const [items, setItems] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showFiltros, setShowFiltros] = useState(false);
+  const [filtroNombre, setFiltroNombre] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
   const cargar = async () => setItems(await ApiService.getClasificacionesConsejo(true));
   useEffect(() => { cargar(); }, []);
 
-  const handleDelete = async (c) => {
-    if (!window.confirm(`¿Eliminar "${c.nombre}"? Se borrarán también los artículos asociados.`)) return;
-    try { await ApiService.eliminarClasificacionConsejo(c.id); cargar(); } catch (e) { alert(e.message); }
+  const handleDelete = (c) => setDeleteTarget(c);
+  const confirmDelete = async () => {
+    try { await ApiService.eliminarClasificacionConsejo(deleteTarget.id); cargar(); } catch (e) { alert(e.message); }
+    setDeleteTarget(null);
   };
   const handleToggle = async (c) => {
     try { await ApiService.actualizarClasificacionConsejo(c.id, { activa: !c.activa }); cargar(); } catch (e) { alert(e.message); }
@@ -401,20 +448,62 @@ function ClasificacionesTab({ onEdit, onNew }) {
 
   return (
     <div>
-      <button onClick={onNew} style={btnPrimario}><Plus size={16} /> Nueva clasificación</button>
-      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {items.map(c => (
-          <div key={c.id} style={{ background: 'white', borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{c.nombre}</div>
-              {c.descripcion && <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.descripcion}</div>}
-              <div style={{ fontSize: 11, color: c.activa ? '#10b981' : '#999', marginTop: 2 }}>{c.activa ? 'Activa' : 'Inactiva'}</div>
-            </div>
-            <button onClick={() => handleToggle(c)} style={iconBtn}>{c.activa ? <Eye size={16} /> : <EyeOff size={16} />}</button>
-            <button onClick={() => onEdit(c)} style={iconBtn}><Edit2 size={16} /></button>
-            <button onClick={() => handleDelete(c)} style={{ ...iconBtn, color: '#ef4444' }}><Trash2 size={16} /></button>
+      {deleteTarget && (
+        <ConfirmModal
+          titulo="Eliminar clasificación"
+          mensaje={`¿Eliminar "${deleteTarget.nombre}"? Se borrarán también los artículos asociados.`}
+          onClose={() => setDeleteTarget(null)}
+          opciones={[
+            { label: 'Eliminar', primary: true, onClick: confirmDelete },
+            { label: 'Cancelar', onClick: () => setDeleteTarget(null) },
+          ]}
+        />
+      )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button onClick={onNew} style={btnPrimario}><Plus size={16} /> Nueva clasificación</button>
+        <button onClick={() => setShowFiltros(v => !v)} style={{ ...btnSec, color: showFiltros ? 'var(--primary)' : 'var(--text-light)', borderColor: showFiltros ? 'var(--primary)' : '#eee' }}>
+          <SlidersHorizontal size={14} /> Filtrar
+        </button>
+      </div>
+      {showFiltros && (
+        <div style={{ marginTop: 8, background: 'white', borderRadius: 12, padding: '12px 14px', border: '1.5px solid #e5d5f0', display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Estado</span>
+            <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} style={{ ...inputCss, marginBottom: 0, padding: '8px 10px', fontSize: 13, width: 'auto', cursor: 'pointer' }}>
+              <option value="todos">Todos</option>
+              <option value="activo">Activas</option>
+              <option value="inactivo">Inactivas</option>
+            </select>
           </div>
-        ))}
+          <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Nombre</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1.5px solid #eee', borderRadius: 12, padding: '8px 10px', background: 'white' }}>
+              <Search size={13} color="var(--text-light)" />
+              <input value={filtroNombre} onChange={e => setFiltroNombre(e.target.value)} placeholder="Buscar…" style={{ border: 'none', outline: 'none', fontSize: 13, width: '100%', background: 'transparent', color: 'var(--text-dark)', fontFamily: 'inherit' }} />
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {(() => {
+          const visibles = items.filter(c =>
+            (!filtroNombre || c.nombre.toLowerCase().includes(filtroNombre.toLowerCase())) &&
+            (filtroEstado === 'todos' || (filtroEstado === 'activo' ? c.activa : !c.activa))
+          );
+          if (visibles.length === 0) return <p style={{ color: 'var(--text-light)' }}>Sin resultados.</p>;
+          return visibles.map(c => (
+            <div key={c.id} style={{ background: 'white', borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{c.nombre}</div>
+                {c.descripcion && <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.descripcion}</div>}
+                <div style={{ fontSize: 11, color: c.activa ? '#10b981' : '#999', marginTop: 2 }}>{c.activa ? 'Activa' : 'Inactiva'}</div>
+              </div>
+              <button onClick={() => handleToggle(c)} style={iconBtn}>{c.activa ? <Eye size={16} /> : <EyeOff size={16} />}</button>
+              <button onClick={() => onEdit(c)} style={iconBtn}><Edit2 size={16} /></button>
+              <button onClick={() => handleDelete(c)} style={{ ...iconBtn, color: '#ef4444' }}><Trash2 size={16} /></button>
+            </div>
+          ));
+        })()}
       </div>
     </div>
   );
@@ -459,12 +548,17 @@ function ClasificacionEditor({ data, onClose }) {
 // ─────────── Etiquetas ───────────
 function EtiquetasTab({ onEdit, onNew }) {
   const [items, setItems] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showFiltros, setShowFiltros] = useState(false);
+  const [filtroNombre, setFiltroNombre] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
   const cargar = async () => setItems(await ApiService.getEtiquetasConsejo(true));
   useEffect(() => { cargar(); }, []);
 
-  const handleDelete = async (e) => {
-    if (!window.confirm(`¿Eliminar "${e.nombre}"?`)) return;
-    try { await ApiService.eliminarEtiquetaConsejo(e.id); cargar(); } catch (err) { alert(err.message); }
+  const handleDelete = (e) => setDeleteTarget(e);
+  const confirmDelete = async () => {
+    try { await ApiService.eliminarEtiquetaConsejo(deleteTarget.id); cargar(); } catch (err) { alert(err.message); }
+    setDeleteTarget(null);
   };
   const handleToggle = async (e) => {
     try { await ApiService.actualizarEtiquetaConsejo(e.id, { activa: !e.activa }); cargar(); } catch (err) { alert(err.message); }
@@ -472,19 +566,61 @@ function EtiquetasTab({ onEdit, onNew }) {
 
   return (
     <div>
-      <button onClick={onNew} style={btnPrimario}><Plus size={16} /> Nueva etiqueta</button>
-      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {items.map(e => (
-          <div key={e.id} style={{ background: 'white', borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{e.nombre}</div>
-              <div style={{ fontSize: 11, color: e.activa ? '#10b981' : '#999' }}>{e.activa ? 'Activa' : 'Inactiva'}</div>
-            </div>
-            <button onClick={() => handleToggle(e)} style={iconBtn}>{e.activa ? <Eye size={16} /> : <EyeOff size={16} />}</button>
-            <button onClick={() => onEdit(e)} style={iconBtn}><Edit2 size={16} /></button>
-            <button onClick={() => handleDelete(e)} style={{ ...iconBtn, color: '#ef4444' }}><Trash2 size={16} /></button>
+      {deleteTarget && (
+        <ConfirmModal
+          titulo="Eliminar etiqueta"
+          mensaje={`¿Eliminar "${deleteTarget.nombre}"?`}
+          onClose={() => setDeleteTarget(null)}
+          opciones={[
+            { label: 'Eliminar', primary: true, onClick: confirmDelete },
+            { label: 'Cancelar', onClick: () => setDeleteTarget(null) },
+          ]}
+        />
+      )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button onClick={onNew} style={btnPrimario}><Plus size={16} /> Nueva etiqueta</button>
+        <button onClick={() => setShowFiltros(v => !v)} style={{ ...btnSec, color: showFiltros ? 'var(--primary)' : 'var(--text-light)', borderColor: showFiltros ? 'var(--primary)' : '#eee' }}>
+          <SlidersHorizontal size={14} /> Filtrar
+        </button>
+      </div>
+      {showFiltros && (
+        <div style={{ marginTop: 8, background: 'white', borderRadius: 12, padding: '12px 14px', border: '1.5px solid #e5d5f0', display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Estado</span>
+            <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} style={{ ...inputCss, marginBottom: 0, padding: '8px 10px', fontSize: 13, width: 'auto', cursor: 'pointer' }}>
+              <option value="todos">Todos</option>
+              <option value="activo">Activas</option>
+              <option value="inactivo">Inactivas</option>
+            </select>
           </div>
-        ))}
+          <div style={{ flex: 1, minWidth: 150, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Nombre</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1.5px solid #eee', borderRadius: 12, padding: '8px 10px', background: 'white' }}>
+              <Search size={13} color="var(--text-light)" />
+              <input value={filtroNombre} onChange={e => setFiltroNombre(e.target.value)} placeholder="Buscar…" style={{ border: 'none', outline: 'none', fontSize: 13, width: '100%', background: 'transparent', color: 'var(--text-dark)', fontFamily: 'inherit' }} />
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {(() => {
+          const visibles = items.filter(e =>
+            (!filtroNombre || e.nombre.toLowerCase().includes(filtroNombre.toLowerCase())) &&
+            (filtroEstado === 'todos' || (filtroEstado === 'activo' ? e.activa : !e.activa))
+          );
+          if (visibles.length === 0) return <p style={{ color: 'var(--text-light)' }}>Sin resultados.</p>;
+          return visibles.map(e => (
+            <div key={e.id} style={{ background: 'white', borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{e.nombre}</div>
+                <div style={{ fontSize: 11, color: e.activa ? '#10b981' : '#999' }}>{e.activa ? 'Activa' : 'Inactiva'}</div>
+              </div>
+              <button onClick={() => handleToggle(e)} style={iconBtn}>{e.activa ? <Eye size={16} /> : <EyeOff size={16} />}</button>
+              <button onClick={() => onEdit(e)} style={iconBtn}><Edit2 size={16} /></button>
+              <button onClick={() => handleDelete(e)} style={{ ...iconBtn, color: '#ef4444' }}><Trash2 size={16} /></button>
+            </div>
+          ));
+        })()}
       </div>
     </div>
   );
@@ -564,6 +700,33 @@ function AvisoModal({ titulo, mensaje, tipo = 'info', onClose }) {
           color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer'
         }}>Aceptar</button>
       </div>
+    </div>
+  );
+}
+
+function SelectEstado({ value, onChange, opciones }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+  const selected = opciones.find(o => o.value === value);
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 12, border: `1.5px solid ${open ? 'var(--primary)' : '#eee'}`, background: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-dark)', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        {selected?.label} <ChevronDown size={13} color="var(--text-light)" />
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: 'white', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', zIndex: 200, minWidth: '100%', overflow: 'hidden', border: '1.5px solid #eee' }}>
+          {opciones.map(o => (
+            <button key={o.value} onClick={() => { onChange(o.value); setOpen(false); }} style={{ display: 'block', width: '100%', padding: '10px 14px', background: o.value === value ? 'rgba(176,91,181,0.08)' : 'white', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: o.value === value ? 700 : 500, color: o.value === value ? 'var(--primary)' : 'var(--text-dark)', textAlign: 'left', fontFamily: 'inherit' }}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
-import SkyJumpGame  from './SkyJumpGame';
-import SkyHopGame   from './SkyHopGame';
-import FoodDropGame from './FoodDropGame';
+import SkyJumpGame   from './SkyJumpGame';
+import SkyHopGame    from './SkyHopGame';
+import FoodDropGame  from './FoodDropGame';
+import CliffJumpGame from './CliffJumpGame';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -80,7 +81,8 @@ export default function GameScreen({ onGameActiveChange }) {
   const [enJuego,    setEnJuego]    = useState(false);
   const [enSkyJump,  setEnSkyJump]  = useState(false);
   const [enSkyHop,   setEnSkyHop]   = useState(false);
-  const [enFoodDrop, setEnFoodDrop] = useState(false);
+  const [enFoodDrop,   setEnFoodDrop]   = useState(false);
+  const [enCliffJump,  setEnCliffJump]  = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
@@ -88,7 +90,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
   const { user } = useContext(AuthContext);
 
-  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop;
+  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump;
 
   useEffect(() => {
     onGameActiveChange?.(inAnyGame);
@@ -103,6 +105,7 @@ export default function GameScreen({ onGameActiveChange }) {
       setEnSkyJump(false);
       setEnSkyHop(false);
       setEnFoodDrop(false);
+      setEnCliffJump(false);
       setMostrarJuegos(true);
     };
     window.addEventListener('popstate', onPop);
@@ -207,6 +210,16 @@ export default function GameScreen({ onGameActiveChange }) {
         mostrarColisiones={mostrarColisiones}
         globalSensPct={tiltSensPct}
         onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
+      />
+    );
+  }
+
+  if (enCliffJump) {
+    return (
+      <CliffJumpGame
+        onSalir={() => setEnCliffJump(false)}
+        onVolverAlListado={() => { setEnCliffJump(false); setMostrarJuegos(true); }}
+        mostrarColisiones={mostrarColisiones}
       />
     );
   }
@@ -452,6 +465,27 @@ export default function GameScreen({ onGameActiveChange }) {
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Food Drop
+              </span>
+            </div>
+
+            {/* Juego 5: Cliff Jump */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnCliffJump(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: 'linear-gradient(180deg, #BAE6FD 0%, #5da832 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #bae6fd', overflow: 'hidden',
+                position: 'relative',
+              }}>
+                <img src="/juego/mascota-jump.png" alt="" style={{ width: '55%', height: '55%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', position: 'relative', zIndex: 1 }}
+                     onError={e => { e.currentTarget.outerHTML = '<span style="font-size:40px">🏃</span>'; }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%', background: 'linear-gradient(180deg,#72c242,#4a9a28)' }} />
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Cliff Jump
               </span>
             </div>
           </div>
