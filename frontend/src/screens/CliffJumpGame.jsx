@@ -57,8 +57,8 @@ function makeTerrain() {
     x += gw;
     const pw = GND_MIN + Math.random() * (GND_MAX - GND_MIN);
     segs.push({ type: 'ground', x, w: pw });
-    // Obstacle: from gap #5, 60% chance, only on platforms wide enough
-    if (i >= 5 && pw >= GND_MAX * 0.6 && Math.random() < 0.6) {
+    // Obstacle: from gap #5, 70% chance, only on platforms wide enough
+    if (i >= 5 && pw >= GND_MAX * 0.7 && Math.random() < 0.7) {
       // Center the obstacle on the platform
       obs.push({ x: x + pw / 2 - OBS_W / 2 });
     }
@@ -147,41 +147,52 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     const groundY = H - GND_OFFSET;
 
     // Death line drawn FIRST so terrain blocks cover it where there's ground
-    ctx.save();
-    ctx.setLineDash([10, 7]);
-    ctx.strokeStyle = 'rgba(220,40,40,0.75)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, groundY + 50);
-    ctx.lineTo(W, groundY + 50);
-    ctx.stroke();
-    ctx.restore();
+    if (showHitboxRef.current) {
+      ctx.save();
+      ctx.setLineDash([10, 7]);
+      ctx.strokeStyle = 'rgba(220,40,40,0.75)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY + 50);
+      ctx.lineTo(W, groundY + 50);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     for (const seg of segsRef.current) {
       if (seg.type !== 'ground') continue;
       const sx = seg.x - camX;
       if (sx > W + 4 || sx + seg.w < -4) continue;
 
-      // Dirt body (fills from below turf to bottom of canvas)
-      const grad = ctx.createLinearGradient(0, groundY + TURF_H, 0, H);
-      grad.addColorStop(0, '#9b6b3a');
+      // Dirt body
+      const dirtH = H - groundY - TURF_H;
+      const grad = ctx.createLinearGradient(0, groundY + TURF_H, 0, groundY + TURF_H + dirtH);
+      grad.addColorStop(0, '#a0714a');
+      grad.addColorStop(0.3, '#8c5e35');
       grad.addColorStop(1, '#6b4020');
       ctx.fillStyle = grad;
-      ctx.fillRect(sx, groundY + TURF_H, seg.w, H - groundY - TURF_H);
+      ctx.fillRect(sx, groundY + TURF_H, seg.w, dirtH);
 
-      // Grass turf (14px green strip at surface level)
+      // Side shadow on left edge for 3-D look
+      const shadow = ctx.createLinearGradient(sx, 0, sx + Math.min(8, seg.w), 0);
+      shadow.addColorStop(0, 'rgba(0,0,0,0.18)');
+      shadow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = shadow;
+      ctx.fillRect(sx, groundY + TURF_H, Math.min(8, seg.w), dirtH);
+
+      // Grass turf
       const grassGrad = ctx.createLinearGradient(0, groundY, 0, groundY + TURF_H);
-      grassGrad.addColorStop(0, '#72c242');
-      grassGrad.addColorStop(1, '#4a9a28');
+      grassGrad.addColorStop(0, '#82d44e');
+      grassGrad.addColorStop(0.5, '#5db832');
+      grassGrad.addColorStop(1, '#3d9020');
       ctx.fillStyle = grassGrad;
       ctx.beginPath();
       ctx.roundRect(sx, groundY, seg.w, TURF_H, [4, 4, 0, 0]);
       ctx.fill();
 
-      // Subtle dirt texture lines
-      ctx.fillStyle = 'rgba(0,0,0,0.07)';
-      ctx.fillRect(sx + 10, groundY + TURF_H + 14, seg.w - 20, 1);
-      ctx.fillRect(sx + 20, groundY + TURF_H + 28, seg.w - 40, 1);
+      // Thin highlight on top of grass
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(sx + 2, groundY + 1, seg.w - 4, 3);
     }
 
     // Draw obstacles (two compresas stacked)
