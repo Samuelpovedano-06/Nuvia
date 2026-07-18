@@ -107,7 +107,13 @@ const CatLabel = ({ id }) => {
 const IcoPlay  = ({ size = 11, color = 'currentColor' }) => <svg width={size} height={size * 1.1} viewBox="0 0 10 11" fill="none"><polygon points="0,0 10,5.5 0,11" fill={color}/></svg>;
 const IcoPause = ({ size = 11, color = 'currentColor' }) => <svg width={size} height={size * 1.1} viewBox="0 0 10 11" fill="none"><rect x="0" y="0" width="3.5" height="11" rx="1" fill={color}/><rect x="6.5" y="0" width="3.5" height="11" rx="1" fill={color}/></svg>;
 
-const WAVEFORM_DUR = 300; // segundos que representa la onda (5 min)
+const parseDurSecs = (str) => {
+  if (!str) return 300;
+  const parts = str.split(':').map(Number);
+  if (parts.length === 2) return (parts[0] || 0) * 60 + (parts[1] || 0);
+  if (parts.length === 3) return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+  return 300;
+};
 const generateWaveform = (seed = '', count = 52) => {
   let h = 5381;
   for (const c of (seed || '')) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0;
@@ -1540,8 +1546,9 @@ export default function CommunityScreen() {
                 {showTramoSelector && (() => {
                   const vid = ytVideoId(musicaSeleccionada?.preview);
                   const bars = generateWaveform(vid);
-                  const startPct = offsetMusica / WAVEFORM_DUR;
-                  const winPct   = 30 / WAVEFORM_DUR;
+                  const durSecs = musicaSeleccionada?.duracionSecs ?? 300;
+                  const startPct = offsetMusica / durSecs;
+                  const winPct   = 30 / durSecs;
                   return (
                     <div style={{ background: '#4f46e5', borderRadius: '0 0 12px 12px', padding: '14px 14px 12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -1569,7 +1576,7 @@ export default function CommunityScreen() {
                         </div>
                         {/* Input range invisible encima para el drag */}
                         <input
-                          type="range" min={0} max={WAVEFORM_DUR - 30} step={1} value={offsetMusica}
+                          type="range" min={0} max={Math.max(0, durSecs - 30)} step={1} value={offsetMusica}
                           onChange={e => { setOffsetMusica(Number(e.target.value)); if (reproduciendo === musicaSeleccionada.preview) stopPlayback(); }}
                           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', margin: 0 }}
                         />
@@ -1577,7 +1584,7 @@ export default function CommunityScreen() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.55)' }}>
                         <span>0:00</span>
                         <span style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>{fmtSec(offsetMusica)} → {fmtSec(offsetMusica + 30)}</span>
-                        <span>{fmtSec(WAVEFORM_DUR)}</span>
+                        <span>{fmtSec(durSecs)}</span>
                       </div>
                     </div>
                   );
@@ -1620,7 +1627,7 @@ export default function CommunityScreen() {
                   {resultadosMusica.map((r, i) => (
                     <button
                       key={i}
-                      onClick={() => { setMusicaSeleccionada(r); setOffsetMusica(0); setShowTramoSelector(true); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); stopPlayback(); }}
+                      onClick={() => { setMusicaSeleccionada({ ...r, duracionSecs: parseDurSecs(r.duracion) }); setOffsetMusica(0); setShowTramoSelector(true); setShowBuscarMusica(false); setBusquedaMusica(''); setArtistaMusica(''); setResultadosMusica([]); stopPlayback(); }}
                       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '10px', border: '1.5px solid #f0f0f5', background: 'white', cursor: 'pointer', textAlign: 'left' }}
                     >
                       {r.artwork && <img src={r.artwork} alt="" style={{ width: '38px', height: '38px', borderRadius: '6px', flexShrink: 0 }} />}
