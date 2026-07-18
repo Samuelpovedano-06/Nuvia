@@ -28,9 +28,9 @@ const SPEED_STEP = 8;    // per successful gap crossed
 
 // Terrain
 const GAP_MIN = 110;
-const GAP_MAX = 280;
+const GAP_MAX = 290;
 const GND_MIN = 90;
-const GND_MAX = 280;
+const GND_MAX = 380;
 const INIT_GND = 380;
 
 // Obstacles (compresas apiladas)
@@ -40,10 +40,15 @@ const OBS_H = COMP_H; // una sola compresa
 
 const SP = {
   bg: '/juego/Sky_Jump/fondo_nubes.png',
-  idle: '/juego/mascota-idle.png',
   jump: '/juego/mascota-jump.png',
   fall: '/juego/mascota-caida.png',
 };
+
+// Sprite sheet de correr (mismo que la pantalla principal)
+const WALK_SHEET = '/mascota-walk.png';
+const WALK_COLS = 6;
+const WALK_CELL = 70;   // px por celda en la sheet original
+const WALK_INTERVAL = 60;   // ms por frame (más rápido que el paseo normal de 130 ms)
 
 function makeTerrain() {
   const segs = [{ type: 'ground', x: 0, w: INIT_GND }];
@@ -93,6 +98,8 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
   const canvasRef = useRef(null);
   const playerRef = useRef(null);
   const hitboxRef = useRef(null);
+  const walkFrameRef = useRef(0);
+  const lastWalkTRef = useRef(0);
 
   const syncPhase = v => { phaseRef.current = v; setPhase(v); };
   const syncScore = v => { scoreRef.current = v; setScore(v); };
@@ -303,8 +310,22 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     const playerBot = GND_OFFSET - SPRITE_FOOT_OFFSET + jumpHRef.current;
     if (playerRef.current) {
       playerRef.current.style.bottom = playerBot + 'px';
-      const want = groundedRef.current ? SP.idle : vyRef.current > 0 ? SP.jump : SP.fall;
-      if (!playerRef.current.src.endsWith(want)) playerRef.current.src = want;
+      if (groundedRef.current) {
+        const now = performance.now();
+        if (now - lastWalkTRef.current >= WALK_INTERVAL) {
+          walkFrameRef.current = (walkFrameRef.current + 1) % WALK_COLS;
+          lastWalkTRef.current = now;
+        }
+        const fx = walkFrameRef.current * PLAYER_W;
+        playerRef.current.style.backgroundImage = `url('${WALK_SHEET}')`;
+        playerRef.current.style.backgroundSize = `${WALK_COLS * PLAYER_W}px ${2 * PLAYER_H}px`;
+        playerRef.current.style.backgroundPosition = `-${fx}px 0px`;
+      } else {
+        const src = vyRef.current > 0 ? SP.jump : SP.fall;
+        playerRef.current.style.backgroundImage = `url('${src}')`;
+        playerRef.current.style.backgroundSize = 'contain';
+        playerRef.current.style.backgroundPosition = 'center';
+      }
     }
     if (hitboxRef.current) {
       hitboxRef.current.style.bottom = playerBot + 'px';
@@ -384,11 +405,15 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 
       {/* Player */}
-      <img
+      <div
         ref={playerRef}
-        src={SP.idle}
-        alt=""
-        style={{ position: 'absolute', left: PLAYER_X - PLAYER_W / 2, bottom: GND_OFFSET - SPRITE_FOOT_OFFSET, width: PLAYER_W, height: PLAYER_H, objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', pointerEvents: 'none', zIndex: 20 }}
+        style={{
+          position: 'absolute', left: PLAYER_X - PLAYER_W / 2, bottom: GND_OFFSET - SPRITE_FOOT_OFFSET,
+          width: PLAYER_W, height: PLAYER_H,
+          backgroundImage: `url('${SP.jump}')`, backgroundSize: 'contain',
+          backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
+          filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', pointerEvents: 'none', zIndex: 20,
+        }}
       />
 
       {mostrarColisiones && (
