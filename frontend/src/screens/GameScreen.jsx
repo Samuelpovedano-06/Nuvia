@@ -523,20 +523,20 @@ export default function GameScreen({ onGameActiveChange }) {
                 boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #f3c6e6',
                 overflow: 'hidden', position: 'relative',
               }}>
-                <img src="/juego/Sky_Jump/fondo_nubes_portal.png" alt=""
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={e => { e.currentTarget.style.display = 'none'; }} />
-                {/* Camino en zigzag */}
-                <div style={{ position: 'absolute', bottom: '14px', left: '18px', width: '30px', height: '14px', background: 'linear-gradient(180deg,#82d44e,#4a9a28)', borderRadius: '3px', transform: 'rotate(-20deg)' }} />
-                <div style={{ position: 'absolute', bottom: '30px', left: '40px', width: '30px', height: '14px', background: 'linear-gradient(180deg,#82d44e,#4a9a28)', borderRadius: '3px', transform: 'rotate(20deg)' }} />
-                <div style={{ position: 'absolute', bottom: '50px', left: '58px', width: '30px', height: '14px', background: 'linear-gradient(180deg,#82d44e,#4a9a28)', borderRadius: '3px', transform: 'rotate(-20deg)' }} />
-                {/* Compresa obstáculo */}
+                {/* Cielo */}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,#87d9f5,#b8e9fa)' }} />
+                {/* 3 carriles horizontales apilados, como en el juego real */}
+                <div style={{ position: 'absolute', top: '26px', left: 0, right: 0, bottom: 0, background: 'linear-gradient(180deg,#ffd35c,#ffa733)' }} />
+                <div style={{ position: 'absolute', top: '26px', left: 0, right: 0, height: '3px', background: '#3fae1f' }} />
+                <div style={{ position: 'absolute', top: '52px', left: 0, right: 0, height: '3px', background: '#3fae1f' }} />
+                <div style={{ position: 'absolute', top: '78px', left: 0, right: 0, height: '3px', background: '#3fae1f' }} />
+                {/* Compresa obstáculo, en el carril de arriba */}
                 <img src="/juego/compresa.png" alt=""
-                  style={{ position: 'absolute', top: '18px', right: '14px', width: '24px', height: '22px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))', transform: 'rotate(20deg)' }}
+                  style={{ position: 'absolute', top: '10px', right: '12px', width: '22px', height: '20px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
-                {/* Mascota */}
-                <img src="/juego/mascota-jump.png" alt=""
-                  style={{ position: 'absolute', bottom: '36px', left: '44px', width: '30px', height: '30px', objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
+                {/* Mascota, corriendo por el carril del medio */}
+                <img src="/juego/mascota-idle.png" alt=""
+                  style={{ position: 'absolute', top: '52px', left: '16px', width: '32px', height: '32px', objectFit: 'contain', transform: 'translateY(-100%)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
