@@ -7,6 +7,7 @@ import SkyJumpGame   from './SkyJumpGame';
 import SkyHopGame    from './SkyHopGame';
 import FoodDropGame  from './FoodDropGame';
 import CliffJumpGame from './CliffJumpGame';
+import CliffDashGame from './CliffDashGame';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -83,6 +84,7 @@ export default function GameScreen({ onGameActiveChange }) {
   const [enSkyHop,   setEnSkyHop]   = useState(false);
   const [enFoodDrop,   setEnFoodDrop]   = useState(false);
   const [enCliffJump,  setEnCliffJump]  = useState(false);
+  const [enCliffDash,  setEnCliffDash]  = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
@@ -90,7 +92,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
   const { user } = useContext(AuthContext);
 
-  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump;
+  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash;
 
   useEffect(() => {
     onGameActiveChange?.(inAnyGame);
@@ -106,6 +108,7 @@ export default function GameScreen({ onGameActiveChange }) {
       setEnSkyHop(false);
       setEnFoodDrop(false);
       setEnCliffJump(false);
+      setEnCliffDash(false);
       setMostrarJuegos(true);
     };
     window.addEventListener('popstate', onPop);
@@ -219,6 +222,16 @@ export default function GameScreen({ onGameActiveChange }) {
       <CliffJumpGame
         onSalir={() => setEnCliffJump(false)}
         onVolverAlListado={() => { setEnCliffJump(false); setMostrarJuegos(true); }}
+        mostrarColisiones={mostrarColisiones}
+      />
+    );
+  }
+
+  if (enCliffDash) {
+    return (
+      <CliffDashGame
+        onSalir={() => setEnCliffDash(false)}
+        onVolverAlListado={() => { setEnCliffDash(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
       />
     );
@@ -496,6 +509,38 @@ export default function GameScreen({ onGameActiveChange }) {
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Cliff Jump
+              </span>
+            </div>
+
+            {/* Juego 6: Cliff Dash */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnCliffDash(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: 'linear-gradient(180deg, #b5479a 0%, #d66b93 60%, #f3a8d8 100%)',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #f3c6e6',
+                overflow: 'hidden', position: 'relative',
+              }}>
+                <img src="/juego/Sky_Jump/fondo_nubes_portal.png" alt=""
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={e => { e.currentTarget.style.display = 'none'; }} />
+                {/* Camino en zigzag */}
+                <div style={{ position: 'absolute', bottom: '14px', left: '18px', width: '30px', height: '14px', background: 'linear-gradient(180deg,#82d44e,#4a9a28)', borderRadius: '3px', transform: 'rotate(-20deg)' }} />
+                <div style={{ position: 'absolute', bottom: '30px', left: '40px', width: '30px', height: '14px', background: 'linear-gradient(180deg,#82d44e,#4a9a28)', borderRadius: '3px', transform: 'rotate(20deg)' }} />
+                <div style={{ position: 'absolute', bottom: '50px', left: '58px', width: '30px', height: '14px', background: 'linear-gradient(180deg,#82d44e,#4a9a28)', borderRadius: '3px', transform: 'rotate(-20deg)' }} />
+                {/* Compresa obstáculo */}
+                <img src="/juego/compresa.png" alt=""
+                  style={{ position: 'absolute', top: '18px', right: '14px', width: '24px', height: '22px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))', transform: 'rotate(20deg)' }}
+                  onError={e => { e.currentTarget.style.display = 'none'; }} />
+                {/* Mascota */}
+                <img src="/juego/mascota-jump.png" alt=""
+                  style={{ position: 'absolute', bottom: '36px', left: '44px', width: '30px', height: '30px', objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
+                  onError={e => { e.currentTarget.style.display = 'none'; }} />
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Cliff Dash
               </span>
             </div>
           </div>
