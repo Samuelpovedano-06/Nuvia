@@ -41,6 +41,7 @@ function computeLaneLayout(H) {
   return { otherH, lastH, skyMargin };
 }
 const LANE_LERP = 12;  // suavizado del cambio de carril (mayor = más rápido)
+const SWIPE_MIN_DIST = 30; // px mínimos de deslizamiento vertical para cambiar de carril
 
 // Velocidad
 const BASE_SPEED = 200;  // px de mundo / seg
@@ -180,6 +181,7 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
   const cloudImgRef = useRef(null);
   const showHitboxRef = useRef(mostrarColisiones);
   const areaRef = useRef(null);
+  const swipeStartRef = useRef(null); // { y, id } — para detectar deslizar arriba/abajo
   const canvasRef = useRef(null);
   const playerRef = useRef(null);
   const walkFrameRef = useRef(0);
@@ -602,11 +604,22 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       style={{ position: 'fixed', inset: 0, overflow: 'hidden', userSelect: 'none', touchAction: 'none', background: 'linear-gradient(180deg, #6fc9ec 0%, #a7e1f4 100%)' }}
       onPointerDown={e => {
         e.preventDefault();
-        if (phaseRef.current !== 'playing' || !areaRef.current) return;
-        const rect = areaRef.current.getBoundingClientRect();
-        const relY = e.clientY - rect.top;
-        moveLane(relY < rect.height / 2 ? -1 : 1);
+        if (phaseRef.current !== 'playing') return;
+        swipeStartRef.current = { y: e.clientY, id: e.pointerId };
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) { }
       }}
+      onPointerUp={e => {
+        const start = swipeStartRef.current;
+        swipeStartRef.current = null;
+        if (!start || start.id !== e.pointerId || phaseRef.current !== 'playing') return;
+        const deltaY = e.clientY - start.y;
+        if (Math.abs(deltaY) < SWIPE_MIN_DIST) return;
+        // Deslizar hacia arriba (deltaY negativo) sube de carril; hacia
+        // abajo (deltaY positivo) baja, sin importar en qué punto de la
+        // pantalla empiece el gesto.
+        moveLane(deltaY < 0 ? -1 : 1);
+      }}
+      onPointerCancel={() => { swipeStartRef.current = null; }}
     >
       {/* Carriles y compresas */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
