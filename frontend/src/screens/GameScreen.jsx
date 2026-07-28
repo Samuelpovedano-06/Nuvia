@@ -8,6 +8,7 @@ import SkyHopGame    from './SkyHopGame';
 import FoodDropGame  from './FoodDropGame';
 import CliffJumpGame from './CliffJumpGame';
 import CliffDashGame from './CliffDashGame';
+import TumbleGame    from './TumbleGame';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -85,6 +86,7 @@ export default function GameScreen({ onGameActiveChange }) {
   const [enFoodDrop,   setEnFoodDrop]   = useState(false);
   const [enCliffJump,  setEnCliffJump]  = useState(false);
   const [enCliffDash,  setEnCliffDash]  = useState(false);
+  const [enTumble,     setEnTumble]     = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
@@ -92,7 +94,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
   const { user } = useContext(AuthContext);
 
-  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash;
+  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash || enTumble;
 
   useEffect(() => {
     onGameActiveChange?.(inAnyGame);
@@ -109,6 +111,7 @@ export default function GameScreen({ onGameActiveChange }) {
       setEnFoodDrop(false);
       setEnCliffJump(false);
       setEnCliffDash(false);
+      setEnTumble(false);
       setMostrarJuegos(true);
     };
     window.addEventListener('popstate', onPop);
@@ -233,6 +236,17 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnCliffDash(false)}
         onVolverAlListado={() => { setEnCliffDash(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+      />
+    );
+  }
+
+  if (enTumble) {
+    return (
+      <TumbleGame
+        onSalir={() => setEnTumble(false)}
+        onVolverAlListado={() => { setEnTumble(false); setMostrarJuegos(true); }}
+        mostrarColisiones={mostrarColisiones}
+        globalSensPct={tiltSensPct}
       />
     );
   }
@@ -541,6 +555,31 @@ export default function GameScreen({ onGameActiveChange }) {
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Cliff Dash
+              </span>
+            </div>
+
+            {/* Juego 7: Tumble */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnTumble(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: 'linear-gradient(180deg, #6fc9ec 0%, #a7e1f4 100%)',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #bae6fd',
+                overflow: 'hidden', position: 'relative',
+              }}>
+                {/* Roca */}
+                <div style={{ position: 'absolute', bottom: '10px', left: '10px', width: '22px', height: '20px', borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%, #9ca3af, #4b5563)' }} />
+                {/* Tronco */}
+                <div style={{ position: 'absolute', bottom: '16px', right: '8px', width: '30px', height: '13px', borderRadius: '7px', background: 'linear-gradient(180deg,#a0714a,#6b4020)' }} />
+                {/* Mascota rodando */}
+                <img src="/juego/mascota-idle.png" alt=""
+                  style={{ position: 'absolute', top: '30px', left: '50%', width: '36px', height: '36px', objectFit: 'contain', transform: 'translateX(-50%) rotate(25deg)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
+                  onError={e => { e.currentTarget.style.display = 'none'; }} />
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Tumble
               </span>
             </div>
           </div>
