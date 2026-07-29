@@ -14,9 +14,10 @@ const SP = {
 // ─────────────────────── Jugador ───────────────────────
 const PLAYER_W = 52;
 const PLAYER_H = 52;
-const PLAYER_Y_FRAC = 0.6;  // posición fija en pantalla (fracción del alto)
+const PLAYER_REST_FRAC = 0.25; // posición de reposo, cerca del borde de arriba
 const MOVE_SPEED = 380;     // px/s moviéndose lateralmente (tocando la pantalla)
-const ROLL_DEG_PER_PX = 0.6; // velocidad de giro del sprite al rodar (solo cuando cae)
+const ROLL_DEG_PER_PX = 0.6; // velocidad de giro del sprite al rodar
+const CRUSH_MARGIN = 32;    // cuánto puede asomar por debajo del borde antes de perder
 
 // Movimiento por giroscopio (inclinar el móvil). Si se está tocando la
 // pantalla, el toque manda; si no, el personaje sigue la inclinación.
@@ -49,11 +50,6 @@ const HAZARD_CLEAR_W = PLAYER_W + 16;
 
 // Arbustos decorativos sobre el césped sólido
 const BUSH_CHANCE = 0.45;
-
-// El césped es SÓLIDO: si no estás alineado con el hueco al llegar a una
-// franja, te quedas parado sobre ella (solo puedes moverte en horizontal)
-// hasta encontrar el hueco. Si tardas demasiado, la pantalla te alcanza.
-const STUCK_LIMIT_MS = 2400;
 
 const BG_PARALLAX = 0.5; // el fondo se desplaza más despacio que las franjas
 
@@ -169,6 +165,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
   const tiltRef = useRef(0);    // grados de inclinación del giroscopio
   const sensFactorRef = useRef(1);
   const playerXRef = useRef(180);
+  const playerDisplayYRef = useRef(0); // Y real en pantalla (baja si una franja lo empuja)
   const rollAngleRef = useRef(0);
   const rowsRef = useRef([]);
   const nextRowWorldYRef = useRef(0);
@@ -177,19 +174,11 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
   const showHitboxRef = useRef(mostrarColisiones);
   const bgRatioRef = useRef(1);
 
-  // Física de "suelo firme": mientras hay una franja bloqueando, el
-  // personaje se queda quieto en vertical (solo se mueve en horizontal)
-  // hasta encontrar el hueco. Si tarda demasiado, la pantalla lo alcanza.
-  const groundedRef = useRef(false);
-  const blockingRowRef = useRef(null);
-  const stuckSinceRef = useRef(0);
-
   const areaRef = useRef(null);
   const canvasRef = useRef(null);
   const playerRef = useRef(null);
   const hitboxRef = useRef(null);
   const bgRef = useRef(null);
-  const crushOverlayRef = useRef(null);
 
   const syncPhase = v => { phaseRef.current = v; setPhase(v); };
   const syncScore = v => { scoreRef.current = v; setScore(v); };
@@ -251,9 +240,9 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     }
     ctx.clearRect(0, 0, W, H);
 
-    const playerScreenY = H * PLAYER_Y_FRAC;
+    const restY = H * PLAYER_REST_FRAC;
     for (const row of rowsRef.current) {
-      const screenY = playerScreenY + distanceRef.current - row.worldY;
+      const screenY = restY + row.worldY - distanceRef.current;
       if (screenY < -60 || screenY > H + 60) continue;
 
       drawTurf(ctx, 0, row.gapLeft, screenY);
@@ -281,11 +270,10 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     if (!area) { animRef.current = requestAnimationFrame(gameLoop); return; }
     const W = area.clientWidth;
     const H = area.clientHeight;
-    const playerScreenY = H * PLAYER_Y_FRAC;
+    const restY = H * PLAYER_REST_FRAC;
 
-    // Movimiento lateral: siempre disponible, tanto cayendo como parado
-    // buscando el hueco de la franja que te bloquea. El toque manda si se
-    // está usando; si no, el personaje sigue la inclinación del móvil.
+    // Movimiento lateral: siempre disponible. El toque manda si se está
+    // usando; si no, el personaje sigue la inclinación del móvil.
     let lateralSpeed = moveDirRef.current * MOVE_SPEED;
     if (moveDirRef.current === 0 && Math.abs(tiltRef.current) > TILT_DEADZONE) {
       lateralSpeed = clamp(tiltRef.current * TILT_DEG_TO_PX * sensFactorRef.current, -MOVE_SPEED, MOVE_SPEED);
@@ -294,63 +282,46 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     const playerLeft = playerXRef.current - PLAYER_W / 2 * 0.75;
     const playerRight = playerXRef.current + PLAYER_W / 2 * 0.75;
 
-    const hitsHazard = row => {
-      if (!row.hazard) return false;
-      const h = row.hazard;
-      const xPad = PLAYER_W / 2 * 0.55;
-      return playerRight > h.x - h.size / 2 - xPad && playerLeft < h.x + h.size / 2 + xPad;
-    };
-    const withinGap = row => playerLeft >= row.gapLeft && playerRight <= row.gapRight;
+    // El mundo (las franjas de césped) siempre sube, sin pausas: nacen
+    // abajo (fuera de pantalla) y avanzan hacia arriba.
+    const fallSpeed = Math.min(MAX_FALL_SPEED, BASE_FALL_SPEED + distanceRef.current * SPEED_RAMP);
+    distanceRef.current += fallSpeed * dt;
 
-    if (groundedRef.current) {
-      // Parado sobre césped sólido: solo se libera si se alinea con el
-      // hueco; si tarda demasiado, la pantalla (el borde de arriba) lo
-      // alcanza y pierde.
-      const row = blockingRowRef.current;
-      if (hitsHazard(row)) { endGame('critical'); return; }
-      if (withinGap(row)) {
-        row.resolved = true;
-        groundedRef.current = false;
-        blockingRowRef.current = null;
-      } else if (ts - stuckSinceRef.current >= STUCK_LIMIT_MS) {
-        endGame('crushed');
-        return;
-      }
-    } else {
-      // Cayendo con normalidad: la distancia avanza y la dificultad crece.
-      const fallSpeed = Math.min(MAX_FALL_SPEED, BASE_FALL_SPEED + distanceRef.current * SPEED_RAMP);
-      distanceRef.current += fallSpeed * dt;
+    // Generar franjas por debajo, a punto de entrar en pantalla
+    while (nextRowWorldYRef.current <= distanceRef.current + (H - restY) + 40) {
+      rowsRef.current.push(spawnPlatformRow(nextRowWorldYRef.current, W, distanceRef.current));
+      const spacing = Math.max(ROW_SPACING_MIN, ROW_SPACING_START - distanceRef.current * ROW_SPACING_RAMP);
+      nextRowWorldYRef.current += spacing;
+    }
 
-      // Generar franjas por delante del jugador
-      while (nextRowWorldYRef.current <= distanceRef.current + playerScreenY + 40) {
-        rowsRef.current.push(spawnPlatformRow(nextRowWorldYRef.current, W, distanceRef.current));
-        const spacing = Math.max(ROW_SPACING_MIN, ROW_SPACING_START - distanceRef.current * ROW_SPACING_RAMP);
-        nextRowWorldYRef.current += spacing;
-      }
-
-      // ¿La franja más próxima sin resolver ha llegado ya a la línea del jugador?
-      const next = rowsRef.current.find(r => !r.resolved);
-      if (next) {
-        const screenY = playerScreenY + distanceRef.current - next.worldY;
-        if (screenY >= playerScreenY) {
-          if (hitsHazard(next)) { endGame('critical'); return; }
-          if (withinGap(next)) {
-            next.resolved = true; // pasa limpio por el hueco
-          } else {
-            // Choca contra el césped sólido: se detiene en seco (suelo firme)
-            distanceRef.current = next.worldY;
-            groundedRef.current = true;
-            blockingRowRef.current = next;
-            stuckSinceRef.current = ts;
-          }
+    // La mascota se queda en su línea de reposo (cerca de arriba) salvo que
+    // una franja sólida ya la haya alcanzado y la esté empujando hacia arriba.
+    let playerDisplayY = restY;
+    const next = rowsRef.current.find(r => !r.resolved);
+    if (next) {
+      const screenY = restY + next.worldY - distanceRef.current;
+      if (screenY <= restY) {
+        const hitHazard = next.hazard && (() => {
+          const h = next.hazard;
+          const xPad = PLAYER_W / 2 * 0.55;
+          return playerRight > h.x - h.size / 2 - xPad && playerLeft < h.x + h.size / 2 + xPad;
+        })();
+        if (hitHazard) { endGame('critical'); return; }
+        const withinGap = playerLeft >= next.gapLeft && playerRight <= next.gapRight;
+        if (withinGap) {
+          next.resolved = true; // pasa limpio por el hueco, se mantiene a salvo
+        } else {
+          // Césped sólido: la franja la empuja hacia arriba al seguir subiendo
+          playerDisplayY = screenY;
+          if (screenY < -CRUSH_MARGIN) { endGame('crushed'); return; }
         }
       }
     }
 
-    // Limpieza de franjas ya pasadas por debajo de la pantalla
+    // Limpieza de franjas ya pasadas por encima de la pantalla
     rowsRef.current = rowsRef.current.filter(row => {
-      const screenY = playerScreenY + distanceRef.current - row.worldY;
-      return screenY <= H + 80;
+      const screenY = restY + row.worldY - distanceRef.current;
+      return screenY >= -80;
     });
 
     const newScore = Math.floor(distanceRef.current / PX_PER_METER);
@@ -358,26 +329,22 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
 
     drawScene(W, H);
 
+    playerDisplayYRef.current = playerDisplayY;
     if (playerRef.current) {
       playerRef.current.style.left = playerXRef.current + 'px';
-      playerRef.current.style.top = playerScreenY + 'px';
-      if (!groundedRef.current) {
-        rollAngleRef.current = (distanceRef.current * ROLL_DEG_PER_PX) % 360;
-      }
+      playerRef.current.style.top = playerDisplayY + 'px';
+      rollAngleRef.current = (distanceRef.current * ROLL_DEG_PER_PX) % 360;
       playerRef.current.style.transform = `translate(-50%, -50%) rotate(${rollAngleRef.current}deg)`;
     }
     if (hitboxRef.current) {
       hitboxRef.current.style.left = playerXRef.current + 'px';
-      hitboxRef.current.style.top = playerScreenY + 'px';
+      hitboxRef.current.style.top = playerDisplayY + 'px';
     }
     if (bgRef.current) {
       const tileH = W * bgRatioRef.current;
       const off = tileH > 0 ? (distanceRef.current * BG_PARALLAX) % tileH : 0;
+      // Negativo: el fondo se desplaza hacia arriba, igual que las franjas.
       bgRef.current.style.backgroundPositionY = `${-off}px`;
-    }
-    if (crushOverlayRef.current) {
-      const dangerT = groundedRef.current ? clamp((ts - stuckSinceRef.current) / STUCK_LIMIT_MS, 0, 1) : 0;
-      crushOverlayRef.current.style.height = `${dangerT * H * 0.6}px`;
     }
 
     animRef.current = requestAnimationFrame(gameLoop);
@@ -389,14 +356,12 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     const W = area?.clientWidth || 360;
     const H = area?.clientHeight || 600;
     playerXRef.current = W / 2;
+    playerDisplayYRef.current = H * PLAYER_REST_FRAC;
     distanceRef.current = 0;
     moveDirRef.current = 0;
     rollAngleRef.current = 0;
     rowsRef.current = [];
-    nextRowWorldYRef.current = H * PLAYER_Y_FRAC + 260;
-    groundedRef.current = false;
-    blockingRowRef.current = null;
-    stuckSinceRef.current = 0;
+    nextRowWorldYRef.current = H * (1 - PLAYER_REST_FRAC) + 260;
     lastTRef.current = null;
     syncScore(0);
     syncPhase('playing');
@@ -438,20 +403,18 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       onPointerLeave={() => { moveDirRef.current = 0; }}
       onPointerCancel={() => { moveDirRef.current = 0; }}
     >
-      {/* Fondo de nubes, con scroll continuo hacia abajo (se detiene si el jugador se queda atascado) */}
+      {/* Fondo de nubes, con scroll continuo hacia abajo */}
       <div ref={bgRef} style={{ position: 'absolute', inset: 0, backgroundImage: `url('${SP.bg}')`, backgroundRepeat: 'repeat-y', backgroundSize: '100% auto', pointerEvents: 'none' }} />
 
       {/* Franjas de césped con hueco + obstáculos */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 
-      {/* Aviso visual de "la pantalla te alcanza" mientras estás atascado en una franja */}
-      <div ref={crushOverlayRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.6), rgba(20,15,10,0))', pointerEvents: 'none', zIndex: 15 }} />
-
-      {/* Jugador */}
+      {/* Jugador: se queda cerca del borde de abajo; si una franja sólida
+          lo alcanza, lo empuja hacia abajo hasta sacarlo de la pantalla */}
       <div
         ref={playerRef}
         style={{
-          position: 'absolute', left: playerXRef.current, top: 0,
+          position: 'absolute', left: playerXRef.current, top: playerDisplayYRef.current,
           width: PLAYER_W, height: PLAYER_H,
           backgroundImage: `url('${SP.player}')`, backgroundSize: 'contain',
           backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
@@ -460,7 +423,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       />
 
       {mostrarColisiones && (
-        <div ref={hitboxRef} style={{ position: 'absolute', left: playerXRef.current, top: 0, width: PLAYER_W, height: PLAYER_H, transform: 'translate(-50%, -50%)', border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />
+        <div ref={hitboxRef} style={{ position: 'absolute', left: playerXRef.current, top: playerDisplayYRef.current, width: PLAYER_W, height: PLAYER_H, transform: 'translate(-50%, -50%)', border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />
       )}
 
       {/* Puntuación */}
@@ -487,7 +450,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
           <h2 style={{ color: 'var(--primary)', margin: 0 }}>Tumble</h2>
           <p style={{ color: '#64748b', textAlign: 'center', fontSize: 14, margin: '8px 24px 18px' }}>
             Toca el lado izquierdo o derecho para rodar hacia ese lado.<br />
-            El césped es sólido: si no encuentras el hueco a tiempo te quedas atascado y la pantalla te alcanza. ¡Cuidado con las rocas y troncos que haya dentro del hueco!
+            El césped es sólido: si no encuentras el hueco a tiempo, la franja te empuja hacia arriba y te saca de la pantalla. ¡Cuidado con las rocas y troncos que haya dentro del hueco!
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 220 }}>
             <button onClick={startGame} style={btn}><Play size={18} fill="white" /> Empezar</button>
@@ -513,7 +476,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       {phase === 'over' && (
         <Overlay>
           <h2 style={{ color: 'var(--primary)', margin: 0 }}>
-            {deathReason === 'crushed' ? '¡La pantalla te ha alcanzado!' : '¡Has chocado!'}
+            {deathReason === 'crushed' ? '¡Te ha empujado fuera de la pantalla!' : '¡Has chocado!'}
           </h2>
           <p style={{ color: '#64748b', fontSize: 14, margin: '6px 0 4px' }}>
             Distancia: <strong style={{ color: 'var(--primary)', fontSize: 24 }}>{score} m</strong>
