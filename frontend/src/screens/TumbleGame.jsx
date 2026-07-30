@@ -30,13 +30,14 @@ const MAX_FALL_SPEED = 500;   // px/s velocidad máxima
 const SPEED_RAMP = 0.5;       // aumento de px/s por metro recorrido
 const PX_PER_METER = 20;      // píxeles por metro (puntuación)
 const CRUSH_MARGIN = PLAYER_H; // px por encima de pantalla antes de morir
+const PLAYER_FALL_FRAC = 0.62; // Y en pantalla (fracción desde arriba) al que se fija el jugador al caer
 
 // ─────────────────── Plataformas ────────────────────────
 const ROW_SPACING_START = 160;
 const ROW_SPACING_MIN = 100;
 const ROW_SPACING_RAMP = 0.012;
-const GAP_W_START = PLAYER_W * 1.2;
-const GAP_W_MIN = PLAYER_W * 1.1;
+const GAP_W_START = PLAYER_W * 2.0;
+const GAP_W_MIN = PLAYER_W * 1.5;
 const GAP_W_RAMP = 0.01;
 const ROW_MARGIN = 10;
 const PLATFORM_THICKNESS = 30;
@@ -52,11 +53,22 @@ const BG_PARALLAX = 0.5;
 
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
-// Genera una fila de plataforma con un hueco (y a veces un obstáculo dentro del hueco)
-function spawnPlatformRow(worldY, W, distance) {
+// Genera una fila de plataforma con un hueco que, en la medida de lo posible,
+// no solapa con el hueco de la plataforma anterior (para que el jugador siempre aterrice).
+function spawnPlatformRow(worldY, W, distance, prevRow) {
   const gapW = clamp(GAP_W_START - distance * GAP_W_RAMP, GAP_W_MIN, GAP_W_START);
-  const gapLeft = ROW_MARGIN + Math.random() * Math.max(0, W - ROW_MARGIN * 2 - gapW);
-  const gapRight = gapLeft + gapW;
+
+  // Intenta colocar el hueco en una posición que no solape demasiado con el anterior
+  let gapLeft, gapRight;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    gapLeft = ROW_MARGIN + Math.random() * Math.max(0, W - ROW_MARGIN * 2 - gapW);
+    gapRight = gapLeft + gapW;
+    if (!prevRow) break; // primera plataforma, sin restricción
+    const overlapLeft = Math.max(gapLeft, prevRow.gapLeft);
+    const overlapRight = Math.min(gapRight, prevRow.gapRight);
+    const overlap = Math.max(0, overlapRight - overlapLeft);
+    if (overlap / gapW < 0.35) break; // menos del 35% de solape → válido
+  }
 
   let hazard = null;
   const hazardChance = Math.min(HAZARD_CHANCE_MAX, HAZARD_CHANCE_BASE + distance * HAZARD_RAMP);
@@ -347,15 +359,22 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     }
 
     // ── Muerte: la pantalla alcanza al jugador ───────────────
-    // screenY = worldY - scroll  →  negativo = por encima de pantalla
-    const playerScreenY = playerWorldYRef.current - scrollRef.current;
-    if (playerScreenY < -CRUSH_MARGIN) {
+    // ── Cámara híbrida ────────────────────────────────────────
+    // Si el jugador está cayendo más rápido que el scroll, la cámara lo sigue
+    // para que no desaparezca por abajo. Si está en plataforma, manda el scroll.
+    const cameraY = Math.max(scrollRef.current, playerWorldYRef.current - H * PLAYER_FALL_FRAC);
+
+    // Muerte: el scroll automático alcanza al jugador por arriba
+    const playerScreenY = playerWorldYRef.current - cameraY;
+    const playerScreenYScroll = playerWorldYRef.current - scrollRef.current;
+    if (playerScreenYScroll < -CRUSH_MARGIN) {
       endGame('crushed'); return;
     }
 
     // ── Genera nuevas plataformas por debajo ─────────────────
-    while (nextRowWorldYRef.current <= scrollRef.current + H + 40) {
-      rowsRef.current.push(spawnPlatformRow(nextRowWorldYRef.current, W, scrollRef.current));
+    while (nextRowWorldYRef.current <= cameraY + H + 40) {
+      const lastRow = rowsRef.current.length > 0 ? rowsRef.current[rowsRef.current.length - 1] : null;
+      rowsRef.current.push(spawnPlatformRow(nextRowWorldYRef.current, W, scrollRef.current, lastRow));
       const spacing = Math.max(ROW_SPACING_MIN, ROW_SPACING_START - scrollRef.current * ROW_SPACING_RAMP);
       nextRowWorldYRef.current += spacing;
     }
@@ -365,7 +384,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     if (newScore !== scoreRef.current) syncScore(newScore);
 
     // ── Dibuja ───────────────────────────────────────────────
-    drawScene(W, H, scrollRef.current);
+    drawScene(W, H, cameraY);
 
     // ── Actualiza sprite del jugador ─────────────────────────
     if (playerRef.current) {
@@ -379,13 +398,13 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     }
     if (bgRef.current) {
       const tileH = W * bgRatioRef.current;
-      const off = tileH > 0 ? (scrollRef.current * BG_PARALLAX) % tileH : 0;
+      const off = tileH > 0 ? (cameraY * BG_PARALLAX) % tileH : 0;
       bgRef.current.style.backgroundPositionY = `${-off}px`;
     }
 
     // ── Limpia plataformas que ya subieron muy por encima ────
     rowsRef.current = rowsRef.current.filter(
-      row => row === currentPlatformRef.current || row.worldY > scrollRef.current - 120
+      row => row === currentPlatformRef.current || row.worldY > cameraY - 120
     );
 
     animRef.current = requestAnimationFrame(gameLoop);
