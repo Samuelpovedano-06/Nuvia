@@ -15,7 +15,7 @@ const CHASSIS_H = 22;
 const MASS = 1.0;
 const I_INERTIA = 0.85;
 const FRICTION = 0.82;
-const TILT_KILL_DEG = 70;
+const TILT_KILL_DEG = 125;
 const TIMER_INIT = 60000;
 const FUEL_BONUS_MS = 8000;
 const FUEL_INTERVAL = 4500;
@@ -407,56 +407,62 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     
     const penF = (wfy + WHEEL_RADIUS) - groundF;
     const penR = (wry + WHEEL_RADIUS) - groundR;
-    const enSueloF = penF > -2 && chassis.y >= (groundF - WHEEL_RADIUS - 14) && chassis.vy >= -40;
-    const enSueloR = penR > -2 && chassis.y >= (groundR - WHEEL_RADIUS - 14) && chassis.vy >= -40;
+    const enSueloF = penF >= -6;
+    const enSueloR = penR >= -6;
     const enSuelo = enSueloF || enSueloR;
 
     // Gravedad
     chassis.vy += 750 * dt;
 
-    // Aceleración (Tracción Trasera RWD) y Freno
+    // Aceleración (Tracción Trasera) y Freno (rebajado un 83% para máxima estabilidad dócil)
     if (s.accel > 0) {
-      if (enSueloR) {
-        // Tracción Trasera: Solo impulsa si la rueda trasera toca el suelo
-        chassis.vx += 950 * dt;
-        chassis.omega += 4.2 * dt; // Levantamiento de morro por par de tracción trasera
-      } else if (!enSuelo) {
-        chassis.omega += 8.5 * dt; // Giro en el aire
+      if (enSueloR || enSuelo) {
+        // Aceleración con tracción trasera (83% más dócil y estable)
+        chassis.vx += 980 * dt;
+        chassis.omega -= 0.8 * dt; // Elevación sutil de morro
+      } else {
+        chassis.omega -= 1.2 * dt; // Giro muy suave en el aire
       }
     } else if (s.accel < 0) {
       if (enSuelo) {
-        chassis.vx -= 520 * dt;
-        chassis.omega -= 3.8 * dt; // Torque de frenada: hinca el morro hacia abajo
+        chassis.vx -= 550 * dt;
+        chassis.omega += 0.6 * dt; // Frenada suave
       } else {
-        chassis.omega -= 8.5 * dt;
+        chassis.omega += 1.2 * dt;
       }
     }
 
-    // En suelo se aplica fricción ligera; en el aire la inercia horizontal se conserva 100%
+    // En suelo se aplica fricción ligera; en el aire la inercia horizontal se conserva
     chassis.vx *= Math.pow(enSuelo ? 0.985 : 0.9995, dt * 60);
     chassis.vx = clamp(chassis.vx, -300, 1000);
     chassis.vy = clamp(chassis.vy, -1000, 1000);
+
+    // Integración de rotación con firme auto-nivelado de pendiente al apoyar ambas ruedas
+    if (enSueloF && enSueloR) {
+      const slopeAngle = Math.atan2(groundF - groundR, wfx - wrx);
+      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 11.0 * dt);
+      chassis.omega *= 0.30;
+    }
+    chassis.angle += chassis.omega * dt;
+    chassis.omega *= Math.pow(0.96, dt * 60);
 
     // Integración de posición
     chassis.x += chassis.vx * dt;
     chassis.y += chassis.vy * dt;
 
-    // Alineación y física de suelo
-    if (enSuelo) {
-      const groundAvg = (groundF + groundR) / 2;
-      const targetY = groundAvg - WHEEL_RADIUS - 8;
-      if (chassis.y > targetY - 4) {
-        chassis.y = targetY - 4;
+    // Física de contacto: Apoyo pivotado en rueda trasera para permitir levantar el morro sin freno
+    if (enSueloR) {
+      const targetY_R = groundR - WHEEL_RADIUS - 8 + Math.sin(chassis.angle) * WHEEL_OX;
+      if (chassis.y > targetY_R - 4) {
+        chassis.y = targetY_R - 4;
         if (chassis.vy > 0) chassis.vy = 0;
       }
-      // Orientación progresiva según pendiente (permite desequilibrio y exige control manual)
-      const slopeAngle = Math.atan2(groundF - groundR, wfx - wrx);
-      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 4.5 * dt);
-      chassis.omega *= 0.7;
-    } else {
-      // Rotación en el aire libre
-      chassis.omega *= Math.pow(0.97, dt * 60);
-      chassis.angle += chassis.omega * dt;
+    } else if (enSueloF) {
+      const targetY_F = groundF - WHEEL_RADIUS - 8 - Math.sin(chassis.angle) * WHEEL_OX;
+      if (chassis.y > targetY_F - 4) {
+        chassis.y = targetY_F - 4;
+        if (chassis.vy > 0) chassis.vy = 0;
+      }
     }
 
     s.camX = chassis.x - s.W * CAM_X_OFFSET;
