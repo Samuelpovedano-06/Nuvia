@@ -353,20 +353,23 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
           playerVYRef.current = 0;
           playerWorldYRef.current = row.worldY - PLAYER_H / 2;
           currentPlatformRef.current = row;
+          break; // aterrizó en esta plataforma
         }
-        break; // una sola plataforma por frame
       }
     }
 
-    // ── Cámara fluida: si el jugador cae rápido, el scroll avanza sin tirones ──
-    const targetScroll = playerWorldYRef.current - H * PLAYER_FALL_FRAC;
-    if (targetScroll > scrollRef.current) {
-      scrollRef.current = targetScroll;
-    }
     const cameraY = scrollRef.current;
+    let playerScreenY = playerWorldYRef.current - cameraY;
+
+    // Límite inferior: el jugador desciende de forma 100% natural sin tirones de cámara;
+    // si llega al fondo, no se le permite salir de pantalla.
+    const maxScreenY = H - PLAYER_H / 2 - 12;
+    if (playerScreenY > maxScreenY) {
+      playerWorldYRef.current = cameraY + maxScreenY;
+      playerScreenY = maxScreenY;
+    }
 
     // Muerte: el scroll automático alcanza al jugador por arriba
-    const playerScreenY = playerWorldYRef.current - cameraY;
     if (playerScreenY < -CRUSH_MARGIN) {
       endGame('crushed'); return;
     }
