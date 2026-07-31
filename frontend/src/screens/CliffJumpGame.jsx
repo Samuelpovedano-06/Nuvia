@@ -481,6 +481,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 220 }}>
             <button onClick={togglePause} style={btn}><Play size={18} fill="white" /> Reanudar</button>
             <button onClick={onVolverAlListado} style={btnSec}>Volver atrás</button>
+            <button onClick={onSalir} style={btnSec}>Salir</button>
           </div>
         </Overlay>
       )}

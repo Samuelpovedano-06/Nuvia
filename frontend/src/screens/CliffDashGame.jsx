@@ -514,14 +514,36 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     laneRef.current = Math.max(0, Math.min(LANES - 1, laneRef.current + delta));
   }, []);
 
-  const exitFullscreen = () => {
-    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) { }
+  const exitFullscreen = async () => {
+    // Esperar a que la pantalla completa se cierre DE VERDAD antes de
+    // navegar de vuelta al listado. En algunos navegadores móviles la
+    // promesa se resuelve antes de que document.fullscreenElement se
+    // actualice, así que además comprobamos el estado real (con límite de
+    // tiempo por si nunca llega a soltarse del todo) — si no, la barra de
+    // menús puede quedarse calculada con un viewport a medio asentar y no
+    // aparecer.
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        const start = Date.now();
+        while (document.fullscreenElement && Date.now() - start < 500) {
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+    } catch (_) { }
     try { screen.orientation?.unlock?.(); } catch (_) { }
+    window.dispatchEvent(new Event('resize'));
+    await new Promise(r => setTimeout(r, 60));
   };
 
-  const handleExit = () => {
-    exitFullscreen();
+  const handleExit = async () => {
+    await exitFullscreen();
     onVolverAlListado?.();
+  };
+
+  const handleSalirExit = async () => {
+    await exitFullscreen();
+    onSalir?.();
   };
 
   const handleGirar = async () => {
@@ -715,6 +737,7 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 220 }}>
             <button onClick={togglePause} style={btn}><Play size={18} fill="white" /> Reanudar</button>
             <button onClick={handleExit} style={btnSec}>Volver atrás</button>
+            <button onClick={handleSalirExit} style={btnSec}>Salir</button>
           </div>
         </Overlay>
       )}

@@ -144,13 +144,34 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     };
   }, []);
 
-  const exitFullscreen = () => {
-    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) { }
+  const exitFullscreen = async () => {
+    // Hay que ESPERAR a que la pantalla completa se cierre DE VERDAD antes
+    // de navegar de vuelta al listado. En algunos navegadores móviles la
+    // promesa de exitFullscreen() se resuelve antes de que
+    // document.fullscreenElement se actualice, así que además de esperar
+    // la promesa, comprobamos el estado real (con un límite de tiempo por
+    // si nunca llega a soltarse del todo) — si no, React desmonta el juego
+    // y muestra la barra de menús mientras el navegador sigue a medio salir
+    // de pantalla completa/orientación bloqueada, y la barra se queda mal
+    // calculada (oculta) hasta que algo más fuerce un recálculo.
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        const start = Date.now();
+        while (document.fullscreenElement && Date.now() - start < 500) {
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+    } catch (_) { }
     try { screen?.orientation?.unlock?.(); } catch (_) { }
+    // Red de seguridad: fuerza un recálculo de layout por si algo se quedó
+    // con las medidas viejas.
+    window.dispatchEvent(new Event('resize'));
+    await new Promise(r => setTimeout(r, 60));
   };
 
-  const handleSalir = () => { exitFullscreen(); onSalir?.(); };
-  const handleVolver = () => { exitFullscreen(); onVolverAlListado?.(); };
+  const handleSalir = async () => { await exitFullscreen(); onSalir?.(); };
+  const handleVolver = async () => { await exitFullscreen(); onVolverAlListado?.(); };
 
   const handleGirar = async () => {
     try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (_) { }

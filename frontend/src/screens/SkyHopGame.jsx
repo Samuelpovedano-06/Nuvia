@@ -254,14 +254,36 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     syncPhase('over');
   }, []);
 
-  const exitFullscreen = () => {
-    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {}
+  const exitFullscreen = async () => {
+    // Esperar a que la pantalla completa se cierre DE VERDAD antes de
+    // navegar de vuelta al listado. En algunos navegadores móviles la
+    // promesa se resuelve antes de que document.fullscreenElement se
+    // actualice, así que además comprobamos el estado real (con límite de
+    // tiempo por si nunca llega a soltarse del todo) — si no, la barra de
+    // menús puede quedarse calculada con un viewport a medio asentar y no
+    // aparecer.
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        const start = Date.now();
+        while (document.fullscreenElement && Date.now() - start < 500) {
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+    } catch (_) {}
     try { screen.orientation?.unlock?.(); } catch (_) {}
+    window.dispatchEvent(new Event('resize'));
+    await new Promise(r => setTimeout(r, 60));
   };
 
-  const handleExit = () => {
-    exitFullscreen();
+  const handleExit = async () => {
+    await exitFullscreen();
     (onVolverAlListado || onSalir)?.();
+  };
+
+  const handleSalirExit = async () => {
+    await exitFullscreen();
+    onSalir?.();
   };
 
   const togglePause = useCallback(() => {
@@ -298,17 +320,43 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     }
   }, [phase]);
 
-  const placePlayer = (col, row, cont) => {
+  const placePlayer = useCallback((col, row, cont) => {
     const pl = playerRef.current;
     if (!pl || !cont) return;
     const cw = cont.clientWidth;
     const ch = cont.clientHeight;
+    if (!cw || !ch) return;
     const left = (getSlotX(col, row.n, cw) - PL_W / 2) + 'px';
     const top  = (ch * BASE_Y_PCT - PL_H + FEET_OFFSET) + 'px';
     pl.style.left = left;
     pl.style.top  = top;
     if (playerHitRef.current) { playerHitRef.current.style.left = left; playerHitRef.current.style.top = top; }
-  };
+  }, []);
+
+  // Reposition player whenever phase or orientation changes (or container resizes)
+  useEffect(() => {
+    if (phase === 'playing' || phase === 'paused') {
+      const reposition = () => {
+        const r = rowsRef.current[curRowRef.current];
+        if (r && contRef.current) {
+          placePlayer(curColRef.current, r, contRef.current);
+        }
+      };
+      reposition();
+      const t1 = setTimeout(reposition, 60);
+      const t2 = setTimeout(reposition, 200);
+      const t3 = setTimeout(reposition, 500);
+      window.addEventListener('resize', reposition);
+      window.addEventListener('orientationchange', reposition);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        window.removeEventListener('resize', reposition);
+        window.removeEventListener('orientationchange', reposition);
+      };
+    }
+  }, [phase, landscape, placePlayer]);
 
   const startGame = async () => {
     try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (_) {}
@@ -621,9 +669,9 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       {phase !== 'menu' && (
         <>
           <img ref={playerRef} src={sprite === 'jump' ? SP.jump : sprite === 'fall' ? SP.fall : SP.idle} alt=""
-            style={{ position: 'absolute', width: PL_W, height: PL_H, objectFit: 'contain', zIndex: 20, pointerEvents: 'none' }} />
+            style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, objectFit: 'contain', zIndex: 20, pointerEvents: 'none' }} />
           {mostrarColisiones && (
-            <div ref={playerHitRef} style={{ position: 'absolute', width: PL_W, height: PL_H, zIndex: 21, pointerEvents: 'none', boxSizing: 'border-box' }}>
+            <div ref={playerHitRef} style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, zIndex: 21, pointerEvents: 'none', boxSizing: 'border-box' }}>
               <div style={{ position: 'absolute', bottom: 9, left: 0, right: 0, height: 2, background: '#facc15' }} />
             </div>
           )}
@@ -647,7 +695,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
             <button onClick={e => { e.stopPropagation(); handleExit(); }} style={{ background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               Volver atrás
             </button>
-            <button onClick={e => { e.stopPropagation(); onSalir?.(); }} style={{ background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <button onClick={e => { e.stopPropagation(); handleSalirExit(); }} style={{ background: 'white', color: 'var(--primary,#b05bb5)', border: '2px solid var(--primary,#b05bb5)', borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               Salir
             </button>
           </div>

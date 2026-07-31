@@ -358,16 +358,16 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       }
     }
 
-    // ── Muerte: la pantalla alcanza al jugador ───────────────
-    // ── Cámara híbrida ────────────────────────────────────────
-    // Si el jugador está cayendo más rápido que el scroll, la cámara lo sigue
-    // para que no desaparezca por abajo. Si está en plataforma, manda el scroll.
-    const cameraY = Math.max(scrollRef.current, playerWorldYRef.current - H * PLAYER_FALL_FRAC);
+    // ── Cámara fluida: si el jugador cae rápido, el scroll avanza sin tirones ──
+    const targetScroll = playerWorldYRef.current - H * PLAYER_FALL_FRAC;
+    if (targetScroll > scrollRef.current) {
+      scrollRef.current = targetScroll;
+    }
+    const cameraY = scrollRef.current;
 
     // Muerte: el scroll automático alcanza al jugador por arriba
     const playerScreenY = playerWorldYRef.current - cameraY;
-    const playerScreenYScroll = playerWorldYRef.current - scrollRef.current;
-    if (playerScreenYScroll < -CRUSH_MARGIN) {
+    if (playerScreenY < -CRUSH_MARGIN) {
       endGame('crushed'); return;
     }
 
@@ -563,6 +563,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 220 }}>
             <button onClick={togglePause} style={btn}><Play size={18} fill="white" /> Reanudar</button>
             <button onClick={onVolverAlListado} style={btnSec}>Volver atrás</button>
+            <button onClick={onSalir} style={btnSec}>Salir</button>
           </div>
         </Overlay>
       )}
