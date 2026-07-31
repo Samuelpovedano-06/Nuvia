@@ -94,28 +94,44 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
   useEffect(() => { faseRef.current = fase; }, [fase]);
 
   // ─── Forzar orientación horizontal ───
+  // El bloqueo de orientación (y la pantalla completa) solo funciona si se
+  // pide dentro de un gesto del usuario (p. ej. al pulsar "Jugar"), nunca
+  // al montar el componente — por eso el intento real vive en
+  // iniciarJuego/handleGirar, igual que en Sky Hop y Cliff Dash. Aquí solo
+  // seguimos la orientación actual para mostrar el aviso de "gira el móvil".
+  const wasPortraitRef = useRef(isPortrait);
   useEffect(() => {
-    // Intentar bloquear en landscape (funciona en Android/Chrome, no en iOS Safari)
-    try {
-      screen?.orientation?.lock('landscape').catch(() => { });
-    } catch (_) { }
-
     const onResize = () => {
       const portrait = window.innerHeight > window.innerWidth;
+      const wasPortrait = wasPortraitRef.current;
+      wasPortraitRef.current = portrait;
       setIsPortrait(portrait);
-      // Si el juego estaba corriendo y ahora es landscape, reinicializar canvas
+      // Si el juego se había iniciado en vertical (el bloqueo de pantalla
+      // falló o tardó) y el jugador acaba de girar el móvil a horizontal,
+      // el terreno ya generado quedó calculado con las medidas verticales
+      // (mucho más alto que ancho) y aparece fuera de la pantalla nueva.
+      // Hay que regenerar el estado entero con las medidas reales, no solo
+      // parchear W/H sobre el terreno viejo.
       if (!portrait && faseRef.current === 'jugando') {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        requestAnimationFrame(() => {
+        const reinit = wasPortrait; // pasó de vertical a horizontal: regenerar de cero
+        requestAnimationFrame(() => requestAnimationFrame(() => {
           const W = canvas.offsetWidth || window.innerWidth;
           const H = canvas.offsetHeight || window.innerHeight;
-          if (W && H) {
-            canvas.width = W;
-            canvas.height = H;
-            if (stateRef.current) { stateRef.current.W = W; stateRef.current.H = H; }
+          if (!W || !H) return;
+          canvas.width = W;
+          canvas.height = H;
+          if (reinit) {
+            stateRef.current = initState(W, H);
+            stateRef.current.lastTime = null;
+          } else if (stateRef.current) {
+            // Reajuste menor (p. ej. la barra del navegador se oculta): no
+            // hace falta regenerar el terreno, solo actualizar el tamaño.
+            stateRef.current.W = W;
+            stateRef.current.H = H;
           }
-        });
+        }));
       }
     };
     window.addEventListener('resize', onResize);
@@ -123,9 +139,23 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     return () => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onResize);
+      try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) { }
       try { screen?.orientation?.unlock(); } catch (_) { }
     };
   }, []);
+
+  const exitFullscreen = () => {
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) { }
+    try { screen?.orientation?.unlock?.(); } catch (_) { }
+  };
+
+  const handleSalir = () => { exitFullscreen(); onSalir?.(); };
+  const handleVolver = () => { exitFullscreen(); onVolverAlListado?.(); };
+
+  const handleGirar = async () => {
+    try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch (_) { }
+    try { await screen?.orientation?.lock?.('landscape'); } catch (_) { }
+  };
 
   const petImgRef = useRef(null); // mascota-idle.png precargada
 
@@ -343,9 +373,6 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     ctx.beginPath(); ctx.ellipse(-CHASSIS_W + 6, -10, 5, 4, 0, 0, Math.PI * 2); ctx.fill();
 
     ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.font = 'bold 8px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('NUVIA', -10, -10);
     ctx.restore();
 
     // Ruedas (dibujadas por DELANTE de la carrocería)
@@ -430,6 +457,16 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       } else {
         chassis.omega += 1.2 * dt;
       }
+    } else {
+      // Sin acelerar ni frenar: el peso del coche lo cae al suelo si se queda apoyado en una sola rueda o en el aire
+      const slopeAngle = Math.atan2(groundF - groundR, wfx - wrx);
+      if (enSueloR && !enSueloF) {
+        chassis.omega += (slopeAngle - chassis.angle) * 8.0 * dt;
+      } else if (enSueloF && !enSueloR) {
+        chassis.omega += (slopeAngle - chassis.angle) * 8.0 * dt;
+      } else if (!enSuelo) {
+        chassis.omega += (slopeAngle - chassis.angle) * 3.5 * dt;
+      }
     }
 
     // En suelo se aplica fricción ligera; en el aire la inercia horizontal se conserva
@@ -509,7 +546,11 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
   }, []);
 
   // ─── Iniciar ───
-  const iniciarJuego = useCallback(() => {
+  const iniciarJuego = useCallback(async () => {
+    // Pedir pantalla completa y bloquear en horizontal: solo funciona aquí,
+    // dentro del gesto de pulsar "Jugar" (no al montar el componente).
+    await handleGirar();
+
     // Paso 1: primero setear la fase a 'jugando' para que React haga el canvas visible.
     setPuntuacion(0); setTiempoMs(TIMER_INIT); setCausaGO('');
     setPausado(false);
@@ -613,7 +654,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
             {record > 0 && <div style={{ color: '#FFD700', fontWeight: 700, fontSize: '13px', marginBottom: '10px' }}>🏆 Récord: {record} m</div>}
             <div style={{ display: 'flex', gap: '10px', width: '100%', justifyContent: 'center' }}>
               <button onClick={iniciarJuego} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '14px', padding: '11px 0', fontSize: '15px', fontWeight: 800, cursor: 'pointer', width: '100%', maxWidth: '200px', boxShadow: '0 8px 32px rgba(233,30,140,0.5)' }}>▶ Jugar</button>
-              <button onClick={onVolverAlListado} style={{ background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '11px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', maxWidth: '200px' }}>← Volver</button>
+              <button onClick={handleVolver} style={{ background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '11px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', maxWidth: '200px' }}>← Volver</button>
             </div>
           </div>
         </div>
@@ -628,7 +669,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       {/* HUD */}
       {(fase === 'jugando' || fase === 'pausa') && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 150, pointerEvents: 'none' }}>
-          <button onClick={onSalir} style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', border: 'none', borderRadius: '12px', padding: '8px 12px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 700, pointerEvents: 'auto' }}>
+          <button onClick={handleSalir} style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', border: 'none', borderRadius: '12px', padding: '8px 12px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 700, pointerEvents: 'auto' }}>
             <ChevronLeft size={16} /> Salir
           </button>
           <div style={{ textAlign: 'center' }}>
@@ -652,12 +693,51 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       )}
 
       {/* Pausa */}
-      {fase === 'pausa' && pausado && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 160, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
-          <div style={{ fontSize: '30px', fontWeight: 900, color: '#fff' }}>⏸ PAUSA</div>
-          <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '15px' }}>{puntuacion} m recorridos</div>
-          <button onClick={togglePausa} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '16px', padding: '13px 40px', fontSize: '15px', fontWeight: 800, cursor: 'pointer' }}>▶ Continuar</button>
-          <button onClick={onVolverAlListado} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.22)', borderRadius: '12px', padding: '10px 28px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Menú de juegos</button>
+      {pausado && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 200,
+          background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(6px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <h2 style={{ color: 'var(--primary, #E91E8C)', margin: 0, fontSize: '24px', fontWeight: 800 }}>Pausa</h2>
+          <p style={{ color: '#64748b', textAlign: 'center', fontSize: '14px', margin: '6px 24px 18px' }}>
+            ¡Tómate un respiro!
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '220px' }}>
+            <button
+              onClick={togglePausa}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '12px 24px', background: 'var(--primary, #E91E8C)', color: 'white',
+                border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '15px',
+                cursor: 'pointer', boxShadow: '0 6px 16px rgba(233, 30, 140, 0.3)',
+              }}
+            >
+              <Play size={18} fill="white" /> Reanudar
+            </button>
+            <button
+              onClick={handleVolver}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '12px 24px', background: 'white', color: 'var(--primary, #E91E8C)',
+                border: '2px solid var(--primary, #E91E8C)', borderRadius: '999px',
+                fontWeight: 700, fontSize: '15px', cursor: 'pointer',
+              }}
+            >
+              Volver atrás
+            </button>
+            <button
+              onClick={handleSalir}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '12px 24px', background: 'white', color: 'var(--primary, #E91E8C)',
+                border: '2px solid var(--primary, #E91E8C)', borderRadius: '999px',
+                fontWeight: 700, fontSize: '15px', cursor: 'pointer',
+              }}
+            >
+              Salir
+            </button>
+          </div>
         </div>
       )}
 
@@ -683,14 +763,14 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
 
             <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={iniciarJuego} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '16px', padding: '13px 32px', fontSize: '15px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 24px rgba(233,30,140,0.4)', flex: '1', minWidth: '130px', maxWidth: '200px' }}>Reintentar</button>
-              <button onClick={onVolverAlListado} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.18)', borderRadius: '14px', padding: '13px 24px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: '1', minWidth: '130px', maxWidth: '200px' }}>Volver</button>
+              <button onClick={handleVolver} style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.18)', borderRadius: '14px', padding: '13px 24px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', flex: '1', minWidth: '130px', maxWidth: '200px' }}>Volver</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Overlay: girar el teléfono si está en vertical */}
-      {isPortrait && (
+      {isPortrait && fase !== 'inicio' && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 500,
           background: 'linear-gradient(160deg, #2b0b30 0%, #52185c 50%, #852296 100%)',
@@ -704,12 +784,20 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', textAlign: 'center', margin: 0, maxWidth: '240px' }}>
             Hill Drive se juega en orientación horizontal
           </p>
-          <button
-            onClick={onVolverAlListado}
-            style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 24px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginTop: '8px' }}
-          >
-            ← Volver a juegos
-          </button>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+            <button
+              onClick={handleGirar}
+              style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '12px', padding: '10px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Girar 🔄
+            </button>
+            <button
+              onClick={handleVolver}
+              style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 24px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              ← Volver a juegos
+            </button>
+          </div>
         </div>
       )}
 
