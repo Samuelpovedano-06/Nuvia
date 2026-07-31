@@ -344,10 +344,17 @@ def run_migrations():
                 conn.rollback()
                 print(f"[migration skip] {e}")
         try:
-            conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_solicitud_id FOREIGN KEY (solicitud_id) REFERENCES usuarias(id_usuaria)"))
+            # Se recrea siempre (DROP + ADD) porque una versión anterior de
+            # esta constraint se creó sin ON DELETE SET NULL: bloqueaba por
+            # completo borrar a una usuaria si alguien le había mandado (o
+            # ella había mandado) una solicitud de pareja, con un 500 sin
+            # explicación en /admin/users/{id}.
+            conn.execute(text("ALTER TABLE usuarias DROP CONSTRAINT IF EXISTS fk_solicitud_id"))
+            conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_solicitud_id FOREIGN KEY (solicitud_id) REFERENCES usuarias(id_usuaria) ON DELETE SET NULL"))
             conn.commit()
-        except Exception:
+        except Exception as e:
             conn.rollback()
+            print(f"[migration skip] {e}")
 
 run_migrations()
 

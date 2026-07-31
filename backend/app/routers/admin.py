@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from typing import List
 from uuid import UUID
 from datetime import date, datetime, timedelta
@@ -186,8 +187,18 @@ def delete_user_admin(id_usuaria: UUID, db: Session = Depends(get_db), current_u
     if not usuaria:
         raise HTTPException(status_code=404, detail="Usuaria no encontrada")
 
-    db.delete(usuaria)
-    db.commit()
+    try:
+        db.delete(usuaria)
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        # TEMPORAL: se expone el detalle real del error de Postgres (nombre
+        # de la restricción/tabla) para poder localizar qué falta arreglar.
+        # Quitar el detalle en cuanto quede identificado y corregido.
+        raise HTTPException(
+            status_code=409,
+            detail=f"No se pudo eliminar: {str(getattr(e, 'orig', e))}",
+        ) from e
     return None
 
 @router.patch("/users/{id_usuaria}/toggle-activo", response_model=UsuariaOut)
