@@ -436,19 +436,19 @@ export default function GameScreen({ onGameActiveChange }) {
 
           <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px 14px', padding: '10px 20px 16px', width: '100%', maxWidth: '360px'
+            display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px 16px', padding: '12px 20px 20px', width: '100%', maxWidth: '380px'
           }}>
             {/* Juego 1: Esquiva-compresas */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnJuego(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <img
                 src="/juego/caratula-esquiva.png"
                 alt="Esquiva-compresas"
-                style={{ width: '80px', height: '80px', borderRadius: '18px', objectFit: 'cover', boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #ddd6fe' }}
+                style={{ width: '90px', height: '90px', borderRadius: '20px', objectFit: 'cover', boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #ddd6fe' }}
               />
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Esquiva<br />compresas
               </span>
             </div>
@@ -456,17 +456,17 @@ export default function GameScreen({ onGameActiveChange }) {
             {/* Juego 2: Sky Jump */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnSkyJump(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
-                width: '80px', height: '80px', borderRadius: '18px',
+                width: '90px', height: '90px', borderRadius: '20px',
                 background: 'linear-gradient(180deg, #BAE6FD 0%, #FBCFE8 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #ddd6fe', overflow: 'hidden',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #ddd6fe', overflow: 'hidden',
               }}>
                 <img src="/juego/Sky_Jump/plataforma.png" alt="" style={{ width: '70%', height: '70%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }} onError={(e) => { e.currentTarget.outerHTML = '☁️'; }} />
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Sky Jump
               </span>
             </div>
@@ -474,17 +474,17 @@ export default function GameScreen({ onGameActiveChange }) {
             {/* Juego 3: Sky Hop */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnSkyHop(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
-                width: '80px', height: '80px', borderRadius: '18px',
+                width: '90px', height: '90px', borderRadius: '20px',
                 background: 'linear-gradient(180deg, #BAE6FD 0%, #E0F2FE 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #ddd6fe', overflow: 'hidden',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #ddd6fe', overflow: 'hidden',
               }}>
                 <img src="/juego/Sky_Jump/nube.png" alt="" style={{ width: '80%', height: '55%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))' }} />
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Sky Hop
               </span>
             </div>
@@ -492,18 +492,18 @@ export default function GameScreen({ onGameActiveChange }) {
             {/* Juego 4: Food Drop */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnFoodDrop(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
-                width: '80px', height: '80px', borderRadius: '18px',
+                width: '90px', height: '90px', borderRadius: '20px',
                 background: 'linear-gradient(180deg, #FDF2F8 0%, #FCE7F3 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #fbcfe8', overflow: 'hidden',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #fbcfe8', overflow: 'hidden',
               }}>
                 <img src="/juego/Food_Drop/chocolate.png" alt="" style={{ width: '60%', height: '60%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))' }}
-                     onError={e => { e.currentTarget.outerHTML = '<span style="font-size:32px">🍫</span>'; }} />
+                     onError={e => { e.currentTarget.outerHTML = '<span style="font-size:36px">🍫</span>'; }} />
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Food Drop
               </span>
             </div>
@@ -511,30 +511,30 @@ export default function GameScreen({ onGameActiveChange }) {
             {/* Juego 5: Cliff Jump */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnCliffJump(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
-                width: '80px', height: '80px', borderRadius: '18px',
+                width: '90px', height: '90px', borderRadius: '20px',
                 background: 'linear-gradient(180deg, #5b8fd4 0%, #87ceeb 60%, #a8d8f0 100%)',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #bae6fd',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #bae6fd',
                 overflow: 'hidden', position: 'relative',
               }}>
                 {/* Mascota saltando */}
                 <img src="/juego/mascota-jump.png" alt=""
-                  style={{ position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', width: '38px', height: '38px', objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
+                  style={{ position: 'absolute', bottom: '28px', left: '50%', transform: 'translateX(-50%)', width: '44px', height: '44px', objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
                 {/* Plataforma izquierda */}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: '42%', zIndex: 1 }}>
-                  <div style={{ height: '8px', background: 'linear-gradient(180deg,#72c242,#4a9a28)', borderRadius: '3px 0 0 0' }} />
-                  <div style={{ height: '18px', background: 'linear-gradient(180deg,#9b6b3a,#6b4020)' }} />
+                  <div style={{ height: '9px', background: 'linear-gradient(180deg,#72c242,#4a9a28)', borderRadius: '3px 0 0 0' }} />
+                  <div style={{ height: '20px', background: 'linear-gradient(180deg,#9b6b3a,#6b4020)' }} />
                 </div>
                 {/* Plataforma derecha */}
                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: '42%', zIndex: 1 }}>
-                  <div style={{ height: '8px', background: 'linear-gradient(180deg,#72c242,#4a9a28)', borderRadius: '0 3px 0 0' }} />
-                  <div style={{ height: '18px', background: 'linear-gradient(180deg,#9b6b3a,#6b4020)' }} />
+                  <div style={{ height: '9px', background: 'linear-gradient(180deg,#72c242,#4a9a28)', borderRadius: '0 3px 0 0' }} />
+                  <div style={{ height: '20px', background: 'linear-gradient(180deg,#9b6b3a,#6b4020)' }} />
                 </div>
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Cliff Jump
               </span>
             </div>
@@ -542,31 +542,31 @@ export default function GameScreen({ onGameActiveChange }) {
             {/* Juego 6: Cliff Dash */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnCliffDash(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
-                width: '80px', height: '80px', borderRadius: '18px',
+                width: '90px', height: '90px', borderRadius: '20px',
                 background: 'linear-gradient(180deg, #b5479a 0%, #d66b93 60%, #f3a8d8 100%)',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #f3c6e6',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #f3c6e6',
                 overflow: 'hidden', position: 'relative',
               }}>
                 {/* Cielo */}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,#87d9f5,#b8e9fa)' }} />
                 {/* 3 carriles horizontales apilados */}
-                <div style={{ position: 'absolute', top: '20px', left: 0, right: 0, bottom: 0, background: 'linear-gradient(180deg,#ffd35c,#ffa733)' }} />
-                <div style={{ position: 'absolute', top: '20px', left: 0, right: 0, height: '2.5px', background: '#3fae1f' }} />
-                <div style={{ position: 'absolute', top: '40px', left: 0, right: 0, height: '2.5px', background: '#3fae1f' }} />
-                <div style={{ position: 'absolute', top: '60px', left: 0, right: 0, height: '2.5px', background: '#3fae1f' }} />
+                <div style={{ position: 'absolute', top: '24px', left: 0, right: 0, bottom: 0, background: 'linear-gradient(180deg,#ffd35c,#ffa733)' }} />
+                <div style={{ position: 'absolute', top: '24px', left: 0, right: 0, height: '2.5px', background: '#3fae1f' }} />
+                <div style={{ position: 'absolute', top: '48px', left: 0, right: 0, height: '2.5px', background: '#3fae1f' }} />
+                <div style={{ position: 'absolute', top: '72px', left: 0, right: 0, height: '2.5px', background: '#3fae1f' }} />
                 {/* Compresa obstáculo */}
                 <img src="/juego/compresa.png" alt=""
-                  style={{ position: 'absolute', top: '6px', right: '8px', width: '18px', height: '16px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+                  style={{ position: 'absolute', top: '8px', right: '10px', width: '20px', height: '18px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
                 {/* Mascota */}
                 <img src="/juego/mascota-idle.png" alt=""
-                  style={{ position: 'absolute', top: '40px', left: '12px', width: '26px', height: '26px', objectFit: 'contain', transform: 'translateY(-100%)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
+                  style={{ position: 'absolute', top: '48px', left: '14px', width: '28px', height: '28px', objectFit: 'contain', transform: 'translateY(-100%)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Cliff Dash
               </span>
             </div>
@@ -574,24 +574,24 @@ export default function GameScreen({ onGameActiveChange }) {
             {/* Juego 7: Tumble */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnTumble(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
-                width: '80px', height: '80px', borderRadius: '18px',
+                width: '90px', height: '90px', borderRadius: '20px',
                 background: 'linear-gradient(180deg, #6fc9ec 0%, #a7e1f4 100%)',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #bae6fd',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #bae6fd',
                 overflow: 'hidden', position: 'relative',
               }}>
                 {/* Roca */}
-                <div style={{ position: 'absolute', bottom: '8px', left: '8px', width: '18px', height: '16px', borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%, #9ca3af, #4b5563)' }} />
+                <div style={{ position: 'absolute', bottom: '10px', left: '10px', width: '20px', height: '18px', borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%, #9ca3af, #4b5563)' }} />
                 {/* Tronco */}
-                <div style={{ position: 'absolute', bottom: '12px', right: '6px', width: '24px', height: '10px', borderRadius: '5px', background: 'linear-gradient(180deg,#a0714a,#6b4020)' }} />
+                <div style={{ position: 'absolute', bottom: '14px', right: '7px', width: '26px', height: '11px', borderRadius: '6px', background: 'linear-gradient(180deg,#a0714a,#6b4020)' }} />
                 {/* Mascota rodando */}
                 <img src="/juego/mascota-idle.png" alt=""
-                  style={{ position: 'absolute', top: '22px', left: '50%', width: '30px', height: '30px', objectFit: 'contain', transform: 'translateX(-50%) rotate(25deg)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
+                  style={{ position: 'absolute', top: '26px', left: '50%', width: '32px', height: '32px', objectFit: 'contain', transform: 'translateX(-50%) rotate(25deg)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Tumble
               </span>
             </div>
@@ -599,12 +599,12 @@ export default function GameScreen({ onGameActiveChange }) {
             {/* Juego 8: Hill Drive */}
             <div
               onClick={() => { setMostrarJuegos(false); setEnHillDrive(true); }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '5px' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
-                width: '80px', height: '80px', borderRadius: '18px',
+                width: '90px', height: '90px', borderRadius: '20px',
                 background: 'linear-gradient(180deg, #87ceeb 0%, #4CAF50 70%, #2E7D32 100%)',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.12)', border: '1.5px solid #a5d6a7',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.13)', border: '1.5px solid #a5d6a7',
                 overflow: 'hidden', position: 'relative',
               }}>
                 {/* Cielo */}
@@ -615,18 +615,18 @@ export default function GameScreen({ onGameActiveChange }) {
                   <path d="M0,50 Q20,35 40,45 Q60,32 80,42 L100,38 L100,60 L0,60Z" fill="#2E7D32"/>
                 </svg>
                 {/* Coche pixel en miniatura */}
-                <div style={{ position: 'absolute', bottom: '22px', left: '20px', width: '36px', height: '16px', zIndex: 2 }}>
+                <div style={{ position: 'absolute', bottom: '26px', left: '24px', width: '40px', height: '18px', zIndex: 2 }}>
                   {/* Carrocería */}
-                  <div style={{ position: 'absolute', bottom: '6px', left: 0, right: 0, height: '8px', background: 'linear-gradient(135deg,#E91E8C,#880E4F)', borderRadius: '5px 5px 2px 2px' }} />
+                  <div style={{ position: 'absolute', bottom: '7px', left: 0, right: 0, height: '9px', background: 'linear-gradient(135deg,#E91E8C,#880E4F)', borderRadius: '5px 5px 2px 2px' }} />
                   {/* Techo */}
-                  <div style={{ position: 'absolute', bottom: '13px', left: '6px', right: '6px', height: '6px', background: '#F48FB1', borderRadius: '4px 4px 0 0' }} />
+                  <div style={{ position: 'absolute', bottom: '15px', left: '7px', right: '7px', height: '7px', background: '#F48FB1', borderRadius: '4px 4px 0 0' }} />
                   {/* Rueda trasera */}
-                  <div style={{ position: 'absolute', bottom: '1px', right: '3px', width: '8px', height: '8px', borderRadius: '50%', background: '#1a1a1a', border: '1.5px solid #78909C' }} />
+                  <div style={{ position: 'absolute', bottom: '1px', right: '3px', width: '9px', height: '9px', borderRadius: '50%', background: '#1a1a1a', border: '1.5px solid #78909C' }} />
                   {/* Rueda delantera */}
-                  <div style={{ position: 'absolute', bottom: '1px', left: '3px', width: '8px', height: '8px', borderRadius: '50%', background: '#1a1a1a', border: '1.5px solid #78909C' }} />
+                  <div style={{ position: 'absolute', bottom: '1px', left: '3px', width: '9px', height: '9px', borderRadius: '50%', background: '#1a1a1a', border: '1.5px solid #78909C' }} />
                 </div>
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '12.5px', textAlign: 'center', lineHeight: 1.15 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '13px', textAlign: 'center', lineHeight: 1.18 }}>
                 Hill Drive
               </span>
             </div>
