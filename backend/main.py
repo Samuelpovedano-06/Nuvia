@@ -344,17 +344,40 @@ def run_migrations():
                 conn.rollback()
                 print(f"[migration skip] {e}")
         try:
-            # Se recrea siempre (DROP + ADD) porque una versión anterior de
-            # esta constraint se creó sin ON DELETE SET NULL: bloqueaba por
-            # completo borrar a una usuaria si alguien le había mandado (o
-            # ella había mandado) una solicitud de pareja, con un 500 sin
-            # explicación en /admin/users/{id}.
-            conn.execute(text("ALTER TABLE usuarias DROP CONSTRAINT IF EXISTS fk_solicitud_id"))
-            conn.execute(text("ALTER TABLE usuarias ADD CONSTRAINT fk_solicitud_id FOREIGN KEY (solicitud_id) REFERENCES usuarias(id_usuaria) ON DELETE SET NULL"))
+            # Autorreparación: busca en el catálogo de Postgres TODAS las
+            # claves foráneas que apuntan a usuarias(id_usuaria) y que no
+            # tengan ON DELETE CASCADE ni ON DELETE SET NULL (es decir, que
+            # por defecto BLOQUEAN el borrado de la usuaria referenciada), y
+            # las recrea con el comportamiento correcto. Esto evita tener
+            # que localizar a mano, restricción por restricción, cuál es la
+            # que impide borrar una usuaria desde /admin/users/{id} — hasta
+            # ahora se habían quedado sin arreglar varias tablas creadas (o
+            # modificadas) antes de que este proyecto añadiera ON DELETE a
+            # sus claves foráneas.
+            rows = conn.execute(text("""
+                SELECT c.conname, c.conrelid::regclass::text AS tabla, a.attname AS columna
+                FROM pg_constraint c
+                JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey)
+                WHERE c.contype = 'f'
+                  AND c.confrelid = 'usuarias'::regclass
+                  AND c.confdeltype NOT IN ('c', 'n')
+            """)).fetchall()
+            # Columnas de auditoría/moderación (referencian a "otra" usuaria,
+            # no son "esto pertenece a esta usuaria") — al borrar, se dejan
+            # en NULL en vez de arrastrar el borrado de la fila entera.
+            SET_NULL_COLUMNS = {"id_admin", "id_otra", "solicitud_id"}
+            for conname, tabla, columna in rows:
+                accion = "SET NULL" if columna in SET_NULL_COLUMNS else "CASCADE"
+                conn.execute(text(f'ALTER TABLE {tabla} DROP CONSTRAINT "{conname}"'))
+                conn.execute(text(
+                    f'ALTER TABLE {tabla} ADD CONSTRAINT "{conname}" '
+                    f'FOREIGN KEY ({columna}) REFERENCES usuarias(id_usuaria) ON DELETE {accion}'
+                ))
+                print(f"[migration] {tabla}.{columna} ({conname}) -> ON DELETE {accion}")
             conn.commit()
         except Exception as e:
             conn.rollback()
-            print(f"[migration skip] {e}")
+            print(f"[migration skip] fk autoreparación: {e}")
 
 run_migrations()
 
