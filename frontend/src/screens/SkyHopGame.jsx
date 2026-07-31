@@ -478,27 +478,35 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
 
   if (phase === 'menu') {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden' }}>
-        <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <h2 style={{ color: 'var(--primary,#b05bb5)', margin: 0 }}>Sky Hop</h2>
-          <p style={{ color: '#64748b', textAlign: 'center', fontSize: '14px', margin: '8px 24px 18px' }}>
-            Toca izquierda o derecha para saltar de plataforma en plataforma.<br />
-            Las nubes te harán caer. Las estrellas dan tiempo extra.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '220px' }}>
-            <button onClick={startGame} style={{ padding: '12px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '999px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Play size={18} fill="white" /> Empezar
-            </button>
-            <button onClick={handleExit} style={{ padding: '12px 24px', background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)', borderRadius: '999px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              Volver atrás
-            </button>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #2b0b30 0%, #52185c 50%, #852296 100%)', padding: '16px 24px', overflowY: 'auto' }}>
+        <svg style={{ position: 'absolute', bottom: 0, width: '100%', opacity: 0.22 }} viewBox="0 0 400 200" preserveAspectRatio="none">
+          <path d="M0,150 Q50,80 100,130 Q150,60 200,110 Q250,50 300,100 Q350,70 400,120 L400,200 L0,200Z" fill="#38bdf8" />
+          <path d="M0,170 Q60,120 120,150 Q180,100 240,140 Q300,110 360,150 L400,160 L400,200 L0,200Z" fill="#0284c7" />
+        </svg>
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ fontSize: '38px', marginBottom: '2px' }}>☁️</div>
+          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', margin: '0 0 2px', letterSpacing: '-0.5px', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>Sky Hop</h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', margin: '0 0 12px' }}>¡Salta de plataforma en plataforma sin caerte!</p>
+          <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '14px', padding: '10px 14px', marginBottom: '14px', textAlign: 'left', width: '100%' }}>
+            {[
+              ['👈👉', 'Controles', 'Toca a la izquierda o derecha para saltar'],
+              ['☁️', 'Cuidado nubes', 'Las nubes se rompen y te hacen caer'],
+              ['⭐', 'Estrellas', 'Recógelas para ganar tiempo extra']
+            ].map(([icon, title, sub]) => (
+              <div key={title} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>{icon}</div>
+                <div>
+                  <div style={{ color: '#fff', fontWeight: 700, fontSize: '12px' }}>{title}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{sub}</div>
+                </div>
+              </div>
+            ))}
           </div>
-          {record > 0 && (
-            <p style={{ marginTop: '14px', fontSize: '13px', color: '#64748b' }}>
-              Récord: <strong style={{ color: 'var(--primary,#b05bb5)' }}>{record}</strong>
-            </p>
-          )}
+          {record > 0 && <div style={{ color: '#FFD700', fontWeight: 700, fontSize: '13px', marginBottom: '10px' }}>🏆 Récord: {record}</div>}
+          <div style={{ display: 'flex', gap: '10px', width: '100%', justifyContent: 'center' }}>
+            <button onClick={startGame} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '14px', padding: '11px 0', fontSize: '15px', fontWeight: 800, cursor: 'pointer', width: '100%', maxWidth: '200px', boxShadow: '0 8px 32px rgba(233,30,140,0.5)' }}>▶ Jugar</button>
+            <button onClick={handleExit} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '11px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', maxWidth: '200px' }}>← Volver</button>
+          </div>
         </div>
       </div>
     );

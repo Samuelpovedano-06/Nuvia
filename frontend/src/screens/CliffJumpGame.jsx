@@ -440,18 +440,37 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
 
       {/* Menu */}
       {phase === 'menu' && (
-        <Overlay>
-          <h2 style={{ color: 'var(--primary)', margin: 0 }}>Cliff Jump</h2>
-          <p style={{ color: '#64748b', textAlign: 'center', fontSize: 14, margin: '8px 24px 18px' }}>
-            Toca la pantalla para saltar los precipicios.<br />
-            ¡Cuantos más cruces, más rápido va!
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 220 }}>
-            <button onClick={startGame} style={btn}><Play size={18} fill="white" /> Empezar</button>
-            <button onClick={onVolverAlListado} style={btnSec}>Volver atrás</button>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #2b0b30 0%, #52185c 50%, #852296 100%)', zIndex: 200, padding: '16px 24px', overflowY: 'auto' }}>
+          <svg style={{ position: 'absolute', bottom: 0, width: '100%', opacity: 0.22 }} viewBox="0 0 400 200" preserveAspectRatio="none">
+            <path d="M0,150 Q50,80 100,130 Q150,60 200,110 Q250,50 300,100 Q350,70 400,120 L400,200 L0,200Z" fill="#5b8fd4" />
+            <path d="M0,170 Q60,120 120,150 Q180,100 240,140 Q300,110 360,150 L400,160 L400,200 L0,200Z" fill="#3b72b8" />
+          </svg>
+          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ fontSize: '38px', marginBottom: '2px' }}>⛰️</div>
+            <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', margin: '0 0 2px', letterSpacing: '-0.5px', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>Cliff Jump</h1>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', margin: '0 0 12px' }}>¡Toca la pantalla para saltar los precipicios!</p>
+            <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: '14px', padding: '10px 14px', marginBottom: '14px', textAlign: 'left', width: '100%' }}>
+              {[
+                ['👆', 'Toca la pantalla', 'Para realizar un salto'],
+                ['✌️', 'Doble salto', 'Toca de nuevo en el aire para saltar más lejos'],
+                ['⚡', 'Velocidad', 'Cuantos más precipicios cruces, ¡más rápido va!']
+              ].map(([icon, title, sub]) => (
+                <div key={title} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>{icon}</div>
+                  <div>
+                    <div style={{ color: '#fff', fontWeight: 700, fontSize: '12px' }}>{title}</div>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{sub}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {record > 0 && <div style={{ color: '#FFD700', fontWeight: 700, fontSize: '13px', marginBottom: '10px' }}>🏆 Récord: {record}</div>}
+            <div style={{ display: 'flex', gap: '10px', width: '100%', justifyContent: 'center' }}>
+              <button onClick={startGame} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '14px', padding: '11px 0', fontSize: '15px', fontWeight: 800, cursor: 'pointer', width: '100%', maxWidth: '200px', boxShadow: '0 8px 32px rgba(233,30,140,0.5)' }}>▶ Jugar</button>
+              <button onClick={onVolverAlListado} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '11px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', maxWidth: '200px' }}>← Volver</button>
+            </div>
           </div>
-          {record > 0 && <p style={{ marginTop: 14, fontSize: 13, color: '#64748b' }}>Récord: <strong style={{ color: 'var(--primary)' }}>{record}</strong></p>}
-        </Overlay>
+        </div>
       )}
 
       {/* Paused */}
