@@ -506,17 +506,32 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
 
   if (!landscape) {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#87CEEB' }}>
-        <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        <div style={{ position: 'relative', background: 'rgba(255,255,255,0.92)', borderRadius: 20, padding: '28px 24px', textAlign: 'center', maxWidth: 260 }}>
-          <div style={{ fontSize: 44, marginBottom: 10 }}>🔄</div>
-          <h3 style={{ margin: '0 0 8px', color: 'var(--primary, #b05bb5)' }}>Gira el móvil</h3>
-          <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 16px' }}>Sky Hop se juega en horizontal</p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button onClick={handleExit} style={{ padding: '10px 18px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Volver</button>
-            <button onClick={handleGirar} style={{ padding: '10px 18px', background: 'var(--primary, #b05bb5)', color: 'white', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Girar 🔄</button>
-          </div>
-        </div>
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 500,
+        background: 'linear-gradient(160deg, #2b0b30 0%, #52185c 50%, #852296 100%)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: '18px',
+      }}>
+        <div style={{ fontSize: '72px', animation: 'hd-rotate-phone 2.2s ease-in-out infinite' }}>📱</div>
+        <p style={{ color: '#fff', fontSize: '20px', fontWeight: 800, textAlign: 'center', margin: 0 }}>
+          Gira el teléfono
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', textAlign: 'center', margin: 0, maxWidth: '240px' }}>
+          Sky Hop se juega en orientación horizontal
+        </p>
+        <button
+          onClick={handleExit}
+          style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 24px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginTop: '8px' }}
+        >
+          ← Volver a juegos
+        </button>
+        <style>{`
+          @keyframes hd-rotate-phone {
+            0%,100% { transform:rotate(0deg) scale(1); }
+            30%     { transform:rotate(-90deg) scale(1.1); }
+            70%     { transform:rotate(-90deg) scale(1.05); }
+          }
+        `}</style>
       </div>
     );
   }

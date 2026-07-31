@@ -8,7 +8,8 @@ import SkyHopGame    from './SkyHopGame';
 import FoodDropGame  from './FoodDropGame';
 import CliffJumpGame from './CliffJumpGame';
 import CliffDashGame from './CliffDashGame';
-import TumbleGame    from './TumbleGame';
+import TumbleGame      from './TumbleGame';
+import HillDriveGame   from './HillDriveGame';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -87,6 +88,7 @@ export default function GameScreen({ onGameActiveChange }) {
   const [enCliffJump,  setEnCliffJump]  = useState(false);
   const [enCliffDash,  setEnCliffDash]  = useState(false);
   const [enTumble,     setEnTumble]     = useState(false);
+  const [enHillDrive,  setEnHillDrive]  = useState(false);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
@@ -94,7 +96,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
   const { user } = useContext(AuthContext);
 
-  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash || enTumble;
+  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash || enTumble || enHillDrive;
 
   useEffect(() => {
     onGameActiveChange?.(inAnyGame);
@@ -112,6 +114,7 @@ export default function GameScreen({ onGameActiveChange }) {
       setEnCliffJump(false);
       setEnCliffDash(false);
       setEnTumble(false);
+      setEnHillDrive(false);
       setMostrarJuegos(true);
     };
     window.addEventListener('popstate', onPop);
@@ -247,6 +250,15 @@ export default function GameScreen({ onGameActiveChange }) {
         onVolverAlListado={() => { setEnTumble(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
         globalSensPct={tiltSensPct}
+      />
+    );
+  }
+
+  if (enHillDrive) {
+    return (
+      <HillDriveGame
+        onSalir={() => setEnHillDrive(false)}
+        onVolverAlListado={() => { setEnHillDrive(false); setMostrarJuegos(true); }}
       />
     );
   }
@@ -580,6 +592,41 @@ export default function GameScreen({ onGameActiveChange }) {
               </div>
               <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
                 Tumble
+              </span>
+            </div>
+
+            {/* Juego 8: Hill Drive */}
+            <div
+              onClick={() => { setMostrarJuegos(false); setEnHillDrive(true); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '10px' }}
+            >
+              <div style={{
+                width: '100px', height: '100px', borderRadius: '22px',
+                background: 'linear-gradient(180deg, #87ceeb 0%, #4CAF50 70%, #2E7D32 100%)',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: '1.5px solid #a5d6a7',
+                overflow: 'hidden', position: 'relative',
+              }}>
+                {/* Cielo */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg,#87ceeb,#c8e6f5)' }} />
+                {/* Colinas onduladas en SVG */}
+                <svg style={{ position: 'absolute', bottom: 0, width: '100%', height: '65%' }} viewBox="0 0 100 60" preserveAspectRatio="none">
+                  <path d="M0,40 Q15,18 30,34 Q45,10 60,28 Q75,8 90,22 L100,30 L100,60 L0,60Z" fill="#4CAF50"/>
+                  <path d="M0,50 Q20,35 40,45 Q60,32 80,42 L100,38 L100,60 L0,60Z" fill="#2E7D32"/>
+                </svg>
+                {/* Coche pixel en miniatura */}
+                <div style={{ position: 'absolute', bottom: '30px', left: '28px', width: '44px', height: '20px', zIndex: 2 }}>
+                  {/* Carrocería */}
+                  <div style={{ position: 'absolute', bottom: '8px', left: 0, right: 0, height: '10px', background: 'linear-gradient(135deg,#E91E8C,#880E4F)', borderRadius: '6px 6px 3px 3px' }} />
+                  {/* Techo */}
+                  <div style={{ position: 'absolute', bottom: '16px', left: '8px', right: '8px', height: '8px', background: '#F48FB1', borderRadius: '5px 5px 0 0' }} />
+                  {/* Rueda trasera */}
+                  <div style={{ position: 'absolute', bottom: '2px', right: '4px', width: '10px', height: '10px', borderRadius: '50%', background: '#1a1a1a', border: '2px solid #78909C' }} />
+                  {/* Rueda delantera */}
+                  <div style={{ position: 'absolute', bottom: '2px', left: '4px', width: '10px', height: '10px', borderRadius: '50%', background: '#1a1a1a', border: '2px solid #78909C' }} />
+                </div>
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', textAlign: 'center', lineHeight: 1.2 }}>
+                Hill Drive
               </span>
             </div>
           </div>
