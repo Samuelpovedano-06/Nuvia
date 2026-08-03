@@ -6,8 +6,11 @@ import { ApiService } from '../api';
 const RECORD_KEY = 'nuvia_hilldrive_record';
 const JUEGO_ID = 'hill_drive';
 const GRAVITY = 980;
-const SPRING_K = 2800;
-const DAMPING = 60;
+// Suspensión: muelle amortiguado por rueda (Ley de Hooke, F = deformación·K − velocidad·D)
+const SUS_K = 110;           // rigidez del muelle (más duro = se hunde menos y devuelve más energía)
+const SUS_D = 4.5;           // amortiguación bastante floja: rebote claro, 2-3 veces antes de asentarse
+const SUS_MAX_COMP = 18;     // compresión máxima antes de un tope duro (menos hundimiento visible)
+const SUS_TORQUE_GAIN = 0.07; // cuánta fuerza de la suspensión se convierte en giro del chasis (más = golpes fuertes pueden volcarlo)
 const MAX_TORQUE = 14000;
 const WHEEL_RADIUS = 14;
 const CHASSIS_W = 70;
@@ -29,7 +32,6 @@ const METERS_PER_PX = 0.01;
 const CAM_X_OFFSET = 0.32;
 const MAX_VX = 1100;
 const MAX_VY = 1800;
-const BOUNCE_RESTITUTION = 0.35; // cuánta velocidad vertical se conserva al rebotar
 
 // ─────────────────────── Perlin Noise 1D (inline) ───────────────────────
 function buildPerlin(seed = 42) {
@@ -453,12 +455,36 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
 
     const groundF = terrainHeightAt(wfx, s.terrainPoints);
     const groundR = terrainHeightAt(wrx, s.terrainPoints);
-    
+
     const penF = (wfy + WHEEL_RADIUS) - groundF;
     const penR = (wry + WHEEL_RADIUS) - groundR;
     const enSueloF = penF >= -6;
     const enSueloR = penR >= -6;
     const enSuelo = enSueloF || enSueloR;
+
+    // ─── Suspensión: muelle amortiguado por rueda (Ley de Hooke) ───
+    // Cada rueda se trata como si no tuviera masa propia (siempre "toca" el
+    // suelo cuando está en rango) y empuja al chasis, que sí tiene masa,
+    // a través de un muelle con amortiguación — en vez de fijar la posición
+    // del chasis al suelo de golpe. deformación = cuánto se ha comprimido
+    // el muelle; fuerza = deformación*K − velocidadRelativa*D (Ley de
+    // Hooke con amortiguación).
+    const susForce = (groundY, wheelWorldY) => {
+      // Positivo cuando la posición "rígida" de la rueda (sin suspensión)
+      // queda por debajo de donde debería tocar el suelo, es decir, cuando
+      // el muelle está comprimido de verdad.
+      const deform = Math.min(SUS_MAX_COMP, (wheelWorldY - (groundY - WHEEL_RADIUS)));
+      if (deform <= 0) return 0;
+      // Aquí Y crece hacia abajo, así que "comprimiéndose" es vy positivo:
+      // el término de amortiguación SUMA (no resta) para frenar tanto la
+      // compresión como el rebote posterior, si no, no disipa energía.
+      return deform * SUS_K + chassis.vy * SUS_D;
+    };
+    const forceF = susForce(groundF, wfy);
+    const forceR = susForce(groundR, wry);
+    chassis.vy -= (forceF + forceR) * dt;
+    chassis.omega -= forceF * SUS_TORQUE_GAIN * dt;
+    chassis.omega += forceR * SUS_TORQUE_GAIN * dt;
 
     // Gravedad
     chassis.vy += 750 * dt;
@@ -499,9 +525,13 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     // Integración de rotación con auto-nivelado de pendiente al apoyar ambas
     // ruedas (más lento que antes = menos "robótico" al enderezarse)
     if (enSueloF && enSueloR) {
+      // Antes esto enderezaba el coche casi de golpe en cuanto las dos
+      // ruedas tocaban (ángulo al 8·dt y giro cortado al 30%), lo que
+      // borraba cualquier rebote de la suspensión antes de que pudiera
+      // notarse — con eso, volcar era imposible. Ahora es más suave.
       const slopeAngle = Math.atan2(groundF - groundR, wfx - wrx);
-      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 8.0 * dt);
-      chassis.omega *= 0.30;
+      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 4.0 * dt);
+      chassis.omega *= 0.92;
     }
     chassis.angle += chassis.omega * dt;
     chassis.omega *= Math.pow(0.96, dt * 60);
@@ -510,26 +540,27 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     chassis.x += chassis.vx * dt;
     chassis.y += chassis.vy * dt;
 
-    // Física de contacto: Apoyo pivotado en rueda trasera para permitir levantar el morro sin freno.
-    // Suspensión con amortiguación: en vez de fijar la posición al suelo de
-    // golpe (que se notaba muy rígido), el coche "cede" un poco al tocar y
-    // vuelve a su sitio gradualmente. Al aterrizar con velocidad de caída
-    // notable, además rebota (conserva parte de esa velocidad hacia arriba).
-    const SUSPENSION_RATE = 16; // cuanto más bajo, más blanda/lenta la suspensión
-    const SUSPENSION_MAX_PEN = 26; // px máximos que puede "hundirse" antes de tope duro
+    // Red de seguridad: el muelle ya evita que la rueda se hunda más de
+    // SUS_MAX_COMP, pero si un impacto muy fuerte lo supera en un solo
+    // fotograma, esto corta en seco (con margen extra) para que el coche
+    // nunca atraviese visualmente el suelo. Aun así rebota un poco (no deja
+    // la velocidad a cero), si no, los golpes más fuertes —los que de
+    // verdad podrían volcarlo— se quedaban sin ningún rebote.
+    const cosA2 = Math.cos(chassis.angle), sinA2 = Math.sin(chassis.angle);
     if (enSueloR) {
-      const targetY_R = groundR - WHEEL_RADIUS - 8 + Math.sin(chassis.angle) * WHEEL_OX - 4;
-      const pen = chassis.y - targetY_R;
-      if (pen > 0) {
-        chassis.y = targetY_R + Math.min(SUSPENSION_MAX_PEN, pen) * (1 - Math.min(1, SUSPENSION_RATE * dt));
-        if (chassis.vy > 0) chassis.vy = chassis.vy > 60 ? -chassis.vy * BOUNCE_RESTITUTION : chassis.vy * 0.4;
+      const wryNow = chassis.y - sinA2 * WHEEL_OX + cosA2 * 8;
+      const maxWryNow = groundR - WHEEL_RADIUS + SUS_MAX_COMP + 12;
+      if (wryNow > maxWryNow) {
+        chassis.y -= (wryNow - maxWryNow);
+        if (chassis.vy > 0) chassis.vy = -chassis.vy * 0.3;
       }
-    } else if (enSueloF) {
-      const targetY_F = groundF - WHEEL_RADIUS - 8 - Math.sin(chassis.angle) * WHEEL_OX - 4;
-      const pen = chassis.y - targetY_F;
-      if (pen > 0) {
-        chassis.y = targetY_F + Math.min(SUSPENSION_MAX_PEN, pen) * (1 - Math.min(1, SUSPENSION_RATE * dt));
-        if (chassis.vy > 0) chassis.vy = chassis.vy > 60 ? -chassis.vy * BOUNCE_RESTITUTION : chassis.vy * 0.4;
+    }
+    if (enSueloF) {
+      const wfyNow = chassis.y + sinA2 * WHEEL_OX + cosA2 * 8;
+      const maxWfyNow = groundF - WHEEL_RADIUS + SUS_MAX_COMP + 12;
+      if (wfyNow > maxWfyNow) {
+        chassis.y -= (wfyNow - maxWfyNow);
+        if (chassis.vy > 0) chassis.vy = -chassis.vy * 0.3;
       }
     }
 
