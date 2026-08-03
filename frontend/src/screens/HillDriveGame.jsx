@@ -7,10 +7,10 @@ const RECORD_KEY = 'nuvia_hilldrive_record';
 const JUEGO_ID = 'hill_drive';
 const GRAVITY = 980;
 // Suspensión: muelle amortiguado por rueda (Ley de Hooke, F = deformación·K − velocidad·D)
-const SUS_K = 110;           // rigidez del muelle (más duro = se hunde menos y devuelve más energía)
-const SUS_D = 4.5;           // amortiguación bastante floja: rebote claro, 2-3 veces antes de asentarse
+const SUS_K = 65;            // rigidez del muelle (más duro = se hunde menos y devuelve más energía)
+const SUS_D = 1.2;           // amortiguación bastante floja: rebote claro, 2-3 veces antes de asentarse
 const SUS_MAX_COMP = 18;     // compresión máxima antes de un tope duro (menos hundimiento visible)
-const SUS_TORQUE_GAIN = 0.07; // cuánta fuerza de la suspensión se convierte en giro del chasis (más = golpes fuertes pueden volcarlo)
+const SUS_TORQUE_GAIN = 0.065; // cuánta fuerza de la suspensión se convierte en giro del chasis (más = golpes fuertes pueden volcarlo)
 const MAX_TORQUE = 14000;
 const WHEEL_RADIUS = 14;
 const CHASSIS_W = 70;
@@ -531,7 +531,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       // notarse — con eso, volcar era imposible. Ahora es más suave.
       const slopeAngle = Math.atan2(groundF - groundR, wfx - wrx);
       chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 4.0 * dt);
-      chassis.omega *= 0.92;
+      chassis.omega *= 0.8;
     }
     chassis.angle += chassis.omega * dt;
     chassis.omega *= Math.pow(0.96, dt * 60);
