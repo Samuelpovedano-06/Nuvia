@@ -20,15 +20,16 @@ const TIMER_INIT = 60000;
 const FUEL_BONUS_MS = 8000;
 const FUEL_INTERVAL = 4500;
 const TERRAIN_STEP = 5;
-const TERRAIN_FREQ = 0.0016;
-const TERRAIN_AMP = 85;
-const TERRAIN_AMP2 = 32;
-const TERRAIN_FREQ2 = 0.004;
+const TERRAIN_FREQ = 0.0019;
+const TERRAIN_AMP = 105;
+const TERRAIN_AMP2 = 40;
+const TERRAIN_FREQ2 = 0.0048;
 const AMP_RAMP = 0.004;
 const METERS_PER_PX = 0.01;
 const CAM_X_OFFSET = 0.32;
 const MAX_VX = 1100;
 const MAX_VY = 1800;
+const BOUNCE_RESTITUTION = 0.35; // cuánta velocidad vertical se conserva al rebotar
 
 // ─────────────────────── Perlin Noise 1D (inline) ───────────────────────
 function buildPerlin(seed = 42) {
@@ -467,9 +468,9 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       if (enSueloR || enSuelo) {
         // Aceleración con tracción trasera (83% más dócil y estable)
         chassis.vx += 980 * dt;
-        chassis.omega -= 0.8 * dt; // Elevación sutil de morro
+        chassis.omega -= 0.008 * dt; // Cuesta un 99% más levantar el morro (0.8 original -> 0.008)
       } else {
-        chassis.omega -= 1.2 * dt; // Giro muy suave en el aire
+        chassis.omega -= 0.012 * dt; // Giro en el aire, reducido igual que en el suelo (99% menos)
       }
     } else if (s.accel < 0) {
       if (enSuelo) {
@@ -495,10 +496,11 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     chassis.vx = clamp(chassis.vx, -300, 1000);
     chassis.vy = clamp(chassis.vy, -1000, 1000);
 
-    // Integración de rotación con firme auto-nivelado de pendiente al apoyar ambas ruedas
+    // Integración de rotación con auto-nivelado de pendiente al apoyar ambas
+    // ruedas (más lento que antes = menos "robótico" al enderezarse)
     if (enSueloF && enSueloR) {
       const slopeAngle = Math.atan2(groundF - groundR, wfx - wrx);
-      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 11.0 * dt);
+      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 8.0 * dt);
       chassis.omega *= 0.30;
     }
     chassis.angle += chassis.omega * dt;
@@ -508,18 +510,26 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     chassis.x += chassis.vx * dt;
     chassis.y += chassis.vy * dt;
 
-    // Física de contacto: Apoyo pivotado en rueda trasera para permitir levantar el morro sin freno
+    // Física de contacto: Apoyo pivotado en rueda trasera para permitir levantar el morro sin freno.
+    // Suspensión con amortiguación: en vez de fijar la posición al suelo de
+    // golpe (que se notaba muy rígido), el coche "cede" un poco al tocar y
+    // vuelve a su sitio gradualmente. Al aterrizar con velocidad de caída
+    // notable, además rebota (conserva parte de esa velocidad hacia arriba).
+    const SUSPENSION_RATE = 16; // cuanto más bajo, más blanda/lenta la suspensión
+    const SUSPENSION_MAX_PEN = 26; // px máximos que puede "hundirse" antes de tope duro
     if (enSueloR) {
-      const targetY_R = groundR - WHEEL_RADIUS - 8 + Math.sin(chassis.angle) * WHEEL_OX;
-      if (chassis.y > targetY_R - 4) {
-        chassis.y = targetY_R - 4;
-        if (chassis.vy > 0) chassis.vy = 0;
+      const targetY_R = groundR - WHEEL_RADIUS - 8 + Math.sin(chassis.angle) * WHEEL_OX - 4;
+      const pen = chassis.y - targetY_R;
+      if (pen > 0) {
+        chassis.y = targetY_R + Math.min(SUSPENSION_MAX_PEN, pen) * (1 - Math.min(1, SUSPENSION_RATE * dt));
+        if (chassis.vy > 0) chassis.vy = chassis.vy > 60 ? -chassis.vy * BOUNCE_RESTITUTION : chassis.vy * 0.4;
       }
     } else if (enSueloF) {
-      const targetY_F = groundF - WHEEL_RADIUS - 8 - Math.sin(chassis.angle) * WHEEL_OX;
-      if (chassis.y > targetY_F - 4) {
-        chassis.y = targetY_F - 4;
-        if (chassis.vy > 0) chassis.vy = 0;
+      const targetY_F = groundF - WHEEL_RADIUS - 8 - Math.sin(chassis.angle) * WHEEL_OX - 4;
+      const pen = chassis.y - targetY_F;
+      if (pen > 0) {
+        chassis.y = targetY_F + Math.min(SUSPENSION_MAX_PEN, pen) * (1 - Math.min(1, SUSPENSION_RATE * dt));
+        if (chassis.vy > 0) chassis.vy = chassis.vy > 60 ? -chassis.vy * BOUNCE_RESTITUTION : chassis.vy * 0.4;
       }
     }
 
