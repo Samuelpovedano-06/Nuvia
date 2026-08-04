@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Moon, Sun, Shirt, Coffee, Volume2, VolumeX, Sparkles, X, Heart,
-  Check, Play, Pause, Flame, CloudRain, Music, Wind, Bed, Calendar, Award
+  Moon, Sun, Shirt, Volume2, VolumeX, Sparkles, X, Heart,
+  Check, Play, Pause, CloudRain, Music, Wind, Bed, Calendar, Award, BookOpen
 } from 'lucide-react';
 
 // Lista de accesorios del Armario
@@ -181,11 +181,35 @@ export default function DormitorioSection({
     }
   });
 
+  // Estado de Energía de la Mascota
+  const [energia, setEnergia] = useState(() => {
+    return Number(localStorage.getItem('nuvia_mascot_energy') || 75);
+  });
+
   // Estado de Diario de Sueño
   const [horasSueño, setHorasSueño] = useState(8);
   const [calidadSueño, setCalidadSueño] = useState('excelente');
-  const [insomnio, setInsomnio] = useState(false);
   const [sueñoGuardado, setSueñoGuardado] = useState(false);
+
+  // Regeneración gradual de energía cuando el modo noche (dormir) está activo (+1% cada 30 segundos)
+  useEffect(() => {
+    if (!modoNoche) return;
+    const timer = setInterval(() => {
+      setEnergia(prev => {
+        if (prev >= 100) return 100;
+        const next = Math.min(100, prev + 1);
+        localStorage.setItem('nuvia_mascot_energy', String(next));
+        if (next === 100 && prev < 100) {
+          lanzarCorazones('¡Nuvia durmió y recuperó el 100% de su energía! ⚡🌙 (+15 Monedas de despertar)');
+          const nCoins = userCoins + 15;
+          setUserCoins(nCoins);
+          localStorage.setItem('nuvia_user_coins', String(nCoins));
+        }
+        return next;
+      });
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [modoNoche, userCoins]);
 
   // Manejo de sonido sintetizado
   const toggleSound = (mode) => {
@@ -206,8 +230,8 @@ export default function DormitorioSection({
     };
   }, []);
 
-  // Animación de corazones cuando cuidamos a la mascota
-  const lanzarCorazones = (mensaje) => {
+  // Animación de corazones cuando cuidamos a la mascota y aumento de energía
+  const lanzarCorazones = (mensaje, bonusEnergia = 15) => {
     setMostrarToastCare(mensaje);
     const id = Date.now();
     const nuevosCorazones = Array.from({ length: 5 }, (_, i) => ({
@@ -217,6 +241,14 @@ export default function DormitorioSection({
       delay: i * 0.1,
     }));
     setCorazones(nuevosCorazones);
+
+    if (bonusEnergia > 0) {
+      setEnergia(prev => {
+        const next = Math.min(100, prev + bonusEnergia);
+        localStorage.setItem('nuvia_mascot_energy', String(next));
+        return next;
+      });
+    }
 
     setTimeout(() => {
       setMostrarToastCare(null);
@@ -245,18 +277,25 @@ export default function DormitorioSection({
   };
 
   const guardarDiario = () => {
+    const today = new Date().toISOString().split('T')[0];
     const registro = {
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: today,
       horas: horasSueño,
       calidad: calidadSueño,
-      insomnio
+      insomnio: calidadSueño === 'malo'
     };
-    localStorage.setItem('nuvia_registro_sueño', JSON.stringify(registro));
+
+    // Guardar exclusivamente en el historial de diario de salud local
+    const prevLog = JSON.parse(localStorage.getItem('nuvia_registro_sueño_historial') || '[]');
+    localStorage.setItem('nuvia_registro_sueño_historial', JSON.stringify([registro, ...prevLog]));
+    localStorage.setItem('nuvia_registro_sueño_ultimo', JSON.stringify(registro));
+
     setSueñoGuardado(true);
+
     setTimeout(() => {
       setSueñoGuardado(false);
       setShowDiarioSueño(false);
-    }, 1200);
+    }, 1000);
   };
 
   return (
@@ -348,27 +387,89 @@ export default function DormitorioSection({
         </div>
       )}
 
-      {/* Indicador de Monedas en vivo en la parte superior derecha del Dormitorio */}
+      {/* Marcadores Estilo Pou (Debajo de 'Volver', arriba a la izquierda) */}
       <div style={{
         position: 'absolute',
-        top: '80px',
-        right: '20px',
-        background: 'rgba(255, 255, 255, 0.92)',
-        backdropFilter: 'blur(12px)',
-        border: '1.5px solid #FCD34D',
-        borderRadius: '20px',
-        padding: '6px 14px',
-        color: '#D97706',
-        fontWeight: 800,
-        fontSize: '13px',
-        zIndex: 10,
-        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)',
+        top: '65px',
+        left: '20px',
         display: 'flex',
         alignItems: 'center',
-        gap: '6px'
+        gap: '14px',
+        zIndex: 10
       }}>
-        <span>🪙</span>
-        <span>{userCoins} Monedas</span>
+        {/* Monedas Estilo Pou: Moneda dorada con borde negro grueso y número blanco con borde negro */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 35% 35%, #FDE047 0%, #F59E0B 70%, #D97706 100%)',
+            border: '3px solid #000000',
+            boxShadow: '0 3px 0 #000000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            position: 'relative',
+            flexShrink: 0
+          }}>
+            🪙
+            <span style={{
+              position: 'absolute',
+              top: '-3px',
+              right: '-3px',
+              background: '#22C55E',
+              color: '#FFF',
+              border: '2px solid #000000',
+              borderRadius: '50%',
+              width: '14px',
+              height: '14px',
+              fontSize: '10px',
+              fontWeight: 900,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>+</span>
+          </div>
+          <span style={{
+            fontSize: '18px',
+            fontWeight: 900,
+            color: '#FFFFFF',
+            WebkitTextStroke: '1.2px #000000',
+            textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
+            fontFamily: 'system-ui, sans-serif'
+          }}>
+            {userCoins}
+          </span>
+        </div>
+
+        {/* Estadística de Energía Estilo Pou: Cuadrado verde brillante con borde negro de 3px e icono en silueta negra */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '8px',
+            background: energia > 50 ? '#22C55E' : '#EAB308',
+            border: '3px solid #000000',
+            boxShadow: '0 3px 0 #000000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <span style={{ fontSize: '20px', filter: 'brightness(0)' }}>⚡</span>
+          </div>
+          <span style={{
+            fontSize: '16px',
+            fontWeight: 900,
+            color: '#FFFFFF',
+            WebkitTextStroke: '1.2px #000000',
+            textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
+            fontFamily: 'system-ui, sans-serif'
+          }}>
+            {energia}%
+          </span>
+        </div>
       </div>
 
       {/* BOTONES INTERACTIVOS DEL DORMITORIO (Barra Flotante de Acciones) */}
@@ -395,7 +496,7 @@ export default function DormitorioSection({
         {/* Interruptor de Lámpara (Modo Noche) */}
         <button
           onClick={() => setModoNoche(!modoNoche)}
-          title="Encender/Apagar Luz"
+          title="Encender/Apagar Luz (Restaurar Energía)"
           style={{
             background: modoNoche ? '#312E81' : '#FEF3C7',
             color: modoNoche ? '#FDE047' : '#D97706',
@@ -414,7 +515,31 @@ export default function DormitorioSection({
           }}
         >
           {modoNoche ? <Moon size={18} /> : <Sun size={18} />}
-          <span>{modoNoche ? 'Noche' : 'Día'}</span>
+          <span>{modoNoche ? 'Dormir' : 'Día'}</span>
+        </button>
+
+        {/* Botón Diario de Sueño */}
+        <button
+          onClick={() => setShowDiarioSueño(true)}
+          title="Diario de Sueño y Salud"
+          style={{
+            background: '#F3E8FF',
+            color: '#6B21A8',
+            border: 'none',
+            borderRadius: '16px',
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: '12px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <BookOpen size={18} />
+          <span>Diario Sueño</span>
         </button>
 
         {/* Botón Armario (Vestidor) */}
@@ -441,39 +566,7 @@ export default function DormitorioSection({
           <span>Armario</span>
         </button>
 
-        {/* Botón Autocuidado: Té */}
-        <button
-          onClick={() => lanzarCorazones('¡Nuvia disfrutó su té reconfortante! ☕✨')}
-          title="Dar Té Caliente"
-          style={{
-            background: '#FEF3C7',
-            color: '#B45309',
-            border: 'none',
-            borderRadius: '16px',
-            padding: '10px',
-            cursor: 'pointer',
-            flexShrink: 0
-          }}
-        >
-          <Coffee size={18} />
-        </button>
 
-        {/* Botón Autocuidado: Compresa Caliente */}
-        <button
-          onClick={() => lanzarCorazones('¡Compresa calentita aplicada! 💖')}
-          title="Poner Compresa Térmica"
-          style={{
-            background: '#FFE4E6',
-            color: '#E11D48',
-            border: 'none',
-            borderRadius: '16px',
-            padding: '10px',
-            cursor: 'pointer',
-            flexShrink: 0
-          }}
-        >
-          <Flame size={18} />
-        </button>
 
         {/* Botón Sonidos para Dormir */}
         <button
@@ -661,6 +754,109 @@ export default function DormitorioSection({
                 Detener Audio
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DIARIO DE SUEÑO Y SALUD */}
+      {showDiarioSueño && (
+        <div style={modalOverlayStyle}>
+          <div style={modalCardStyle}>
+            <div style={modalHeaderStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BookOpen size={22} color="#8B5CF6" />
+                <h3 style={{ margin: 0, color: '#4C1D95', fontSize: '18px' }}>Diario de Sueño</h3>
+              </div>
+              <button onClick={() => setShowDiarioSueño(false)} style={closeBtnStyle}><X size={20} /></button>
+            </div>
+
+            <p style={{ fontSize: '12px', color: '#64748B', margin: '6px 0 14px' }}>
+              Registra tu descanso de anoche para sincronizarlo con el seguimiento de tu ciclo en Nuvia.
+            </p>
+
+            {/* Selector de Horas de Sueño */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                ⏰ Horas dormidas: <span style={{ color: '#8B5CF6', fontSize: '14px' }}>{horasSueño} hrs</span>
+              </label>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {[5, 6, 7, 8, 9, 10].map(h => (
+                  <button
+                    key={h}
+                    onClick={() => setHorasSueño(h)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '12px',
+                      border: horasSueño === h ? '2px solid #8B5CF6' : '1px solid #E2E8F0',
+                      background: horasSueño === h ? '#F3E8FF' : '#F8FAFC',
+                      color: horasSueño === h ? '#6B21A8' : '#475569',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {h}h
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Calidad de Descanso */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                🌙 Calidad de descanso:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                {[
+                  { id: 'excelente', label: '😴 Profundo', desc: 'Sin interrupciones' },
+                  { id: 'bueno', label: '☁️ Reparador', desc: 'Descanso normal' },
+                  { id: 'ligero', label: '🌙 Ligero', desc: 'Varios despertares' },
+                  { id: 'malo', label: '⚡ Inquieto', desc: 'Insomnio / Cólicos' },
+                ].map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setCalidadSueño(c.id)}
+                    style={{
+                      padding: '8px',
+                      borderRadius: '14px',
+                      border: calidadSueño === c.id ? '2px solid #8B5CF6' : '1.5px solid #E2E8F0',
+                      background: calidadSueño === c.id ? '#F3E8FF' : '#F8FAFC',
+                      color: calidadSueño === c.id ? '#6B21A8' : '#334155',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div>{c.label}</div>
+                    <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 500 }}>{c.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Botón Guardar en Salud */}
+            <button
+              onClick={guardarDiario}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                color: '#FFF',
+                border: 'none',
+                borderRadius: '14px',
+                padding: '12px',
+                fontWeight: 700,
+                fontSize: '14px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(139, 92, 246, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                gap: '6px'
+              }}
+            >
+              {sueñoGuardado ? '✓ ¡Registro Guardado!' : 'Guardar Registro de Sueño'}
+            </button>
           </div>
         </div>
       )}

@@ -144,6 +144,11 @@ export default function GameScreen({ onGameActiveChange }) {
       .catch(err => console.error("Error al obtener config de colisiones:", err));
   }, [user]);
 
+  const consumirEnergia = (cantidad = 15) => {
+    const cur = Number(localStorage.getItem('nuvia_mascot_energy') || 75);
+    localStorage.setItem('nuvia_mascot_energy', String(Math.max(0, cur - cantidad)));
+  };
+
   const habitacion = HABITACIONES.find(h => h.id === habitacionId) || HABITACIONES[0];
 
   useEffect(() => {
@@ -415,7 +420,10 @@ export default function GameScreen({ onGameActiveChange }) {
         <DormitorioSection
           modoNoche={modoNoche}
           setModoNoche={setModoNoche}
-          onAbrirContarOvejas={() => setEnSheepCounting(true)}
+          onAbrirContarOvejas={() => {
+            consumirEnergia(10);
+            setEnSheepCounting(true);
+          }}
           equiparAccesorio={(accId) => {
             setAccesorioEquipado(accId);
             localStorage.setItem('nuvia_mascot_outfit', accId);
@@ -506,7 +514,7 @@ export default function GameScreen({ onGameActiveChange }) {
           }}>
             {/* Juego 1: Esquiva-compresas */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnJuego(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnJuego(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <img
@@ -521,7 +529,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
             {/* Juego 2: Sky Jump */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnSkyJump(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnSkyJump(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
@@ -539,7 +547,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
             {/* Juego 3: Sky Hop */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnSkyHop(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnSkyHop(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
@@ -557,7 +565,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
             {/* Juego 4: Food Drop */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnFoodDrop(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnFoodDrop(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
@@ -576,7 +584,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
             {/* Juego 5: Cliff Jump */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnCliffJump(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnCliffJump(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
@@ -607,7 +615,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
             {/* Juego 6: Cliff Dash */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnCliffDash(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnCliffDash(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
@@ -639,7 +647,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
             {/* Juego 7: Tumble */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnTumble(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnTumble(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
@@ -664,7 +672,7 @@ export default function GameScreen({ onGameActiveChange }) {
 
             {/* Juego 8: Hill Drive */}
             <div
-              onClick={() => { setMostrarJuegos(false); setEnHillDrive(true); }}
+              onClick={() => { consumirEnergia(15); setMostrarJuegos(false); setEnHillDrive(true); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', gap: '6px' }}
             >
               <div style={{
