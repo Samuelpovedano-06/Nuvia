@@ -10,6 +10,9 @@ import CliffJumpGame from './CliffJumpGame';
 import CliffDashGame from './CliffDashGame';
 import TumbleGame      from './TumbleGame';
 import HillDriveGame   from './HillDriveGame';
+import DormitorioSection, { ACCESORIOS } from '../components/DormitorioSection';
+import SheepCountingGame from './SheepCountingGame';
+
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -89,14 +92,20 @@ export default function GameScreen({ onGameActiveChange }) {
   const [enCliffDash,  setEnCliffDash]  = useState(false);
   const [enTumble,     setEnTumble]     = useState(false);
   const [enHillDrive,  setEnHillDrive]  = useState(false);
+  const [enSheepCounting, setEnSheepCounting] = useState(false);
+  const [modoNoche, setModoNoche] = useState(false);
+  const [accesorioEquipado, setAccesorioEquipado] = useState(() => localStorage.getItem('nuvia_mascot_outfit') || 'ninguno');
+  const [userCoins, setUserCoins] = useState(() => Number(localStorage.getItem('nuvia_user_coins') || 50));
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
   const [showAjustes, setShowAjustes] = useState(false);
 
+
   const { user } = useContext(AuthContext);
 
-  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash || enTumble || enHillDrive;
+  const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash || enTumble || enHillDrive || enSheepCounting;
+
 
   useEffect(() => {
     onGameActiveChange?.(inAnyGame);
@@ -115,7 +124,9 @@ export default function GameScreen({ onGameActiveChange }) {
       setEnCliffDash(false);
       setEnTumble(false);
       setEnHillDrive(false);
+      setEnSheepCounting(false);
       setMostrarJuegos(true);
+
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -263,6 +274,26 @@ export default function GameScreen({ onGameActiveChange }) {
     );
   }
 
+  if (enSheepCounting) {
+    return (
+      <SheepCountingGame
+        onSalir={() => {
+          setUserCoins(Number(localStorage.getItem('nuvia_user_coins') || 50));
+          setEnSheepCounting(false);
+        }}
+        onVolverAlListado={() => {
+          setUserCoins(Number(localStorage.getItem('nuvia_user_coins') || 50));
+          setEnSheepCounting(false);
+          setMostrarJuegos(true);
+        }}
+        onGanarMonedas={(cant) => {
+          setUserCoins(prev => prev + cant);
+        }}
+      />
+    );
+  }
+
+
   return (
     <div style={{
       position: 'fixed', inset: 0,
@@ -338,28 +369,63 @@ export default function GameScreen({ onGameActiveChange }) {
       <div style={{
         flex: 1,
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        paddingBottom: '120px',
+        paddingBottom: habitacionId === 'dormitorio' ? '165px' : '120px',
+        position: 'relative'
       }}>
-        <img
-          src={spriteActual}
-          alt="Nuvia"
-          onClick={onMascotaClick}
-          style={{
-            width: `${MASCOTA_TAMANO}px`,
-            height: `${MASCOTA_TAMANO}px`,
-            objectFit: 'contain',
-            cursor: 'pointer',
-            userSelect: 'none',
-            WebkitUserDrag: 'none',
-            filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.25))',
-            animation: faseSalto === 'saltando'
-              ? `mascota-juego-salto ${DURACION_SALTO_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
-              : faseSalto === 'por_saltar'
-                ? 'mascota-juego-prep 0.14s ease-out forwards'
-                : 'mascota-juego-idle 2.5s ease-in-out infinite',
-          }}
-        />
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <img
+            src={spriteActual}
+            alt="Nuvia"
+            onClick={onMascotaClick}
+            style={{
+              width: `${MASCOTA_TAMANO}px`,
+              height: `${MASCOTA_TAMANO}px`,
+              objectFit: 'contain',
+              cursor: 'pointer',
+              userSelect: 'none',
+              WebkitUserDrag: 'none',
+              filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.25))',
+              animation: faseSalto === 'saltando'
+                ? `mascota-juego-salto ${DURACION_SALTO_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
+                : faseSalto === 'por_saltar'
+                  ? 'mascota-juego-prep 0.14s ease-out forwards'
+                  : 'mascota-juego-idle 2.5s ease-in-out infinite',
+            }}
+          />
+
+          {/* Accesorio equipado en la cabeza/mascota */}
+          {accesorioEquipado && accesorioEquipado !== 'ninguno' && (
+            <div style={{
+              position: 'absolute',
+              top: '-10px',
+              right: '15px',
+              fontSize: '28px',
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+              pointerEvents: 'none',
+              animation: 'bounce 2s infinite ease-in-out'
+            }}>
+              {ACCESORIOS.find(a => a.id === accesorioEquipado)?.icono}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Sección del Dormitorio (Lámpara, Armario, Sonidos, Té, Ovejitas) */}
+      {habitacionId === 'dormitorio' && (
+        <DormitorioSection
+          modoNoche={modoNoche}
+          setModoNoche={setModoNoche}
+          onAbrirContarOvejas={() => setEnSheepCounting(true)}
+          equiparAccesorio={(accId) => {
+            setAccesorioEquipado(accId);
+            localStorage.setItem('nuvia_mascot_outfit', accId);
+          }}
+          accesorioEquipado={accesorioEquipado}
+          userCoins={userCoins}
+          setUserCoins={setUserCoins}
+        />
+      )}
+
 
       {/* Botón interactivo sobre la caja morada (diseño de cubo 3D) */}
       {habitacionId === 'sala' && (
