@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Save, Utensils, Droplets, Heart, FileText, Lightbulb, Sparkles, Egg, Cloud, Shield, ShieldOff, Zap } from 'lucide-react';
+import { ChevronLeft, Save, Utensils, Droplets, Heart, FileText, Lightbulb, Sparkles, Egg, Cloud, Shield, ShieldOff, Zap, Clock, Moon, Activity, Brain, CloudRain } from 'lucide-react';
 import { ApiService } from '../api';
 
 // Componente para dibujar las caritas EXACTAS de la imagen usando SVG
@@ -279,6 +279,16 @@ export default function SymptomsScreen() {
     init();
   }, [today]);
 
+  const [horasSueño, setHorasSueño] = useState(8);
+  const [calidadSueño, setCalidadSueño] = useState('excelente');
+  const [sintomasSueño, setSintomasSueño] = useState([]);
+
+  const toggleSintomaSueño = (id) => {
+    setSintomasSueño(prev =>
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+    );
+  };
+
   const toggleSintoma = (id) => {
     if (selected.includes(id)) {
       setSelected(prev => prev.filter(i => i !== id));
@@ -310,6 +320,18 @@ export default function SymptomsScreen() {
         flujo,
         relaciones
       });
+
+      // Guardar también el registro de sueño en el historial local
+      const registroSueño = {
+        fecha: today,
+        horas: horasSueño,
+        calidad: calidadSueño,
+        sintomas: sintomasSueño,
+        insomnio: calidadSueño === 'malo' || sintomasSueño.includes('insomnio')
+      };
+      const prevLog = JSON.parse(localStorage.getItem('nuvia_registro_sueño_historial') || '[]');
+      localStorage.setItem('nuvia_registro_sueño_historial', JSON.stringify([registroSueño, ...prevLog]));
+      localStorage.setItem('nuvia_registro_sueño_ultimo', JSON.stringify(registroSueño));
 
       setMessage('¡Registros guardados con éxito!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -495,6 +517,131 @@ export default function SymptomsScreen() {
                 <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)' }}>{type.label}</span>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* SECCIÓN DIARIO DE SUEÑO Y DESCANSO */}
+        <div>
+          <h3 style={{ fontSize: '18px', marginBottom: '16px', borderLeft: '4px solid var(--primary)', paddingLeft: '12px' }}>
+            Sueño y Descanso
+          </h3>
+          <div className="card" style={{ margin: 0, padding: '20px', background: 'var(--white)', borderRadius: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.03)' }}>
+            
+            {/* Horas dormidas con input manual */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>
+                <Clock size={16} color="var(--primary)" />
+                <span>Horas de sueño:</span>
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  step="0.5"
+                  value={horasSueño}
+                  onChange={(e) => !isPareja && setHorasSueño(e.target.value)}
+                  placeholder="8"
+                  style={{
+                    width: '90px',
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    border: '1.5px solid var(--primary)',
+                    background: 'var(--primary-light)',
+                    color: 'var(--primary)',
+                    fontWeight: '800',
+                    fontSize: '16px',
+                    textAlign: 'center',
+                    outline: 'none'
+                  }}
+                />
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-dark)' }}>horas de descanso</span>
+              </div>
+            </div>
+
+            {/* Calidad de descanso con iconos temáticos */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>
+                <Moon size={16} color="var(--primary)" />
+                <span>Calidad de descanso:</span>
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                {[
+                  { id: 'excelente', label: 'Profundo', desc: 'Sin interrupciones', icon: <Moon size={16} color="var(--primary)" /> },
+                  { id: 'bueno', label: 'Reparador', desc: 'Descanso normal', icon: <Cloud size={16} color="var(--primary)" /> },
+                  { id: 'ligero', label: 'Ligero', desc: 'Varios despertares', icon: <Sparkles size={16} color="var(--primary)" /> },
+                  { id: 'malo', label: 'Inquieto', desc: 'Insomnio / Molestias', icon: <Zap size={16} color="var(--primary)" /> },
+                ].map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => !isPareja && setCalidadSueño(c.id)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '14px',
+                      border: calidadSueño === c.id ? '2px solid var(--primary)' : '1.5px solid #E2E8F0',
+                      background: calidadSueño === c.id ? 'var(--primary-light)' : '#F8FAFC',
+                      color: calidadSueño === c.id ? 'var(--primary)' : '#334155',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      cursor: isPareja ? 'default' : 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {c.icon}
+                      <span>{c.label}</span>
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 500, marginTop: '2px' }}>{c.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Síntomas de Noche con iconos temáticos */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>
+                <Activity size={16} color="var(--primary)" />
+                <span>Síntomas nocturnos:</span>
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {[
+                  { id: 'colicos', label: 'Cólicos', icon: <Droplets size={14} /> },
+                  { id: 'sudores', label: 'Sudores', icon: <CloudRain size={14} /> },
+                  { id: 'insomnio', label: 'Insomnio', icon: <Brain size={14} /> },
+                  { id: 'pesadillas', label: 'Pesadillas', icon: <Cloud size={14} /> },
+                  { id: 'dolor_cabeza', label: 'Dolor cabeza', icon: <Zap size={14} /> },
+                  { id: 'dolor_lumbar', label: 'Dolor lumbar', icon: <Heart size={14} /> },
+                ].map(s => {
+                  const sel = sintomasSueño.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => !isPareja && toggleSintomaSueño(s.id)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        border: sel ? '1.5px solid var(--primary)' : '1px solid #E2E8F0',
+                        background: sel ? 'var(--primary-light)' : '#F8FAFC',
+                        color: sel ? 'var(--primary)' : '#64748B',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        cursor: isPareja ? 'default' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span style={{ color: sel ? 'var(--primary)' : '#94A3B8' }}>{s.icon}</span>
+                      <span>{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
           </div>
         </div>
 

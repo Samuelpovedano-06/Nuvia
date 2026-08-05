@@ -38,13 +38,13 @@ class AmbientSynthPlayer {
   playRain() {
     this.stop();
     this.init();
-    
+
     // Crear buffer de ruido rosa/blanco para lluvia
     const bufferSize = this.ctx.sampleRate * 2;
     const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-    
+
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
       b0 = 0.99886 * b0 + white * 0.0555179;
@@ -122,7 +122,7 @@ class AmbientSynthPlayer {
 
     // Oscilar volumen imitando oleaje
     gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-    
+
     osc.connect(gain);
     gain.connect(this.ctx.destination);
     osc.start();
@@ -143,10 +143,10 @@ class AmbientSynthPlayer {
   stop() {
     if (this.intervalId) clearInterval(this.intervalId);
     if (this.noiseNode) {
-      try { this.noiseNode.stop(); } catch(e){}
+      try { this.noiseNode.stop(); } catch (e) { }
     }
     if (this.oscNode) {
-      try { this.oscNode.stop(); } catch(e){}
+      try { this.oscNode.stop(); } catch (e) { }
     }
     this.isPlaying = false;
   }
@@ -166,7 +166,7 @@ export default function DormitorioSection({
   const [showArmario, setShowArmario] = useState(false);
   const [showSonidos, setShowSonidos] = useState(false);
   const [showDiarioSueño, setShowDiarioSueño] = useState(false);
-  
+
   // Sonido reproduciéndose actualmente: 'none' | 'rain' | 'melody' | 'waves'
   const [soundMode, setSoundMode] = useState('none');
 
@@ -181,15 +181,47 @@ export default function DormitorioSection({
     }
   });
 
-  // Estado de Energía de la Mascota
+  // Persistir modoNoche en localStorage para el cálculo offline estilo Pou
+  useEffect(() => {
+    localStorage.setItem('nuvia_modo_noche', String(modoNoche));
+  }, [modoNoche]);
+
+  // Estado de Energía de la Mascota (con cálculo de tiempo transcurrido fuera de la app)
   const [energia, setEnergia] = useState(() => {
-    return Number(localStorage.getItem('nuvia_mascot_energy') || 75);
+    const savedEnergy = Number(localStorage.getItem('nuvia_mascot_energy') || 75);
+    const lastTimestamp = Number(localStorage.getItem('nuvia_last_energy_timestamp') || Date.now());
+    const isNight = localStorage.getItem('nuvia_modo_noche') === 'true';
+
+    const elapsedMs = Date.now() - lastTimestamp;
+    let newEnergy = savedEnergy;
+
+    if (elapsedMs > 0) {
+      if (isNight) {
+        // Estaba durmiendo fuera de la app: recarga +1% cada 30 segundos
+        const gained = Math.floor(elapsedMs / 30000);
+        newEnergy = Math.min(100, savedEnergy + gained);
+      } else {
+        // Estaba despierta fuera de la app: desgasta -1% cada 45 segundos
+        const lost = Math.floor(elapsedMs / 45000);
+        newEnergy = Math.max(0, savedEnergy - lost);
+      }
+    }
+
+    localStorage.setItem('nuvia_mascot_energy', String(newEnergy));
+    localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
+    return newEnergy;
   });
 
-  // Estado de Diario de Sueño
-  const [horasSueño, setHorasSueño] = useState(8);
-  const [calidadSueño, setCalidadSueño] = useState('excelente');
-  const [sueñoGuardado, setSueñoGuardado] = useState(false);
+  const [mostrarPorcentajeEnergia, setMostrarPorcentajeEnergia] = useState(false);
+
+  // Mantener actualizada la marca de tiempo de última actividad
+  useEffect(() => {
+    localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
+    const interval = setInterval(() => {
+      localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [energia, modoNoche]);
 
   // Regeneración gradual de energía cuando el modo noche (dormir) está activo (+1% cada 30 segundos)
   useEffect(() => {
@@ -199,6 +231,7 @@ export default function DormitorioSection({
         if (prev >= 100) return 100;
         const next = Math.min(100, prev + 1);
         localStorage.setItem('nuvia_mascot_energy', String(next));
+        localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
         if (next === 100 && prev < 100) {
           lanzarCorazones('¡Nuvia durmió y recuperó el 100% de su energía! ⚡🌙 (+15 Monedas de despertar)');
           const nCoins = userCoins + 15;
@@ -210,6 +243,21 @@ export default function DormitorioSection({
     }, 30000);
     return () => clearInterval(timer);
   }, [modoNoche, userCoins]);
+
+  // Desgaste gradual de energía mientras Nuvia está despierta (!modoNoche) (-1% cada 45 segundos)
+  useEffect(() => {
+    if (modoNoche) return;
+    const timer = setInterval(() => {
+      setEnergia(prev => {
+        if (prev <= 0) return 0;
+        const next = Math.max(0, prev - 1);
+        localStorage.setItem('nuvia_mascot_energy', String(next));
+        localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
+        return next;
+      });
+    }, 45000);
+    return () => clearInterval(timer);
+  }, [modoNoche]);
 
   // Manejo de sonido sintetizado
   const toggleSound = (mode) => {
@@ -276,6 +324,11 @@ export default function DormitorioSection({
     }
   };
 
+  // Estado de Diario de Sueño
+  const [horasSueño, setHorasSueño] = useState(8);
+  const [calidadSueño, setCalidadSueño] = useState('excelente');
+  const [sueñoGuardado, setSueñoGuardado] = useState(false);
+
   const guardarDiario = () => {
     const today = new Date().toISOString().split('T')[0];
     const registro = {
@@ -300,6 +353,8 @@ export default function DormitorioSection({
 
   return (
     <>
+
+
       {/* Superposición de Modo Noche */}
       {modoNoche && (
         <div style={{
@@ -387,77 +442,40 @@ export default function DormitorioSection({
         </div>
       )}
 
-      {/* Marcadores Estilo Pou (Debajo de 'Volver', arriba a la izquierda) */}
+      {/* Marcadores Estilo Pou con Colores y Logo de Nuvia (Debajo de 'Volver', arriba a la izquierda) */}
       <div style={{
         position: 'absolute',
-        top: '65px',
+        top: '85px',
         left: '20px',
         display: 'flex',
-        alignItems: 'center',
-        gap: '14px',
+        alignItems: 'flex-start',
+        gap: '16px',
         zIndex: 10
       }}>
-        {/* Monedas Estilo Pou: Moneda dorada con borde negro grueso y número blanco con borde negro */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        {/* Monedas Estilo Pou: Círculo arriba con Logo de Nuvia y número de monedas DEBAJO */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
           <div style={{
-            width: '38px',
-            height: '38px',
+            width: '40px',
+            height: '40px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle at 35% 35%, #FDE047 0%, #F59E0B 70%, #D97706 100%)',
+            background: 'linear-gradient(135deg, #FFFFFF 0%, #F3E8FF 100%)',
             border: '3px solid #000000',
             boxShadow: '0 3px 0 #000000',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '18px',
             position: 'relative',
             flexShrink: 0
           }}>
-            🪙
-            <span style={{
-              position: 'absolute',
-              top: '-3px',
-              right: '-3px',
-              background: '#22C55E',
-              color: '#FFF',
-              border: '2px solid #000000',
-              borderRadius: '50%',
-              width: '14px',
-              height: '14px',
-              fontSize: '10px',
-              fontWeight: 900,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>+</span>
-          </div>
-          <span style={{
-            fontSize: '18px',
-            fontWeight: 900,
-            color: '#FFFFFF',
-            WebkitTextStroke: '1.2px #000000',
-            textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
-            fontFamily: 'system-ui, sans-serif'
-          }}>
-            {userCoins}
-          </span>
-        </div>
-
-        {/* Estadística de Energía Estilo Pou: Cuadrado verde brillante con borde negro de 3px e icono en silueta negra */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '8px',
-            background: energia > 50 ? '#22C55E' : '#EAB308',
-            border: '3px solid #000000',
-            boxShadow: '0 3px 0 #000000',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <span style={{ fontSize: '20px', filter: 'brightness(0)' }}>⚡</span>
+            <img
+              src="/logo.png"
+              alt="Nuvia Logo"
+              style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = 'block';
+              }}
+            />
           </div>
           <span style={{
             fontSize: '16px',
@@ -465,10 +483,74 @@ export default function DormitorioSection({
             color: '#FFFFFF',
             WebkitTextStroke: '1.2px #000000',
             textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
-            fontFamily: 'system-ui, sans-serif'
+            fontFamily: 'system-ui, sans-serif',
+            marginTop: '2px'
           }}>
-            {energia}%
+            {userCoins}
           </span>
+        </div>
+
+        {/* Estadística de Energía Estilo Pou: Cuadrado que baja su relleno y solo muestra porcentaje al hacer Click */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', position: 'relative' }}>
+          <div
+            onClick={() => setMostrarPorcentajeEnergia(v => !v)}
+            title="Toca para ver el porcentaje de energía"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: '#2D1436',
+              border: '3px solid #000000',
+              boxShadow: '0 3px 0 #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              cursor: 'pointer',
+              overflow: 'hidden',
+              flexShrink: 0
+            }}
+          >
+            {/* Relleno de energía que sube o baja de abajo hacia arriba estilo Pou */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: `${energia}%`,
+              background: energia > 50
+                ? 'linear-gradient(180deg, #EC4899 0%, #A855F7 100%)'
+                : 'linear-gradient(180deg, #EF4444 0%, #F59E0B 100%)',
+              transition: 'height 0.5s ease-in-out'
+            }} />
+
+            {/* Icono de Rayo por encima del nivel de relleno */}
+            <span style={{
+              fontSize: '20px',
+              color: '#FFFFFF',
+              position: 'relative',
+              zIndex: 2,
+              filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.6))'
+            }}>
+              ⚡
+            </span>
+          </div>
+
+          {/* Porcentaje numérico: Solo aparece debajo al hacer CLICK */}
+          {mostrarPorcentajeEnergia && (
+            <span style={{
+              fontSize: '14px',
+              fontWeight: 900,
+              color: '#FFFFFF',
+              WebkitTextStroke: '1px #000000',
+              textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
+              fontFamily: 'system-ui, sans-serif',
+              marginTop: '2px',
+              animation: 'fadeIn 0.15s ease-out'
+            }}>
+              {energia}%
+            </span>
+          )}
         </div>
       </div>
 
@@ -481,56 +563,31 @@ export default function DormitorioSection({
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        justifyContent: 'center',
+        gap: '6px',
         background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(16px)',
-        padding: '10px 14px',
+        padding: '8px 10px',
         borderRadius: '24px',
         boxShadow: '0 12px 32px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.1)',
         border: '1.5px solid rgba(255,255,255,0.8)',
-        maxWidth: '94vw',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
+        maxWidth: 'calc(100vw - 16px)',
+        width: 'max-content',
+        overflow: 'hidden'
       }}>
-        {/* Interruptor de Lámpara (Modo Noche) */}
+        {/* Botón Lámpara / Luz */}
         <button
           onClick={() => setModoNoche(!modoNoche)}
-          title="Encender/Apagar Luz (Restaurar Energía)"
+          title="Apagar/Encender Luz (Dormir)"
           style={{
             background: modoNoche ? '#312E81' : '#FEF3C7',
             color: modoNoche ? '#FDE047' : '#D97706',
             border: 'none',
             borderRadius: '16px',
-            padding: '10px 14px',
+            padding: '8px 10px',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: '12px',
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-          }}
-        >
-          {modoNoche ? <Moon size={18} /> : <Sun size={18} />}
-          <span>{modoNoche ? 'Dormir' : 'Día'}</span>
-        </button>
-
-        {/* Botón Diario de Sueño */}
-        <button
-          onClick={() => setShowDiarioSueño(true)}
-          title="Diario de Sueño y Salud"
-          style={{
-            background: '#F3E8FF',
-            color: '#6B21A8',
-            border: 'none',
-            borderRadius: '16px',
-            padding: '10px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
             cursor: 'pointer',
             fontWeight: 700,
             fontSize: '12px',
@@ -538,9 +595,11 @@ export default function DormitorioSection({
             whiteSpace: 'nowrap'
           }}
         >
-          <BookOpen size={18} />
-          <span>Diario Sueño</span>
+          {modoNoche ? <Moon size={17} /> : <Sun size={17} />}
+          <span>Dormir</span>
         </button>
+
+
 
         {/* Botón Armario (Vestidor) */}
         <button
@@ -551,10 +610,10 @@ export default function DormitorioSection({
             color: '#DB2777',
             border: 'none',
             borderRadius: '16px',
-            padding: '10px 14px',
+            padding: '8px 11px',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '5px',
             cursor: 'pointer',
             fontWeight: 700,
             fontSize: '12px',
@@ -562,34 +621,8 @@ export default function DormitorioSection({
             whiteSpace: 'nowrap'
           }}
         >
-          <Shirt size={18} />
+          <Shirt size={17} />
           <span>Armario</span>
-        </button>
-
-
-
-        {/* Botón Sonidos para Dormir */}
-        <button
-          onClick={() => setShowSonidos(true)}
-          title="Sonidos Relajantes"
-          style={{
-            background: soundMode !== 'none' ? '#C7D2FE' : '#E0E7FF',
-            color: '#4338CA',
-            border: 'none',
-            borderRadius: '16px',
-            padding: '10px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: '12px',
-            flexShrink: 0,
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <Volume2 size={18} />
-          <span>{soundMode !== 'none' ? 'Audio ON' : 'Sonidos'}</span>
         </button>
 
         {/* Botón Minijuego Contar Ovejitas */}
@@ -601,10 +634,10 @@ export default function DormitorioSection({
             color: '#FFF',
             border: 'none',
             borderRadius: '16px',
-            padding: '10px 14px',
+            padding: '8px 11px',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '5px',
             cursor: 'pointer',
             fontWeight: 700,
             fontSize: '12px',
@@ -613,7 +646,7 @@ export default function DormitorioSection({
             boxShadow: '0 4px 12px rgba(99, 102, 241, 0.35)'
           }}
         >
-          <Bed size={18} />
+          <Bed size={17} />
           <span>Ovejitas</span>
         </button>
       </div>
@@ -758,108 +791,7 @@ export default function DormitorioSection({
         </div>
       )}
 
-      {/* MODAL: DIARIO DE SUEÑO Y SALUD */}
-      {showDiarioSueño && (
-        <div style={modalOverlayStyle}>
-          <div style={modalCardStyle}>
-            <div style={modalHeaderStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BookOpen size={22} color="#8B5CF6" />
-                <h3 style={{ margin: 0, color: '#4C1D95', fontSize: '18px' }}>Diario de Sueño</h3>
-              </div>
-              <button onClick={() => setShowDiarioSueño(false)} style={closeBtnStyle}><X size={20} /></button>
-            </div>
 
-            <p style={{ fontSize: '12px', color: '#64748B', margin: '6px 0 14px' }}>
-              Registra tu descanso de anoche para sincronizarlo con el seguimiento de tu ciclo en Nuvia.
-            </p>
-
-            {/* Selector de Horas de Sueño */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                ⏰ Horas dormidas: <span style={{ color: '#8B5CF6', fontSize: '14px' }}>{horasSueño} hrs</span>
-              </label>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                {[5, 6, 7, 8, 9, 10].map(h => (
-                  <button
-                    key={h}
-                    onClick={() => setHorasSueño(h)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '12px',
-                      border: horasSueño === h ? '2px solid #8B5CF6' : '1px solid #E2E8F0',
-                      background: horasSueño === h ? '#F3E8FF' : '#F8FAFC',
-                      color: horasSueño === h ? '#6B21A8' : '#475569',
-                      fontWeight: 700,
-                      fontSize: '12px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {h}h
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Calidad de Descanso */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                🌙 Calidad de descanso:
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-                {[
-                  { id: 'excelente', label: '😴 Profundo', desc: 'Sin interrupciones' },
-                  { id: 'bueno', label: '☁️ Reparador', desc: 'Descanso normal' },
-                  { id: 'ligero', label: '🌙 Ligero', desc: 'Varios despertares' },
-                  { id: 'malo', label: '⚡ Inquieto', desc: 'Insomnio / Cólicos' },
-                ].map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setCalidadSueño(c.id)}
-                    style={{
-                      padding: '8px',
-                      borderRadius: '14px',
-                      border: calidadSueño === c.id ? '2px solid #8B5CF6' : '1.5px solid #E2E8F0',
-                      background: calidadSueño === c.id ? '#F3E8FF' : '#F8FAFC',
-                      color: calidadSueño === c.id ? '#6B21A8' : '#334155',
-                      fontWeight: 700,
-                      fontSize: '12px',
-                      textAlign: 'left',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div>{c.label}</div>
-                    <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 500 }}>{c.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Botón Guardar en Salud */}
-            <button
-              onClick={guardarDiario}
-              style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-                color: '#FFF',
-                border: 'none',
-                borderRadius: '14px',
-                padding: '12px',
-                fontWeight: 700,
-                fontSize: '14px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(139, 92, 246, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                justify: 'center',
-                gap: '6px'
-              }}
-            >
-              {sueñoGuardado ? '✓ ¡Registro Guardado!' : 'Guardar Registro de Sueño'}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ESTILOS CSS INLINE */}
       <style>{`
