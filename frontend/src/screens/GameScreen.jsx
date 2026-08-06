@@ -371,49 +371,185 @@ export default function GameScreen({ onGameActiveChange }) {
       </div>
 
       {/* Zona principal con la mascota */}
-      <div style={{
-        flex: 1,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        paddingBottom: habitacionId === 'dormitorio' ? '165px' : '120px',
-        position: 'relative'
-      }}>
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <img
-            src={spriteActual}
-            alt="Nuvia"
-            onClick={onMascotaClick}
-            style={{
-              width: `${MASCOTA_TAMANO}px`,
-              height: `${MASCOTA_TAMANO}px`,
-              objectFit: 'contain',
-              cursor: 'pointer',
-              userSelect: 'none',
-              WebkitUserDrag: 'none',
-              filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.25))',
-              animation: faseSalto === 'saltando'
-                ? `mascota-juego-salto ${DURACION_SALTO_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
-                : faseSalto === 'por_saltar'
-                  ? 'mascota-juego-prep 0.14s ease-out forwards'
-                  : 'mascota-juego-idle 2.5s ease-in-out infinite',
-            }}
-          />
-
-          {/* Accesorio equipado en la cabeza/mascota */}
-          {accesorioEquipado && accesorioEquipado !== 'ninguno' && (
+      {(() => {
+        const isDurmiendoEnCama = habitacionId === 'dormitorio' && modoNoche;
+        return (
+          <div style={{
+            flex: 1,
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            paddingBottom: habitacionId === 'dormitorio' ? '165px' : '120px',
+            position: 'relative'
+          }}>
             <div style={{
-              position: 'absolute',
-              top: '-10px',
-              right: '15px',
-              fontSize: '28px',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-              pointerEvents: 'none',
-              animation: 'bounce 2s infinite ease-in-out'
+              position: 'relative',
+              display: 'inline-block',
+              transform: isDurmiendoEnCama ? 'translateY(-78px) scale(0.92)' : 'translateY(0) scale(1)',
+              transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              zIndex: isDurmiendoEnCama ? 3 : 'auto'
             }}>
-              {ACCESORIOS.find(a => a.id === accesorioEquipado)?.icono}
+              <img
+                src={spriteActual}
+                alt="Nuvia"
+                onClick={onMascotaClick}
+                style={{
+                  width: `${MASCOTA_TAMANO}px`,
+                  height: `${MASCOTA_TAMANO}px`,
+                  objectFit: 'contain',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  WebkitUserDrag: 'none',
+                  filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.25))',
+                  animation: faseSalto === 'saltando'
+                    ? `mascota-juego-salto ${DURACION_SALTO_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
+                    : faseSalto === 'por_saltar'
+                      ? 'mascota-juego-prep 0.14s ease-out forwards'
+                      : isDurmiendoEnCama
+                        ? 'mascota-durmiendo-cama 3.5s ease-in-out infinite'
+                        : 'mascota-juego-idle 2.5s ease-in-out infinite',
+                }}
+              />
+
+              {/* Ojos cerrados dormidos cuando está en la cama */}
+              {isDurmiendoEnCama && (
+                <div style={{
+                  position: 'absolute',
+                  top: '39%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: '15px',
+                  pointerEvents: 'none',
+                  zIndex: 5
+                }}>
+                  {/* Ojo Izquierdo dormido */}
+                  <div style={{ position: 'relative', width: '20px', height: '14px' }}>
+                    <div style={{
+                      position: 'absolute', inset: '-1px',
+                      background: '#7B3585',
+                      borderRadius: '50%',
+                    }} />
+                    <svg width="20" height="14" viewBox="0 0 20 14" style={{ position: 'relative', zIndex: 2 }}>
+                      <path d="M 2 4 Q 10 13 18 4" fill="none" stroke="#25092C" strokeWidth="3.2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  {/* Ojo Derecho dormido */}
+                  <div style={{ position: 'relative', width: '20px', height: '14px' }}>
+                    <div style={{
+                      position: 'absolute', inset: '-1px',
+                      background: '#7B3585',
+                      borderRadius: '50%',
+                    }} />
+                    <svg width="20" height="14" viewBox="0 0 20 14" style={{ position: 'relative', zIndex: 2 }}>
+                      <path d="M 2 4 Q 10 13 18 4" fill="none" stroke="#25092C" strokeWidth="3.2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              {/* Burbujas flotantes Zzz cerca de la cabeza */}
+              {isDurmiendoEnCama && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-28px',
+                  right: '0px',
+                  pointerEvents: 'none',
+                  zIndex: 15,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: '#C084FC', textShadow: '0 2px 5px rgba(0,0,0,0.6)', animation: 'zzz-float-1 2.8s infinite ease-in-out' }}>Z</span>
+                  <span style={{ fontSize: '14px', fontWeight: 900, color: '#A78BFA', marginTop: '-6px', textShadow: '0 2px 5px rgba(0,0,0,0.6)', animation: 'zzz-float-2 2.8s infinite ease-in-out 0.4s' }}>z</span>
+                  <span style={{ fontSize: '11px', fontWeight: 900, color: '#DDD6FE', marginTop: '-4px', textShadow: '0 2px 5px rgba(0,0,0,0.6)', animation: 'zzz-float-3 2.8s infinite ease-in-out 0.8s' }}>z</span>
+                </div>
+              )}
+
+              {/* Cobija / Sábana de la cama (Tuck-in blanket overlay) */}
+              <div style={{
+                position: 'absolute',
+                bottom: '-10px',
+                left: '50%',
+                width: '154px',
+                pointerEvents: 'none',
+                zIndex: 8,
+                transform: isDurmiendoEnCama ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(35px)',
+                opacity: isDurmiendoEnCama ? 1 : 0,
+                transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease',
+              }}>
+                {/* Doblez superior de la sábana blanca */}
+                <div style={{
+                  width: '100%',
+                  height: '18px',
+                  background: 'linear-gradient(180deg, #FFFFFF 0%, #FCE7F3 100%)',
+                  borderRadius: '14px 14px 6px 6px',
+                  borderBottom: '2.5px solid #F472B6',
+                  boxShadow: '0 3px 6px rgba(0,0,0,0.15)',
+                  position: 'relative',
+                  zIndex: 2,
+                }}>
+                  {/* Pequeños lunares/costura decorativa en la dobladura */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '2px',
+                    left: '10px', right: '10px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    opacity: 0.45
+                  }}>
+                    {[...Array(7)].map((_, i) => (
+                      <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#DB2777' }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cuerpo principal de la cobija con gradiente coincidente y textura de células */}
+                <div style={{
+                  width: '100%',
+                  height: '64px',
+                  marginTop: '-3px',
+                  background: 'linear-gradient(135deg, #F472B6 0%, #E879F9 45%, #C084FC 100%)',
+                  borderRadius: '0 0 20px 20px',
+                  boxShadow: '0 10px 22px rgba(192, 132, 252, 0.45), inset 0 2px 4px rgba(255,255,255,0.4)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {/* Dibujos de mitocondrias y vesículas celulitas en la sábana */}
+                  <div style={{ opacity: 0.35, display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <svg width="22" height="12" viewBox="0 0 22 12" fill="none">
+                      <rect width="22" height="12" rx="6" fill="#6B21A8" />
+                      <path d="M 3 6 Q 7 2 11 6 T 19 6" stroke="#FFF" strokeWidth="1.5" fill="none" />
+                    </svg>
+                    <circle cx="6" cy="6" r="4" fill="#6B21A8" />
+                    <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
+                      <rect width="18" height="10" rx="5" fill="#6B21A8" />
+                      <path d="M 3 5 Q 6 2 9 5 T 15 5" stroke="#FFF" strokeWidth="1.2" fill="none" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Accesorio equipado en la cabeza/mascota */}
+              {accesorioEquipado && accesorioEquipado !== 'ninguno' && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '15px',
+                  fontSize: '28px',
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  pointerEvents: 'none',
+                  zIndex: 7,
+                  animation: isDurmiendoEnCama ? 'none' : 'bounce 2s infinite ease-in-out'
+                }}>
+                  {ACCESORIOS.find(a => a.id === accesorioEquipado)?.icono}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Sección del Dormitorio (Lámpara, Armario, Sonidos, Té, Ovejitas) */}
       {habitacionId === 'dormitorio' && (
@@ -710,6 +846,22 @@ export default function GameScreen({ onGameActiveChange }) {
       )}
 
       <style>{`
+        @keyframes mascota-durmiendo-cama {
+          0%, 100% { transform: translateY(0) scale(1) rotate(-3deg); }
+          50%      { transform: translateY(-4px) scale(1.02, 0.97) rotate(-3deg); }
+        }
+        @keyframes zzz-float-1 {
+          0%, 100% { transform: translate(0, 0) scale(0.8); opacity: 0.3; }
+          50%      { transform: translate(7px, -14px) scale(1.1); opacity: 1; }
+        }
+        @keyframes zzz-float-2 {
+          0%, 100% { transform: translate(0, 0) scale(0.8); opacity: 0.2; }
+          50%      { transform: translate(-6px, -16px) scale(1.1); opacity: 0.95; }
+        }
+        @keyframes zzz-float-3 {
+          0%, 100% { transform: translate(0, 0) scale(0.8); opacity: 0.3; }
+          50%      { transform: translate(9px, -18px) scale(1.25); opacity: 1; }
+        }
         @keyframes mascota-juego-idle {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-8px); }
