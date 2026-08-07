@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Play, Pause, Settings } from 'lucide-react';
 import { ApiService } from '../api';
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS }) {
   return (
@@ -63,6 +64,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
   const [phase, setPhase] = useState('menu');
   const [score, setScore] = useState(0);
   const [misses, setMisses] = useState(0);
+  const [monedasPartida, setMonedasPartida] = useState(0);
   const [record, setRecord] = useState(() => +(localStorage.getItem(RECORD_KEY) || 0));
   const [tip, setTip] = useState(null);
   const [objects, setObjects] = useState([]);
@@ -147,13 +149,24 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
     const area = areaRef.current;
     if (!area) return;
     const w = area.clientWidth;
-    const isBad = Math.random() < 0.25;
-    const pool = isBad ? BAD_ITEMS : FOOD_ITEMS;
-    const item = pool[Math.floor(Math.random() * pool.length)];
+    const rand = Math.random();
+    let type = 'food';
+    let item = null;
+    if (rand < 0.10) { // 10% probabilidad de moneda (poco común, valor 1)
+      type = 'coin';
+      item = { sprite: '/logo.png', tip: '¡+1 Moneda Nuvia conseguida!' };
+    } else if (rand < 0.32) {
+      type = 'bad';
+      item = BAD_ITEMS[Math.floor(Math.random() * BAD_ITEMS.length)];
+    } else {
+      type = 'food';
+      item = FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)];
+    }
+
     const x = OBJ_W / 2 + Math.random() * (w - OBJ_W);
     objectsRef.current = [
       ...objectsRef.current,
-      { id: ++_objId, x, y: -OBJ_H, type: isBad ? 'bad' : 'food', sprite: item.sprite, tip: item.tip },
+      { id: ++_objId, x, y: -OBJ_H, type, sprite: item.sprite, tip: item.tip },
     ];
     spawnTRef.current = setTimeout(scheduleSpawn, spawnMs(scoreRef.current));
   }, []);
@@ -189,8 +202,17 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
         const pL = px - PLAYER_W / 2, pR = px + PLAYER_W / 2;
 
         if (oR > pL && oL < pR && oB > pTop && oT < pTop + PLAYER_H) {
-          if (o.type === 'bad') { over = true; tipText = o.tip; }
-          else { scored = true; tipText = o.tip; }
+          if (o.type === 'coin') {
+            sumarMoneda(1);
+            setMonedasPartida(m => m + 1);
+            tipText = o.tip;
+          } else if (o.type === 'bad') {
+            over = true;
+            tipText = o.tip;
+          } else {
+            scored = true;
+            tipText = o.tip;
+          }
           return false;
         }
         if (o.y > h) {
@@ -228,6 +250,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
     setObjects([]);
     syncScore(0);
     syncMisses(0);
+    setMonedasPartida(0);
     setTip(null);
     const area = areaRef.current;
     if (area) {
@@ -302,13 +325,28 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
         {/* Falling objects */}
         {objects.map(o => (
           <div key={o.id} style={{ position: 'absolute', left: o.x - OBJ_W / 2, top: o.y, width: OBJ_W, height: OBJ_H, pointerEvents: 'none' }}>
-            <img
-              src={o.sprite}
-              alt=""
-              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.18))' }}
-            />
+            {o.type === 'coin' ? (
+              <div style={{
+                width: '30px', height: '30px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #FFFFFF 0%, #F3E8FF 100%)',
+                border: '1.5px solid #000000',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                animation: 'bounce 1s infinite ease-in-out',
+                margin: '0 auto'
+              }}>
+                <img src="/logo.png" alt="Moneda" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+              </div>
+            ) : (
+              <img
+                src={o.sprite}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.18))' }}
+              />
+            )}
             {mostrarColisiones && (
-              <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${o.type === 'bad' ? '#ef4444' : '#22c55e'}`, background: o.type === 'bad' ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, border: `2px dashed ${o.type === 'bad' ? '#ef4444' : o.type === 'coin' ? '#f59e0b' : '#22c55e'}`, background: o.type === 'bad' ? 'rgba(239,68,68,0.15)' : o.type === 'coin' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.15)', pointerEvents: 'none' }} />
             )}
           </div>
         ))}
@@ -350,8 +388,13 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
               : <Pause size={18} fill="var(--primary,#b05bb5)" color="var(--primary,#b05bb5)" />}
           </button>
 
-          <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 14px', fontWeight: 800, fontSize: 20, color: '#1e293b' }}>
-            {score}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 10px', fontWeight: 800, fontSize: 13, color: 'var(--primary, #852296)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CoinIcon size={16} /> {monedasPartida}
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 14px', fontWeight: 800, fontSize: 20, color: '#1e293b' }}>
+              {score}
+            </div>
           </div>
 
           {/* Miss counter — rellena de derecha a izquierda */}
@@ -365,8 +408,9 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
 
       {/* Tip popup — acotado para no salirse */}
       {tip && (
-        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.96)', borderRadius: 14, padding: '8px 16px', fontWeight: 700, fontSize: 13, color: 'var(--primary,#b05bb5)', zIndex: 70, pointerEvents: 'none', maxWidth: '75vw', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', animation: 'fdTip 2.2s ease forwards' }}>
-          💡 {tip}
+        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.96)', borderRadius: 14, padding: '8px 16px', fontWeight: 700, fontSize: 13, color: 'var(--primary,#b05bb5)', zIndex: 70, pointerEvents: 'none', maxWidth: '75vw', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', animation: 'fdTip 2.2s ease forwards', display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+          <span>💡 {tip}</span>
+          {tip.includes('Moneda') && <CoinIcon size={18} />}
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, ChevronLeft } from 'lucide-react';
 import { ApiService } from '../api';
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 // ─────────────────────── Constantes ───────────────────────
 const RECORD_KEY = 'nuvia_hilldrive_record';
@@ -83,9 +84,17 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
   const rafRef = useRef(null);
   const pausadoRef = useRef(false);
   const bgImgRef = useRef(null);  // fondo_nubes.png precargado
+  const logoImgRef = useRef(null);
+
+  useEffect(() => {
+    const logoImg = new Image();
+    logoImg.src = '/logo.png';
+    logoImgRef.current = logoImg;
+  }, []);
 
   const [fase, setFase] = useState('inicio');
   const [puntuacion, setPuntuacion] = useState(0);
+  const [monedasPartida, setMonedasPartida] = useState(0);
   const [tiempoMs, setTiempoMs] = useState(TIMER_INIT);
   const [record, setRecord] = useState(() => Number(localStorage.getItem(RECORD_KEY) || 0));
   const [causaGameover, setCausaGO] = useState('');
@@ -335,6 +344,32 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       ctx.restore();
     }
 
+    // Dibujar Monedas (logo de Nuvia)
+    if (s.coins) {
+      const logoImg = logoImgRef.current;
+      for (const coin of s.coins) {
+        if (coin.collected) continue;
+        ctx.save();
+        ctx.translate(coin.x, coin.y);
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0,0,0,0.25)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#000000';
+        ctx.stroke();
+
+        if (logoImg?.complete && logoImg.naturalWidth > 0) {
+          ctx.drawImage(logoImg, -9, -9, 18, 18);
+        }
+        ctx.restore();
+      }
+    }
+
     // Vehículo (orientado hacia la derecha +X)
     const { x, y, angle } = chassis;
     const cosA = Math.cos(angle), sinA = Math.sin(angle);
@@ -582,6 +617,27 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     }
     s.fuels = s.fuels.filter(f => !f.collected && f.x > s.camX - 100);
 
+    if (!s.coins) s.coins = [];
+    if (!s.nextCoinAtPx) s.nextCoinAtPx = 1800;
+
+    if (s.distPx + s.W > s.nextCoinAtPx) {
+      const spawnX = s.nextCoinAtPx + Math.random() * 60;
+      const spawnY = terrainHeightAt(spawnX, s.terrainPoints) - WHEEL_RADIUS - 28;
+      s.coins.push({ x: spawnX, y: spawnY, collected: false });
+      s.nextCoinAtPx += 2200 + Math.random() * 1200; // Monedas poco comunes (valor 1)
+    }
+
+    for (const coin of s.coins) {
+      if (coin.collected) continue;
+      const dx = chassis.x - coin.x, dy = chassis.y - coin.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 42) {
+        coin.collected = true;
+        sumarMoneda(1);
+        setMonedasPartida(m => m + 1);
+      }
+    }
+    s.coins = s.coins.filter(c => !c.collected && c.x > s.camX - 100);
+
     s.timerMs -= dt * 1000;
     if (s.timerMs <= 0) { s.timerMs = 0; s.gameOver = true; s.causaGameover = 'tiempo'; }
     if (Math.abs(deg(chassis.angle)) > TILT_KILL_DEG) { s.gameOver = true; s.causaGameover = 'vuelco'; }
@@ -614,7 +670,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     await handleGirar();
 
     // Paso 1: primero setear la fase a 'jugando' para que React haga el canvas visible.
-    setPuntuacion(0); setTiempoMs(TIMER_INIT); setCausaGO('');
+    setPuntuacion(0); setTiempoMs(TIMER_INIT); setMonedasPartida(0); setCausaGO('');
     setPausado(false);
     pausadoRef.current = false;
     setFase('jugando');
@@ -735,8 +791,13 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
             <ChevronLeft size={16} /> Salir
           </button>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '14px', padding: '6px 18px', color: timerColor, fontWeight: 900, fontSize: '22px', minWidth: '90px', textAlign: 'center', boxShadow: timerPulse ? `0 0 18px ${timerColor}66` : 'none', animation: timerPulse ? 'hd-pulse 0.6s ease-in-out infinite' : 'none' }}>
-              ⏱ {fmtTime(tiempoMs)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+              <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '14px', padding: '6px 12px', color: '#E9D5FF', fontWeight: 800, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <CoinIcon size={16} /> {monedasPartida}
+              </div>
+              <div style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '14px', padding: '6px 18px', color: timerColor, fontWeight: 900, fontSize: '22px', minWidth: '90px', textAlign: 'center', boxShadow: timerPulse ? `0 0 18px ${timerColor}66` : 'none', animation: timerPulse ? 'hd-pulse 0.6s ease-in-out infinite' : 'none' }}>
+                ⏱ {fmtTime(tiempoMs)}
+              </div>
             </div>
             <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', fontWeight: 700, marginTop: '2px', textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>{puntuacion} m</div>
           </div>

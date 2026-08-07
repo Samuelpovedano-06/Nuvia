@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { ApiService } from '../api';
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 const RECORD_KEY = 'nuvia_cliffjump_record';
 const JUEGO_ID = 'cliff_jump';
@@ -53,6 +54,7 @@ const WALK_INTERVAL = 60;   // ms por frame (más rápido que el paseo normal de
 function makeTerrain() {
   const segs = [{ type: 'ground', x: 0, w: INIT_GND }];
   const obs = [];
+  const coins = [];
   let x = INIT_GND;
   for (let i = 0; i < 260; i++) {
     const progress = Math.max(0, Math.min(1, (i - 50) / 100));
@@ -66,15 +68,19 @@ function makeTerrain() {
     if (i >= 5 && pw >= GND_MAX * 0.7 && Math.random() < 0.7) {
       // Center the obstacle on the platform
       obs.push({ x: x + pw / 2 - OBS_W / 2 });
+    } else if (i >= 2 && Math.random() < 0.12) {
+      // Moneda poco común (12% probabilidad, valor 1)
+      coins.push({ x: x + pw / 2, yOffset: 35 + Math.random() * 25, collected: false });
     }
     x += pw;
   }
-  return { segs, obs };
+  return { segs, obs, coins };
 }
 
 export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColisiones }) {
   const [phase, setPhase] = useState('menu');
   const [score, setScore] = useState(0);
+  const [monedasPartida, setMonedasPartida] = useState(0);
   const [record, setRecord] = useState(() => +(localStorage.getItem(RECORD_KEY) || 0));
 
   const phaseRef = useRef('menu');
@@ -92,7 +98,9 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
   const animRef = useRef(null);
   const segsRef = useRef([]);
   const obsRef = useRef([]);
+  const coinsRef = useRef([]);
   const compImgRef = useRef(null);
+  const logoImgRef = useRef(null);
   const showHitboxRef = useRef(mostrarColisiones);
   const areaRef = useRef(null);
   const canvasRef = useRef(null);
@@ -123,6 +131,10 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     const img = new Image();
     img.src = '/juego/compresa.png';
     compImgRef.current = img;
+
+    const logoImg = new Image();
+    logoImg.src = '/logo.png';
+    logoImgRef.current = logoImg;
   }, []);
 
   const endGame = useCallback(() => {
@@ -231,6 +243,32 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
         ctx.restore();
       }
     }
+    // Draw coins
+    if (coinsRef.current) {
+      const logoImg = logoImgRef.current;
+      for (const coin of coinsRef.current) {
+        if (coin.collected) continue;
+        const cx = coin.x - camX;
+        if (cx < -20 || cx > W + 20) continue;
+        const cy = groundY - coin.yOffset;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0,0,0,0.25)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#000000';
+        ctx.stroke();
+        ctx.restore();
+
+        if (logoImg?.complete && logoImg.naturalWidth > 0) {
+          ctx.drawImage(logoImg, cx - 9, cy - 9, 18, 18);
+        }
+      }
+    }
   }, []);
 
   const gameLoop = useCallback(ts => {
@@ -246,8 +284,18 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     // Scroll world
     cameraXRef.current += speedRef.current * dt;
 
-    // Player world X (center point)
+    // Check coin collection
     const pwx = cameraXRef.current + PLAYER_X;
+    const playerY = jumpHRef.current;
+    if (coinsRef.current) {
+      for (const coin of coinsRef.current) {
+        if (!coin.collected && Math.abs(pwx - coin.x) < 28 && Math.abs(playerY - (coin.yOffset - 10)) < 35) {
+          coin.collected = true;
+          sumarMoneda(1);
+          setMonedasPartida(m => m + 1);
+        }
+      }
+    }
 
     // Current segment under player center
     const seg = segsRef.current.find(s => pwx >= s.x && pwx < s.x + s.w);
@@ -351,9 +399,10 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
 
   const startGame = useCallback(() => {
     cancelAnimationFrame(animRef.current);
-    const { segs, obs } = makeTerrain();
+    const { segs, obs, coins } = makeTerrain();
     segsRef.current = segs;
     obsRef.current = obs;
+    coinsRef.current = coins;
     cameraXRef.current = 0;
     jumpHRef.current = 0;
     vyRef.current = 0;
@@ -365,6 +414,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     speedRef.current = BASE_SPEED;
     lastTRef.current = null;
     syncScore(0);
+    setMonedasPartida(0);
     syncPhase('playing');
     animRef.current = requestAnimationFrame(gameLoop);
   }, [gameLoop]);
@@ -422,8 +472,13 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
 
       {/* Score */}
       {phase === 'playing' && (
-        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 18px', fontWeight: 800, fontSize: 20, color: 'var(--primary)', zIndex: 30, pointerEvents: 'none' }}>
-          {score}
+        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 30, pointerEvents: 'none' }}>
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 12px', fontWeight: 800, fontSize: 14, color: 'var(--primary, #852296)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CoinIcon size={16} /> {monedasPartida}
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 18px', fontWeight: 800, fontSize: 20, color: 'var(--primary)' }}>
+            {score}
+          </div>
         </div>
       )}
 

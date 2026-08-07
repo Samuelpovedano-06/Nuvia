@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { ApiService } from '../api';
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 const RECORD_KEY = 'nuvia_tumble_record';
 const JUEGO_ID = 'tumble';
@@ -87,7 +88,12 @@ function spawnPlatformRow(worldY, W, distance, prevRow) {
     bushes.push({ x: gapRight + 18 + Math.random() * (W - gapRight - 36), size: 24 + Math.random() * 10 });
   }
 
-  return { worldY, gapLeft, gapRight, hazard, bushes };
+  let coin = null;
+  if (!hazard && Math.random() < 0.14) {
+    coin = { x: gapLeft + gapW / 2, collected: false };
+  }
+
+  return { worldY, gapLeft, gapRight, hazard, bushes, coin };
 }
 
 function drawObstacle(ctx, ob, y) {
@@ -162,6 +168,7 @@ function drawTurf(ctx, left, right, y) {
 export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColisiones, globalSensPct }) {
   const [phase, setPhase] = useState('menu');
   const [score, setScore] = useState(0);
+  const [monedasPartida, setMonedasPartida] = useState(0);
   const [record, setRecord] = useState(() => +(localStorage.getItem(RECORD_KEY) || 0));
   const [deathReason, setDeathReason] = useState('critical');
 
@@ -223,10 +230,15 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     return () => window.removeEventListener('deviceorientation', handle);
   }, []);
 
+  const logoImgRef = useRef(null);
   useEffect(() => {
     const img = new Image();
     img.onload = () => { bgRatioRef.current = (img.naturalHeight / img.naturalWidth) || 1; };
     img.src = SP.bg;
+
+    const logoImg = new Image();
+    logoImg.src = '/logo.png';
+    logoImgRef.current = logoImg;
   }, []);
 
   const endGame = useCallback(reason => {
@@ -260,6 +272,29 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       drawTurf(ctx, row.gapRight, W, screenY);
       for (const b of row.bushes) drawObstacle(ctx, { x: b.x, size: b.size, shape: 'bush' }, screenY - 4);
       if (row.hazard) drawObstacle(ctx, row.hazard, screenY);
+
+      if (row.coin && !row.coin.collected) {
+        const logoImg = logoImgRef.current;
+        const cx = row.coin.x;
+        const cy = screenY - 14;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0,0,0,0.25)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#000000';
+        ctx.stroke();
+        ctx.restore();
+
+        if (logoImg?.complete && logoImg.naturalWidth > 0) {
+          ctx.drawImage(logoImg, cx - 9, cy - 9, 18, 18);
+        }
+      }
 
       if (showHitboxRef.current) {
         ctx.save();
@@ -306,6 +341,20 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
 
     const playerLeft = playerXRef.current - PLAYER_W / 2 * 0.75;
     const playerRight = playerXRef.current + PLAYER_W / 2 * 0.75;
+
+    // Recoger Monedas: detección instantánea con la posición real del jugador en el mundo
+    const pWorldX = playerXRef.current;
+    const pWorldY = playerWorldYRef.current;
+    for (const row of rowsRef.current) {
+      if (row.coin && !row.coin.collected) {
+        const coinWorldY = row.worldY - 14;
+        if (Math.abs(pWorldX - row.coin.x) < 44 && Math.abs(pWorldY - coinWorldY) < 48) {
+          row.coin.collected = true;
+          sumarMoneda(1);
+          setMonedasPartida(m => m + 1);
+        }
+      }
+    }
 
     // ── Física ───────────────────────────────────────────────
     if (onGroundRef.current) {
@@ -440,6 +489,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     nextRowWorldYRef.current = firstPlatWorldY + ROW_SPACING_START;
     lastTRef.current = null;
     syncScore(0);
+    setMonedasPartida(0);
     syncPhase('playing');
     animRef.current = requestAnimationFrame(gameLoop);
   }, [gameLoop]);
@@ -507,8 +557,13 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
 
       {/* Puntuación */}
       {phase === 'playing' && (
-        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 18px', fontWeight: 800, fontSize: 20, color: 'var(--primary)', zIndex: 30, pointerEvents: 'none' }}>
-          {score} m
+        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 30, pointerEvents: 'none' }}>
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 12px', fontWeight: 800, fontSize: 14, color: 'var(--primary, #852296)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CoinIcon size={16} /> {monedasPartida}
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 18px', fontWeight: 800, fontSize: 20, color: 'var(--primary)' }}>
+            {score} m
+          </div>
         </div>
       )}
 

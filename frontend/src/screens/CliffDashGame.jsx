@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { ApiService } from '../api';
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 const RECORD_KEY = 'nuvia_cliffdash_record';
 const JUEGO_ID = 'cliff_dash';
@@ -135,7 +136,17 @@ function makeTrack() {
     bx += BRIDGE_GAP_MIN + Math.random() * (BRIDGE_GAP_MAX - BRIDGE_GAP_MIN);
   }
 
-  return { obstacles, bridges };
+  const coins = [];
+  let cx = START_MARGIN + 300;
+  for (let i = 0; i < 150; i++) {
+    if (Math.random() < 0.12) { // 12% probabilidad (poco común, valor 1)
+      const lane = Math.floor(Math.random() * LANES);
+      coins.push({ x: cx, lane, collected: false });
+    }
+    cx += 450 + Math.random() * 500;
+  }
+
+  return { obstacles, bridges, coins };
 }
 
 // Textura decorativa de la tierra: una franja ondulada más oscura dentro
@@ -161,6 +172,7 @@ function drawWavyFill(ctx, camX, yTop, xLeft, xRight, extraH, amp, wavelength, c
 export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColisiones }) {
   const [phase, setPhase] = useState('menu');
   const [score, setScore] = useState(0);
+  const [monedasPartida, setMonedasPartida] = useState(0);
   const [record, setRecord] = useState(() => +(localStorage.getItem(RECORD_KEY) || 0));
   const [landscape, setLandscape] = useState(() => window.innerWidth > window.innerHeight);
 
@@ -174,11 +186,13 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
   const obstaclesRef = useRef([]);
   const cloudsRef = useRef([]);
   const bridgesRef = useRef([]);
+  const coinsRef = useRef([]);
   const nextCloudSpawnXRef = useRef(0);
   const lastTRef = useRef(null);
   const animRef = useRef(null);
   const compImgRef = useRef(null);
   const cloudImgRef = useRef(null);
+  const logoImgRef = useRef(null);
   const showHitboxRef = useRef(mostrarColisiones);
   const areaRef = useRef(null);
   const swipeStartRef = useRef(null); // { y, id } — para detectar deslizar arriba/abajo
@@ -238,6 +252,9 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     const cloudImg = new Image();
     cloudImg.src = SP.nubeMala;
     cloudImgRef.current = cloudImg;
+    const logoImg = new Image();
+    logoImg.src = '/logo.png';
+    logoImgRef.current = logoImg;
   }, []);
 
   const endGame = useCallback(() => {
@@ -378,6 +395,33 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       }
     }
 
+    // Dibujar Monedas en los carriles
+    if (coinsRef.current) {
+      const logoImg = logoImgRef.current;
+      for (const coin of coinsRef.current) {
+        if (coin.collected) continue;
+        const sx = coin.x - camX;
+        if (sx < -VIEW_MARGIN || sx > W + VIEW_MARGIN) continue;
+        const sy = laneY(coin.lane) - 22;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sx, sy, 14, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = 'rgba(0,0,0,0.25)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#000000';
+        ctx.stroke();
+        ctx.restore();
+
+        if (logoImg?.complete && logoImg.naturalWidth > 0) {
+          ctx.drawImage(logoImg, sx - 9, sy - 9, 18, 18);
+        }
+      }
+    }
+
     const cloudImg = cloudImgRef.current;
     for (const cl of cloudsRef.current) {
       const sx = cl.x - camX;
@@ -426,6 +470,17 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     const pwx = cameraXRef.current + PLAYER_X;
     const playerLeft = pwx - PLAYER_W / 2 + 6;
     const playerRight = pwx + PLAYER_W / 2 - 6;
+
+    // Recoger Monedas
+    if (coinsRef.current) {
+      for (const coin of coinsRef.current) {
+        if (!coin.collected && coin.lane === laneRef.current && Math.abs(coin.x - pwx) < 32) {
+          coin.collected = true;
+          sumarMoneda(1);
+          setMonedasPartida(m => m + 1);
+        }
+      }
+    }
 
     for (const ob of obstaclesRef.current) {
       if (ob.lane !== laneRef.current) continue;
@@ -563,9 +618,10 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       landscapeRef.current = true;
     } catch (_) { }
     cancelAnimationFrame(animRef.current);
-    const { obstacles, bridges } = makeTrack();
+    const { obstacles, bridges, coins } = makeTrack();
     obstaclesRef.current = obstacles;
     bridgesRef.current = bridges;
+    coinsRef.current = coins;
     cloudsRef.current = [];
     nextCloudSpawnXRef.current = CLOUD_MIN_SCORE * DIST_PER_POINT;
     cameraXRef.current = 0;
@@ -574,6 +630,8 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     speedRef.current = BASE_SPEED;
     lastTRef.current = null;
     walkFrameRef.current = 0;
+    syncScore(0);
+    setMonedasPartida(0);
     if (playerRef.current) {
       playerRef.current.style.backgroundSize = `${WALK_COLS * PLAYER_W}px ${2 * PLAYER_H}px`;
     }
@@ -678,8 +736,13 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
 
       {/* Puntuación */}
       {phase === 'playing' && (
-        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 18px', fontWeight: 800, fontSize: 20, color: 'var(--primary)', zIndex: 30, pointerEvents: 'none' }}>
-          {score}
+        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 30, pointerEvents: 'none' }}>
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 12px', fontWeight: 800, fontSize: 14, color: 'var(--primary, #852296)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CoinIcon size={16} /> {monedasPartida}
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 20, padding: '5px 18px', fontWeight: 800, fontSize: 20, color: 'var(--primary)' }}>
+            {score}
+          </div>
         </div>
       )}
 

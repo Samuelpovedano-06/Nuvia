@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings } from 'lucide-react';
+import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings, Zap } from 'lucide-react';
 import { ApiService } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import SkyJumpGame   from './SkyJumpGame';
@@ -13,6 +13,8 @@ import HillDriveGame   from './HillDriveGame';
 import DormitorioSection, { ACCESORIOS } from '../components/DormitorioSection';
 import SheepCountingGame from './SheepCountingGame';
 
+
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -96,6 +98,24 @@ export default function GameScreen({ onGameActiveChange }) {
   const [modoNoche, setModoNoche] = useState(false);
   const [accesorioEquipado, setAccesorioEquipado] = useState(() => localStorage.getItem('nuvia_mascot_outfit') || 'ninguno');
   const [userCoins, setUserCoins] = useState(() => Number(localStorage.getItem('nuvia_user_coins') || 50));
+  const [userEnergy, setUserEnergy] = useState(() => Number(localStorage.getItem('nuvia_mascot_energy') || 75));
+
+  useEffect(() => {
+    const syncStats = () => {
+      setUserCoins(Number(localStorage.getItem('nuvia_user_coins') || 50));
+      setUserEnergy(Number(localStorage.getItem('nuvia_mascot_energy') || 75));
+    };
+
+    window.addEventListener('nuvia_coins_updated', syncStats);
+    window.addEventListener('nuvia_energy_updated', syncStats);
+    const interval = setInterval(syncStats, 1500);
+
+    return () => {
+      window.removeEventListener('nuvia_coins_updated', syncStats);
+      window.removeEventListener('nuvia_energy_updated', syncStats);
+      clearInterval(interval);
+    };
+  }, []);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
@@ -168,6 +188,7 @@ export default function GameScreen({ onGameActiveChange }) {
       for (const h of HABITACIONES) {
         fondos[h.id] = await check(h.fondo);
       }
+      fondos['durmiendo'] = await check('/juego/durmiendo.png');
       setFondoOk(fondos);
     })();
   }, []);
@@ -180,7 +201,12 @@ export default function GameScreen({ onGameActiveChange }) {
     setTimeout(() => setFaseSalto('idle'), DURACION_POR_SALTAR_MS + DURACION_SALTO_MS);
   };
 
-  const fondoUrl = fondoOk[habitacionId] ? habitacion.fondo : null;
+  const fondoUrl = (() => {
+    if (habitacionId === 'dormitorio' && modoNoche) {
+      return fondoOk['durmiendo'] ? '/juego/durmiendo.png' : habitacion.fondo;
+    }
+    return fondoOk[habitacionId] ? habitacion.fondo : null;
+  })();
   const spriteActual = (() => {
     if (faseSalto === 'por_saltar') return spriteOk.porSaltar ? SPRITE_POR_SALTAR : (spriteOk.idle ? SPRITE_IDLE : SPRITE_FALLBACK);
     if (faseSalto === 'saltando') return spriteOk.jump ? SPRITE_JUMP : SPRITE_FALLBACK;
@@ -317,29 +343,58 @@ export default function GameScreen({ onGameActiveChange }) {
         }} />
       )}
 
-      {/* Header con botón volver + selector de habitaciones */}
+      {/* Header con botón volver + stats (Monedas y Energía) + selector de habitaciones */}
       <div style={{
-        padding: '16px 20px',
+        padding: '12px 16px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'relative',
+        zIndex: 10,
+        gap: '8px',
+        flexWrap: 'wrap'
       }}>
         <button
           onClick={() => navigate(-1)}
           style={{
-            background: 'rgba(255,255,255,0.8)', border: 'none',
-            borderRadius: '12px', padding: '8px 14px',
-            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(255,255,255,0.85)', border: 'none',
+            borderRadius: '12px', padding: '8px 12px',
+            display: 'flex', alignItems: 'center', gap: '5px',
             color: 'var(--primary)', cursor: 'pointer', fontWeight: 600,
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            fontSize: '13px'
           }}
         >
           <ChevronLeft size={18} /> Volver
         </button>
+
+        {/* Indicadores de Monedas y Energía */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(8px)',
+          borderRadius: '16px',
+          padding: '6px 12px',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+        }}>
+          {/* Monedas */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#852296', fontWeight: 800, fontSize: '13px' }}>
+            <CoinIcon size={18} /> {userCoins}
+          </div>
+
+          <div style={{ width: '1px', height: '14px', background: '#CBD5E1' }} />
+
+          {/* Energía */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#D97706', fontWeight: 800, fontSize: '13px' }}>
+            <Zap size={15} fill="#F59E0B" color="#F59E0B" /> {userEnergy}%
+          </div>
+        </div>
+
+        {/* Selector de habitaciones */}
         <div style={{
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(8px)',
           borderRadius: '20px',
-          padding: '6px',
-          display: 'flex', gap: '4px',
+          padding: '4px',
+          display: 'flex', gap: '3px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
         }}>
           {HABITACIONES.map(h => {
@@ -353,13 +408,13 @@ export default function GameScreen({ onGameActiveChange }) {
                   color: activa ? 'white' : 'var(--text-light)',
                   border: 'none',
                   borderRadius: '14px',
-                  padding: '8px 12px',
+                  padding: '6px 10px',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  minWidth: '56px',
+                  minWidth: '50px',
                   fontWeight: 600,
-                  fontSize: '11px',
+                  fontSize: '10px',
                 }}
               >
                 {h.icon}
@@ -373,6 +428,10 @@ export default function GameScreen({ onGameActiveChange }) {
       {/* Zona principal con la mascota */}
       {(() => {
         const isDurmiendoEnCama = habitacionId === 'dormitorio' && modoNoche;
+        if (isDurmiendoEnCama) {
+          // Con la luz apagada (modo sueño) se muestra la imagen durmiendo.png donde Nuvia ya está durmiendo en la cama
+          return <div style={{ flex: 1 }} />;
+        }
         return (
           <div style={{
             flex: 1,
@@ -383,9 +442,6 @@ export default function GameScreen({ onGameActiveChange }) {
             <div style={{
               position: 'relative',
               display: 'inline-block',
-              transform: isDurmiendoEnCama ? 'translateY(-78px) scale(0.92)' : 'translateY(0) scale(1)',
-              transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              zIndex: isDurmiendoEnCama ? 3 : 'auto'
             }}>
               <img
                 src={spriteActual}
@@ -403,133 +459,9 @@ export default function GameScreen({ onGameActiveChange }) {
                     ? `mascota-juego-salto ${DURACION_SALTO_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
                     : faseSalto === 'por_saltar'
                       ? 'mascota-juego-prep 0.14s ease-out forwards'
-                      : isDurmiendoEnCama
-                        ? 'mascota-durmiendo-cama 3.5s ease-in-out infinite'
-                        : 'mascota-juego-idle 2.5s ease-in-out infinite',
+                      : 'mascota-juego-idle 2.5s ease-in-out infinite',
                 }}
               />
-
-              {/* Ojos cerrados dormidos cuando está en la cama */}
-              {isDurmiendoEnCama && (
-                <div style={{
-                  position: 'absolute',
-                  top: '39%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  display: 'flex',
-                  gap: '15px',
-                  pointerEvents: 'none',
-                  zIndex: 5
-                }}>
-                  {/* Ojo Izquierdo dormido */}
-                  <div style={{ position: 'relative', width: '20px', height: '14px' }}>
-                    <div style={{
-                      position: 'absolute', inset: '-1px',
-                      background: '#7B3585',
-                      borderRadius: '50%',
-                    }} />
-                    <svg width="20" height="14" viewBox="0 0 20 14" style={{ position: 'relative', zIndex: 2 }}>
-                      <path d="M 2 4 Q 10 13 18 4" fill="none" stroke="#25092C" strokeWidth="3.2" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  {/* Ojo Derecho dormido */}
-                  <div style={{ position: 'relative', width: '20px', height: '14px' }}>
-                    <div style={{
-                      position: 'absolute', inset: '-1px',
-                      background: '#7B3585',
-                      borderRadius: '50%',
-                    }} />
-                    <svg width="20" height="14" viewBox="0 0 20 14" style={{ position: 'relative', zIndex: 2 }}>
-                      <path d="M 2 4 Q 10 13 18 4" fill="none" stroke="#25092C" strokeWidth="3.2" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-
-              {/* Burbujas flotantes Zzz cerca de la cabeza */}
-              {isDurmiendoEnCama && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-28px',
-                  right: '0px',
-                  pointerEvents: 'none',
-                  zIndex: 15,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}>
-                  <span style={{ fontSize: '18px', fontWeight: 900, color: '#C084FC', textShadow: '0 2px 5px rgba(0,0,0,0.6)', animation: 'zzz-float-1 2.8s infinite ease-in-out' }}>Z</span>
-                  <span style={{ fontSize: '14px', fontWeight: 900, color: '#A78BFA', marginTop: '-6px', textShadow: '0 2px 5px rgba(0,0,0,0.6)', animation: 'zzz-float-2 2.8s infinite ease-in-out 0.4s' }}>z</span>
-                  <span style={{ fontSize: '11px', fontWeight: 900, color: '#DDD6FE', marginTop: '-4px', textShadow: '0 2px 5px rgba(0,0,0,0.6)', animation: 'zzz-float-3 2.8s infinite ease-in-out 0.8s' }}>z</span>
-                </div>
-              )}
-
-              {/* Cobija / Sábana de la cama (Tuck-in blanket overlay) */}
-              <div style={{
-                position: 'absolute',
-                bottom: '-10px',
-                left: '50%',
-                width: '154px',
-                pointerEvents: 'none',
-                zIndex: 8,
-                transform: isDurmiendoEnCama ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(35px)',
-                opacity: isDurmiendoEnCama ? 1 : 0,
-                transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease',
-              }}>
-                {/* Doblez superior de la sábana blanca */}
-                <div style={{
-                  width: '100%',
-                  height: '18px',
-                  background: 'linear-gradient(180deg, #FFFFFF 0%, #FCE7F3 100%)',
-                  borderRadius: '14px 14px 6px 6px',
-                  borderBottom: '2.5px solid #F472B6',
-                  boxShadow: '0 3px 6px rgba(0,0,0,0.15)',
-                  position: 'relative',
-                  zIndex: 2,
-                }}>
-                  {/* Pequeños lunares/costura decorativa en la dobladura */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '2px',
-                    left: '10px', right: '10px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    opacity: 0.45
-                  }}>
-                    {[...Array(7)].map((_, i) => (
-                      <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#DB2777' }} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Cuerpo principal de la cobija con gradiente coincidente y textura de células */}
-                <div style={{
-                  width: '100%',
-                  height: '64px',
-                  marginTop: '-3px',
-                  background: 'linear-gradient(135deg, #F472B6 0%, #E879F9 45%, #C084FC 100%)',
-                  borderRadius: '0 0 20px 20px',
-                  boxShadow: '0 10px 22px rgba(192, 132, 252, 0.45), inset 0 2px 4px rgba(255,255,255,0.4)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {/* Dibujos de mitocondrias y vesículas celulitas en la sábana */}
-                  <div style={{ opacity: 0.35, display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <svg width="22" height="12" viewBox="0 0 22 12" fill="none">
-                      <rect width="22" height="12" rx="6" fill="#6B21A8" />
-                      <path d="M 3 6 Q 7 2 11 6 T 19 6" stroke="#FFF" strokeWidth="1.5" fill="none" />
-                    </svg>
-                    <circle cx="6" cy="6" r="4" fill="#6B21A8" />
-                    <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
-                      <rect width="18" height="10" rx="5" fill="#6B21A8" />
-                      <path d="M 3 5 Q 6 2 9 5 T 15 5" stroke="#FFF" strokeWidth="1.2" fill="none" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
 
               {/* Accesorio equipado en la cabeza/mascota */}
               {accesorioEquipado && accesorioEquipado !== 'ninguno' && (
@@ -540,8 +472,7 @@ export default function GameScreen({ onGameActiveChange }) {
                   fontSize: '28px',
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
                   pointerEvents: 'none',
-                  zIndex: 7,
-                  animation: isDurmiendoEnCama ? 'none' : 'bounce 2s infinite ease-in-out'
+                  animation: 'bounce 2s infinite ease-in-out'
                 }}>
                   {ACCESORIOS.find(a => a.id === accesorioEquipado)?.icono}
                 </div>
@@ -923,6 +854,7 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
   const [puntos, setPuntos] = useState(0);
   const [vidas, setVidas] = useState(3);
+  const [monedasPartida, setMonedasPartida] = useState(0);
   const [recordLocal, setRecordLocal] = useState(() => Number(localStorage.getItem(RECORD_LOCAL_KEY) || 0));
 
   // Al montar, sincroniza con el récord del servidor (gana el mayor de los dos)
@@ -993,17 +925,20 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
       const dt = Math.min(50, ts - ultimoTickRef.current);  // limitar dt para evitar saltos
       ultimoTickRef.current = ts;
 
-      // Spawn de compresas (cadencia que aumenta con la puntuación)
+      // Spawn de compresas / monedas (cadencia que aumenta con la puntuación)
       const cadencia = Math.max(450, 1200 - puntos * 8);  // ms entre spawns
       if (ts - ultimoSpawnRef.current > cadencia) {
         ultimoSpawnRef.current = ts;
+        const esMoneda = Math.random() < 0.10; // 10% de probabilidad (poco común, valor 1)
         const x = Math.random() * (tamPantalla.w - COMPRESA_TAMANO);
         const vy = 0.18 + Math.random() * 0.12 + puntos * 0.002;  // px/ms
         obstaculosRef.current.push({
           id: idCounterRef.current++,
+          type: esMoneda ? 'moneda' : 'compresa',
           x, y: tamPantalla.h,
           vy,
-          w: COMPRESA_TAMANO, h: COMPRESA_TAMANO,
+          w: esMoneda ? 28 : COMPRESA_TAMANO,
+          h: esMoneda ? 28 : COMPRESA_TAMANO,
         });
       }
 
@@ -1035,14 +970,23 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
         .map(o => ({ ...o, y: o.y - o.vy * dt }))
         .filter(o => {
           if (o.y < -o.h) {
-            setPuntos(p => p + 1);  // esquivada → punto
+            if (o.type !== 'moneda') {
+              setPuntos(p => p + 1);  // esquivada → punto
+            }
             return false;
           }
-          const oBox = { x1: o.x + 12, y1: o.y + 25, x2: o.x + o.w - 12, y2: o.y + o.h - 25 };
+          const margin = o.type === 'moneda' ? 4 : 12;
+          const oBox = { x1: o.x + margin, y1: o.y + margin, x2: o.x + o.w - margin, y2: o.y + o.h - margin };
           const colision = !(pBox.x2 < oBox.x1 || pBox.x1 > oBox.x2 || pBox.y2 < oBox.y1 || pBox.y1 > oBox.y2);
           if (colision) {
-            golpe = true;
-            return false;
+            if (o.type === 'moneda') {
+              sumarMoneda(1);
+              setMonedasPartida(m => m + 1);
+              return false; // recolectada
+            } else {
+              golpe = true;
+              return false;
+            }
           }
           return true;
         });
@@ -1080,6 +1024,7 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
     playerXRef.current = tamPantalla.w / 2;
     playerVxRef.current = 0;
     setPuntos(0);
+    setMonedasPartida(0);
     setVidas(3);
     setEstado('jugando');
   };
@@ -1140,6 +1085,9 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
             </button>
           )}
           <span>🎯 {puntos}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary, #852296)', background: 'rgba(255,255,255,0.92)', padding: '2px 8px', borderRadius: '10px', fontSize: '13px', fontWeight: 800 }}>
+            <CoinIcon size={16} /> {monedasPartida}
+          </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
             {Array.from({ length: vidas }).map((_, i) => (
               <Heart key={i} size={16} fill="#F6416C" color="#F6416C" />
@@ -1162,10 +1110,31 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
           touchAction: 'none',
         }}
       >
-        {/* Compresas */}
-        {/* Compresas */}
+        {/* Obstáculos y Monedas */}
         {obstaculosRef.current.map(o => (
-          spriteCompresa ? (
+          o.type === 'moneda' ? (
+            <div
+              key={o.id}
+              style={{
+                position: 'absolute',
+                left: `${o.x}px`, top: `${o.y}px`,
+                width: `${o.w}px`, height: `${o.h}px`,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #FFFFFF 0%, #F3E8FF 100%)',
+                border: '1.5px solid #000000',
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                pointerEvents: 'none',
+                animation: 'bounce 1s infinite ease-in-out'
+              }}
+            >
+              <img
+                src="/logo.png"
+                alt="Moneda"
+                style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+              />
+            </div>
+          ) : spriteCompresa ? (
             <img
               key={o.id}
               src={spriteCompresa}

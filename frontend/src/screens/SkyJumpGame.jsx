@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Play, RefreshCw, Pause, Settings } from 'lucide-react';
 import { ApiService } from '../api';
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 const JUEGO_ID = 'sky_jump';
 const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
@@ -97,6 +98,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
   const [tam, setTam] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'pausa' | 'gameover'
   const [score, setScore] = useState(0);
+  const [monedasPartida, setMonedasPartida] = useState(0);
   const [recordLocal, setRecordLocal] = useState(() => Number(localStorage.getItem(RECORD_LOCAL_KEY) || 0));
   const [specificSensPct, setSpecificSensPct] = useState(() => Number(localStorage.getItem('nuvia_skyjump_specific_sens') || 50));
   const [useSpecific, setUseSpecific] = useState(() => localStorage.getItem('nuvia_skyjump_use_specific') === 'true');
@@ -227,6 +229,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
 
     generarHasta(tam.h * 1.5);
     setScore(0);
+    setMonedasPartida(0);
     setEstado('jugando');
   };
 
@@ -283,8 +286,9 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
       // Power-up: estrella o flor encima de la plataforma (no en plataformas portal,
       // y no en nubes — la nube se rompe al primer toque). Se adosa a la plataforma.
       if (!esPortal && tipoFinal !== 'nube' && y >= ALTURA_OBJETOS && Math.random() < 0.14) {
+        const rObj = Math.random();
         plat.objeto = {
-          tipo: Math.random() < 0.55 ? 'estrella' : 'flor',
+          tipo: rObj < 0.22 ? 'moneda' : (rObj < 0.62 ? 'estrella' : 'flor'),
           usado: false,
         };
       }
@@ -439,8 +443,14 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
             // ¿Trae objeto? → solo se activa aterrizando aquí
             if (pl.objeto && !pl.objeto.usado) {
               pl.objeto.usado = true;
-              if (pl.objeto.tipo === 'estrella') p.vy = V_SALTO_ESTRELLA;
-              else if (pl.objeto.tipo === 'flor') p.flotando = 2200;
+              if (pl.objeto.tipo === 'moneda') {
+                sumarMoneda(1);
+                setMonedasPartida(m => m + 1);
+              } else if (pl.objeto.tipo === 'estrella') {
+                p.vy = V_SALTO_ESTRELLA;
+              } else if (pl.objeto.tipo === 'flor') {
+                p.flotando = 2200;
+              }
             }
 
             if (pl.tipo === 'nube') pl.usada = true;
@@ -619,12 +629,21 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
               {estado === 'pausa' ? <Play size={18} fill="var(--primary)" /> : <Pause size={18} fill="var(--primary)" />}
             </button>
           )}
-          <div style={{
-            background: 'rgba(255,255,255,0.92)', padding: '6px 14px',
-            borderRadius: '12px', fontWeight: 700, color: 'var(--primary)',
-            minHeight: '34px', display: 'flex', alignItems: 'center',
-          }}>
-            {score} m
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              background: 'rgba(255,255,255,0.92)', padding: '6px 10px',
+              borderRadius: '12px', fontWeight: 700, color: 'var(--primary, #852296)',
+              minHeight: '34px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px',
+            }}>
+              <CoinIcon size={16} /> {monedasPartida}
+            </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.92)', padding: '6px 14px',
+              borderRadius: '12px', fontWeight: 700, color: 'var(--primary)',
+              minHeight: '34px', display: 'flex', alignItems: 'center',
+            }}>
+              {score} m
+            </div>
           </div>
         </div>
       </div>
@@ -743,20 +762,41 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
             const yS = toScreen(pl.y + pl.h + 4, OBJ_H);
             if (yS > -OBJ_H && yS < H) {
               items.push(
-                <img
-                  key={`o_${pl.id}`}
-                  src={pl.objeto.tipo === 'estrella' ? SP.estrella : SP.flor}
-                  alt=""
-                  style={{
-                    position: 'absolute',
-                    left: `${pl.x + pl.w / 2 - OBJ_W / 2}px`,
-                    top: `${yS}px`,
-                    width: `${OBJ_W}px`, height: `${OBJ_H}px`,
-                    objectFit: 'contain',
-                    pointerEvents: 'none',
-                    animation: 'sj-obj-bob 1.6s ease-in-out infinite',
-                  }}
-                />
+                pl.objeto.tipo === 'moneda' ? (
+                  <div
+                    key={`o_${pl.id}`}
+                    style={{
+                      position: 'absolute',
+                      left: `${pl.x + pl.w / 2 - 14}px`,
+                      top: `${yS}px`,
+                      width: '28px', height: '28px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #FFFFFF 0%, #F3E8FF 100%)',
+                      border: '1.5px solid #000000',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      pointerEvents: 'none',
+                      animation: 'sj-obj-bob 1.6s ease-in-out infinite',
+                    }}
+                  >
+                    <img src="/logo.png" alt="Moneda" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                  </div>
+                ) : (
+                  <img
+                    key={`o_${pl.id}`}
+                    src={pl.objeto.tipo === 'estrella' ? SP.estrella : SP.flor}
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      left: `${pl.x + pl.w / 2 - OBJ_W / 2}px`,
+                      top: `${yS}px`,
+                      width: `${OBJ_W}px`, height: `${OBJ_H}px`,
+                      objectFit: 'contain',
+                      pointerEvents: 'none',
+                      animation: 'sj-obj-bob 1.6s ease-in-out infinite',
+                    }}
+                  />
+                )
               );
             }
           }

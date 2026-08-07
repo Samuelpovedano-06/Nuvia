@@ -3,6 +3,7 @@ import {
   Moon, Sun, Shirt, Volume2, VolumeX, Sparkles, X, Heart,
   Check, Play, Pause, CloudRain, Music, Wind, Bed, Calendar, Award, BookOpen
 } from 'lucide-react';
+import { CoinIcon } from '../utils/coinHelper';
 
 // Lista de accesorios del Armario
 export const ACCESORIOS = [
@@ -355,44 +356,51 @@ export default function DormitorioSection({
     <>
 
 
-      {/* Superposición de Modo Noche */}
+      {/* Superposición de Modo Noche (Capa Oscura Luz Apagada) */}
       {modoNoche && (
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(15, 23, 42, 0.72)',
-          backdropFilter: 'blur(2px)',
+          background: 'rgba(15, 23, 42, 0.62)',
+          backdropFilter: 'blur(1.5px)',
           zIndex: 2,
           pointerEvents: 'none',
           transition: 'all 0.6s ease'
         }}>
           {/* Estrellas decorativas de noche */}
-          {[...Array(20)].map((_, i) => (
+          {[...Array(22)].map((_, i) => (
             <div
               key={i}
               style={{
                 position: 'absolute',
                 top: `${(i * 23) % 80}%`,
                 left: `${(i * 47) % 90}%`,
-                width: '3px', height: '3px',
+                width: i % 3 === 0 ? '4px' : '3px',
+                height: i % 3 === 0 ? '4px' : '3px',
                 borderRadius: '50%',
                 background: '#FFF',
-                opacity: 0.6,
-                boxShadow: '0 0 6px #FFF'
+                opacity: 0.65,
+                boxShadow: '0 0 8px #FFF'
               }}
             />
           ))}
-          {/* Cartel flotante Zzz */}
+          {/* Cartel flotante Zzz saliendo de la mascota recostada en la cama */}
           <div style={{
             position: 'absolute',
-            top: '28%',
-            left: '52%',
-            color: '#A78BFA',
-            fontWeight: 800,
-            fontSize: '24px',
-            animation: 'floatZzz 3s infinite ease-in-out'
+            top: '48%',
+            left: '43%',
+            pointerEvents: 'none',
+            filter: 'drop-shadow(0 2px 10px rgba(167, 139, 250, 0.9))'
           }}>
-            Zzz...
+            <div style={{
+              color: '#DDD6FE',
+              fontWeight: 900,
+              fontSize: '26px',
+              animation: 'floatZzz 3s infinite ease-in-out',
+              textShadow: '0 0 12px #A78BFA, 0 0 24px #818CF8, 0 2px 4px rgba(0,0,0,0.8)'
+            }}>
+              Zzz
+            </div>
           </div>
         </div>
       )}
@@ -661,8 +669,8 @@ export default function DormitorioSection({
                 <h3 style={{ margin: 0, color: '#831843', fontSize: '18px' }}>Armario de Nuvia</h3>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#D97706', background: '#FEF3C7', padding: '4px 10px', borderRadius: '12px' }}>
-                  🪙 {userCoins} Monedas
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#852296', background: 'rgba(255, 255, 255, 0.95)', padding: '4px 10px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
+                  <CoinIcon size={18} /> {userCoins} Monedas
                 </span>
                 <button onClick={() => setShowArmario(false)} style={closeBtnStyle}><X size={20} /></button>
               </div>
@@ -702,8 +710,8 @@ export default function DormitorioSection({
                         Usar
                       </span>
                     ) : (
-                      <span style={{ fontSize: '11px', color: '#D97706', fontWeight: 700, marginTop: '4px' }}>
-                        🪙 {acc.precio} Monedas
+                      <span style={{ fontSize: '11px', color: '#852296', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CoinIcon size={15} /> {acc.precio} Monedas
                       </span>
                     )}
                   </div>
@@ -796,8 +804,9 @@ export default function DormitorioSection({
       {/* ESTILOS CSS INLINE */}
       <style>{`
         @keyframes floatZzz {
-          0%, 100% { transform: translateY(0px) scale(1); opacity: 0.8; }
-          50% { transform: translateY(-12px) scale(1.1); opacity: 1; }
+          0% { transform: translateY(0px) scale(0.85); opacity: 0.4; }
+          50% { transform: translateY(-28px) scale(1.1); opacity: 1; }
+          100% { transform: translateY(-50px) scale(1.25); opacity: 0.1; }
         }
         @keyframes floatHeart {
           0% { transform: translateY(0) scale(0.5); opacity: 1; }
