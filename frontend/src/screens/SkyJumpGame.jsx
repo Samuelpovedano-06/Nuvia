@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Play, RefreshCw, Pause, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
+import AccesorioOverlay from '../components/AccesorioOverlay';
 
 const JUEGO_ID = 'sky_jump';
 const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
@@ -877,21 +878,26 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
         {/* Player */}
         {estado !== 'inicio' && (
           <>
-            <img
-              src={playerSpriteSrc}
-              alt="Nuvia"
-              style={{
-                position: 'absolute',
-                left: `${playerRef.current.x - PLAYER_W / 2}px`,
-                top: `${toScreen(playerRef.current.y, PLAYER_H)}px`,
-                width: `${PLAYER_W}px`, height: `${PLAYER_H}px`,
-                objectFit: 'contain',
-                pointerEvents: 'none',
-                transform: playerRef.current.dir < 0 ? 'scaleX(-1)' : 'none',
-                filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.3))',
-                zIndex: 20,
-              }}
-            />
+            <div style={{
+              position: 'absolute',
+              left: `${playerRef.current.x - PLAYER_W / 2}px`,
+              top: `${toScreen(playerRef.current.y, PLAYER_H)}px`,
+              width: `${PLAYER_W}px`, height: `${PLAYER_H}px`,
+              pointerEvents: 'none',
+              transform: playerRef.current.dir < 0 ? 'scaleX(-1)' : 'none',
+              filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.3))',
+              zIndex: 20,
+            }}>
+              <img
+                src={playerSpriteSrc}
+                alt="Nuvia"
+                style={{
+                  width: '100%', height: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+              <AccesorioOverlay size={34} />
+            </div>
             {mostrarColisiones && (
               <div
                 style={{

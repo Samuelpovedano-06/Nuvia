@@ -9,7 +9,7 @@ import { CoinIcon } from '../utils/coinHelper';
 export const ACCESORIOS = [
   { id: 'ninguno', nombre: 'Natural', icono: '✨', precio: 0, preview: null },
   { id: 'gorro_noche', nombre: 'Gorro Nocturno', icono: '🌙', precio: 30, color: '#A78BFA' },
-  { id: 'antifaz', nombre: 'Antifaz de Seda', icono: '🕶️', precio: 45, color: '#F472B6' },
+  { id: 'antifaz', nombre: 'Gafas de Sol', icono: '🕶️', precio: 45, color: '#F472B6' },
   { id: 'lazo_rosa', nombre: 'Lazo Coquette', icono: '🎀', precio: 50, color: '#FB7185' },
   { id: 'zapatillas_conejo', nombre: 'Zapatillas Conejo', icono: '🐰', precio: 60, color: '#FDE047' },
   { id: 'corona_flores', nombre: 'Corona Botánica', icono: '👑', precio: 80, color: '#34D399' },
@@ -181,6 +181,13 @@ export default function DormitorioSection({
       return ['ninguno'];
     }
   });
+  const [accesorioLado, setAccesorioLado] = useState(() => localStorage.getItem('nuvia_accesorio_lado') || 'derecha');
+
+  const cambiarLadoAccesorio = (lado) => {
+    setAccesorioLado(lado);
+    localStorage.setItem('nuvia_accesorio_lado', lado);
+    window.dispatchEvent(new Event('nuvia_accesorio_lado_updated'));
+  };
 
   // Persistir modoNoche en localStorage para el cálculo offline estilo Pou
   useEffect(() => {
@@ -308,20 +315,16 @@ export default function DormitorioSection({
   const comprarOEquipar = (acc) => {
     if (comprados.includes(acc.id)) {
       equiparAccesorio(acc.id);
-    } else {
-      if (userCoins >= acc.precio) {
-        const nCoins = userCoins - acc.precio;
-        setUserCoins(nCoins);
-        localStorage.setItem('nuvia_user_coins', String(nCoins));
+    } else if (userCoins >= acc.precio) {
+      const nCoins = userCoins - acc.precio;
+      setUserCoins(nCoins);
+      localStorage.setItem('nuvia_user_coins', String(nCoins));
 
-        const nComprados = [...comprados, acc.id];
-        setComprados(nComprados);
-        localStorage.setItem('nuvia_accesorios_comprados', JSON.stringify(nComprados));
+      const nComprados = [...comprados, acc.id];
+      setComprados(nComprados);
+      localStorage.setItem('nuvia_accesorios_comprados', JSON.stringify(nComprados));
 
-        equiparAccesorio(acc.id);
-      } else {
-        alert('¡No tienes suficientes monedas! Juega minijuegos para ganar más.');
-      }
+      equiparAccesorio(acc.id);
     }
   };
 
@@ -450,118 +453,6 @@ export default function DormitorioSection({
         </div>
       )}
 
-      {/* Marcadores Estilo Pou con Colores y Logo de Nuvia (Debajo de 'Volver', arriba a la izquierda) */}
-      <div style={{
-        position: 'absolute',
-        top: '85px',
-        left: '20px',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '16px',
-        zIndex: 10
-      }}>
-        {/* Monedas Estilo Pou: Círculo arriba con Logo de Nuvia y número de monedas DEBAJO */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #FFFFFF 0%, #F3E8FF 100%)',
-            border: '3px solid #000000',
-            boxShadow: '0 3px 0 #000000',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            flexShrink: 0
-          }}>
-            <img
-              src="/logo.png"
-              alt="Nuvia Logo"
-              style={{ width: '28px', height: '28px', objectFit: 'contain' }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = 'block';
-              }}
-            />
-          </div>
-          <span style={{
-            fontSize: '16px',
-            fontWeight: 900,
-            color: '#FFFFFF',
-            WebkitTextStroke: '1.2px #000000',
-            textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
-            fontFamily: 'system-ui, sans-serif',
-            marginTop: '2px'
-          }}>
-            {userCoins}
-          </span>
-        </div>
-
-        {/* Estadística de Energía Estilo Pou: Cuadrado que baja su relleno y solo muestra porcentaje al hacer Click */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', position: 'relative' }}>
-          <div
-            onClick={() => setMostrarPorcentajeEnergia(v => !v)}
-            title="Toca para ver el porcentaje de energía"
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: '#2D1436',
-              border: '3px solid #000000',
-              boxShadow: '0 3px 0 #000000',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              cursor: 'pointer',
-              overflow: 'hidden',
-              flexShrink: 0
-            }}
-          >
-            {/* Relleno de energía que sube o baja de abajo hacia arriba estilo Pou */}
-            <div style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: `${energia}%`,
-              background: energia > 50
-                ? 'linear-gradient(180deg, #EC4899 0%, #A855F7 100%)'
-                : 'linear-gradient(180deg, #EF4444 0%, #F59E0B 100%)',
-              transition: 'height 0.5s ease-in-out'
-            }} />
-
-            {/* Icono de Rayo por encima del nivel de relleno */}
-            <span style={{
-              fontSize: '20px',
-              color: '#FFFFFF',
-              position: 'relative',
-              zIndex: 2,
-              filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.6))'
-            }}>
-              ⚡
-            </span>
-          </div>
-
-          {/* Porcentaje numérico: Solo aparece debajo al hacer CLICK */}
-          {mostrarPorcentajeEnergia && (
-            <span style={{
-              fontSize: '14px',
-              fontWeight: 900,
-              color: '#FFFFFF',
-              WebkitTextStroke: '1px #000000',
-              textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
-              fontFamily: 'system-ui, sans-serif',
-              marginTop: '2px',
-              animation: 'fadeIn 0.15s ease-out'
-            }}>
-              {energia}%
-            </span>
-          )}
-        </div>
-      </div>
-
       {/* BOTONES INTERACTIVOS DEL DORMITORIO (Barra Flotante de Acciones) */}
       <div style={{
         position: 'absolute',
@@ -676,24 +567,81 @@ export default function DormitorioSection({
               </div>
             </div>
 
+            {/* Selector de Lado para Accesorios (Izquierda / Derecha) */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              borderRadius: '14px',
+              padding: '8px 12px',
+              marginTop: '12px'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Lado del accesorio:</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  onClick={() => cambiarLadoAccesorio('izquierda')}
+                  style={{
+                    background: accesorioLado === 'izquierda' ? '#DB2777' : '#FFFFFF',
+                    color: accesorioLado === 'izquierda' ? '#FFFFFF' : '#64748B',
+                    border: accesorioLado === 'izquierda' ? 'none' : '1px solid #CBD5E1',
+                    borderRadius: '10px',
+                    padding: '5px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  Izquierda
+                </button>
+                <button
+                  onClick={() => cambiarLadoAccesorio('derecha')}
+                  style={{
+                    background: accesorioLado === 'derecha' ? '#DB2777' : '#FFFFFF',
+                    color: accesorioLado === 'derecha' ? '#FFFFFF' : '#64748B',
+                    border: accesorioLado === 'derecha' ? 'none' : '1px solid #CBD5E1',
+                    borderRadius: '10px',
+                    padding: '5px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  Derecha
+                </button>
+              </div>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '16px' }}>
               {ACCESORIOS.map(acc => {
                 const esComprado = comprados.includes(acc.id);
                 const esEquipado = accesorioEquipado === acc.id;
+                const tieneSuficientes = userCoins >= acc.precio;
+                const sePuedeInteractuar = esComprado || tieneSuficientes;
 
                 return (
                   <div
                     key={acc.id}
-                    onClick={() => comprarOEquipar(acc)}
+                    onClick={() => {
+                      if (sePuedeInteractuar) {
+                        comprarOEquipar(acc);
+                      }
+                    }}
                     style={{
-                      background: esEquipado ? '#FCE7F3' : '#F8FAFC',
-                      border: esEquipado ? '2px solid #EC4899' : '1.5px solid #E2E8F0',
+                      background: esEquipado ? '#FCE7F3' : !sePuedeInteractuar ? '#FEF2F2' : '#F8FAFC',
+                      border: esEquipado ? '2px solid #EC4899' : !sePuedeInteractuar ? '1.5px solid #FCA5A5' : '1.5px solid #E2E8F0',
                       borderRadius: '16px',
                       padding: '12px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      cursor: 'pointer',
+                      cursor: !sePuedeInteractuar ? 'not-allowed' : 'pointer',
+                      opacity: !sePuedeInteractuar ? 0.75 : 1,
                       position: 'relative',
                       transition: 'all 0.2s'
                     }}
@@ -709,10 +657,19 @@ export default function DormitorioSection({
                       <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '4px' }}>
                         Usar
                       </span>
-                    ) : (
+                    ) : tieneSuficientes ? (
                       <span style={{ fontSize: '11px', color: '#852296', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <CoinIcon size={15} /> {acc.precio} Monedas
                       </span>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', marginTop: '4px' }}>
+                        <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textDecoration: 'line-through', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <CoinIcon size={13} /> {acc.precio} Monedas
+                        </span>
+                        <span style={{ fontSize: '10.5px', color: '#DC2626', fontWeight: 800, textAlign: 'center', lineHeight: 1.15 }}>
+                          No tienes suficientes
+                        </span>
+                      </div>
                     )}
                   </div>
                 );

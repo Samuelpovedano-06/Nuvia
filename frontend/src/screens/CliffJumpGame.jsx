@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
+import AccesorioOverlay from '../components/AccesorioOverlay';
 
 const RECORD_KEY = 'nuvia_cliffjump_record';
 const JUEGO_ID = 'cliff_jump';
@@ -464,7 +465,9 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
           backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
           filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', pointerEvents: 'none', zIndex: 20,
         }}
-      />
+      >
+        <AccesorioOverlay size={30} />
+      </div>
 
       {mostrarColisiones && (
         <div ref={hitboxRef} style={{ position: 'absolute', left: PLAYER_X - PLAYER_W / 2, bottom: GND_OFFSET - SPRITE_FOOT_OFFSET, width: PLAYER_W, height: PLAYER_H, border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />

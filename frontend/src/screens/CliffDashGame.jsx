@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
+import AccesorioOverlay from '../components/AccesorioOverlay';
 
 const RECORD_KEY = 'nuvia_cliffdash_record';
 const JUEGO_ID = 'cliff_dash';
@@ -732,7 +733,9 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
           backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
           filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', pointerEvents: 'none', zIndex: 20,
         }}
-      />
+      >
+        <AccesorioOverlay size={30} />
+      </div>
 
       {/* Puntuación */}
       {phase === 'playing' && (

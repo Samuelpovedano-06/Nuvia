@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { Play, Pause, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
+import AccesorioOverlay from '../components/AccesorioOverlay';
 
 function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS }) {
   return (
@@ -364,13 +365,24 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
         </div>
 
         {/* Player */}
-        <img
-          ref={playerRef}
-          src={SP.idle}
-          alt=""
-          style={{ position: 'absolute', bottom: PLAYER_BOT, width: PLAYER_W, height: PLAYER_H, objectFit: 'contain', filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.22))', pointerEvents: 'none', zIndex: 20 }}
-          onError={e => e.currentTarget.style.display = 'none'}
-        />
+        <div style={{
+          position: 'absolute',
+          bottom: PLAYER_BOT,
+          left: `${playerXRef.current - PLAYER_W / 2}px`,
+          width: PLAYER_W,
+          height: PLAYER_H,
+          pointerEvents: 'none',
+          zIndex: 20,
+        }}>
+          <img
+            ref={playerRef}
+            src={SP.idle}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.22))' }}
+            onError={e => e.currentTarget.style.display = 'none'}
+          />
+          <AccesorioOverlay size={28} />
+        </div>
         {mostrarColisiones && (
           <div style={{ position: 'absolute', bottom: PLAYER_BOT, left: playerXRef.current - PLAYER_W / 2, width: PLAYER_W, height: PLAYER_H, border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />
         )}

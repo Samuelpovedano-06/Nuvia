@@ -12,6 +12,7 @@ import TumbleGame      from './TumbleGame';
 import HillDriveGame   from './HillDriveGame';
 import DormitorioSection, { ACCESORIOS } from '../components/DormitorioSection';
 import SheepCountingGame from './SheepCountingGame';
+import AccesorioOverlay from '../components/AccesorioOverlay';
 
 
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
@@ -99,24 +100,29 @@ export default function GameScreen({ onGameActiveChange }) {
   const [accesorioEquipado, setAccesorioEquipado] = useState(() => localStorage.getItem('nuvia_mascot_outfit') || 'ninguno');
   const [userCoins, setUserCoins] = useState(() => Number(localStorage.getItem('nuvia_user_coins') || 50));
   const [userEnergy, setUserEnergy] = useState(() => Number(localStorage.getItem('nuvia_mascot_energy') || 75));
+  const [accesorioLado, setAccesorioLado] = useState(() => localStorage.getItem('nuvia_accesorio_lado') || 'derecha');
 
   useEffect(() => {
     const syncStats = () => {
       setUserCoins(Number(localStorage.getItem('nuvia_user_coins') || 50));
       setUserEnergy(Number(localStorage.getItem('nuvia_mascot_energy') || 75));
+      setAccesorioLado(localStorage.getItem('nuvia_accesorio_lado') || 'derecha');
     };
 
     window.addEventListener('nuvia_coins_updated', syncStats);
     window.addEventListener('nuvia_energy_updated', syncStats);
+    window.addEventListener('nuvia_accesorio_lado_updated', syncStats);
     const interval = setInterval(syncStats, 1500);
 
     return () => {
       window.removeEventListener('nuvia_coins_updated', syncStats);
       window.removeEventListener('nuvia_energy_updated', syncStats);
+      window.removeEventListener('nuvia_accesorio_lado_updated', syncStats);
       clearInterval(interval);
     };
   }, []);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
+  const [mostrarPorcentajeEnergia, setMostrarPorcentajeEnergia] = useState(false);
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
   const [showAjustes, setShowAjustes] = useState(false);
@@ -343,50 +349,27 @@ export default function GameScreen({ onGameActiveChange }) {
         }} />
       )}
 
-      {/* Header con botón volver + stats (Monedas y Energía) + selector de habitaciones */}
+      {/* Header con botón volver + selector de habitaciones */}
       <div style={{
         padding: '12px 16px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         position: 'relative',
         zIndex: 10,
-        gap: '8px',
-        flexWrap: 'wrap'
       }}>
         <button
           onClick={() => navigate(-1)}
           style={{
             background: 'rgba(255,255,255,0.85)', border: 'none',
-            borderRadius: '12px', padding: '8px 12px',
+            borderRadius: '14px', padding: '0 14px',
             display: 'flex', alignItems: 'center', gap: '5px',
             color: 'var(--primary)', cursor: 'pointer', fontWeight: 600,
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            fontSize: '13px'
+            fontSize: '13px',
+            height: '42px',
           }}
         >
           <ChevronLeft size={18} /> Volver
         </button>
-
-        {/* Indicadores de Monedas y Energía */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          background: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(8px)',
-          borderRadius: '16px',
-          padding: '6px 12px',
-          boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
-        }}>
-          {/* Monedas */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#852296', fontWeight: 800, fontSize: '13px' }}>
-            <CoinIcon size={18} /> {userCoins}
-          </div>
-
-          <div style={{ width: '1px', height: '14px', background: '#CBD5E1' }} />
-
-          {/* Energía */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#D97706', fontWeight: 800, fontSize: '13px' }}>
-            <Zap size={15} fill="#F59E0B" color="#F59E0B" /> {userEnergy}%
-          </div>
-        </div>
 
         {/* Selector de habitaciones */}
         <div style={{
@@ -425,6 +408,114 @@ export default function GameScreen({ onGameActiveChange }) {
         </div>
       </div>
 
+      {/* Marcadores Estilo Pou con Colores y Logo de Nuvia (Debajo de 'Volver', arriba a la izquierda - Visible en TODAS las vistas) */}
+      <div style={{
+        position: 'absolute',
+        top: '66px',
+        left: '16px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '14px',
+        zIndex: 10
+      }}>
+        {/* Monedas Estilo Pou */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #FFFFFF 0%, #F3E8FF 100%)',
+            border: '3px solid #000000',
+            boxShadow: '0 3px 0 #000000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            flexShrink: 0
+          }}>
+            <img
+              src="/logo.png"
+              alt="Nuvia Logo"
+              style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
+          <span style={{
+            fontSize: '16px',
+            fontWeight: 900,
+            color: '#FFFFFF',
+            WebkitTextStroke: '1.2px #000000',
+            textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
+            fontFamily: 'system-ui, sans-serif',
+            marginTop: '2px'
+          }}>
+            {userCoins}
+          </span>
+        </div>
+
+        {/* Estadística de Energía Estilo Pou */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', position: 'relative' }}>
+          <div
+            onClick={() => setMostrarPorcentajeEnergia(v => !v)}
+            title="Toca para ver el porcentaje de energía"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: '#2D1436',
+              border: '3px solid #000000',
+              boxShadow: '0 3px 0 #000000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              cursor: 'pointer',
+              overflow: 'hidden',
+              flexShrink: 0
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: `${userEnergy}%`,
+              background: userEnergy > 50
+                ? 'linear-gradient(180deg, #EC4899 0%, #A855F7 100%)'
+                : 'linear-gradient(180deg, #EF4444 0%, #F59E0B 100%)',
+              transition: 'height 0.5s ease-in-out'
+            }} />
+
+            <span style={{
+              fontSize: '20px',
+              color: '#FFFFFF',
+              position: 'relative',
+              zIndex: 2,
+              filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.6))'
+            }}>
+              ⚡
+            </span>
+          </div>
+
+          {mostrarPorcentajeEnergia && (
+            <span style={{
+              fontSize: '14px',
+              fontWeight: 900,
+              color: '#FFFFFF',
+              WebkitTextStroke: '1px #000000',
+              textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
+              fontFamily: 'system-ui, sans-serif',
+              marginTop: '2px',
+              animation: 'fadeIn 0.15s ease-out'
+            }}>
+              {userEnergy}%
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Zona principal con la mascota */}
       {(() => {
         const isDurmiendoEnCama = habitacionId === 'dormitorio' && modoNoche;
@@ -439,44 +530,67 @@ export default function GameScreen({ onGameActiveChange }) {
             paddingBottom: habitacionId === 'dormitorio' ? '165px' : '120px',
             position: 'relative'
           }}>
-            <div style={{
-              position: 'relative',
-              display: 'inline-block',
-            }}>
+            {/* Contenedor animado de la mascota + su accesorio */}
+            <div
+              onClick={onMascotaClick}
+              style={{
+                position: 'relative',
+                display: 'inline-block',
+                cursor: 'pointer',
+                userSelect: 'none',
+                WebkitUserDrag: 'none',
+                animation: faseSalto === 'saltando'
+                  ? `mascota-juego-salto ${DURACION_SALTO_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
+                  : faseSalto === 'por_saltar'
+                    ? 'mascota-juego-prep 0.14s ease-out forwards'
+                    : 'mascota-juego-idle 2.5s ease-in-out infinite',
+              }}
+            >
               <img
                 src={spriteActual}
                 alt="Nuvia"
-                onClick={onMascotaClick}
                 style={{
                   width: `${MASCOTA_TAMANO}px`,
                   height: `${MASCOTA_TAMANO}px`,
                   objectFit: 'contain',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  WebkitUserDrag: 'none',
                   filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.25))',
-                  animation: faseSalto === 'saltando'
-                    ? `mascota-juego-salto ${DURACION_SALTO_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
-                    : faseSalto === 'por_saltar'
-                      ? 'mascota-juego-prep 0.14s ease-out forwards'
-                      : 'mascota-juego-idle 2.5s ease-in-out infinite',
                 }}
               />
 
-              {/* Accesorio equipado en la cabeza/mascota */}
-              {accesorioEquipado && accesorioEquipado !== 'ninguno' && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-10px',
-                  right: '15px',
-                  fontSize: '28px',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                  pointerEvents: 'none',
-                  animation: 'bounce 2s infinite ease-in-out'
-                }}>
-                  {ACCESORIOS.find(a => a.id === accesorioEquipado)?.icono}
-                </div>
-              )}
+              {/* Accesorio equipado perfectamente posicionado en Nuvia */}
+              {accesorioEquipado && accesorioEquipado !== 'ninguno' && (() => {
+                const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
+                if (!acc) return null;
+
+                let positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
+                if (acc.id === 'antifaz') {
+                  positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '78px' };
+                } else if (acc.id === 'zapatillas_conejo') {
+                  positionStyle = { bottom: '0px', left: '50%', transform: 'translateX(-50%)', fontSize: '30px' };
+                } else if (acc.id === 'lazo_rosa') {
+                  if (accesorioLado === 'izquierda') {
+                    positionStyle = { top: '20px', left: '22px', fontSize: '32px', transform: 'rotate(-10deg)' };
+                  } else {
+                    positionStyle = { top: '20px', right: '22px', fontSize: '32px', transform: 'rotate(10deg)' };
+                  }
+                } else if (acc.id === 'corona_flores') {
+                  positionStyle = { top: '-6px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
+                } else if (acc.id === 'gorro_noche') {
+                  positionStyle = { top: '-4px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
+                }
+
+                return (
+                  <div style={{
+                    position: 'absolute',
+                    ...positionStyle,
+                    filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
+                    pointerEvents: 'none',
+                    zIndex: 5,
+                  }}>
+                    {acc.icono}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         );
@@ -1165,20 +1279,26 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
         ))}
 
         {/* Jugador */}
-        <img
-          src={spriteCaida}
-          alt="Nuvia"
-          style={{
-            position: 'absolute',
-            left: `${playerXRef.current - MASCOTA_TAMANO_JUEGO / 2}px`,
-            top: '25%',
-            width: `${MASCOTA_TAMANO_JUEGO}px`,
-            height: `${MASCOTA_TAMANO_JUEGO}px`,
-            objectFit: 'contain',
-            pointerEvents: 'none',
-            filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.25))',
-          }}
-        />
+        <div style={{
+          position: 'absolute',
+          left: `${playerXRef.current - MASCOTA_TAMANO_JUEGO / 2}px`,
+          top: '25%',
+          width: `${MASCOTA_TAMANO_JUEGO}px`,
+          height: `${MASCOTA_TAMANO_JUEGO}px`,
+          pointerEvents: 'none',
+        }}>
+          <img
+            src={spriteCaida}
+            alt="Nuvia"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.25))',
+            }}
+          />
+          <AccesorioOverlay size={34} />
+        </div>
 
         {/* Hitbox del Jugador */}
         {mostrarColisiones && (

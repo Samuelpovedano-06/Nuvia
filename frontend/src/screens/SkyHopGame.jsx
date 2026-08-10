@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Play, Pause, ChevronLeft } from 'lucide-react';
 import { ApiService } from '../api';
+import AccesorioOverlay from '../components/AccesorioOverlay';
 
 const RECORD_KEY = 'nuvia_skyhop_record';
 const JUEGO_ID   = 'sky_hop';
@@ -668,8 +669,11 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       {/* Player */}
       {phase !== 'menu' && (
         <>
-          <img ref={playerRef} src={sprite === 'jump' ? SP.jump : sprite === 'fall' ? SP.fall : SP.idle} alt=""
-            style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, objectFit: 'contain', zIndex: 20, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, zIndex: 20, pointerEvents: 'none' }}>
+            <img ref={playerRef} src={sprite === 'jump' ? SP.jump : sprite === 'fall' ? SP.fall : SP.idle} alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <AccesorioOverlay size={30} />
+          </div>
           {mostrarColisiones && (
             <div ref={playerHitRef} style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, zIndex: 21, pointerEvents: 'none', boxSizing: 'border-box' }}>
               <div style={{ position: 'absolute', bottom: 9, left: 0, right: 0, height: 2, background: '#facc15' }} />

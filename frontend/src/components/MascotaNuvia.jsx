@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiService } from '../api';
+import { ACCESORIOS } from './DormitorioSection';
 
 const MASCOTA_SIZE = 70;
 const CYCLE_SECS = 28;
@@ -25,6 +26,23 @@ export default function MascotaNuvia({ user }) {
   const [walkOk, setWalkOk] = useState(null);
   const [sentadoOk, setSentadoOk] = useState(null);
   const [flotandoOk, setFlotandoOk] = useState(null);
+  const [accesorioEquipado, setAccesorioEquipado] = useState(() => localStorage.getItem('nuvia_mascot_outfit') || 'ninguno');
+  const [accesorioLado, setAccesorioLado] = useState(() => localStorage.getItem('nuvia_accesorio_lado') || 'derecha');
+
+  useEffect(() => {
+    const syncOutfit = () => {
+      setAccesorioEquipado(localStorage.getItem('nuvia_mascot_outfit') || 'ninguno');
+      setAccesorioLado(localStorage.getItem('nuvia_accesorio_lado') || 'derecha');
+    };
+    window.addEventListener('nuvia_outfit_updated', syncOutfit);
+    window.addEventListener('nuvia_accesorio_lado_updated', syncOutfit);
+    const interval = setInterval(syncOutfit, 1500);
+    return () => {
+      window.removeEventListener('nuvia_outfit_updated', syncOutfit);
+      window.removeEventListener('nuvia_accesorio_lado_updated', syncOutfit);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Estados visuales:
   //   hasAviso  -> lift arriba + flotando visible (instantáneo al cambiar aviso)
@@ -396,6 +414,41 @@ export default function MascotaNuvia({ user }) {
                 />
               </div>
             )}
+
+            {/* Accesorio equipado sobre la mascota caminando */}
+            {accesorioEquipado && accesorioEquipado !== 'ninguno' && (() => {
+              const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
+              if (!acc) return null;
+
+              let positionStyle = { top: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
+              if (acc.id === 'antifaz') {
+                positionStyle = { top: '10px', left: '50%', transform: 'translateX(-50%)', fontSize: '42px' };
+              } else if (acc.id === 'zapatillas_conejo') {
+                positionStyle = { bottom: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: '18px' };
+              } else if (acc.id === 'lazo_rosa') {
+                if (accesorioLado === 'izquierda') {
+                  positionStyle = { top: '6px', left: '8px', fontSize: '22px', transform: 'rotate(-10deg)' };
+                } else {
+                  positionStyle = { top: '6px', right: '8px', fontSize: '22px', transform: 'rotate(10deg)' };
+                }
+              } else if (acc.id === 'corona_flores') {
+                positionStyle = { top: '-4px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
+              } else if (acc.id === 'gorro_noche') {
+                positionStyle = { top: '-4px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
+              }
+
+              return (
+                <div style={{
+                  position: 'absolute',
+                  ...positionStyle,
+                  pointerEvents: 'none',
+                  zIndex: 20,
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                }}>
+                  {acc.icono}
+                </div>
+              );
+            })()}
           </div>
         </div>
         </div>
