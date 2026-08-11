@@ -672,7 +672,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
           <div style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, zIndex: 20, pointerEvents: 'none' }}>
             <img ref={playerRef} src={sprite === 'jump' ? SP.jump : sprite === 'fall' ? SP.fall : SP.idle} alt=""
               style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            <AccesorioOverlay size={30} />
+            <AccesorioOverlay size={21} />
           </div>
           {mostrarColisiones && (
             <div ref={playerHitRef} style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, zIndex: 21, pointerEvents: 'none', boxSizing: 'border-box' }}>

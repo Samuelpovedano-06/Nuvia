@@ -466,7 +466,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
           filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))', pointerEvents: 'none', zIndex: 20,
         }}
       >
-        <AccesorioOverlay size={30} />
+        <AccesorioOverlay size={20} />
       </div>
 
       {mostrarColisiones && (

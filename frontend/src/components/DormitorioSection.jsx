@@ -12,7 +12,7 @@ export const ACCESORIOS = [
   { id: 'antifaz', nombre: 'Gafas de Sol', icono: '🕶️', precio: 45, color: '#F472B6' },
   { id: 'lazo_rosa', nombre: 'Lazo Coquette', icono: '🎀', precio: 50, color: '#FB7185' },
   { id: 'zapatillas_conejo', nombre: 'Zapatillas Conejo', icono: '🐰', precio: 60, color: '#FDE047' },
-  { id: 'corona_flores', nombre: 'Corona Botánica', icono: '👑', precio: 80, color: '#34D399' },
+  { id: 'corona_flores', nombre: 'Corona', icono: '👑', precio: 80, color: '#34D399' },
 ];
 
 // Generador de audio relajante sintético (Web Audio API)
@@ -780,10 +780,10 @@ const modalOverlayStyle = {
   inset: 0,
   background: 'rgba(0,0,0,0.5)',
   backdropFilter: 'blur(6px)',
-  zIndex: 90,
+  zIndex: 200,
   display: 'flex',
   alignItems: 'center',
-  justify: 'center',
+  justifyContent: 'center',
   padding: '20px'
 };
 
@@ -793,6 +793,8 @@ const modalCardStyle = {
   padding: '22px 20px',
   width: '100%',
   maxWidth: '360px',
+  maxHeight: 'calc(100dvh - 120px)',
+  overflowY: 'auto',
   boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
   animation: 'fadeIn 0.2s ease-out'
 };

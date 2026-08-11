@@ -551,7 +551,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
           transform: 'translate(-50%, -50%)',
         }}
       >
-        <AccesorioOverlay size={30} />
+        <AccesorioOverlay size={20} />
       </div>
 
       {mostrarColisiones && (

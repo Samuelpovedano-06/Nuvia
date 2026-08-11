@@ -16,9 +16,9 @@ export default function AccesorioOverlay({ size = 28 }) {
     positionStyle = { bottom: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 0.9}px` };
   } else if (acc.id === 'lazo_rosa') {
     if (accesorioLado === 'izquierda') {
-      positionStyle = { top: `${size * 0.15}px`, left: `${size * 0.15}px`, fontSize: `${size}px`, transform: 'rotate(-10deg)' };
+      positionStyle = { top: `${size * 0.04}px`, left: `${size * 0.18}px`, fontSize: `${size * 0.55}px`, transform: 'rotate(-12deg)' };
     } else {
-      positionStyle = { top: `${size * 0.15}px`, right: `${size * 0.15}px`, fontSize: `${size}px`, transform: 'rotate(10deg)' };
+      positionStyle = { top: `${size * 0.04}px`, right: `${size * 0.18}px`, fontSize: `${size * 0.55}px`, transform: 'rotate(12deg)' };
     }
   } else if (acc.id === 'corona_flores') {
     positionStyle = { top: `-${size * 0.15}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 1.1}px` };

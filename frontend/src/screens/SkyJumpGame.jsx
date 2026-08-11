@@ -884,7 +884,6 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
               top: `${toScreen(playerRef.current.y, PLAYER_H)}px`,
               width: `${PLAYER_W}px`, height: `${PLAYER_H}px`,
               pointerEvents: 'none',
-              transform: playerRef.current.dir < 0 ? 'scaleX(-1)' : 'none',
               filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.3))',
               zIndex: 20,
             }}>
@@ -894,9 +893,10 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
                 style={{
                   width: '100%', height: '100%',
                   objectFit: 'contain',
+                  transform: playerRef.current.dir < 0 ? 'scaleX(-1)' : 'none',
                 }}
               />
-              <AccesorioOverlay size={34} />
+              <AccesorioOverlay size={23} />
             </div>
             {mostrarColisiones && (
               <div

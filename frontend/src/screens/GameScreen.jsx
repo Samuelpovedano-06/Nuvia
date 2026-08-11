@@ -1297,7 +1297,7 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
               filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.25))',
             }}
           />
-          <AccesorioOverlay size={34} />
+          <AccesorioOverlay size={29} />
         </div>
 
         {/* Hitbox del Jugador */}
