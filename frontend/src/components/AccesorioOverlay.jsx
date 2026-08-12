@@ -11,19 +11,19 @@ export default function AccesorioOverlay({ size = 28 }) {
 
   let positionStyle = { top: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: `${size}px` };
   if (acc.id === 'antifaz') {
-    positionStyle = { top: `${size * 0.25}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 1.4}px` };
+    positionStyle = { top: `${size * 0.05}px`, left: '53%', transform: 'translateX(-50%)', fontSize: `${size * 0.56}px` };
   } else if (acc.id === 'zapatillas_conejo') {
-    positionStyle = { bottom: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 0.9}px` };
+    positionStyle = { bottom: '0px', left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 0.25}px` };
   } else if (acc.id === 'lazo_rosa') {
     if (accesorioLado === 'izquierda') {
-      positionStyle = { top: `${size * 0.04}px`, left: `${size * 0.18}px`, fontSize: `${size * 0.55}px`, transform: 'rotate(-12deg)' };
+      positionStyle = { top: `${size * 0.14}px`, left: `${size * 0.16}px`, fontSize: `${size * 0.3}px`, transform: 'rotate(-12deg)' };
     } else {
-      positionStyle = { top: `${size * 0.04}px`, right: `${size * 0.18}px`, fontSize: `${size * 0.55}px`, transform: 'rotate(12deg)' };
+      positionStyle = { top: `${size * 0.14}px`, right: `${size * 0.16}px`, fontSize: `${size * 0.3}px`, transform: 'rotate(12deg)' };
     }
   } else if (acc.id === 'corona_flores') {
-    positionStyle = { top: `-${size * 0.15}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 1.1}px` };
+    positionStyle = { top: `-${size * 0.38}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 0.65}px` };
   } else if (acc.id === 'gorro_noche') {
-    positionStyle = { top: `-${size * 0.15}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 1.1}px` };
+    positionStyle = { top: `-${size * 0.12}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 0.4}px` };
   }
 
   return (
