@@ -3,7 +3,8 @@ import {
   Moon, Sun, Shirt, Volume2, VolumeX, Sparkles, X, Heart,
   Check, Play, Pause, CloudRain, Music, Wind, Bed, Calendar, Award, BookOpen
 } from 'lucide-react';
-import { CoinIcon } from '../utils/coinHelper';
+import { CoinIcon, sumarMoneda } from '../utils/coinHelper';
+import { ApiService } from '../api';
 
 // Lista de accesorios del Armario
 export const ACCESORIOS = [
@@ -187,6 +188,7 @@ export default function DormitorioSection({
     setAccesorioLado(lado);
     localStorage.setItem('nuvia_accesorio_lado', lado);
     window.dispatchEvent(new Event('nuvia_accesorio_lado_updated'));
+    ApiService.equiparAccesorio(accesorioEquipado, lado).catch(() => {});
   };
 
   // Persistir modoNoche en localStorage para el cálculo offline estilo Pou
@@ -242,9 +244,7 @@ export default function DormitorioSection({
         localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
         if (next === 100 && prev < 100) {
           lanzarCorazones('¡Nuvia durmió y recuperó el 100% de su energía! ⚡🌙 (+15 Monedas de despertar)');
-          const nCoins = userCoins + 15;
-          setUserCoins(nCoins);
-          localStorage.setItem('nuvia_user_coins', String(nCoins));
+          setUserCoins(sumarMoneda(15));
         }
         return next;
       });
@@ -315,6 +315,7 @@ export default function DormitorioSection({
   const comprarOEquipar = (acc) => {
     if (comprados.includes(acc.id)) {
       equiparAccesorio(acc.id);
+      ApiService.equiparAccesorio(acc.id, accesorioLado).catch(() => {});
     } else if (userCoins >= acc.precio) {
       const nCoins = userCoins - acc.precio;
       setUserCoins(nCoins);
@@ -325,6 +326,7 @@ export default function DormitorioSection({
       localStorage.setItem('nuvia_accesorios_comprados', JSON.stringify(nComprados));
 
       equiparAccesorio(acc.id);
+      ApiService.comprarAccesorio(acc.id).catch(() => {});
     }
   };
 

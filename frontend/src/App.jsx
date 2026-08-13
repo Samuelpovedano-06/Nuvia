@@ -107,6 +107,26 @@ function App() {
   // Precargar imágenes en caché del navegador al iniciar la app
   useEffect(() => { precargarImagenes(); }, []);
 
+  // Al iniciar sesión, trae de la BD las monedas y accesorios desbloqueados
+  // de la mascota (antes solo vivían en localStorage, así que no viajaban
+  // entre dispositivos) y refresca la caché local para que el resto de la
+  // app (que lee de localStorage) los recoja de inmediato.
+  useEffect(() => {
+    if (!user) return;
+    let cancel = false;
+    (async () => {
+      const estado = await ApiService.getEstadoTienda();
+      if (cancel || !estado) return;
+      localStorage.setItem('nuvia_user_coins', String(estado.monedas));
+      localStorage.setItem('nuvia_mascot_outfit', estado.equipado);
+      localStorage.setItem('nuvia_accesorio_lado', estado.lado);
+      localStorage.setItem('nuvia_accesorios_comprados', JSON.stringify(estado.comprados));
+      window.dispatchEvent(new CustomEvent('nuvia_coins_updated', { detail: { coins: estado.monedas } }));
+      window.dispatchEvent(new Event('nuvia_accesorio_lado_updated'));
+    })();
+    return () => { cancel = true; };
+  }, [user?.id_usuaria]);
+
   // Polling para actualizaciones en tiempo real (cada 10 segundos)
   useEffect(() => {
     if (user) {

@@ -575,6 +575,45 @@ export const ApiService = {
     } catch (_) { return null; }
   },
 
+  // Monedas y accesorios de la mascota (tienda del dormitorio)
+  getEstadoTienda: async () => {
+    try {
+      const res = await fetch(`${baseUrl}/tienda/estado`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) { return null; }
+  },
+
+  sumarMonedas: async (cantidad) => {
+    const res = await fetch(`${baseUrl}/tienda/monedas`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ cantidad })
+    });
+    if (!res.ok) throw new Error('No se pudo sincronizar monedas');
+    return await res.json();
+  },
+
+  comprarAccesorio: async (accesorioId) => {
+    const res = await fetch(`${baseUrl}/tienda/comprar`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ accesorio_id: accesorioId })
+    });
+    if (!res.ok) throw new Error('No se pudo comprar el accesorio');
+    return await res.json();
+  },
+
+  equiparAccesorio: async (accesorioId, lado) => {
+    const res = await fetch(`${baseUrl}/tienda/equipar`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ accesorio_id: accesorioId, lado })
+    });
+    if (!res.ok) throw new Error('No se pudo equipar el accesorio');
+    return await res.json();
+  },
+
   compartirPublicacion: async (idReceptor, idPublicacion) => {
     const res = await fetch(`${baseUrl}/chat/compartir-publicacion`, {
       method: 'POST',

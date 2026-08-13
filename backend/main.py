@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos, juegos
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos, juegos, tienda
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -175,6 +175,16 @@ def run_migrations():
             record      INTEGER NOT NULL DEFAULT 0,
             updated_at  TIMESTAMP DEFAULT NOW(),
             PRIMARY KEY (id_usuaria, juego)
+        )""",
+        # Monedas y accesorio equipado de la mascota (Nuvia), por usuaria
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS monedas INTEGER NOT NULL DEFAULT 50",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS accesorio_equipado VARCHAR(40) NOT NULL DEFAULT 'ninguno'",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS accesorio_lado VARCHAR(20) NOT NULL DEFAULT 'derecha'",
+        """CREATE TABLE IF NOT EXISTS accesorios_comprados (
+            id_usuaria    UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            accesorio_id  VARCHAR(40) NOT NULL,
+            comprado_at   TIMESTAMP DEFAULT NOW(),
+            PRIMARY KEY (id_usuaria, accesorio_id)
         )""",
         """CREATE TABLE IF NOT EXISTS comunicados_generales (
             id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -429,6 +439,7 @@ app.include_router(chat.router)
 app.include_router(foro.router)
 app.include_router(consejos.router)
 app.include_router(juegos.router)
+app.include_router(tienda.router)
 
 
 @app.get("/")
