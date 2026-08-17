@@ -3,6 +3,7 @@ import { Play, Pause, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
+import { getOutfitSprite } from '../utils/outfitSprites';
 
 function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS }) {
   return (
@@ -230,8 +231,8 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
     if (scored) {
       syncScore(scoreRef.current + 1);
       if (imgRef.current) {
-        imgRef.current.src = SP.catch;
-        setTimeout(() => { if (imgRef.current) imgRef.current.src = SP.idle; }, 280);
+        imgRef.current.src = getOutfitSprite('caida', SP.catch);
+        setTimeout(() => { if (imgRef.current) imgRef.current.src = getOutfitSprite('idle', SP.idle); }, 280);
       }
     }
     if (missed > 0) {
@@ -263,7 +264,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
         playerRef.current.style.left = (x - PLAYER_W / 2) + 'px';
       }
       if (imgRef.current) {
-        imgRef.current.src = SP.idle;
+        imgRef.current.src = getOutfitSprite('idle', SP.idle);
       }
     }
     syncPhase('playing');
@@ -382,7 +383,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
         >
           <img
             ref={imgRef}
-            src={SP.idle}
+            src={getOutfitSprite('idle', SP.idle)}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.22))' }}
             onError={e => e.currentTarget.style.display = 'none'}

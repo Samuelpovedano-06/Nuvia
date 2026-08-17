@@ -3,6 +3,8 @@ import { Play, Pause } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
+import { getWalkSheet } from '../utils/walkSheet';
+import { getOutfitSprite } from '../utils/outfitSprites';
 
 const RECORD_KEY = 'nuvia_cliffdash_record';
 const JUEGO_ID = 'cliff_dash';
@@ -96,11 +98,6 @@ const SP = {
   nubeMala: '/juego/Sky_Jump/enemigo.png',
 };
 
-const WALK_SHEET_BASE = '/mascota-walk.png';
-const WALK_SHEET_MARINERO = '/mascota-walk-marinero.png';
-function getWalkSheet() {
-  return localStorage.getItem('nuvia_mascot_outfit') === 'traje_marinero' ? WALK_SHEET_MARINERO : WALK_SHEET_BASE;
-}
 const WALK_COLS = 6;
 const WALK_INTERVAL = 55;
 
@@ -265,7 +262,7 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
   const endGame = useCallback(() => {
     cancelAnimationFrame(animRef.current);
     if (playerRef.current) {
-      playerRef.current.style.backgroundImage = `url('${SP.fall}')`;
+      playerRef.current.style.backgroundImage = `url('${getOutfitSprite('caida', SP.fall)}')`;
       playerRef.current.style.backgroundSize = 'contain';
       playerRef.current.style.backgroundPosition = 'center';
     }

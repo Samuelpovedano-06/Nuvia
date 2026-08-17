@@ -16,6 +16,7 @@ import AccesorioOverlay, { TrajeMarineroOverlay } from '../components/AccesorioO
 
 
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
+import { getOutfitSprite } from '../utils/outfitSprites';
 
 const JUEGO_ID = 'esquivar_compresas';
 const RECORD_LOCAL_KEY = 'nuvia_esquivar_record';
@@ -213,10 +214,14 @@ export default function GameScreen({ onGameActiveChange }) {
     }
     return fondoOk[habitacionId] ? habitacion.fondo : null;
   })();
+  // La ropa equipada va dibujada directamente en variantes de cada pose
+  // (mascota-idle-rayas.png, mascota-jump-rayas.png, ...) en vez de un
+  // emoji flotando encima.
+  const spriteIdleActual = getOutfitSprite('idle', SPRITE_IDLE);
   const spriteActual = (() => {
-    if (faseSalto === 'por_saltar') return spriteOk.porSaltar ? SPRITE_POR_SALTAR : (spriteOk.idle ? SPRITE_IDLE : SPRITE_FALLBACK);
-    if (faseSalto === 'saltando') return spriteOk.jump ? SPRITE_JUMP : SPRITE_FALLBACK;
-    return spriteOk.idle ? SPRITE_IDLE : SPRITE_FALLBACK;
+    if (faseSalto === 'por_saltar') return spriteOk.porSaltar ? SPRITE_POR_SALTAR : (spriteOk.idle ? spriteIdleActual : SPRITE_FALLBACK);
+    if (faseSalto === 'saltando') return spriteOk.jump ? getOutfitSprite('jump', SPRITE_JUMP) : SPRITE_FALLBACK;
+    return spriteOk.idle ? spriteIdleActual : SPRITE_FALLBACK;
   })();
 
   // Si está jugando, mostramos solo el juego
@@ -595,6 +600,9 @@ export default function GameScreen({ onGameActiveChange }) {
                 if (acc.id === 'traje_marinero') {
                   return <TrajeMarineroOverlay width={86} height={56} top="70px" />;
                 }
+
+                // La camiseta de rayas va dibujada directamente en mascota-idle-rayas.png
+                if (acc.id === 'camiseta_rayas') return null;
 
                 let positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
                 if (acc.id === 'antifaz') {

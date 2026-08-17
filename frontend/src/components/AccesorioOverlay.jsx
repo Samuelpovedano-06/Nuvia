@@ -1,3 +1,6 @@
+import React from 'react';
+import { ACCESORIOS } from './DormitorioSection';
+
 export function TrajeMarineroOverlay({ width = 76, height = 50, top = '54%' }) {
   return (
     <div style={{
@@ -55,6 +58,9 @@ export default function AccesorioOverlay({ size = 28 }) {
   if (acc.id === 'traje_marinero') {
     return <TrajeMarineroOverlay width={size * 1.1} height={size * 0.7} top="52%" />;
   }
+  // La camiseta de rayas va dibujada directamente en cada pose del sprite
+  // (mascota-idle-rayas.png, mascota-jump-rayas.png, mascota-caida-rayas.png, ...)
+  if (acc.id === 'camiseta_rayas') return null;
 
   if (acc.id === 'zapatillas_conejo') {
     const slipperSize = size * 0.36;

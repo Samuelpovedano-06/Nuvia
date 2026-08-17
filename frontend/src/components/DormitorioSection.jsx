@@ -15,6 +15,7 @@ export const ACCESORIOS = [
   { id: 'zapatillas_conejo', nombre: 'Zapatillas Conejo', icono: '🐰', precio: 60, color: '#FDE047' },
   { id: 'corona_flores', nombre: 'Corona', icono: '👑', precio: 80, color: '#34D399' },
   { id: 'traje_marinero', nombre: 'Traje de Marinero', icono: '⚓', precio: 70, color: '#1E3A8A' },
+  { id: 'camiseta_rayas', nombre: 'Camiseta de Rayas', icono: '👕', precio: 35, color: '#F5A8B8' },
 ];
 
 // Generador de audio relajante sintético (Web Audio API)

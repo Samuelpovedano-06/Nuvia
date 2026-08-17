@@ -3,6 +3,7 @@ import { ChevronLeft, Play, RefreshCw, Pause, Settings } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
+import { getOutfitSprite } from '../utils/outfitSprites';
 
 const JUEGO_ID = 'sky_jump';
 const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
@@ -584,9 +585,9 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
   // Sprite del player según vy/flor
   const playerSpriteSrc = (() => {
     const p = playerRef.current;
-    if (p.vy > 0.05) return SP.player_jump;
-    if (p.vy < -0.05) return SP.player_caida;
-    return SP.player_idle;
+    if (p.vy > 0.05) return getOutfitSprite('jump', SP.player_jump);
+    if (p.vy < -0.05) return getOutfitSprite('caida', SP.player_caida);
+    return getOutfitSprite('idle', SP.player_idle);
   })();
 
   return (

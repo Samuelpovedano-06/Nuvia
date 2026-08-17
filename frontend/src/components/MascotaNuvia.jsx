@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiService } from '../api';
 import { ACCESORIOS } from './DormitorioSection';
 import { TrajeMarineroOverlay } from './AccesorioOverlay';
+import { getWalkSheet, WALK_SHEET_BASE } from '../utils/walkSheet';
+import { getOutfitSprite } from '../utils/outfitSprites';
 
 const MASCOTA_SIZE = 70;
 const CYCLE_SECS = 28;
@@ -64,7 +66,7 @@ export default function MascotaNuvia({ user }) {
       img.onerror = () => set(false);
       img.src = src;
     };
-    check('/mascota-walk.png', setWalkOk);
+    check(WALK_SHEET_BASE, setWalkOk);
     check('/mascota-sentado.png', setSentadoOk);
     check('/mascota-flotando.png', setFlotandoOk);
   }, [ocultar]);
@@ -153,7 +155,9 @@ export default function MascotaNuvia({ user }) {
   };
 
   const usarSprites = walkOk === true;
-  const walkSheetUrl = '/mascota-walk.png';
+  const walkSheetUrl = getWalkSheet();
+  const sentadoUrl = getOutfitSprite('sentado', '/mascota-sentado.png');
+  const flotandoUrl = getOutfitSprite('flotando', '/mascota-flotando.png');
 
   return (
     <>
@@ -299,7 +303,7 @@ export default function MascotaNuvia({ user }) {
         }
 
         .nuvia-capa-sentado {
-          background-image: url('/mascota-sentado.png');
+          background-image: url('${sentadoUrl}');
           background-size: contain;
           background-position: center;
           background-repeat: no-repeat;
@@ -308,7 +312,7 @@ export default function MascotaNuvia({ user }) {
         }
 
         .nuvia-capa-flotando {
-          background-image: url('/mascota-flotando.png');
+          background-image: url('${flotandoUrl}');
           background-size: contain;
           background-position: center;
           background-repeat: no-repeat;
@@ -424,6 +428,9 @@ export default function MascotaNuvia({ user }) {
               if (acc.id === 'traje_marinero') {
                 return <TrajeMarineroOverlay width={74} height={48} top="54%" />;
               }
+              // La camiseta de rayas va dibujada directamente en cada pose
+              // (mascota-walk-rayas.png, mascota-sentado-rayas.png, mascota-flotando-rayas.png)
+              if (acc.id === 'camiseta_rayas') return null;
 
               if (acc.id === 'zapatillas_conejo') {
                 return (

@@ -50,6 +50,7 @@ PRECIOS_ACCESORIOS = {
     'zapatillas_conejo': 60,
     'corona_flores': 80,
     'traje_marinero': 70,
+    'camiseta_rayas': 35,
 }
 LADOS_VALIDOS = {'izquierda', 'derecha'}
 
