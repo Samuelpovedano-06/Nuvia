@@ -12,7 +12,7 @@ import TumbleGame      from './TumbleGame';
 import HillDriveGame   from './HillDriveGame';
 import DormitorioSection, { ACCESORIOS } from '../components/DormitorioSection';
 import SheepCountingGame from './SheepCountingGame';
-import AccesorioOverlay from '../components/AccesorioOverlay';
+import AccesorioOverlay, { TrajeMarineroOverlay } from '../components/AccesorioOverlay';
 
 
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
@@ -590,6 +590,10 @@ export default function GameScreen({ onGameActiveChange }) {
                       </div>
                     </>
                   );
+                }
+
+                if (acc.id === 'traje_marinero') {
+                  return <TrajeMarineroOverlay width={86} height={56} top="70px" />;
                 }
 
                 let positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };

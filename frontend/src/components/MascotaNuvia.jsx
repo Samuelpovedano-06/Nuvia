@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiService } from '../api';
 import { ACCESORIOS } from './DormitorioSection';
+import { TrajeMarineroOverlay } from './AccesorioOverlay';
 
 const MASCOTA_SIZE = 70;
 const CYCLE_SECS = 28;
@@ -152,7 +153,7 @@ export default function MascotaNuvia({ user }) {
   };
 
   const usarSprites = walkOk === true;
-  const walkSheetUrl = accesorioEquipado === 'traje_marinero' ? '/mascota-walk-marinero.png' : '/mascota-walk.png';
+  const walkSheetUrl = '/mascota-walk.png';
 
   return (
     <>
@@ -420,8 +421,9 @@ export default function MascotaNuvia({ user }) {
             {accesorioEquipado && accesorioEquipado !== 'ninguno' && (() => {
               const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
               if (!acc) return null;
-              // El traje de marinero va dibujado directamente en mascota-walk-marinero.png
-              if (acc.id === 'traje_marinero' && usarSprites) return null;
+              if (acc.id === 'traje_marinero') {
+                return <TrajeMarineroOverlay width={74} height={48} top="54%" />;
+              }
 
               if (acc.id === 'zapatillas_conejo') {
                 return (
