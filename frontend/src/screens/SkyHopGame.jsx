@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { Play, Pause, ChevronLeft } from 'lucide-react';
 import { ApiService } from '../api';
 import AccesorioOverlay from '../components/AccesorioOverlay';
+import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 
 const RECORD_KEY = 'nuvia_skyhop_record';
 const JUEGO_ID   = 'sky_hop';
@@ -85,7 +86,12 @@ function createRowGenerator() {
 
   return function makeRow(id) {
     const n    = id % 2 === 0 ? 3 : 4;
-    const plat = () => Math.random() < 0.15 ? 'star' : 'normal';
+    const plat = () => {
+      const r = Math.random();
+      if (r < 0.28) return 'coin'; // 28% probabilidad de moneda
+      if (r < 0.33) return 'star'; // 5% probabilidad de estrella boost
+      return 'normal';
+    };
     const slots = new Array(n).fill('cloud');
     const placed = new Set();
 
@@ -167,16 +173,18 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const pathGenRef = useRef(null);
   if (!pathGenRef.current) pathGenRef.current = createRowGenerator();
 
-  const [phase,     setPhase]     = useState('menu');
-  const [rows,      setRows]      = useState(() => genInitialRows(pathGenRef.current));
-  const [curRow,    setCurRow]    = useState(0);
-  const [curCol,    setCurCol]    = useState(1);
-  const [score,     setScore]     = useState(0);
-  const [timer,     setTimer]     = useState(TIMER_MAX);
-  const [sprite,    setSprite]    = useState('idle');
-  const [starFlash, setStarFlash] = useState(false);
+  const [phase, setPhase]     = useState('menu'); // 'menu' | 'playing' | 'paused' | 'over'
+  const [rows, setRows]       = useState([]);
+  const [curRow, setCurRow]   = useState(0);
+  const [curCol, setCurCol]   = useState(1);
+  const [score, setScore]     = useState(0);
+  const [monedasPartida, setMonedasPartida] = useState(0);
+  const [record, setRecord]   = useState(() => Number(localStorage.getItem(RECORD_KEY) || 0));
+  const [timer, setTimer]     = useState(TIMER_MAX);
+  const [sprite, setSprite]   = useState('idle');
   const [landscape, setLandscape] = useState(() => window.innerWidth > window.innerHeight);
-  const [record,    setRecord]    = useState(() => +(localStorage.getItem(RECORD_KEY) || 0));
+  const [starFlash, setStarFlash] = useState(false);
+  const [coinFlash, setCoinFlash] = useState(false);
 
   const wrapRef            = useRef(null); // outer wrapper, stable (not animated)
   const contRef            = useRef(null); // platforms container (gets translateY)
@@ -375,7 +383,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     const fresh = genInitialRows(pathGenRef.current);
     syncRows(fresh);
     syncCurRow(0); syncCurCol(1);
-    syncScore(0);  syncTimer(TIMER_MAX);
+    syncScore(0);  setMonedasPartida(0); syncTimer(TIMER_MAX);
     setSprite('idle');
     busyRef.current = false;
     syncPhase('playing');
@@ -458,6 +466,17 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
         setSprite('fall');
         setTimeout(endGame, 400);
         return;
+      }
+
+      if (landedType === 'coin') {
+        sumarMoneda(1);
+        setMonedasPartida(prev => prev + 1);
+        setCoinFlash(true);
+        setTimeout(() => setCoinFlash(false), 900);
+        const updated = rowsRef.current.map((r, i) =>
+          i !== nextIdx ? r : { ...r, slots: r.slots.map((s, j) => j === nextCol ? 'normal' : s) }
+        );
+        syncRows(updated);
       }
 
       if (landedType === 'star') {
@@ -618,7 +637,12 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
 
       {(phase === 'playing' || phase === 'paused') && (
         <>
-          <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 60, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 14px', fontWeight: 800, fontSize: 20, color: '#1e293b' }}>{score}</div>
+          <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 60, display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 12px', fontWeight: 800, fontSize: 14, color: '#852296', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+              <CoinIcon size={16} /> {monedasPartida}
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '4px 14px', fontWeight: 800, fontSize: 20, color: '#1e293b', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>{score}</div>
+          </div>
           <button onClick={e => { e.stopPropagation(); togglePause(); }} style={{ position: 'absolute', top: 14, left: 12, zIndex: 70, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(8px)', border: 'none', borderRadius: 10, padding: '6px 10px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
             {phase === 'paused' ? <Play size={18} fill="var(--primary,#b05bb5)" color="var(--primary,#b05bb5)" /> : <Pause size={18} fill="var(--primary,#b05bb5)" color="var(--primary,#b05bb5)" />}
           </button>
@@ -636,6 +660,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
           r.slots.map((type, col) => {
             const isCloud = type === 'cloud';
             const isStar  = type === 'star';
+            const isCoin  = type === 'coin';
             const w = isCloud ? CLOUD_W : PLAT_W;
             const h = isCloud ? CLOUD_H : PLAT_H;
             return (
@@ -654,6 +679,16 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
                     animation: 'starBob 1.2s ease-in-out infinite',
                   }} />
                 )}
+                {isCoin && (
+                  <div style={{
+                    position: 'absolute', bottom: '100%', left: '50%',
+                    transform: 'translateX(-50%)', marginBottom: 2,
+                    animation: 'starBob 1.2s ease-in-out infinite',
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.18))'
+                  }}>
+                    <CoinIcon size={22} />
+                  </div>
+                )}
                 {mostrarColisiones && isCloud && (
                   <div style={{ position: 'absolute', inset: 0, border: '2px solid #ef4444', boxSizing: 'border-box', pointerEvents: 'none' }} />
                 )}
@@ -669,8 +704,8 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       {/* Player */}
       {phase !== 'menu' && (
         <>
-          <div style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, zIndex: 20, pointerEvents: 'none' }}>
-            <img ref={playerRef} src={sprite === 'jump' ? SP.jump : sprite === 'fall' ? SP.fall : SP.idle} alt=""
+          <div ref={playerRef} style={{ position: 'absolute', left: 'calc(50% - 27px)', top: 'calc(72% - 50px)', width: PL_W, height: PL_H, zIndex: 20, pointerEvents: 'none' }}>
+            <img src={sprite === 'jump' ? SP.jump : sprite === 'fall' ? SP.fall : SP.idle} alt=""
               style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             <AccesorioOverlay size={21} />
           </div>
@@ -685,6 +720,12 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       {starFlash && (
         <div style={{ position: 'absolute', top: '15%', left: '50%', background: 'rgba(255,215,0,0.95)', borderRadius: 12, padding: '6px 16px', fontWeight: 800, fontSize: 14, color: '#92400e', zIndex: 70, pointerEvents: 'none', animation: 'fadeUp 0.9s ease forwards' }}>
           +{STAR_BONUS / 1000}s
+        </div>
+      )}
+
+      {coinFlash && (
+        <div style={{ position: 'absolute', top: '15%', left: '50%', background: 'rgba(255,255,255,0.95)', border: '1.5px solid #F472B6', borderRadius: 12, padding: '6px 16px', fontWeight: 800, fontSize: 14, color: '#BE185D', zIndex: 70, pointerEvents: 'none', animation: 'fadeUp 0.9s ease forwards', display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 4px 12px rgba(244,114,182,0.3)' }}>
+          <CoinIcon size={16} /> +1 Moneda
         </div>
       )}
 
@@ -712,7 +753,10 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
             <img src={SP.fall} alt="" style={{ width: 55, height: 62, objectFit: 'contain', marginBottom: 4 }} />
             <h2 style={{ margin: '0 0 4px', fontSize: 21, color: 'var(--primary, #b05bb5)', fontWeight: 800 }}>¡Se acabó!</h2>
             <div style={{ fontSize: 44, fontWeight: 800, color: '#1e293b', margin: '6px 0 2px' }}>{score}</div>
-            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 14 }}>Mejor: {Math.max(score, record)}</div>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 6 }}>Mejor: {Math.max(score, record)}</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: 13, fontWeight: 800, color: '#BE185D', background: '#FCE7F3', padding: '4px 10px', borderRadius: 10, marginBottom: 14 }}>
+              <CoinIcon size={16} /> +{monedasPartida} Monedas
+            </div>
             <button onClick={e => { e.stopPropagation(); startGame(); }} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg,var(--primary,#b05bb5) 0%,#F6416C 100%)', color: 'white', border: 'none', borderRadius: 13, fontWeight: 800, fontSize: 14, cursor: 'pointer', marginBottom: 7, boxShadow: '0 4px 14px rgba(176,91,181,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               <Play size={14} fill="white" /> Otra vez
             </button>

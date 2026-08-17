@@ -176,16 +176,19 @@ def run_migrations():
             updated_at  TIMESTAMP DEFAULT NOW(),
             PRIMARY KEY (id_usuaria, juego)
         )""",
-        # Monedas y accesorio equipado de la mascota (Nuvia), por usuaria
+        # Monedas, energía y ropa de la mascota (Nuvia), por usuaria
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS monedas INTEGER NOT NULL DEFAULT 50",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS accesorio_equipado VARCHAR(40) NOT NULL DEFAULT 'ninguno'",
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS accesorio_lado VARCHAR(20) NOT NULL DEFAULT 'derecha'",
+        "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS energia INTEGER NOT NULL DEFAULT 75",
+        # Tabla de ropa: qué prenda (accesorio_id) tiene cada usuaria y si la lleva puesta
         """CREATE TABLE IF NOT EXISTS accesorios_comprados (
             id_usuaria    UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
             accesorio_id  VARCHAR(40) NOT NULL,
             comprado_at   TIMESTAMP DEFAULT NOW(),
             PRIMARY KEY (id_usuaria, accesorio_id)
         )""",
+        "ALTER TABLE accesorios_comprados ADD COLUMN IF NOT EXISTS puesta BOOLEAN NOT NULL DEFAULT FALSE",
         """CREATE TABLE IF NOT EXISTS comunicados_generales (
             id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             titulo     VARCHAR(200) NOT NULL,

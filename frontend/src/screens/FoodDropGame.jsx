@@ -82,6 +82,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
   const objectsRef = useRef([]);
   const areaRef = useRef(null);
   const playerRef = useRef(null);
+  const imgRef = useRef(null);
   const animRef = useRef(null);
   const spawnTRef = useRef(null);
   const tipTRef = useRef(null);
@@ -228,9 +229,9 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
 
     if (scored) {
       syncScore(scoreRef.current + 1);
-      if (playerRef.current) {
-        playerRef.current.src = SP.catch;
-        setTimeout(() => { if (playerRef.current) playerRef.current.src = SP.idle; }, 280);
+      if (imgRef.current) {
+        imgRef.current.src = SP.catch;
+        setTimeout(() => { if (imgRef.current) imgRef.current.src = SP.idle; }, 280);
       }
     }
     if (missed > 0) {
@@ -260,7 +261,9 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
       targetXRef.current = x;
       if (playerRef.current) {
         playerRef.current.style.left = (x - PLAYER_W / 2) + 'px';
-        playerRef.current.src = SP.idle;
+      }
+      if (imgRef.current) {
+        imgRef.current.src = SP.idle;
       }
     }
     syncPhase('playing');
@@ -365,17 +368,20 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
         </div>
 
         {/* Player */}
-        <div style={{
-          position: 'absolute',
-          bottom: PLAYER_BOT,
-          left: `${playerXRef.current - PLAYER_W / 2}px`,
-          width: PLAYER_W,
-          height: PLAYER_H,
-          pointerEvents: 'none',
-          zIndex: 20,
-        }}>
+        <div
+          ref={playerRef}
+          style={{
+            position: 'absolute',
+            bottom: PLAYER_BOT,
+            left: `${playerXRef.current - PLAYER_W / 2}px`,
+            width: PLAYER_W,
+            height: PLAYER_H,
+            pointerEvents: 'none',
+            zIndex: 20,
+          }}
+        >
           <img
-            ref={playerRef}
+            ref={imgRef}
             src={SP.idle}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.22))' }}

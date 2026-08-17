@@ -121,8 +121,11 @@ function App() {
       localStorage.setItem('nuvia_mascot_outfit', estado.equipado);
       localStorage.setItem('nuvia_accesorio_lado', estado.lado);
       localStorage.setItem('nuvia_accesorios_comprados', JSON.stringify(estado.comprados));
+      localStorage.setItem('nuvia_mascot_energy', String(estado.energia));
+      localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
       window.dispatchEvent(new CustomEvent('nuvia_coins_updated', { detail: { coins: estado.monedas } }));
       window.dispatchEvent(new Event('nuvia_accesorio_lado_updated'));
+      window.dispatchEvent(new Event('nuvia_energy_updated'));
     })();
     return () => { cancel = true; };
   }, [user?.id_usuaria]);

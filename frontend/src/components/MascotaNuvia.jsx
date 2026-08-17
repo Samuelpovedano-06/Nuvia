@@ -152,6 +152,7 @@ export default function MascotaNuvia({ user }) {
   };
 
   const usarSprites = walkOk === true;
+  const walkSheetUrl = accesorioEquipado === 'traje_marinero' ? '/mascota-walk-marinero.png' : '/mascota-walk.png';
 
   return (
     <>
@@ -286,7 +287,7 @@ export default function MascotaNuvia({ user }) {
         }
 
         .nuvia-capa-andando {
-          background-image: url('/mascota-walk.png');
+          background-image: url('${walkSheetUrl}');
           background-size: ${MASCOTA_SIZE * COLS}px ${MASCOTA_SIZE * ROWS}px;
           background-repeat: no-repeat;
           background-position: 0px 0px;
@@ -419,12 +420,42 @@ export default function MascotaNuvia({ user }) {
             {accesorioEquipado && accesorioEquipado !== 'ninguno' && (() => {
               const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
               if (!acc) return null;
+              // El traje de marinero va dibujado directamente en mascota-walk-marinero.png
+              if (acc.id === 'traje_marinero' && usarSprites) return null;
+
+              if (acc.id === 'zapatillas_conejo') {
+                return (
+                  <>
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '10%',
+                      left: '26%',
+                      fontSize: '16px',
+                      pointerEvents: 'none',
+                      zIndex: 20,
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                      transform: 'scaleX(-1)'
+                    }}>
+                      🐰
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '10%',
+                      right: '26%',
+                      fontSize: '16px',
+                      pointerEvents: 'none',
+                      zIndex: 20,
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                    }}>
+                      🐰
+                    </div>
+                  </>
+                );
+              }
 
               let positionStyle = { top: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
               if (acc.id === 'antifaz') {
                 positionStyle = { top: '10px', left: '50%', transform: 'translateX(-50%)', fontSize: '42px' };
-              } else if (acc.id === 'zapatillas_conejo') {
-                positionStyle = { bottom: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: '18px' };
               } else if (acc.id === 'lazo_rosa') {
                 if (accesorioLado === 'izquierda') {
                   positionStyle = { top: '6px', left: '8px', fontSize: '22px', transform: 'rotate(-10deg)' };

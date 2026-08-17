@@ -14,6 +14,7 @@ export const ACCESORIOS = [
   { id: 'lazo_rosa', nombre: 'Lazo Coquette', icono: '🎀', precio: 50, color: '#FB7185' },
   { id: 'zapatillas_conejo', nombre: 'Zapatillas Conejo', icono: '🐰', precio: 60, color: '#FDE047' },
   { id: 'corona_flores', nombre: 'Corona', icono: '👑', precio: 80, color: '#34D399' },
+  { id: 'traje_marinero', nombre: 'Traje de Marinero', icono: '⚓', precio: 70, color: '#1E3A8A' },
 ];
 
 // Generador de audio relajante sintético (Web Audio API)
@@ -223,6 +224,11 @@ export default function DormitorioSection({
   });
 
   const [mostrarPorcentajeEnergia, setMostrarPorcentajeEnergia] = useState(false);
+
+  // Sincroniza la energía con el backend cada vez que cambia (dormir, desgaste, cuidados)
+  useEffect(() => {
+    ApiService.guardarEnergia(energia).catch(() => {});
+  }, [energia]);
 
   // Mantener actualizada la marca de tiempo de última actividad
   useEffect(() => {
@@ -679,24 +685,24 @@ export default function DormitorioSection({
                     <span style={{ fontWeight: 700, fontSize: '13px', color: '#1E293B' }}>{acc.nombre}</span>
 
                     {esEquipado ? (
-                      <span style={{ fontSize: '11px', color: '#DB2777', fontWeight: 800, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <Check size={12} /> Equipado
-                      </span>
+                      <div style={{ fontSize: '11px', color: '#DB2777', fontWeight: 700, marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <Check size={12} /> <span>Equipado</span>
+                      </div>
                     ) : esComprado ? (
-                      <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '4px' }}>
-                        Usar
-                      </span>
+                      <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '4px' }}>
+                        <span>Usar</span>
+                      </div>
                     ) : tieneSuficientes ? (
-                      <span style={{ fontSize: '11px', color: '#852296', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <CoinIcon size={15} /> {acc.precio} Monedas
-                      </span>
+                      <div style={{ fontSize: '11px', color: '#852296', fontWeight: 700, marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <CoinIcon size={15} /> <span>{acc.precio} Monedas</span>
+                      </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', marginTop: '4px' }}>
-                        <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textDecoration: 'line-through', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                          <CoinIcon size={13} /> {acc.precio} Monedas
-                        </span>
-                        <span style={{ fontSize: '10.5px', color: '#DC2626', fontWeight: 800, textAlign: 'center', lineHeight: 1.15 }}>
-                          No tienes suficientes
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <CoinIcon size={13} /> <span>{acc.precio} Monedas</span>
+                        </div>
+                        <span style={{ fontSize: '10px', color: '#DC2626', fontWeight: 700, textAlign: 'center', lineHeight: 1.15 }}>
+                          Faltan {acc.precio - userCoins} m.
                         </span>
                       </div>
                     )}

@@ -594,6 +594,16 @@ export const ApiService = {
     return await res.json();
   },
 
+  guardarEnergia: async (valor) => {
+    const res = await fetch(`${baseUrl}/tienda/energia`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ valor })
+    });
+    if (!res.ok) throw new Error('No se pudo sincronizar la energía');
+    return await res.json();
+  },
+
   comprarAccesorio: async (accesorioId) => {
     const res = await fetch(`${baseUrl}/tienda/comprar`, {
       method: 'POST',

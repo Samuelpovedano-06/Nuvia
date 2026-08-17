@@ -11,7 +11,7 @@ export const CoinIcon = ({ size = 22, style = {} }) => (
       objectFit: 'contain',
       display: 'inline-block',
       verticalAlign: 'middle',
-      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+      flexShrink: 0,
       ...style,
     }}
   />

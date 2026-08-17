@@ -1,14 +1,17 @@
-"""Monedas y accesorios de la mascota (Nuvia) — compartidos por la pareja.
+"""Monedas, energía y ropa de la mascota (Nuvia) — compartidas por la pareja.
 
 La mascota es una sola por vínculo (usuaria + pareja), así que las dos
-cuentas deben leer y escribir siempre la misma fila. Como la tabla
+cuentas deben leer y escribir siempre el mismo estado. Como la tabla
 `parejas` no tiene un id de "pareja" canónico, se resuelve en cada request
 al id de usuaria menor (orden lexicográfico de UUID) entre los dos
 vinculados — así ambas cuentas convergen siempre a la misma fila sin
 necesitar una tabla/columna nueva ni duplicar escrituras.
 
-Tablas: usuarias.monedas / usuarias.accesorio_equipado / usuarias.accesorio_lado
-        accesorios_comprados (id_usuaria, accesorio_id, comprado_at)
+Tablas:
+  usuarias.monedas / usuarias.energia / usuarias.accesorio_lado
+  accesorios_comprados (id_usuaria, accesorio_id, puesta, comprado_at)
+    — una fila por prenda que la usuaria tiene; `puesta` marca cuál lleva
+    puesta ahora mismo (solo una a la vez).
 """
 from typing import Optional
 
@@ -36,6 +39,7 @@ def _uid_compartido(db: Session, current_user: Usuaria) -> str:
     otro_id = str(vinculo.id_pareja if vinculo.id_usuaria == current_user.id_usuaria else vinculo.id_usuaria)
     return min(mi_id, otro_id)
 
+
 # Precios del catálogo (reflejan ACCESORIOS en frontend/src/components/DormitorioSection.jsx).
 # Se validan en servidor para no confiar en el precio que mande el cliente.
 PRECIOS_ACCESORIOS = {
@@ -45,12 +49,17 @@ PRECIOS_ACCESORIOS = {
     'lazo_rosa': 50,
     'zapatillas_conejo': 60,
     'corona_flores': 80,
+    'traje_marinero': 70,
 }
 LADOS_VALIDOS = {'izquierda', 'derecha'}
 
 
 class SumarMonedasBody(BaseModel):
     cantidad: int
+
+
+class EnergiaBody(BaseModel):
+    valor: int
 
 
 class ComprarBody(BaseModel):
@@ -64,19 +73,34 @@ class EquiparBody(BaseModel):
 
 def _estado(db: Session, uid: str):
     row = db.execute(
-        sql_text("SELECT monedas, accesorio_equipado, accesorio_lado FROM usuarias WHERE id_usuaria = :uid"),
+        sql_text("SELECT monedas, accesorio_lado, energia FROM usuarias WHERE id_usuaria = :uid"),
         {"uid": uid},
     ).fetchone()
-    comprados = db.execute(
-        sql_text("SELECT accesorio_id FROM accesorios_comprados WHERE id_usuaria = :uid"),
+    prendas = db.execute(
+        sql_text("SELECT accesorio_id, puesta FROM accesorios_comprados WHERE id_usuaria = :uid"),
         {"uid": uid},
     ).fetchall()
+    equipado = next((p[0] for p in prendas if p[1]), 'ninguno')
     return {
         "monedas": row[0],
-        "equipado": row[1],
-        "lado": row[2],
-        "comprados": ["ninguno"] + [r[0] for r in comprados],
+        "lado": row[1],
+        "energia": row[2],
+        "equipado": equipado,
+        "comprados": ["ninguno"] + [p[0] for p in prendas],
     }
+
+
+def _equipar(db: Session, uid: str, accesorio_id: str):
+    """Marca `accesorio_id` como la única prenda puesta (o ninguna si es 'ninguno')."""
+    db.execute(
+        sql_text("UPDATE accesorios_comprados SET puesta = FALSE WHERE id_usuaria = :uid"),
+        {"uid": uid},
+    )
+    if accesorio_id != 'ninguno':
+        db.execute(
+            sql_text("UPDATE accesorios_comprados SET puesta = TRUE WHERE id_usuaria = :uid AND accesorio_id = :a"),
+            {"uid": uid, "a": accesorio_id},
+        )
 
 
 @router.get("/estado")
@@ -104,6 +128,23 @@ def sumar_monedas(
         sql_text("SELECT monedas FROM usuarias WHERE id_usuaria = :uid"), {"uid": uid}
     ).scalar()
     return {"monedas": monedas}
+
+
+@router.post("/energia")
+def guardar_energia(
+    body: EnergiaBody,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user),
+):
+    """Guarda el nivel de energía actual de la mascota (0-100)."""
+    uid = _uid_compartido(db, current_user)
+    valor = max(0, min(100, body.valor))
+    db.execute(
+        sql_text("UPDATE usuarias SET energia = :e WHERE id_usuaria = :uid"),
+        {"e": valor, "uid": uid},
+    )
+    db.commit()
+    return {"energia": valor}
 
 
 @router.post("/comprar")
@@ -141,10 +182,7 @@ def comprar_accesorio(
             {"uid": uid, "a": body.accesorio_id},
         )
 
-    db.execute(
-        sql_text("UPDATE usuarias SET accesorio_equipado = :a WHERE id_usuaria = :uid"),
-        {"a": body.accesorio_id, "uid": uid},
-    )
+    _equipar(db, uid, body.accesorio_id)
     db.commit()
     return _estado(db, uid)
 
@@ -155,7 +193,7 @@ def equipar_accesorio(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user),
 ):
-    """Cambia el accesorio equipado (debe estar ya comprado) y/o el lado del lazo."""
+    """Cambia la prenda puesta (debe estar ya comprada) y/o el lado del lazo."""
     uid = _uid_compartido(db, current_user)
     if body.accesorio_id != 'ninguno':
         poseido = db.execute(
@@ -165,15 +203,12 @@ def equipar_accesorio(
         if not poseido:
             raise HTTPException(status_code=400, detail="accesorio no comprado")
 
+    _equipar(db, uid, body.accesorio_id)
+
     if body.lado and body.lado in LADOS_VALIDOS:
         db.execute(
-            sql_text("UPDATE usuarias SET accesorio_equipado = :a, accesorio_lado = :l WHERE id_usuaria = :uid"),
-            {"a": body.accesorio_id, "l": body.lado, "uid": uid},
-        )
-    else:
-        db.execute(
-            sql_text("UPDATE usuarias SET accesorio_equipado = :a WHERE id_usuaria = :uid"),
-            {"a": body.accesorio_id, "uid": uid},
+            sql_text("UPDATE usuarias SET accesorio_lado = :l WHERE id_usuaria = :uid"),
+            {"l": body.lado, "uid": uid},
         )
     db.commit()
     return _estado(db, uid)

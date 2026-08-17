@@ -47,7 +47,11 @@ const SP = {
 };
 
 // Sprite sheet de correr (mismo que la pantalla principal)
-const WALK_SHEET = '/mascota-walk.png';
+const WALK_SHEET_BASE = '/mascota-walk.png';
+const WALK_SHEET_MARINERO = '/mascota-walk-marinero.png';
+function getWalkSheet() {
+  return localStorage.getItem('nuvia_mascot_outfit') === 'traje_marinero' ? WALK_SHEET_MARINERO : WALK_SHEET_BASE;
+}
 const WALK_COLS = 6;
 const WALK_CELL = 70;   // px por celda en la sheet original
 const WALK_INTERVAL = 60;   // ms por frame (más rápido que el paseo normal de 130 ms)
@@ -366,7 +370,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
           lastWalkTRef.current = now;
         }
         const fx = walkFrameRef.current * PLAYER_W;
-        playerRef.current.style.backgroundImage = `url('${WALK_SHEET}')`;
+        playerRef.current.style.backgroundImage = `url('${getWalkSheet()}')`;
         playerRef.current.style.backgroundSize = `${WALK_COLS * PLAYER_W}px ${2 * PLAYER_H}px`;
         playerRef.current.style.backgroundPosition = `-${fx}px 0px`;
       } else {

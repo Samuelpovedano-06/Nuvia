@@ -562,11 +562,39 @@ export default function GameScreen({ onGameActiveChange }) {
                 const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
                 if (!acc) return null;
 
+                if (acc.id === 'zapatillas_conejo') {
+                  return (
+                    <>
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '14px',
+                        left: '36px',
+                        fontSize: '22px',
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
+                        transform: 'scaleX(-1)'
+                      }}>
+                        🐰
+                      </div>
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '14px',
+                        right: '36px',
+                        fontSize: '22px',
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))'
+                      }}>
+                        🐰
+                      </div>
+                    </>
+                  );
+                }
+
                 let positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
                 if (acc.id === 'antifaz') {
                   positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '78px' };
-                } else if (acc.id === 'zapatillas_conejo') {
-                  positionStyle = { bottom: '0px', left: '50%', transform: 'translateX(-50%)', fontSize: '30px' };
                 } else if (acc.id === 'lazo_rosa') {
                   if (accesorioLado === 'izquierda') {
                     positionStyle = { top: '20px', left: '22px', fontSize: '32px', transform: 'rotate(-10deg)' };
