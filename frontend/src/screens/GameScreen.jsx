@@ -608,7 +608,6 @@ export default function GameScreen({ onGameActiveChange }) {
           equiparAccesorio={(accId) => {
             setAccesorioEquipado(accId);
             localStorage.setItem('nuvia_mascot_outfit', accId);
-            ApiService.equiparAccesorio(accId, accesorioLado).catch(() => {});
           }}
           accesorioEquipado={accesorioEquipado}
           userCoins={userCoins}

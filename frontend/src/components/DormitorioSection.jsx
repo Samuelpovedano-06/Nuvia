@@ -389,6 +389,33 @@ export default function DormitorioSection({
               }}
             />
           ))}
+          {/* Luna / Nube brillante con el logo de Nuvia */}
+          <div style={{
+            position: 'absolute',
+            top: '30px',
+            right: '25px',
+            width: '65px',
+            height: '65px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 35% 35%, #FFFDF0 0%, #F4F1DE 70%, #E0DBC5 100%)',
+            boxShadow: '0 0 30px rgba(255, 253, 240, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none'
+          }}>
+            <img
+              src="/logo.png"
+              alt="Logo Nuvia"
+              style={{
+                width: '36px',
+                height: '36px',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
+              }}
+            />
+          </div>
+
           {/* Cartel flotante Zzz saliendo de la mascota recostada en la cama */}
           <div style={{
             position: 'absolute',

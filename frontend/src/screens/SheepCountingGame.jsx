@@ -165,7 +165,7 @@ export default function SheepCountingGame({ onSalir, onVolverAlListado, onGanarM
           />
         ))}
         
-        {/* Luna llena brillante posicionado abajo del menú */}
+        {/* Luna / Nube llena brillante posicionado abajo del menú con el logo de Nuvia */}
         <div style={{
           position: 'absolute',
           top: '100px',
@@ -180,7 +180,16 @@ export default function SheepCountingGame({ onSalir, onVolverAlListado, onGanarM
           justifyContent: 'center',
           zIndex: 1
         }}>
-          <Sparkles size={20} color="#D4A373" opacity={0.6} />
+          <img
+            src="/logo.png"
+            alt="Logo Nuvia"
+            style={{
+              width: '38px',
+              height: '38px',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
+            }}
+          />
         </div>
       </div>
 
