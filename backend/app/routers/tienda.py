@@ -1,4 +1,11 @@
-"""Monedas y accesorios de la mascota (Nuvia), por usuaria.
+"""Monedas y accesorios de la mascota (Nuvia) — compartidos por la pareja.
+
+La mascota es una sola por vínculo (usuaria + pareja), así que las dos
+cuentas deben leer y escribir siempre la misma fila. Como la tabla
+`parejas` no tiene un id de "pareja" canónico, se resuelve en cada request
+al id de usuaria menor (orden lexicográfico de UUID) entre los dos
+vinculados — así ambas cuentas convergen siempre a la misma fila sin
+necesitar una tabla/columna nueva ni duplicar escrituras.
 
 Tablas: usuarias.monedas / usuarias.accesorio_equipado / usuarias.accesorio_lado
         accesorios_comprados (id_usuaria, accesorio_id, comprado_at)
@@ -8,13 +15,26 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import text as sql_text
+from sqlalchemy import or_, text as sql_text
 
 from app.database.connection import get_db
-from app.models.models import Usuaria
+from app.models.models import Usuaria, Pareja
 from app.routers.auth_utils import get_current_user
 
 router = APIRouter(prefix="/tienda", tags=["Tienda"])
+
+
+def _uid_compartido(db: Session, current_user: Usuaria) -> str:
+    """Id de usuaria bajo el que vive el estado compartido de la mascota:
+    si hay pareja vinculada, el menor de los dos UUID; si no, el propio."""
+    mi_id = str(current_user.id_usuaria)
+    vinculo = db.query(Pareja).filter(
+        or_(Pareja.id_usuaria == current_user.id_usuaria, Pareja.id_pareja == current_user.id_usuaria)
+    ).first()
+    if not vinculo:
+        return mi_id
+    otro_id = str(vinculo.id_pareja if vinculo.id_usuaria == current_user.id_usuaria else vinculo.id_usuaria)
+    return min(mi_id, otro_id)
 
 # Precios del catálogo (reflejan ACCESORIOS en frontend/src/components/DormitorioSection.jsx).
 # Se validan en servidor para no confiar en el precio que mande el cliente.
@@ -64,7 +84,7 @@ def obtener_estado(
     db: Session = Depends(get_db),
     current_user: Usuaria = Depends(get_current_user),
 ):
-    return _estado(db, str(current_user.id_usuaria))
+    return _estado(db, _uid_compartido(db, current_user))
 
 
 @router.post("/monedas")
@@ -74,7 +94,7 @@ def sumar_monedas(
     current_user: Usuaria = Depends(get_current_user),
 ):
     """Suma (o resta) monedas ganadas en los minijuegos. Nunca queda por debajo de 0."""
-    uid = str(current_user.id_usuaria)
+    uid = _uid_compartido(db, current_user)
     db.execute(
         sql_text("UPDATE usuarias SET monedas = GREATEST(0, monedas + :c) WHERE id_usuaria = :uid"),
         {"c": body.cantidad, "uid": uid},
@@ -93,7 +113,7 @@ def comprar_accesorio(
     current_user: Usuaria = Depends(get_current_user),
 ):
     """Compra (si no la tiene ya) y equipa un accesorio. El precio se valida en servidor."""
-    uid = str(current_user.id_usuaria)
+    uid = _uid_compartido(db, current_user)
     if body.accesorio_id not in PRECIOS_ACCESORIOS:
         raise HTTPException(status_code=400, detail="accesorio desconocido")
 
@@ -136,7 +156,7 @@ def equipar_accesorio(
     current_user: Usuaria = Depends(get_current_user),
 ):
     """Cambia el accesorio equipado (debe estar ya comprado) y/o el lado del lazo."""
-    uid = str(current_user.id_usuaria)
+    uid = _uid_compartido(db, current_user)
     if body.accesorio_id != 'ninguno':
         poseido = db.execute(
             sql_text("SELECT 1 FROM accesorios_comprados WHERE id_usuaria = :uid AND accesorio_id = :a"),
