@@ -131,6 +131,19 @@ export default function GameScreen({ onGameActiveChange }) {
 
   const { user } = useContext(AuthContext);
 
+  // Mantiene fresca la marca de tiempo de "última actividad" mientras GameScreen esté
+  // montado (incluye estar dentro de cualquier minijuego), no solo cuando se ve el
+  // Dormitorio. Si no se refresca aquí, al volver de un minijuego DormitorioSection
+  // recalcula la energía creyendo que el tiempo jugado fue tiempo fuera de la app,
+  // y guarda ese valor erróneo en la base de datos.
+  useEffect(() => {
+    localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
+    const interval = setInterval(() => {
+      localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const inAnyGame = enJuego || enSkyJump || enSkyHop || enFoodDrop || enCliffJump || enCliffDash || enTumble || enHillDrive || enSheepCounting;
 
 
@@ -642,7 +655,6 @@ export default function GameScreen({ onGameActiveChange }) {
           modoNoche={modoNoche}
           setModoNoche={setModoNoche}
           onAbrirContarOvejas={() => {
-            consumirEnergia(10);
             setEnSheepCounting(true);
           }}
           equiparAccesorio={(accId) => {

@@ -319,21 +319,37 @@ export default function DormitorioSection({
     }, 2800);
   };
 
-  const comprarOEquipar = (acc) => {
+  const comprarOEquipar = async (acc) => {
     if (comprados.includes(acc.id)) {
       equiparAccesorio(acc.id);
       ApiService.equiparAccesorio(acc.id, accesorioLado).catch(() => {});
-    } else if (userCoins >= acc.precio) {
-      const nCoins = userCoins - acc.precio;
-      setUserCoins(nCoins);
-      localStorage.setItem('nuvia_user_coins', String(nCoins));
+      return;
+    }
+    if (userCoins < acc.precio) return;
 
-      const nComprados = [...comprados, acc.id];
-      setComprados(nComprados);
-      localStorage.setItem('nuvia_accesorios_comprados', JSON.stringify(nComprados));
+    // No se marca como comprado en local hasta que el servidor lo confirme:
+    // la mascota (monedas/ropa) es compartida con la pareja vía la fila de
+    // usuarias, así que el saldo local puede estar desactualizado si el otro
+    // ya gastó monedas. El estado que devuelve el servidor es la fuente de verdad.
+    try {
+      const estado = await ApiService.comprarAccesorio(acc.id);
+      setUserCoins(estado.monedas);
+      localStorage.setItem('nuvia_user_coins', String(estado.monedas));
 
-      equiparAccesorio(acc.id);
-      ApiService.comprarAccesorio(acc.id).catch(() => {});
+      setComprados(estado.comprados);
+      localStorage.setItem('nuvia_accesorios_comprados', JSON.stringify(estado.comprados));
+
+      equiparAccesorio(estado.equipado);
+    } catch (e) {
+      // Rechazado por el servidor (p. ej. la pareja ya gastó las monedas):
+      // refrescamos el saldo real para que la UI deje de mostrar uno erróneo.
+      ApiService.getEstadoTienda().then(estado => {
+        if (!estado) return;
+        setUserCoins(estado.monedas);
+        localStorage.setItem('nuvia_user_coins', String(estado.monedas));
+      }).catch(() => {});
+      setMostrarToastCare(e.message === 'monedas insuficientes' ? 'No te alcanzan las monedas' : 'No se pudo comprar, inténtalo de nuevo');
+      setTimeout(() => setMostrarToastCare(null), 2500);
     }
   };
 
@@ -396,32 +412,7 @@ export default function DormitorioSection({
               }}
             />
           ))}
-          {/* Luna / Nube brillante con el logo de Nuvia */}
-          <div style={{
-            position: 'absolute',
-            top: '30px',
-            right: '25px',
-            width: '65px',
-            height: '65px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle at 35% 35%, #FFFDF0 0%, #F4F1DE 70%, #E0DBC5 100%)',
-            boxShadow: '0 0 30px rgba(255, 253, 240, 0.45)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none'
-          }}>
-            <img
-              src="/logo.png"
-              alt="Logo Nuvia"
-              style={{
-                width: '36px',
-                height: '36px',
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'
-              }}
-            />
-          </div>
+
 
           {/* Cartel flotante Zzz saliendo de la mascota recostada en la cama */}
           <div style={{

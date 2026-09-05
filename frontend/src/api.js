@@ -610,7 +610,10 @@ export const ApiService = {
       headers: getHeaders(),
       body: JSON.stringify({ accesorio_id: accesorioId })
     });
-    if (!res.ok) throw new Error('No se pudo comprar el accesorio');
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.detail || 'No se pudo comprar el accesorio');
+    }
     return await res.json();
   },
 
