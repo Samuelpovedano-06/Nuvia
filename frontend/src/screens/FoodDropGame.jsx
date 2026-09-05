@@ -50,6 +50,7 @@ const FOOD_ITEMS = [
 const BAD_ITEMS = [
   { sprite: '/juego/Food_Drop/alcohol.png', tip: '¡El alcohol empeora los calambres!' },
   { sprite: '/juego/Food_Drop/snack.png', tip: '¡Los snacks procesados aumentan la inflamación!' },
+  { sprite: '/juego/compresa.png', tip: '¡Cuidado, esa no se come!' },
 ];
 
 const SP = {
@@ -62,6 +63,12 @@ let _objId = 0;
 
 function dropSpeed(score) { return Math.min(6.5 + Math.floor(score / 5) * 0.5, 14); }
 function spawnMs(score) { return Math.max(2600 - Math.floor(score / 5) * 100, 950); }
+// A partir de 15 puntos empiezan a caer varios objetos a la vez (no solo más
+// seguido), hasta un máximo de 7 — con uno solo cayendo es demasiado fácil.
+function spawnCount(score) {
+  if (score < 15) return 1;
+  return Math.min(7, 2 + Math.floor((score - 15) / 10));
+}
 
 export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisiones = false, globalSensPct, onGlobalSensChange }) {
   const [phase, setPhase] = useState('menu');
