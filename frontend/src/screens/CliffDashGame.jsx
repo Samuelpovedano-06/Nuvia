@@ -93,8 +93,8 @@ const BRIDGE_OBSTACLE_BUFFER = 150; // no coloca un puente demasiado cerca de un
 const NUM_BRIDGES = 220;
 
 const SP = {
-  jump: '/juego/mascota-jump.png',
-  fall: '/juego/mascota-caida.png',
+  jump: '/juego/movimiento-mascota/satando/mascota-jump.png',
+  fall: '/juego/movimiento-mascota/caida/mascota-caida.png',
   compresa: '/juego/compresa.png',
   nubeMala: '/juego/Sky_Jump/enemigo.png',
 };

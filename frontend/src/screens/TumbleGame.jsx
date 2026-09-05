@@ -12,7 +12,7 @@ const JUEGO_ID = 'tumble';
 // ─────────────────────── Sprites ───────────────────────
 const SP = {
   bg: '/juego/Sky_Jump/fondo_nubes.png',
-  player: '/juego/mascota-idle.png',
+  player: '/juego/movimiento-mascota/quieta/mascota-idle.png',
 };
 
 // ─────────────────────── Jugador ───────────────────────

@@ -45,8 +45,8 @@ const OBS_H = COMP_H; // una sola compresa
 
 const SP = {
   bg: '/juego/Sky_Jump/fondo_nubes.png',
-  jump: '/juego/mascota-jump.png',
-  fall: '/juego/mascota-caida.png',
+  jump: '/juego/movimiento-mascota/satando/mascota-jump.png',
+  fall: '/juego/movimiento-mascota/caida/mascota-caida.png',
 };
 
 // Sprite sheet de correr (mismo que la pantalla principal)

@@ -62,24 +62,9 @@ export default function AccesorioOverlay({ size = 28 }) {
   // (mascota-idle-rayas.png, mascota-jump-rayas.png, mascota-caida-rayas.png, ...)
   if (acc.id === 'camiseta_rayas') return null;
 
-  if (acc.id === 'conjunto_invierno') {
-    return (
-      <img
-        src="/conjunto-invierno-icono.png"
-        alt=""
-        style={{
-          position: 'absolute',
-          top: `-${size * 0.15}px`,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: `${size * 0.55}px`,
-          pointerEvents: 'none',
-          zIndex: 10,
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-        }}
-      />
-    );
-  }
+  // El conjunto de invierno ya lleva el gorro y la bufanda pintados
+  // directamente en mascota-idle-conjunto-invierno.png / -caida-...png
+  if (acc.id === 'conjunto_invierno') return null;
 
   if (acc.id === 'zapatillas_conejo') {
     const slipperSize = size * 0.36;

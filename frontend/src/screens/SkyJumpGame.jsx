@@ -11,9 +11,9 @@ const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
 
 // ─────────────────────── Sprites ───────────────────────
 const SP = {
-  player_idle: '/juego/mascota-idle.png',
-  player_jump: '/juego/mascota-jump.png',
-  player_caida: '/juego/mascota-caida.png',
+  player_idle: '/juego/movimiento-mascota/quieta/mascota-idle.png',
+  player_jump: '/juego/movimiento-mascota/satando/mascota-jump.png',
+  player_caida: '/juego/movimiento-mascota/caida/mascota-caida.png',
   plataforma: '/juego/Sky_Jump/plataforma.png',
   plataforma_portal: '/juego/Sky_Jump/plataforma_portal.png',
   nube: '/juego/Sky_Jump/nube.png',

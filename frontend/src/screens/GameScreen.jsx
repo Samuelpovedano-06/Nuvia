@@ -68,10 +68,10 @@ const HABITACIONES = [
 ];
 
 // ─────────────────────── Sprites ───────────────────────
-const SPRITE_IDLE = '/juego/mascota-idle.png';
-const SPRITE_POR_SALTAR = '/juego/mascota-por-saltar.png';
-const SPRITE_JUMP = '/juego/mascota-jump.png';
-const SPRITE_CAIDA = '/juego/mascota-caida.png';
+const SPRITE_IDLE = '/juego/movimiento-mascota/quieta/mascota-idle.png';
+const SPRITE_POR_SALTAR = '/juego/movimiento-mascota/por-saltar/por_saltar.png';
+const SPRITE_JUMP = '/juego/movimiento-mascota/satando/mascota-jump.png';
+const SPRITE_CAIDA = '/juego/movimiento-mascota/caida/mascota-caida.png';
 const SPRITE_COMPRESA = '/juego/compresa.png';
 const SPRITE_FALLBACK = '/home-walk-sit-float/mascota-flotando.png';
 
@@ -255,7 +255,7 @@ export default function GameScreen({ onGameActiveChange }) {
           setEnJuego(false);
           setMostrarJuegos(true);
         }}
-        spriteCaida={spriteOk.caida ? SPRITE_CAIDA : SPRITE_FALLBACK}
+        spriteCaida={spriteOk.caida ? getOutfitSprite('caida', SPRITE_CAIDA) : SPRITE_FALLBACK}
         spriteCompresa={spriteOk.compresa ? SPRITE_COMPRESA : null}
         mostrarColisiones={mostrarColisiones}
         globalSensPct={tiltSensPct}
@@ -624,27 +624,9 @@ export default function GameScreen({ onGameActiveChange }) {
                 // La camiseta de rayas va dibujada directamente en mascota-idle-rayas.png
                 if (acc.id === 'camiseta_rayas') return null;
 
-                // El conjunto de invierno solo tiene arte propio para caminar
-                // (mascota-walk-invierno.png); en la pose quieta se superpone
-                // el gorro como icono, igual que corona_flores.
-                if (acc.id === 'conjunto_invierno') {
-                  return (
-                    <img
-                      src="/conjunto-invierno-icono.png"
-                      alt=""
-                      style={{
-                        position: 'absolute',
-                        top: '-4px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: '34px',
-                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
-                        pointerEvents: 'none',
-                        zIndex: 5,
-                      }}
-                    />
-                  );
-                }
+                // El conjunto de invierno ya lleva el gorro y la bufanda
+                // pintados directamente en mascota-idle-conjunto-invierno.png
+                if (acc.id === 'conjunto_invierno') return null;
 
                 let positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
                 if (acc.id === 'antifaz') {
@@ -854,7 +836,7 @@ export default function GameScreen({ onGameActiveChange }) {
                 overflow: 'hidden', position: 'relative',
               }}>
                 {/* Mascota saltando */}
-                <img src="/juego/mascota-jump.png" alt=""
+                <img src="/juego/movimiento-mascota/satando/mascota-jump.png" alt=""
                   style={{ position: 'absolute', bottom: '28px', left: '50%', transform: 'translateX(-50%)', width: '44px', height: '44px', objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
                 {/* Plataforma izquierda */}
@@ -896,7 +878,7 @@ export default function GameScreen({ onGameActiveChange }) {
                   style={{ position: 'absolute', top: '8px', right: '10px', width: '20px', height: '18px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
                 {/* Mascota */}
-                <img src="/juego/mascota-idle.png" alt=""
+                <img src="/juego/movimiento-mascota/quieta/mascota-idle.png" alt=""
                   style={{ position: 'absolute', top: '48px', left: '14px', width: '28px', height: '28px', objectFit: 'contain', transform: 'translateY(-100%)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
               </div>
@@ -921,7 +903,7 @@ export default function GameScreen({ onGameActiveChange }) {
                 {/* Tronco */}
                 <div style={{ position: 'absolute', bottom: '14px', right: '7px', width: '26px', height: '11px', borderRadius: '6px', background: 'linear-gradient(180deg,#a0714a,#6b4020)' }} />
                 {/* Mascota rodando */}
-                <img src="/juego/mascota-idle.png" alt=""
+                <img src="/juego/movimiento-mascota/quieta/mascota-idle.png" alt=""
                   style={{ position: 'absolute', top: '26px', left: '50%', width: '32px', height: '32px', objectFit: 'contain', transform: 'translateX(-50%) rotate(25deg)', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.25))', zIndex: 2 }}
                   onError={e => { e.currentTarget.style.display = 'none'; }} />
               </div>

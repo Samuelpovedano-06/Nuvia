@@ -54,8 +54,8 @@ const BAD_ITEMS = [
 ];
 
 const SP = {
-  idle: '/juego/mascota-idle.png',
-  catch: '/juego/mascota-caida.png',
+  idle: '/juego/movimiento-mascota/quieta/mascota-idle.png',
+  catch: '/juego/movimiento-mascota/caida/mascota-caida.png',
   bg: '/juego/Food_Drop/fondo.png',
 };
 
@@ -528,7 +528,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
       {phase === 'over' && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.44)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: 24, padding: '24px 24px 16px', width: 'min(82%,300px)', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <img src={SP.catch} alt="" style={{ width: 60, height: 68, objectFit: 'contain', marginBottom: 6 }} onError={e => e.currentTarget.style.display = 'none'} />
+            <img src={getOutfitSprite('caida', SP.catch)} alt="" style={{ width: 60, height: 68, objectFit: 'contain', marginBottom: 6 }} onError={e => e.currentTarget.style.display = 'none'} />
             <h2 style={{ margin: '0 0 4px', color: 'var(--primary,#b05bb5)', fontWeight: 800 }}>¡Se acabó!</h2>
             <div style={{ fontSize: 46, fontWeight: 800, color: '#1e293b', margin: '6px 0 2px' }}>{score}</div>
             <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 16 }}>Récord: {Math.max(score, record)}</div>

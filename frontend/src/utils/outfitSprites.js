@@ -3,12 +3,12 @@
 // una copia de la imagen base con la prenda pintada a mano sobre esa pose.
 // Sprites de caminar/sentado/flotando (los de la mascota suelta por la
 // pantalla de inicio) viven en home-walk-sit-float/; los de idle/jump/caida
-// (usados dentro de los minijuegos) siguen en juego/.
+// (usados dentro de los minijuegos) viven en juego/movimiento-mascota/.
 const POR_ACCESORIO = {
   camiseta_rayas: {
-    idle: '/juego/mascota-idle-rayas.png',
-    jump: '/juego/mascota-jump-rayas.png',
-    caida: '/juego/mascota-caida-rayas.png',
+    idle: '/juego/movimiento-mascota/quieta/mascota-idle-rayas.png',
+    jump: '/juego/movimiento-mascota/satando/mascota-jump-rayas.png',
+    caida: '/juego/movimiento-mascota/caida/mascota-caida-rayas.png',
     sentado: '/home-walk-sit-float/mascota-sentado-rayas.png',
     flotando: '/home-walk-sit-float/mascota-flotando-rayas.png',
     walk: '/home-walk-sit-float/mascota-walk-rayas.png',
@@ -16,6 +16,8 @@ const POR_ACCESORIO = {
   // traje_marinero no tiene sprite de caminar propio por ahora (se está
   // rehaciendo el arte); cae al sprite base hasta que se añada uno nuevo.
   conjunto_invierno: {
+    idle: '/juego/movimiento-mascota/quieta/mascota-idle-conjunto-invierno.png',
+    caida: '/juego/movimiento-mascota/caida/mascota-caidaconjunto-invierno.png',
     walk: '/home-walk-sit-float/mascota-walk-invierno.png',
     sentado: '/home-walk-sit-float/mascota-sentado-invierno.png',
   },

@@ -4,6 +4,7 @@ import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import { ACCESORIOS } from '../components/DormitorioSection';
 import RankingModal from '../components/RankingModal';
+import { getOutfitSprite } from '../utils/outfitSprites';
 
 // ─────────────────────── Constantes ───────────────────────
 const RECORD_KEY = 'nuvia_hilldrive_record';
@@ -202,7 +203,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     img.onload = () => { bgImgRef.current = img; };
 
     const imgPet = new Image();
-    imgPet.src = '/juego/mascota-idle.png';
+    imgPet.src = getOutfitSprite('idle', '/juego/movimiento-mascota/quieta/mascota-idle.png');
     imgPet.onload = () => { petImgRef.current = imgPet; };
   }, []);
 
