@@ -464,7 +464,6 @@ export default function GameScreen({ onGameActiveChange }) {
             fontSize: '16px',
             fontWeight: 900,
             color: '#FFFFFF',
-            WebkitTextStroke: '1.2px #000000',
             textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
             fontFamily: 'system-ui, sans-serif',
             marginTop: '2px'
@@ -522,7 +521,6 @@ export default function GameScreen({ onGameActiveChange }) {
               fontSize: '14px',
               fontWeight: 900,
               color: '#FFFFFF',
-              WebkitTextStroke: '1px #000000',
               textShadow: '2px 2px 0 #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000',
               fontFamily: 'system-ui, sans-serif',
               marginTop: '2px',
