@@ -161,25 +161,27 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
     const area = areaRef.current;
     if (!area) return;
     const w = area.clientWidth;
-    const rand = Math.random();
-    let type = 'food';
-    let item = null;
-    if (rand < 0.10) { // 10% probabilidad de moneda (poco común, valor 1)
-      type = 'coin';
-      item = { sprite: '/logo.png', tip: '¡+1 Moneda Nuvia conseguida!' };
-    } else if (rand < 0.32) {
-      type = 'bad';
-      item = BAD_ITEMS[Math.floor(Math.random() * BAD_ITEMS.length)];
-    } else {
-      type = 'food';
-      item = FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)];
-    }
 
-    const x = OBJ_W / 2 + Math.random() * (w - OBJ_W);
-    objectsRef.current = [
-      ...objectsRef.current,
-      { id: ++_objId, x, y: -OBJ_H, type, sprite: item.sprite, tip: item.tip },
-    ];
+    const elegirItem = () => {
+      const rand = Math.random();
+      if (rand < 0.10) { // 10% probabilidad de moneda (poco común, valor 1)
+        return { type: 'coin', item: { sprite: '/logo.png', tip: '¡+1 Moneda Nuvia conseguida!' } };
+      } else if (rand < 0.32) {
+        return { type: 'bad', item: BAD_ITEMS[Math.floor(Math.random() * BAD_ITEMS.length)] };
+      }
+      return { type: 'food', item: FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)] };
+    };
+
+    // Un carril por objeto de la tanda para que no se solapen entre sí.
+    const count = spawnCount(scoreRef.current);
+    const laneW = w / count;
+    const nuevos = Array.from({ length: count }, (_, i) => {
+      const { type, item } = elegirItem();
+      const x = laneW * i + OBJ_W / 2 + Math.random() * Math.max(0, laneW - OBJ_W);
+      return { id: ++_objId, x, y: -OBJ_H, type, sprite: item.sprite, tip: item.tip };
+    });
+
+    objectsRef.current = [...objectsRef.current, ...nuevos];
     spawnTRef.current = setTimeout(scheduleSpawn, spawnMs(scoreRef.current));
   }, []);
 
