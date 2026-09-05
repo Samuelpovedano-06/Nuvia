@@ -126,6 +126,7 @@ function App() {
       window.dispatchEvent(new CustomEvent('nuvia_coins_updated', { detail: { coins: estado.monedas } }));
       window.dispatchEvent(new Event('nuvia_accesorio_lado_updated'));
       window.dispatchEvent(new Event('nuvia_energy_updated'));
+      window.dispatchEvent(new Event('nuvia_outfit_synced'));
     })();
     return () => { cancel = true; };
   }, [user?.id_usuaria]);

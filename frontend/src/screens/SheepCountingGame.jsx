@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Moon, Sparkles, Volume2, VolumeX, RotateCcw, Trophy, Award } from 'lucide-react';
+import { ApiService } from '../api';
 
 
 // Sonido sintético relajante al contar una oveja usando Web Audio API
@@ -116,6 +117,9 @@ export default function SheepCountingGame({ onSalir, onVolverAlListado, onGanarM
         const curCoins = Number(localStorage.getItem('nuvia_user_coins') || 50);
         const nTotal = curCoins + earned;
         localStorage.setItem('nuvia_user_coins', String(nTotal));
+        // Sin esto la moneda solo quedaba en este móvil y nunca llegaba a la
+        // base de datos, así que otro dispositivo con la misma cuenta no la veía.
+        ApiService.sumarMonedas(earned).catch(() => {});
 
         onGanarMonedas?.(earned);
       }

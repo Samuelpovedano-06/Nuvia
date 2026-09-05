@@ -108,17 +108,20 @@ export default function GameScreen({ onGameActiveChange }) {
       setUserCoins(Number(localStorage.getItem('nuvia_user_coins') || 50));
       setUserEnergy(Number(localStorage.getItem('nuvia_mascot_energy') || 75));
       setAccesorioLado(localStorage.getItem('nuvia_accesorio_lado') || 'derecha');
+      setAccesorioEquipado(localStorage.getItem('nuvia_mascot_outfit') || 'ninguno');
     };
 
     window.addEventListener('nuvia_coins_updated', syncStats);
     window.addEventListener('nuvia_energy_updated', syncStats);
     window.addEventListener('nuvia_accesorio_lado_updated', syncStats);
+    window.addEventListener('nuvia_outfit_synced', syncStats);
     const interval = setInterval(syncStats, 1500);
 
     return () => {
       window.removeEventListener('nuvia_coins_updated', syncStats);
       window.removeEventListener('nuvia_energy_updated', syncStats);
       window.removeEventListener('nuvia_accesorio_lado_updated', syncStats);
+      window.removeEventListener('nuvia_outfit_synced', syncStats);
       clearInterval(interval);
     };
   }, []);
@@ -186,7 +189,13 @@ export default function GameScreen({ onGameActiveChange }) {
 
   const consumirEnergia = (cantidad = 15) => {
     const cur = Number(localStorage.getItem('nuvia_mascot_energy') || 75);
-    localStorage.setItem('nuvia_mascot_energy', String(Math.max(0, cur - cantidad)));
+    const next = Math.max(0, cur - cantidad);
+    localStorage.setItem('nuvia_mascot_energy', String(next));
+    localStorage.setItem('nuvia_last_energy_timestamp', String(Date.now()));
+    setUserEnergy(next);
+    // Se guarda directo en el servidor aquí (no solo al volver al Dormitorio)
+    // para que la energía gastada en cualquier minijuego viaje entre dispositivos.
+    ApiService.guardarEnergia(next).catch(() => {});
   };
 
   const habitacion = HABITACIONES.find(h => h.id === habitacionId) || HABITACIONES[0];

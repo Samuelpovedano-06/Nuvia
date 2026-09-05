@@ -193,6 +193,26 @@ export default function DormitorioSection({
     ApiService.equiparAccesorio(accesorioEquipado, lado).catch(() => {});
   };
 
+  // Refresca la ropa desbloqueada y el lado del lazo cuando llega un estado
+  // nuevo del servidor (entrar desde otro móvil, o cambios de la pareja
+  // vinculada), ya que ambos solo se leían de localStorage al montar.
+  useEffect(() => {
+    const syncDesdeServidor = () => {
+      try {
+        setComprados(JSON.parse(localStorage.getItem('nuvia_accesorios_comprados') || '["ninguno"]'));
+      } catch (e) {
+        setComprados(['ninguno']);
+      }
+      setAccesorioLado(localStorage.getItem('nuvia_accesorio_lado') || 'derecha');
+    };
+    window.addEventListener('nuvia_outfit_synced', syncDesdeServidor);
+    window.addEventListener('nuvia_accesorio_lado_updated', syncDesdeServidor);
+    return () => {
+      window.removeEventListener('nuvia_outfit_synced', syncDesdeServidor);
+      window.removeEventListener('nuvia_accesorio_lado_updated', syncDesdeServidor);
+    };
+  }, []);
+
   // Persistir modoNoche en localStorage para el cálculo offline estilo Pou
   useEffect(() => {
     localStorage.setItem('nuvia_modo_noche', String(modoNoche));
