@@ -67,8 +67,8 @@ export default function MascotaNuvia({ user }) {
       img.src = src;
     };
     check(WALK_SHEET_BASE, setWalkOk);
-    check('/mascota-sentado.png', setSentadoOk);
-    check('/mascota-flotando.png', setFlotandoOk);
+    check('/home-walk-sit-float/mascota-sentado.png', setSentadoOk);
+    check('/home-walk-sit-float/mascota-flotando.png', setFlotandoOk);
   }, [ocultar]);
 
   useEffect(() => {
@@ -156,8 +156,8 @@ export default function MascotaNuvia({ user }) {
 
   const usarSprites = walkOk === true;
   const walkSheetUrl = getWalkSheet();
-  const sentadoUrl = getOutfitSprite('sentado', '/mascota-sentado.png');
-  const flotandoUrl = getOutfitSprite('flotando', '/mascota-flotando.png');
+  const sentadoUrl = getOutfitSprite('sentado', '/home-walk-sit-float/mascota-sentado.png');
+  const flotandoUrl = getOutfitSprite('flotando', '/home-walk-sit-float/mascota-flotando.png');
 
   return (
     <>

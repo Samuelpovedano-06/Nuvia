@@ -72,7 +72,7 @@ const SPRITE_POR_SALTAR = '/juego/mascota-por-saltar.png';
 const SPRITE_JUMP = '/juego/mascota-jump.png';
 const SPRITE_CAIDA = '/juego/mascota-caida.png';
 const SPRITE_COMPRESA = '/juego/compresa.png';
-const SPRITE_FALLBACK = '/mascota-flotando.png';
+const SPRITE_FALLBACK = '/home-walk-sit-float/mascota-flotando.png';
 
 // Tiempo de anticipación (frame "por saltar") antes del salto real
 const DURACION_POR_SALTAR_MS = 140;

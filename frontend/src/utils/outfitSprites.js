@@ -1,20 +1,22 @@
 // Variantes de cada pose de la mascota (quieta, saltando, cayendo, sentada,
 // flotando, caminando) con la ropa equipada dibujada encima. Cada entrada es
 // una copia de la imagen base con la prenda pintada a mano sobre esa pose.
+// Sprites de caminar/sentado/flotando (los de la mascota suelta por la
+// pantalla de inicio) viven en home-walk-sit-float/; los de idle/jump/caida
+// (usados dentro de los minijuegos) siguen en juego/.
 const POR_ACCESORIO = {
   camiseta_rayas: {
     idle: '/juego/mascota-idle-rayas.png',
     jump: '/juego/mascota-jump-rayas.png',
     caida: '/juego/mascota-caida-rayas.png',
-    sentado: '/mascota-sentado-rayas.png',
-    flotando: '/mascota-flotando-rayas.png',
-    walk: '/mascota-walk-rayas.png',
+    sentado: '/home-walk-sit-float/mascota-sentado-rayas.png',
+    flotando: '/home-walk-sit-float/mascota-flotando-rayas.png',
+    walk: '/home-walk-sit-float/mascota-walk-rayas.png',
   },
-  traje_marinero: {
-    walk: '/mascota-walk-marinero.png',
-  },
+  // traje_marinero no tiene sprite de caminar propio por ahora (se está
+  // rehaciendo el arte); cae al sprite base hasta que se añada uno nuevo.
   conjunto_invierno: {
-    walk: '/mascota-walk-invierno.png',
+    walk: '/home-walk-sit-float/mascota-walk-invierno.png',
   },
 };
 
