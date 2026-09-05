@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Play, RefreshCw, Pause, Settings } from 'lucide-react';
+import { ChevronLeft, Play, RefreshCw, Pause, Settings, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
+import RankingModal from '../components/RankingModal';
 
 const JUEGO_ID = 'sky_jump';
 const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
@@ -105,6 +106,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
   const [specificSensPct, setSpecificSensPct] = useState(() => Number(localStorage.getItem('nuvia_skyjump_specific_sens') || 50));
   const [useSpecific, setUseSpecific] = useState(() => localStorage.getItem('nuvia_skyjump_use_specific') === 'true');
   const [showAjustes, setShowAjustes] = useState(false);
+  const [showRanking, setShowRanking] = useState(false);
   const effectivePct = useSpecific ? specificSensPct : (globalSensPct ?? 50);
   const sensibilidadRef = useRef(pctToFactor(effectivePct));
 
@@ -975,10 +977,14 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
                   <Settings size={14} /> {showAjustes ? 'Cerrar ajustes' : 'Ajustes de sensibilidad'}
                 </button>
                 {showAjustes && <PanelSens gPct={globalSensPct ?? 50} onG={onGlobalSensChange} sPct={specificSensPct} onS={(v) => { setSpecificSensPct(v); localStorage.setItem('nuvia_skyjump_specific_sens', String(v)); }} useS={useSpecific} onToggleS={() => { const n = !useSpecific; setUseSpecific(n); localStorage.setItem('nuvia_skyjump_use_specific', String(n)); }} label="Sky Jump" />}
+                <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Trophy size={14} /> Ver ranking
+                </button>
               </div>
             </div>
           </div>
         )}
+        {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Sky Jump" onClose={() => setShowRanking(false)} />}
 
         {estado === 'gameover' && <Overlay>
           <h2 style={{ color: 'var(--primary)', margin: 0 }}>¡Te caíste! 🌪</h2>

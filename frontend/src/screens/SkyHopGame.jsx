@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { Play, Pause, ChevronLeft } from 'lucide-react';
+import { Play, Pause, ChevronLeft, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import AccesorioOverlay from '../components/AccesorioOverlay';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import { getOutfitSprite } from '../utils/outfitSprites';
+import RankingModal from '../components/RankingModal';
 
 const RECORD_KEY = 'nuvia_skyhop_record';
 const JUEGO_ID   = 'sky_hop';
@@ -175,6 +176,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   if (!pathGenRef.current) pathGenRef.current = createRowGenerator();
 
   const [phase, setPhase]     = useState('menu'); // 'menu' | 'playing' | 'paused' | 'over'
+  const [showRanking, setShowRanking] = useState(false);
   const [rows, setRows]       = useState([]);
   const [curRow, setCurRow]   = useState(0);
   const [curCol, setCurCol]   = useState(1);
@@ -576,7 +578,11 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
             <button onClick={startGame} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '14px', padding: '11px 0', fontSize: '15px', fontWeight: 800, cursor: 'pointer', width: '100%', maxWidth: '200px', boxShadow: '0 8px 32px rgba(233,30,140,0.5)' }}>▶ Jugar</button>
             <button onClick={handleExit} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '11px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', maxWidth: '200px' }}>← Volver</button>
           </div>
+          <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
+            <Trophy size={14} /> Ver ranking
+          </button>
         </div>
+        {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Sky Hop" onClose={() => setShowRanking(false)} />}
       </div>
     );
   }

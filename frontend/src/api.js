@@ -575,6 +575,14 @@ export const ApiService = {
     } catch (_) { return null; }
   },
 
+  getRanking: async (juego) => {
+    try {
+      const res = await fetch(`${baseUrl}/juegos/ranking/${encodeURIComponent(juego)}`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) { return null; }
+  },
+
   // Monedas y accesorios de la mascota (tienda del dormitorio)
   getEstadoTienda: async () => {
     try {

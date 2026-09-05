@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
+import RankingModal from '../components/RankingModal';
 
 const RECORD_KEY = 'nuvia_tumble_record';
 const JUEGO_ID = 'tumble';
@@ -169,6 +170,7 @@ function drawTurf(ctx, left, right, y) {
 
 export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColisiones, globalSensPct }) {
   const [phase, setPhase] = useState('menu');
+  const [showRanking, setShowRanking] = useState(false);
   const [score, setScore] = useState(0);
   const [monedasPartida, setMonedasPartida] = useState(0);
   const [record, setRecord] = useState(() => +(localStorage.getItem(RECORD_KEY) || 0));
@@ -613,7 +615,11 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
               <button onClick={startGame} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '14px', padding: '11px 0', fontSize: '15px', fontWeight: 800, cursor: 'pointer', width: '100%', maxWidth: '200px', boxShadow: '0 8px 32px rgba(233,30,140,0.5)' }}>▶ Jugar</button>
               <button onClick={onVolverAlListado} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '11px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', maxWidth: '200px' }}>← Volver</button>
             </div>
+            <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
+              <Trophy size={14} /> Ver ranking
+            </button>
           </div>
+          {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Tumble" onClose={() => setShowRanking(false)} />}
         </div>
       )}
 

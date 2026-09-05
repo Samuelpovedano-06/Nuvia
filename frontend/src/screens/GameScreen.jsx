@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings, Zap } from 'lucide-react';
+import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings, Zap, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
+import RankingModal from '../components/RankingModal';
 import { AuthContext } from '../context/AuthContext';
 import SkyJumpGame   from './SkyJumpGame';
 import SkyHopGame    from './SkyHopGame';
@@ -130,7 +131,6 @@ export default function GameScreen({ onGameActiveChange }) {
   const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
   const [showAjustes, setShowAjustes] = useState(false);
-
 
   const { user } = useContext(AuthContext);
 
@@ -1077,6 +1077,7 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
   const [specificSensPct, setSpecificSensPct] = useState(() => Number(localStorage.getItem('nuvia_compresas_specific_sens') || 50));
   const [useSpecific, setUseSpecific] = useState(() => localStorage.getItem('nuvia_compresas_use_specific') === 'true');
   const [showAjustes, setShowAjustes] = useState(false);
+  const [showRanking, setShowRanking] = useState(false);
   const sensRef = useRef((useSpecific ? Number(localStorage.getItem('nuvia_compresas_specific_sens') || 50) : (globalSensPct ?? 50)));
   useEffect(() => {
     sensRef.current = useSpecific ? specificSensPct : (globalSensPct ?? 50);
@@ -1452,10 +1453,14 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
                   <Settings size={14} /> {showAjustes ? 'Cerrar ajustes' : 'Ajustes de sensibilidad'}
                 </button>
                 {showAjustes && <PanelSens gPct={globalSensPct ?? 50} onG={onGlobalSensChange} sPct={specificSensPct} onS={(v) => { setSpecificSensPct(v); localStorage.setItem('nuvia_compresas_specific_sens', String(v)); }} useS={useSpecific} onToggleS={() => { const n = !useSpecific; setUseSpecific(n); localStorage.setItem('nuvia_compresas_use_specific', String(n)); }} label="Compresas" />}
+                <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <Trophy size={14} /> Ver ranking
+                </button>
               </div>
             </div>
           </div>
         )}
+        {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Esquiva-compresas" onClose={() => setShowRanking(false)} />}
 
         {/* Pantalla de pausa */}
         {estado === 'pausa' && (

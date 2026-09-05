@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Settings } from 'lucide-react';
+import { Play, Pause, Settings, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
+import RankingModal from '../components/RankingModal';
 
 function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS }) {
   return (
@@ -73,6 +74,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
   const [specificPct, setSpecificPct] = useState(() => Number(localStorage.getItem('nuvia_fooddrop_specific_sens') || 50));
   const [useSpecific, setUseSpecific] = useState(() => localStorage.getItem('nuvia_fooddrop_use_specific') === 'true');
   const [showAjustes, setShowAjustes] = useState(false);
+  const [showRanking, setShowRanking] = useState(false);
 
   const phaseRef = useRef('menu');
   const scoreRef = useRef(0);
@@ -478,10 +480,14 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
                   onToggleS={() => { const n = !useSpecific; setUseSpecific(n); localStorage.setItem('nuvia_fooddrop_use_specific', String(n)); }}
                 />
               )}
+              <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Trophy size={14} /> Ver ranking
+              </button>
             </div>
           </div>
         </div>
       )}
+      {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Food Drop" onClose={() => setShowRanking(false)} />}
 
       {/* Pause overlay */}
       {phase === 'paused' && (

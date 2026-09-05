@@ -73,3 +73,34 @@ def guardar_record(
         return {"record": body.puntos, "mejorado": True}
 
     return {"record": actual, "mejorado": False}
+
+
+@router.get("/ranking/{juego}")
+def obtener_ranking(
+    juego: str,
+    db: Session = Depends(get_db),
+    current_user: Usuaria = Depends(get_current_user),
+):
+    """Ranking de un minijuego concreto (cada juego tiene su propio ranking,
+    por su récord en juego_records)."""
+    filas = db.execute(
+        sql_text("""
+            SELECT r.id_usuaria, u.nombre, r.record
+            FROM juego_records r
+            JOIN usuarias u ON u.id_usuaria = r.id_usuaria
+            WHERE r.juego = :juego AND r.record > 0
+            ORDER BY r.record DESC, u.nombre ASC
+        """),
+        {"juego": juego},
+    ).fetchall()
+
+    mi_id = str(current_user.id_usuaria)
+    tabla = []
+    mi_posicion = None
+    for i, fila in enumerate(filas):
+        posicion = i + 1
+        tabla.append({"posicion": posicion, "nombre": fila[1], "puntos": int(fila[2])})
+        if str(fila[0]) == mi_id:
+            mi_posicion = posicion
+
+    return {"tabla": tabla, "mi_posicion": mi_posicion}

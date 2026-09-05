@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, ChevronLeft } from 'lucide-react';
+import { Play, Pause, ChevronLeft, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import { ACCESORIOS } from '../components/DormitorioSection';
+import RankingModal from '../components/RankingModal';
 
 // ─────────────────────── Constantes ───────────────────────
 const RECORD_KEY = 'nuvia_hilldrive_record';
@@ -94,6 +95,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
   }, []);
 
   const [fase, setFase] = useState('inicio');
+  const [showRanking, setShowRanking] = useState(false);
   const [puntuacion, setPuntuacion] = useState(0);
   const [monedasPartida, setMonedasPartida] = useState(0);
   const [tiempoMs, setTiempoMs] = useState(TIMER_INIT);
@@ -803,7 +805,11 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
               <button onClick={iniciarJuego} style={{ background: 'linear-gradient(135deg,#E91E8C,#9C27B0)', color: '#fff', border: 'none', borderRadius: '14px', padding: '11px 0', fontSize: '15px', fontWeight: 800, cursor: 'pointer', width: '100%', maxWidth: '200px', boxShadow: '0 8px 32px rgba(233,30,140,0.5)' }}>▶ Jugar</button>
               <button onClick={handleVolver} style={{ background: 'transparent', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '11px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', width: '100%', maxWidth: '200px' }}>← Volver</button>
             </div>
+            <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
+              <Trophy size={14} /> Ver ranking
+            </button>
           </div>
+          {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Hill Drive" onClose={() => setShowRanking(false)} />}
         </div>
       )}
 
