@@ -17,6 +17,7 @@ const POR_ACCESORIO = {
   // rehaciendo el arte); cae al sprite base hasta que se añada uno nuevo.
   conjunto_invierno: {
     walk: '/home-walk-sit-float/mascota-walk-invierno.png',
+    sentado: '/home-walk-sit-float/mascota-sentado-invierno.png',
   },
 };
 
