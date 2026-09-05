@@ -62,6 +62,25 @@ export default function AccesorioOverlay({ size = 28 }) {
   // (mascota-idle-rayas.png, mascota-jump-rayas.png, mascota-caida-rayas.png, ...)
   if (acc.id === 'camiseta_rayas') return null;
 
+  if (acc.id === 'conjunto_invierno') {
+    return (
+      <img
+        src="/conjunto-invierno-icono.png"
+        alt=""
+        style={{
+          position: 'absolute',
+          top: `-${size * 0.15}px`,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: `${size * 0.55}px`,
+          pointerEvents: 'none',
+          zIndex: 10,
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+        }}
+      />
+    );
+  }
+
   if (acc.id === 'zapatillas_conejo') {
     const slipperSize = size * 0.36;
     return (
@@ -104,8 +123,6 @@ export default function AccesorioOverlay({ size = 28 }) {
     }
   } else if (acc.id === 'corona_flores') {
     positionStyle = { top: `-${size * 0.38}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 0.65}px` };
-  } else if (acc.id === 'gorro_noche') {
-    positionStyle = { top: `-${size * 0.12}px`, left: '50%', transform: 'translateX(-50%)', fontSize: `${size * 0.4}px` };
   }
 
   return (

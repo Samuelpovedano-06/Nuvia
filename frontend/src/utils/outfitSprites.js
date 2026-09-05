@@ -13,6 +13,9 @@ const POR_ACCESORIO = {
   traje_marinero: {
     walk: '/mascota-walk-marinero.png',
   },
+  conjunto_invierno: {
+    walk: '/mascota-walk-invierno.png',
+  },
 };
 
 // pose: 'idle' | 'jump' | 'caida' | 'sentado' | 'flotando' | 'walk'

@@ -401,7 +401,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     const accesorioEquipado = localStorage.getItem('nuvia_mascot_outfit') || 'ninguno';
     if (accesorioEquipado !== 'ninguno') {
       const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
-      if (acc && acc.id !== 'zapatillas_conejo') {
+      if (acc && acc.id !== 'zapatillas_conejo' && acc.id !== 'conjunto_invierno') {
         const accesorioLado = localStorage.getItem('nuvia_accesorio_lado') || 'derecha';
         let ax = 13, ay = -50, rotDeg = 0, fontSize = 16;
         if (acc.id === 'lazo_rosa') {
@@ -411,7 +411,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
           rotDeg = accesorioLado === 'izquierda' ? -15 : 15;
         } else if (acc.id === 'antifaz') {
           ay = -30; fontSize = 18;
-        } else if (acc.id === 'corona_flores' || acc.id === 'gorro_noche') {
+        } else if (acc.id === 'corona_flores') {
           ay = -52; fontSize = 17;
         }
         ctx.save();

@@ -432,6 +432,10 @@ export default function MascotaNuvia({ user }) {
               // (mascota-walk-rayas.png, mascota-sentado-rayas.png, mascota-flotando-rayas.png)
               if (acc.id === 'camiseta_rayas') return null;
 
+              // El gorro y la bufanda del conjunto de invierno ya están
+              // dibujados directamente en mascota-walk-invierno.png
+              if (acc.id === 'conjunto_invierno') return null;
+
               if (acc.id === 'zapatillas_conejo') {
                 return (
                   <>
@@ -472,8 +476,6 @@ export default function MascotaNuvia({ user }) {
                   positionStyle = { top: '6px', right: '8px', fontSize: '22px', transform: 'rotate(10deg)' };
                 }
               } else if (acc.id === 'corona_flores') {
-                positionStyle = { top: '-4px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
-              } else if (acc.id === 'gorro_noche') {
                 positionStyle = { top: '-4px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
               }
 

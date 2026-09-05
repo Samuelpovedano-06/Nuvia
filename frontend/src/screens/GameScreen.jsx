@@ -624,6 +624,28 @@ export default function GameScreen({ onGameActiveChange }) {
                 // La camiseta de rayas va dibujada directamente en mascota-idle-rayas.png
                 if (acc.id === 'camiseta_rayas') return null;
 
+                // El conjunto de invierno solo tiene arte propio para caminar
+                // (mascota-walk-invierno.png); en la pose quieta se superpone
+                // el gorro como icono, igual que corona_flores.
+                if (acc.id === 'conjunto_invierno') {
+                  return (
+                    <img
+                      src="/conjunto-invierno-icono.png"
+                      alt=""
+                      style={{
+                        position: 'absolute',
+                        top: '-4px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '34px',
+                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
+                        pointerEvents: 'none',
+                        zIndex: 5,
+                      }}
+                    />
+                  );
+                }
+
                 let positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
                 if (acc.id === 'antifaz') {
                   positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '78px' };
@@ -635,8 +657,6 @@ export default function GameScreen({ onGameActiveChange }) {
                   }
                 } else if (acc.id === 'corona_flores') {
                   positionStyle = { top: '-6px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
-                } else if (acc.id === 'gorro_noche') {
-                  positionStyle = { top: '-4px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
                 }
 
                 return (

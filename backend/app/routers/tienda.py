@@ -44,13 +44,13 @@ def _uid_compartido(db: Session, current_user: Usuaria) -> str:
 # Se validan en servidor para no confiar en el precio que mande el cliente.
 PRECIOS_ACCESORIOS = {
     'ninguno': 0,
-    'gorro_noche': 30,
     'antifaz': 45,
     'lazo_rosa': 50,
     'zapatillas_conejo': 60,
     'corona_flores': 80,
     'traje_marinero': 70,
     'camiseta_rayas': 35,
+    'conjunto_invierno': 100,
 }
 LADOS_VALIDOS = {'izquierda', 'derecha'}
 

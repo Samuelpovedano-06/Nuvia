@@ -9,13 +9,13 @@ import { ApiService } from '../api';
 // Lista de accesorios del Armario
 export const ACCESORIOS = [
   { id: 'ninguno', nombre: 'Natural', icono: '✨', precio: 0, preview: null },
-  { id: 'gorro_noche', nombre: 'Gorro Nocturno', icono: '🌙', precio: 30, color: '#A78BFA' },
   { id: 'antifaz', nombre: 'Gafas de Sol', icono: '🕶️', precio: 45, color: '#F472B6' },
   { id: 'lazo_rosa', nombre: 'Lazo Coquette', icono: '🎀', precio: 50, color: '#FB7185' },
   { id: 'zapatillas_conejo', nombre: 'Zapatillas Conejo', icono: '🐰', precio: 60, color: '#FDE047' },
   { id: 'corona_flores', nombre: 'Corona', icono: '👑', precio: 80, color: '#34D399' },
   { id: 'traje_marinero', nombre: 'Traje de Marinero', icono: '⚓', precio: 70, color: '#1E3A8A' },
   { id: 'camiseta_rayas', nombre: 'Camiseta de Rayas', icono: '👕', precio: 35, color: '#F5A8B8' },
+  { id: 'conjunto_invierno', nombre: 'Conjunto de Invierno', icono: '/conjunto-invierno-icono.png', precio: 100, color: '#F472B6' },
 ];
 
 // Generador de audio relajante sintético (Web Audio API)
@@ -693,7 +693,11 @@ export default function DormitorioSection({
                       transition: 'all 0.2s'
                     }}
                   >
-                    <span style={{ fontSize: '32px', marginBottom: '6px' }}>{acc.icono}</span>
+                    {acc.icono.startsWith('/') ? (
+                      <img src={acc.icono} alt={acc.nombre} style={{ width: '38px', height: '38px', objectFit: 'contain', marginBottom: '6px' }} />
+                    ) : (
+                      <span style={{ fontSize: '32px', marginBottom: '6px' }}>{acc.icono}</span>
+                    )}
                     <span style={{ fontWeight: 700, fontSize: '13px', color: '#1E293B' }}>{acc.nombre}</span>
 
                     {esEquipado ? (
