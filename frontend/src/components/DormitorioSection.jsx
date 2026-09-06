@@ -696,7 +696,7 @@ export default function DormitorioSection({
                     }}
                   >
                     {acc.icono.startsWith('/') ? (
-                      <img src={acc.icono} alt={acc.nombre} style={{ width: '38px', height: '38px', objectFit: 'contain', marginBottom: '6px' }} />
+                      <img src={acc.icono} alt={acc.nombre} style={{ width: '38px', height: '38px', objectFit: 'cover', borderRadius: '6px', marginBottom: '6px' }} />
                     ) : (
                       <span style={{ fontSize: '32px', marginBottom: '6px' }}>{acc.icono}</span>
                     )}

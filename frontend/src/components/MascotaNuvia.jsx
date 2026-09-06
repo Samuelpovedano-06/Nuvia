@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiService } from '../api';
-import { ACCESORIOS } from './DormitorioSection';
-import { TrajeMarineroOverlay } from './AccesorioOverlay';
 import { getWalkSheet, WALK_SHEET_BASE } from '../utils/walkSheet';
 import { getOutfitSprite } from '../utils/outfitSprites';
 
@@ -421,47 +419,11 @@ export default function MascotaNuvia({ user }) {
               </div>
             )}
 
-            {/* Accesorio equipado sobre la mascota caminando */}
-            {accesorioEquipado && accesorioEquipado !== 'ninguno' && (() => {
-              const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
-              if (!acc) return null;
-              if (acc.id === 'traje_marinero') {
-                return <TrajeMarineroOverlay width={74} height={48} top="54%" />;
-              }
-              // La camiseta de rayas va dibujada directamente en cada pose
-              // (mascota-walk-rayas.png, mascota-sentado-rayas.png, mascota-flotando-rayas.png)
-              if (acc.id === 'camiseta_rayas') return null;
-
-              // El gorro y la bufanda del conjunto de invierno ya están
-              // dibujados directamente en mascota-walk-invierno.png
-              if (acc.id === 'conjunto_invierno') return null;
-
-
-              let positionStyle = { top: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
-              if (acc.id === 'antifaz') {
-                positionStyle = { top: '10px', left: '50%', transform: 'translateX(-50%)', fontSize: '42px' };
-              } else if (acc.id === 'lazo_rosa') {
-                if (accesorioLado === 'izquierda') {
-                  positionStyle = { top: '6px', left: '8px', fontSize: '22px', transform: 'rotate(-10deg)' };
-                } else {
-                  positionStyle = { top: '6px', right: '8px', fontSize: '22px', transform: 'rotate(10deg)' };
-                }
-              } else if (acc.id === 'corona_flores') {
-                positionStyle = { top: '-4px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
-              }
-
-              return (
-                <div style={{
-                  position: 'absolute',
-                  ...positionStyle,
-                  pointerEvents: 'none',
-                  zIndex: 20,
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                }}>
-                  {acc.icono}
-                </div>
-              );
-            })()}
+            {/* El accesorio equipado se ve a través del propio sprite
+                (walkSheetUrl/sentadoUrl/flotandoUrl, elegidos arriba por
+                getOutfitSprite). Si para esta pose no hay arte del
+                accesorio, se prefiere la mascota "sin nada" antes que un
+                icono genérico superpuesto. */}
           </div>
         </div>
         </div>
