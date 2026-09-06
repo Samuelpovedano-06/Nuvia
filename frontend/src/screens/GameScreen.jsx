@@ -241,7 +241,7 @@ export default function GameScreen({ onGameActiveChange }) {
   // emoji flotando encima.
   const spriteIdleActual = getOutfitSprite('idle', SPRITE_IDLE);
   const spriteActual = (() => {
-    if (faseSalto === 'por_saltar') return spriteOk.porSaltar ? SPRITE_POR_SALTAR : (spriteOk.idle ? spriteIdleActual : SPRITE_FALLBACK);
+    if (faseSalto === 'por_saltar') return spriteOk.porSaltar ? getOutfitSprite('por_saltar', SPRITE_POR_SALTAR) : (spriteOk.idle ? spriteIdleActual : SPRITE_FALLBACK);
     if (faseSalto === 'saltando') return spriteOk.jump ? getOutfitSprite('jump', SPRITE_JUMP) : SPRITE_FALLBACK;
     return spriteOk.idle ? spriteIdleActual : SPRITE_FALLBACK;
   })();

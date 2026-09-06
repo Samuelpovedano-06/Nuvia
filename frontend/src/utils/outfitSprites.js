@@ -17,13 +17,16 @@ const POR_ACCESORIO = {
   // rehaciendo el arte); cae al sprite base hasta que se añada uno nuevo.
   conjunto_invierno: {
     idle: '/juego/movimiento-mascota/quieta/mascota-idle-conjunto-invierno.png',
+    jump: '/juego/movimiento-mascota/satando/mascota-jump_conjunto_invierno.png',
+    por_saltar: '/juego/movimiento-mascota/por-saltar/por_saltar_conjunto_invierno.png',
     caida: '/juego/movimiento-mascota/caida/mascota-caidaconjunto-invierno.png',
     walk: '/home-walk-sit-float/mascota-walk-invierno.png',
     sentado: '/home-walk-sit-float/mascota-sentado-invierno.png',
+    flotando: '/home-walk-sit-float/mascota-flotando_conjunto_invierno.png',
   },
 };
 
-// pose: 'idle' | 'jump' | 'caida' | 'sentado' | 'flotando' | 'walk'
+// pose: 'idle' | 'jump' | 'por_saltar' | 'caida' | 'sentado' | 'flotando' | 'walk'
 export function getOutfitSprite(pose, base) {
   const equipado = localStorage.getItem('nuvia_mascot_outfit');
   return POR_ACCESORIO[equipado]?.[pose] || base;
