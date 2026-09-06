@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, ChevronLeft, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
-import { ACCESORIOS } from '../components/DormitorioSection';
 import RankingModal from '../components/RankingModal';
 import { getOutfitSprite } from '../utils/outfitSprites';
 
@@ -400,33 +399,9 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       ctx.beginPath(); ctx.arc(15, -33, 2, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Accesorio equipado (dibujado sobre la cabeza de la mascota)
-    const accesorioEquipado = localStorage.getItem('nuvia_mascot_outfit') || 'ninguno';
-    if (accesorioEquipado !== 'ninguno') {
-      const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
-      if (acc && acc.id !== 'zapatillas_conejo' && acc.id !== 'conjunto_invierno') {
-        const accesorioLado = localStorage.getItem('nuvia_accesorio_lado') || 'derecha';
-        let ax = 13, ay = -50, rotDeg = 0, fontSize = 16;
-        if (acc.id === 'lazo_rosa') {
-          ax = accesorioLado === 'izquierda' ? 6 : 20;
-          ay = -48;
-          fontSize = 11;
-          rotDeg = accesorioLado === 'izquierda' ? -15 : 15;
-        } else if (acc.id === 'antifaz') {
-          ay = -30; fontSize = 18;
-        } else if (acc.id === 'corona_flores') {
-          ay = -52; fontSize = 17;
-        }
-        ctx.save();
-        ctx.translate(ax, ay);
-        if (rotDeg) ctx.rotate(rotDeg * Math.PI / 180);
-        ctx.font = `${fontSize}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(acc.icono, 0, 0);
-        ctx.restore();
-      }
-    }
+    // El accesorio equipado ya viene pintado en la propia imagen de
+    // petImgRef (getOutfitSprite('idle', ...) más arriba), así que no hace
+    // falta dibujar nada encima.
 
     // Cuerpo principal del coche (cubriendo los ejes de las ruedas)
     const bodyG = ctx.createLinearGradient(-CHASSIS_W, -20, CHASSIS_W, 0);

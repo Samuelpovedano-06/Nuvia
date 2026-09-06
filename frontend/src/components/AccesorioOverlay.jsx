@@ -66,37 +66,6 @@ export default function AccesorioOverlay({ size = 28 }) {
   // directamente en mascota-idle-conjunto-invierno.png / -caida-...png
   if (acc.id === 'conjunto_invierno') return null;
 
-  if (acc.id === 'zapatillas_conejo') {
-    const slipperSize = size * 0.36;
-    return (
-      <>
-        <div style={{
-          position: 'absolute',
-          bottom: '10%',
-          left: '26%',
-          fontSize: `${slipperSize}px`,
-          pointerEvents: 'none',
-          zIndex: 10,
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-          transform: 'scaleX(-1)'
-        }}>
-          🐰
-        </div>
-        <div style={{
-          position: 'absolute',
-          bottom: '10%',
-          right: '26%',
-          fontSize: `${slipperSize}px`,
-          pointerEvents: 'none',
-          zIndex: 10,
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-        }}>
-          🐰
-        </div>
-      </>
-    );
-  }
-
   let positionStyle = { top: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: `${size}px` };
   if (acc.id === 'antifaz') {
     positionStyle = { top: `${size * 0.05}px`, left: '53%', transform: 'translateX(-50%)', fontSize: `${size * 0.56}px` };

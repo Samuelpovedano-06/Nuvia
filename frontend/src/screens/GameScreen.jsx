@@ -11,9 +11,9 @@ import CliffJumpGame from './CliffJumpGame';
 import CliffDashGame from './CliffDashGame';
 import TumbleGame      from './TumbleGame';
 import HillDriveGame   from './HillDriveGame';
-import DormitorioSection, { ACCESORIOS } from '../components/DormitorioSection';
+import DormitorioSection from '../components/DormitorioSection';
 import SheepCountingGame from './SheepCountingGame';
-import AccesorioOverlay, { TrajeMarineroOverlay } from '../components/AccesorioOverlay';
+import AccesorioOverlay from '../components/AccesorioOverlay';
 
 
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
@@ -73,7 +73,7 @@ const SPRITE_POR_SALTAR = '/juego/movimiento-mascota/por-saltar/por_saltar.png';
 const SPRITE_JUMP = '/juego/movimiento-mascota/satando/mascota-jump.png';
 const SPRITE_CAIDA = '/juego/movimiento-mascota/caida/mascota-caida.png';
 const SPRITE_COMPRESA = '/juego/compresa.png';
-const SPRITE_FALLBACK = '/home-walk-sit-float/mascota-flotando.png';
+const SPRITE_FALLBACK = '/home-walk-sit-float/flotando/mascota-flotando.png';
 
 // Tiempo de anticipación (frame "por saltar") antes del salto real
 const DURACION_POR_SALTAR_MS = 140;
@@ -582,77 +582,9 @@ export default function GameScreen({ onGameActiveChange }) {
                 }}
               />
 
-              {/* Accesorio equipado perfectamente posicionado en Nuvia */}
-              {accesorioEquipado && accesorioEquipado !== 'ninguno' && (() => {
-                const acc = ACCESORIOS.find(a => a.id === accesorioEquipado);
-                if (!acc) return null;
-
-                if (acc.id === 'zapatillas_conejo') {
-                  return (
-                    <>
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '14px',
-                        left: '36px',
-                        fontSize: '22px',
-                        pointerEvents: 'none',
-                        zIndex: 5,
-                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
-                        transform: 'scaleX(-1)'
-                      }}>
-                        🐰
-                      </div>
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '14px',
-                        right: '36px',
-                        fontSize: '22px',
-                        pointerEvents: 'none',
-                        zIndex: 5,
-                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))'
-                      }}>
-                        🐰
-                      </div>
-                    </>
-                  );
-                }
-
-                if (acc.id === 'traje_marinero') {
-                  return <TrajeMarineroOverlay width={86} height={56} top="70px" />;
-                }
-
-                // La camiseta de rayas va dibujada directamente en mascota-idle-rayas.png
-                if (acc.id === 'camiseta_rayas') return null;
-
-                // El conjunto de invierno ya lleva el gorro y la bufanda
-                // pintados directamente en mascota-idle-conjunto-invierno.png
-                if (acc.id === 'conjunto_invierno') return null;
-
-                let positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
-                if (acc.id === 'antifaz') {
-                  positionStyle = { top: '2px', left: '50%', transform: 'translateX(-50%)', fontSize: '78px' };
-                } else if (acc.id === 'lazo_rosa') {
-                  if (accesorioLado === 'izquierda') {
-                    positionStyle = { top: '20px', left: '22px', fontSize: '32px', transform: 'rotate(-10deg)' };
-                  } else {
-                    positionStyle = { top: '20px', right: '22px', fontSize: '32px', transform: 'rotate(10deg)' };
-                  }
-                } else if (acc.id === 'corona_flores') {
-                  positionStyle = { top: '-6px', left: '50%', transform: 'translateX(-50%)', fontSize: '34px' };
-                }
-
-                return (
-                  <div style={{
-                    position: 'absolute',
-                    ...positionStyle,
-                    filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
-                    pointerEvents: 'none',
-                    zIndex: 5,
-                  }}>
-                    {acc.icono}
-                  </div>
-                );
-              })()}
+              {/* Todos los accesorios ya tienen su propio sprite de pose
+                  quieta (mascota-idle-*.png, elegido por getOutfitSprite
+                  más arriba), así que aquí no hace falta superponer nada. */}
             </div>
           </div>
         );

@@ -46,11 +46,13 @@ PRECIOS_ACCESORIOS = {
     'ninguno': 0,
     'antifaz': 45,
     'lazo_rosa': 50,
-    'zapatillas_conejo': 60,
+    'gafas': 60,
     'corona_flores': 80,
     'traje_marinero': 70,
     'camiseta_rayas': 35,
     'conjunto_invierno': 100,
+    'mecanico': 65,
+    'detective': 90,
 }
 LADOS_VALIDOS = {'izquierda', 'derecha'}
 

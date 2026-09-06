@@ -67,8 +67,8 @@ export default function MascotaNuvia({ user }) {
       img.src = src;
     };
     check(WALK_SHEET_BASE, setWalkOk);
-    check('/home-walk-sit-float/mascota-sentado.png', setSentadoOk);
-    check('/home-walk-sit-float/mascota-flotando.png', setFlotandoOk);
+    check('/home-walk-sit-float/sentada/mascota-sentado.png', setSentadoOk);
+    check('/home-walk-sit-float/flotando/mascota-flotando.png', setFlotandoOk);
   }, [ocultar]);
 
   useEffect(() => {
@@ -156,8 +156,8 @@ export default function MascotaNuvia({ user }) {
 
   const usarSprites = walkOk === true;
   const walkSheetUrl = getWalkSheet();
-  const sentadoUrl = getOutfitSprite('sentado', '/home-walk-sit-float/mascota-sentado.png');
-  const flotandoUrl = getOutfitSprite('flotando', '/home-walk-sit-float/mascota-flotando.png');
+  const sentadoUrl = getOutfitSprite('sentado', '/home-walk-sit-float/sentada/mascota-sentado.png');
+  const flotandoUrl = getOutfitSprite('flotando', '/home-walk-sit-float/flotando/mascota-flotando.png');
 
   return (
     <>
@@ -436,35 +436,6 @@ export default function MascotaNuvia({ user }) {
               // dibujados directamente en mascota-walk-invierno.png
               if (acc.id === 'conjunto_invierno') return null;
 
-              if (acc.id === 'zapatillas_conejo') {
-                return (
-                  <>
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '10%',
-                      left: '26%',
-                      fontSize: '16px',
-                      pointerEvents: 'none',
-                      zIndex: 20,
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                      transform: 'scaleX(-1)'
-                    }}>
-                      🐰
-                    </div>
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '10%',
-                      right: '26%',
-                      fontSize: '16px',
-                      pointerEvents: 'none',
-                      zIndex: 20,
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                    }}>
-                      🐰
-                    </div>
-                  </>
-                );
-              }
 
               let positionStyle = { top: '-2px', left: '50%', transform: 'translateX(-50%)', fontSize: '24px' };
               if (acc.id === 'antifaz') {

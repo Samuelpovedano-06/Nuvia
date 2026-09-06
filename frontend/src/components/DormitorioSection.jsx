@@ -11,11 +11,13 @@ export const ACCESORIOS = [
   { id: 'ninguno', nombre: 'Natural', icono: '✨', precio: 0, preview: null },
   { id: 'antifaz', nombre: 'Gafas de Sol', icono: '🕶️', precio: 45, color: '#F472B6' },
   { id: 'lazo_rosa', nombre: 'Lazo Coquette', icono: '🎀', precio: 50, color: '#FB7185' },
-  { id: 'zapatillas_conejo', nombre: 'Zapatillas Conejo', icono: '🐰', precio: 60, color: '#FDE047' },
+  { id: 'gafas', nombre: 'Gafas', icono: '👓', precio: 60, color: '#FDE047' },
   { id: 'corona_flores', nombre: 'Corona', icono: '👑', precio: 80, color: '#34D399' },
   { id: 'traje_marinero', nombre: 'Traje de Marinero', icono: '⚓', precio: 70, color: '#1E3A8A' },
-  { id: 'camiseta_rayas', nombre: 'Camiseta de Rayas', icono: '👕', precio: 35, color: '#F5A8B8' },
+  { id: 'camiseta_rayas', nombre: 'Camiseta de Rayas', icono: '/rayas-icono.png', precio: 35, color: '#F5A8B8' },
   { id: 'conjunto_invierno', nombre: 'Conjunto de Invierno', icono: '/conjunto-invierno-icono.png', precio: 100, color: '#F472B6' },
+  { id: 'mecanico', nombre: 'Mecánico', icono: '🔧', precio: 65, color: '#60A5FA' },
+  { id: 'detective', nombre: 'Detective', icono: '🕵️', precio: 90, color: '#A8825A' },
 ];
 
 // Generador de audio relajante sintético (Web Audio API)
