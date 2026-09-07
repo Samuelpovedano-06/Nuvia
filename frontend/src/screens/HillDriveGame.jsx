@@ -3,6 +3,7 @@ import { Play, Pause, ChevronLeft, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 import { getOutfitSprite } from '../utils/outfitSprites';
 
 // ─────────────────────── Constantes ───────────────────────
@@ -10,10 +11,10 @@ const RECORD_KEY = 'nuvia_hilldrive_record';
 const JUEGO_ID = 'hill_drive';
 const GRAVITY = 980;
 // Suspensión: muelle amortiguado por rueda (Ley de Hooke, F = deformación·K − velocidad·D)
-const SUS_K = 65;            // rigidez del muelle (más duro = se hunde menos y devuelve más energía)
-const SUS_D = 1.2;           // amortiguación bastante floja: rebote claro, 2-3 veces antes de asentarse
+const SUS_K = 160;           // rigidez del muelle (más duro = se hunde menos y devuelve más energía)
+const SUS_D = 3.8;           // amortiguación firme: se asienta casi sin rebotar
 const SUS_MAX_COMP = 18;     // compresión máxima antes de un tope duro (menos hundimiento visible)
-const SUS_TORQUE_GAIN = 0.065; // cuánta fuerza de la suspensión se convierte en giro del chasis (más = golpes fuertes pueden volcarlo)
+const SUS_TORQUE_GAIN = 0.05; // cuánta fuerza de la suspensión se convierte en giro del chasis (más = golpes fuertes pueden volcarlo)
 const MAX_TORQUE = 14000;
 const WHEEL_RADIUS = 14;
 const CHASSIS_W = 70;
@@ -21,7 +22,7 @@ const CHASSIS_H = 22;
 const MASS = 1.0;
 const I_INERTIA = 0.85;
 const FRICTION = 0.82;
-const TILT_KILL_DEG = 125;
+const TILT_KILL_DEG = 57;
 const TIMER_INIT = 60000;
 const FUEL_BONUS_MS = 8000;
 const FUEL_INTERVAL = 4500;
@@ -80,13 +81,18 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function deg(r) { return r * 180 / Math.PI; }
 
 // ─────────────────────── Componente ───────────────────────
-export default function HillDriveGame({ onSalir, onVolverAlListado }) {
+export default function HillDriveGame({ onSalir, onVolverAlListado, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const rafRef = useRef(null);
   const pausadoRef = useRef(false);
   const bgImgRef = useRef(null);  // fondo_nubes.png precargado
   const logoImgRef = useRef(null);
+  const pausadoDebugRef = useRef(pausadoDebug);
+  const modoDiosRef = useRef(modoDios);
+  useEffect(() => { pausadoDebugRef.current = pausadoDebug; }, [pausadoDebug]);
+  useEffect(() => { modoDiosRef.current = modoDios; }, [modoDios]);
 
   useEffect(() => {
     const logoImg = new Image();
@@ -444,7 +450,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     // Ruedas (dibujadas por DELANTE de la carrocería)
     const wheels = [
       { ox: -WHEEL_OX, oy: WHEEL_OY }, // trasera (izquierda)
-      { ox: WHEEL_OX,  oy: WHEEL_OY }, // delantera (derecha)
+      { ox: WHEEL_OX, oy: WHEEL_OY }, // delantera (derecha)
     ];
     for (const { ox, oy } of wheels) {
       const wx = x + cosA * ox - sinA * oy;
@@ -538,14 +544,20 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
         chassis.vx += 980 * dt;
         chassis.omega -= 0.008 * dt; // Cuesta un 99% más levantar el morro (0.8 original -> 0.008)
       } else {
-        chassis.omega -= 0.012 * dt; // Giro en el aire, reducido igual que en el suelo (99% menos)
+        // En el aire acelerar SÍ gira el coche sobre su eje (estilo Hill
+        // Climb Racing) — a diferencia de en el suelo, aquí no hay ruedas
+        // agarrando el terreno que se opongan al giro.
+        chassis.omega += 8.0 * dt;
       }
     } else if (s.accel < 0) {
       if (enSuelo) {
-        chassis.vx -= 550 * dt;
+        // Solo frena hasta pararse — no hay marcha atrás, así el coche
+        // nunca retrocede fuera del límite izquierdo del nivel.
+        if (chassis.vx > 0) chassis.vx = Math.max(0, chassis.vx - 850 * dt);
         chassis.omega += 0.6 * dt; // Frenada suave
       } else {
-        chassis.omega += 1.2 * dt;
+        // En el aire, frenar gira el coche en el sentido contrario
+        chassis.omega -= 8.0 * dt;
       }
     } else {
       // Sin acelerar ni frenar: el peso del coche lo cae al suelo si se queda apoyado en una sola rueda o en el aire
@@ -572,11 +584,11 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
       // borraba cualquier rebote de la suspensión antes de que pudiera
       // notarse — con eso, volcar era imposible. Ahora es más suave.
       const slopeAngle = Math.atan2(groundF - groundR, wfx - wrx);
-      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 4.0 * dt);
-      chassis.omega *= 0.8;
+      chassis.angle += (slopeAngle - chassis.angle) * Math.min(1.0, 1.2 * dt);
+      chassis.omega *= 0.97;
     }
     chassis.angle += chassis.omega * dt;
-    chassis.omega *= Math.pow(0.96, dt * 60);
+    chassis.omega *= Math.pow(0.88, dt * 60);
 
     // Integración de posición
     chassis.x += chassis.vx * dt;
@@ -627,32 +639,38 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
     if (!s.coins) s.coins = [];
     if (!s.nextCoinAtPx) s.nextCoinAtPx = 1800;
 
-    if (s.distPx + s.W > s.nextCoinAtPx) {
-      const spawnX = s.nextCoinAtPx + Math.random() * 60;
-      const spawnY = terrainHeightAt(spawnX, s.terrainPoints) - WHEEL_RADIUS - 28;
-      s.coins.push({ x: spawnX, y: spawnY, collected: false });
-      s.nextCoinAtPx += 2200 + Math.random() * 1200; // Monedas poco comunes (valor 1)
-    }
-
-    for (const coin of s.coins) {
-      if (coin.collected) continue;
-      const dx = chassis.x - coin.x, dy = chassis.y - coin.y;
-      if (Math.sqrt(dx * dx + dy * dy) < 42) {
-        coin.collected = true;
-        sumarMoneda(1);
-        setMonedasPartida(m => m + 1);
+    if (!pausadoDebugRef.current) {
+      if (s.distPx + s.W > s.nextCoinAtPx) {
+        const spawnX = s.nextCoinAtPx + Math.random() * 60;
+        const spawnY = terrainHeightAt(spawnX, s.terrainPoints) - WHEEL_RADIUS - 28;
+        s.coins.push({ x: spawnX, y: spawnY, collected: false });
+        s.nextCoinAtPx += 2200 + Math.random() * 1200; // Monedas poco comunes (valor 1)
       }
-    }
-    s.coins = s.coins.filter(c => !c.collected && c.x > s.camX - 100);
 
-    s.timerMs -= dt * 1000;
-    if (s.timerMs <= 0) { s.timerMs = 0; s.gameOver = true; s.causaGameover = 'tiempo'; }
-    if (Math.abs(deg(chassis.angle)) > TILT_KILL_DEG) { s.gameOver = true; s.causaGameover = 'vuelco'; }
+      for (const coin of s.coins) {
+        if (coin.collected) continue;
+        const dx = chassis.x - coin.x, dy = chassis.y - coin.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 42) {
+          coin.collected = true;
+          if (!modoDiosRef.current) {
+            sumarMoneda(1);
+            setMonedasPartida(m => m + 1);
+          }
+        }
+      }
+      s.coins = s.coins.filter(c => !c.collected && c.x > s.camX - 100);
+
+      // El reloj no corre en pausa debug, para que solo se mueva la mascota
+      s.timerMs -= dt * 1000;
+      if (s.timerMs <= 0 && !modoDiosRef.current) { s.timerMs = 0; s.gameOver = true; s.causaGameover = 'tiempo'; }
+      else if (s.timerMs <= 0) { s.timerMs = 0; }
+    }
+    if (Math.abs(deg(chassis.angle)) > TILT_KILL_DEG && !modoDiosRef.current) { s.gameOver = true; s.causaGameover = 'vuelco'; }
 
     drawScene(canvasRef.current, s);
 
     if (Math.round(timestamp / 120) !== Math.round((timestamp - dt * 1000) / 120)) {
-      setPuntuacion(Math.floor(s.distMeters));
+      if (!modoDiosRef.current) setPuntuacion(Math.floor(s.distMeters));
       setTiempoMs(Math.max(0, Math.floor(s.timerMs)));
     }
 
@@ -753,6 +771,14 @@ export default function HillDriveGame({ onSalir, onVolverAlListado }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'linear-gradient(180deg,#87ceeb,#c8e6f5)', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 100, fontFamily: "'Outfit','Inter',sans-serif" }}>
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px', zIndex: 260 }}
+      />
 
       {/* Pantalla de inicio */}
       {fase === 'inicio' && (

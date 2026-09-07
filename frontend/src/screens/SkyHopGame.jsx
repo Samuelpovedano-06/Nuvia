@@ -5,6 +5,7 @@ import AccesorioOverlay from '../components/AccesorioOverlay';
 import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 
 const RECORD_KEY = 'nuvia_skyhop_record';
 const JUEGO_ID   = 'sky_hop';
@@ -171,7 +172,8 @@ function easeInOut(t) {
   return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 }
 
-export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColisiones = false }) {
+export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColisiones = false, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const pathGenRef = useRef(null);
   if (!pathGenRef.current) pathGenRef.current = createRowGenerator();
 
@@ -188,6 +190,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const [landscape, setLandscape] = useState(() => window.innerWidth > window.innerHeight);
   const [starFlash, setStarFlash] = useState(false);
   const [coinFlash, setCoinFlash] = useState(false);
+  const [accionDenegada, setAccionDenegada] = useState(false);
 
   const wrapRef            = useRef(null); // outer wrapper, stable (not animated)
   const contRef            = useRef(null); // platforms container (gets translateY)
@@ -199,6 +202,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const animReq            = useRef(null);
   const busyRef            = useRef(false);
   const pendingTransformReset = useRef(false);
+  const accionDenegadaTRef = useRef(null);
   // Mutable mirrors
   const phaseRef  = useRef('menu');
   const rowsRef   = useRef(rows);
@@ -206,6 +210,10 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const curColRef = useRef(1);
   const timerRef  = useRef(TIMER_MAX);
   const scoreRef  = useRef(0);
+  const pausadoDebugRef = useRef(pausadoDebug);
+  const modoDiosRef = useRef(modoDios);
+  useEffect(() => { pausadoDebugRef.current = pausadoDebug; }, [pausadoDebug]);
+  useEffect(() => { modoDiosRef.current = modoDios; }, [modoDios]);
 
   const syncPhase  = v => { phaseRef.current  = v; setPhase(v);  };
   const syncRows   = v => { rowsRef.current   = v; setRows(v);   };
@@ -315,9 +323,14 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   useEffect(() => {
     if (phase !== 'playing') return;
     timerIntv.current = setInterval(() => {
+      if (pausadoDebugRef.current) return; // pausa debug: el reloj no corre
       const next = timerRef.current - 100;
-      if (next <= 0) { syncTimer(0); endGame(); }
-      else syncTimer(next);
+      if (next <= 0) {
+        syncTimer(0);
+        if (!modoDiosRef.current) endGame();
+      } else {
+        syncTimer(next);
+      }
     }, 100);
     return () => clearInterval(timerIntv.current);
   }, [phase, endGame]);
@@ -413,8 +426,20 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       nextCol = dir === 'left' ? curColRef.current - 1 : curColRef.current;
     }
 
+    const fueraDeSitio = nextCol < 0 || nextCol >= nextRow.n;
+    const landedTypePreview = !fueraDeSitio ? nextRow.slots[nextCol] : null;
+
+    // Modo Dios: en vez de dejar saltar y anular la muerte, bloquea el
+    // movimiento que perdería la partida y avisa con un popup.
+    if (modoDiosRef.current && (fueraDeSitio || landedTypePreview === 'cloud')) {
+      setAccionDenegada(true);
+      clearTimeout(accionDenegadaTRef.current);
+      accionDenegadaTRef.current = setTimeout(() => setAccionDenegada(false), 1400);
+      return;
+    }
+
     // Out of bounds (empty zone) → fall
-    if (nextCol < 0 || nextCol >= nextRow.n) {
+    if (fueraDeSitio) {
       busyRef.current = true;
       setSprite('fall');
       setTimeout(endGame, 350);
@@ -457,7 +482,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       pendingTransformReset.current = true;
       syncCurRow(nextIdx);
       syncCurCol(nextCol);
-      syncScore(scoreRef.current + 1);
+      if (!modoDiosRef.current) syncScore(scoreRef.current + 1);
 
       const snapL = (toX - PL_W / 2) + 'px';
       const snapT = baseY + 'px';
@@ -465,15 +490,17 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       pl.style.top  = snapT;
       if (playerHitRef.current) { playerHitRef.current.style.left = snapL; playerHitRef.current.style.top = snapT; }
 
-      if (landedType === 'cloud') {
+      if (landedType === 'cloud' && !modoDiosRef.current) {
         setSprite('fall');
         setTimeout(endGame, 400);
         return;
       }
 
       if (landedType === 'coin') {
-        sumarMoneda(1);
-        setMonedasPartida(prev => prev + 1);
+        if (!modoDiosRef.current) {
+          sumarMoneda(1);
+          setMonedasPartida(prev => prev + 1);
+        }
         setCoinFlash(true);
         setTimeout(() => setCoinFlash(false), 900);
         const updated = rowsRef.current.map((r, i) =>
@@ -630,6 +657,15 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     >
       <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
 
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px', zIndex: 260 }}
+      />
+
       {/* Timer bar */}
       {(phase === 'playing' || phase === 'paused') && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 10, background: 'rgba(0,0,0,0.18)', zIndex: 60 }}>
@@ -654,6 +690,34 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
             {phase === 'paused' ? <Play size={18} fill="var(--primary,#b05bb5)" color="var(--primary,#b05bb5)" /> : <Pause size={18} fill="var(--primary,#b05bb5)" color="var(--primary,#b05bb5)" />}
           </button>
         </>
+      )}
+
+      {modoDios && (phase === 'playing' || phase === 'paused') && (
+        <div style={{
+          position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', zIndex: 65,
+          background: 'rgba(246,65,108,0.92)', color: 'white', fontWeight: 700, fontSize: 12,
+          padding: '5px 12px', borderRadius: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: '5px'
+        }}>
+          🛡️ Modo Dios activo
+        </div>
+      )}
+
+      {accionDenegada && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none', padding: '20px'
+        }}>
+          <div style={{
+            background: 'rgba(20,10,25,0.92)', color: 'white', borderRadius: 18, padding: '18px 22px',
+            textAlign: 'center', maxWidth: 260, boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
+            animation: 'fadeIn 0.15s ease-out'
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 6 }}>🚫</div>
+            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>Acción denegada</div>
+            <div style={{ fontSize: 12.5, opacity: 0.8 }}>Saltar ahí perdería la partida — bloqueado por el Modo Dios.</div>
+          </div>
+        </div>
       )}
 
       {/* Tap divider line (collision debug) */}

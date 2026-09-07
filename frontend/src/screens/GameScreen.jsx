@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Settings, Zap, Trophy } from 'lucide-react';
 import { ApiService } from '../api';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 import { AuthContext } from '../context/AuthContext';
 import SkyJumpGame   from './SkyJumpGame';
 import SkyHopGame    from './SkyHopGame';
@@ -128,9 +129,11 @@ export default function GameScreen({ onGameActiveChange }) {
   }, []);
   const [mostrarJuegos, setMostrarJuegos] = useState(false);
   const [mostrarPorcentajeEnergia, setMostrarPorcentajeEnergia] = useState(false);
-  const [mostrarColisiones, setMostrarColisiones] = useState(false);
   const [tiltSensPct, setTiltSensPct] = useState(() => Number(localStorage.getItem('nuvia_tilt_sens') || 50));
   const [showAjustes, setShowAjustes] = useState(false);
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const [debugConfig, setDebugConfig] = useState({ colisiones: false, pausado: false, modoDios: false });
+  const mostrarColisiones = debugConfig.colisiones;
 
   const { user } = useContext(AuthContext);
 
@@ -175,17 +178,7 @@ export default function GameScreen({ onGameActiveChange }) {
     return () => window.removeEventListener('popstate', onPop);
   }, [inAnyGame]);
 
-  useEffect(() => {
-    ApiService.getPublicStatus()
-      .then(res => {
-        if (res && res.mostrar_colisiones && user?.rol === 'admin') {
-          setMostrarColisiones(true);
-        } else {
-          setMostrarColisiones(false);
-        }
-      })
-      .catch(err => console.error("Error al obtener config de colisiones:", err));
-  }, [user]);
+  const esAdmin = user?.rol === 'admin';
 
   const consumirEnergia = (cantidad = 15) => {
     const cur = Number(localStorage.getItem('nuvia_mascot_energy') || 75);
@@ -258,6 +251,11 @@ export default function GameScreen({ onGameActiveChange }) {
         spriteCaida={spriteOk.caida ? getOutfitSprite('caida', SPRITE_CAIDA) : SPRITE_FALLBACK}
         spriteCompresa={spriteOk.compresa ? SPRITE_COMPRESA : null}
         mostrarColisiones={mostrarColisiones}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
         globalSensPct={tiltSensPct}
         onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
       />
@@ -270,6 +268,11 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnSkyJump(false)}
         onVolverAlListado={() => { setEnSkyJump(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
         globalSensPct={tiltSensPct}
         onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
       />
@@ -282,6 +285,11 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnSkyHop(false)}
         onVolverAlListado={() => { setEnSkyHop(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
       />
     );
   }
@@ -292,6 +300,11 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnFoodDrop(false)}
         onVolverAlListado={() => { setEnFoodDrop(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
         globalSensPct={tiltSensPct}
         onGlobalSensChange={(v) => { setTiltSensPct(v); localStorage.setItem('nuvia_tilt_sens', String(v)); }}
       />
@@ -304,6 +317,11 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnCliffJump(false)}
         onVolverAlListado={() => { setEnCliffJump(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
       />
     );
   }
@@ -314,6 +332,11 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnCliffDash(false)}
         onVolverAlListado={() => { setEnCliffDash(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
       />
     );
   }
@@ -324,6 +347,11 @@ export default function GameScreen({ onGameActiveChange }) {
         onSalir={() => setEnTumble(false)}
         onVolverAlListado={() => { setEnTumble(false); setMostrarJuegos(true); }}
         mostrarColisiones={mostrarColisiones}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
         globalSensPct={tiltSensPct}
       />
     );
@@ -334,6 +362,11 @@ export default function GameScreen({ onGameActiveChange }) {
       <HillDriveGame
         onSalir={() => setEnHillDrive(false)}
         onVolverAlListado={() => { setEnHillDrive(false); setMostrarJuegos(true); }}
+        pausadoDebug={debugConfig.pausado}
+        modoDios={debugConfig.modoDios}
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
       />
     );
   }
@@ -646,6 +679,13 @@ export default function GameScreen({ onGameActiveChange }) {
           <div style={{ alignSelf: 'stretch', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 0' }}>
             <h2 style={{ margin: 0, color: 'var(--primary)', fontSize: '20px' }}>Minijuegos</h2>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <DebugPanel
+                esAdmin={esAdmin}
+                debugConfig={debugConfig}
+                setDebugConfig={setDebugConfig}
+                show={showDebugJuegos}
+                setShow={setShowDebugJuegos}
+              />
               <button
                 onClick={() => setShowAjustes(v => !v)}
                 style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'white', border: '1.5px solid var(--primary)', borderRadius: '10px', padding: '5px 10px', fontSize: '12px', color: 'var(--primary)', fontWeight: 600, cursor: 'pointer' }}
@@ -955,7 +995,8 @@ function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS, label }) {
 }
 
 // ─────────────────────── Mini-juego: Esquivar compresas ───────────────────────
-function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones, globalSensPct, onGlobalSensChange }) {
+function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones, pausadoDebug, modoDios, esAdmin, debugConfig, setDebugConfig, globalSensPct, onGlobalSensChange }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const areaRef = useRef(null);
   const [tamPantalla, setTamPantalla] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -1034,20 +1075,22 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
       ultimoTickRef.current = ts;
 
       // Spawn de compresas / monedas (cadencia que aumenta con la puntuación)
-      const cadencia = Math.max(450, 1200 - puntos * 8);  // ms entre spawns
-      if (ts - ultimoSpawnRef.current > cadencia) {
-        ultimoSpawnRef.current = ts;
-        const esMoneda = Math.random() < 0.10; // 10% de probabilidad (poco común, valor 1)
-        const x = Math.random() * (tamPantalla.w - COMPRESA_TAMANO);
-        const vy = 0.18 + Math.random() * 0.12 + puntos * 0.002;  // px/ms
-        obstaculosRef.current.push({
-          id: idCounterRef.current++,
-          type: esMoneda ? 'moneda' : 'compresa',
-          x, y: tamPantalla.h,
-          vy,
-          w: esMoneda ? 28 : COMPRESA_TAMANO,
-          h: esMoneda ? 28 : COMPRESA_TAMANO,
-        });
+      if (!pausadoDebug) {
+        const cadencia = Math.max(450, 1200 - puntos * 8);  // ms entre spawns
+        if (ts - ultimoSpawnRef.current > cadencia) {
+          ultimoSpawnRef.current = ts;
+          const esMoneda = Math.random() < 0.10; // 10% de probabilidad (poco común, valor 1)
+          const x = Math.random() * (tamPantalla.w - COMPRESA_TAMANO);
+          const vy = 0.18 + Math.random() * 0.12 + puntos * 0.002;  // px/ms
+          obstaculosRef.current.push({
+            id: idCounterRef.current++,
+            type: esMoneda ? 'moneda' : 'compresa',
+            x, y: tamPantalla.h,
+            vy,
+            w: esMoneda ? 28 : COMPRESA_TAMANO,
+            h: esMoneda ? 28 : COMPRESA_TAMANO,
+          });
+        }
       }
 
       // Controles: acelerómetro pisa el touch si hay
@@ -1063,50 +1106,55 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
       playerXRef.current += playerVxRef.current * dt;
       playerXRef.current = Math.max(MASCOTA_TAMANO_JUEGO / 2, Math.min(tamPantalla.w - MASCOTA_TAMANO_JUEGO / 2, playerXRef.current));
 
-      // Movimiento de obstáculos + colisiones
-      const px = playerXRef.current;
-      const py = tamPantalla.h * 0.25;
-      const pw = MASCOTA_TAMANO_JUEGO * 0.6;
-      const ph = MASCOTA_TAMANO_JUEGO * 0.8;
-      const pBox = {
-        x1: px - pw / 2, y1: py + (MASCOTA_TAMANO_JUEGO - ph) / 2,
-        x2: px + pw / 2, y2: py + (MASCOTA_TAMANO_JUEGO + ph) / 2,
-      };
+      // Movimiento de obstáculos + colisiones (nada de esto corre en pausa debug,
+      // así solo se mueve la mascota)
+      if (!pausadoDebug) {
+        const px = playerXRef.current;
+        const py = tamPantalla.h * 0.25;
+        const pw = MASCOTA_TAMANO_JUEGO * 0.6;
+        const ph = MASCOTA_TAMANO_JUEGO * 0.8;
+        const pBox = {
+          x1: px - pw / 2, y1: py + (MASCOTA_TAMANO_JUEGO - ph) / 2,
+          x2: px + pw / 2, y2: py + (MASCOTA_TAMANO_JUEGO + ph) / 2,
+        };
 
-      let golpe = false;
-      obstaculosRef.current = obstaculosRef.current
-        .map(o => ({ ...o, y: o.y - o.vy * dt }))
-        .filter(o => {
-          if (o.y < -o.h) {
-            if (o.type !== 'moneda') {
-              setPuntos(p => p + 1);  // esquivada → punto
-            }
-            return false;
-          }
-          const margin = o.type === 'moneda' ? 4 : 12;
-          const oBox = { x1: o.x + margin, y1: o.y + margin, x2: o.x + o.w - margin, y2: o.y + o.h - margin };
-          const colision = !(pBox.x2 < oBox.x1 || pBox.x1 > oBox.x2 || pBox.y2 < oBox.y1 || pBox.y1 > oBox.y2);
-          if (colision) {
-            if (o.type === 'moneda') {
-              sumarMoneda(1);
-              setMonedasPartida(m => m + 1);
-              return false; // recolectada
-            } else {
-              golpe = true;
+        let golpe = false;
+        obstaculosRef.current = obstaculosRef.current
+          .map(o => ({ ...o, y: o.y - o.vy * dt }))
+          .filter(o => {
+            if (o.y < -o.h) {
+              if (o.type !== 'moneda' && !modoDios) {
+                setPuntos(p => p + 1);  // esquivada → punto
+              }
               return false;
             }
-          }
-          return true;
-        });
+            const margin = o.type === 'moneda' ? 4 : 12;
+            const oBox = { x1: o.x + margin, y1: o.y + margin, x2: o.x + o.w - margin, y2: o.y + o.h - margin };
+            const colision = !(pBox.x2 < oBox.x1 || pBox.x1 > oBox.x2 || pBox.y2 < oBox.y1 || pBox.y1 > oBox.y2);
+            if (colision) {
+              if (o.type === 'moneda') {
+                if (!modoDios) {
+                  sumarMoneda(1);
+                  setMonedasPartida(m => m + 1);
+                }
+                return false; // recolectada
+              } else {
+                golpe = true;
+                return !modoDios; // en modo dios la compresa desaparece pero no cuenta como golpe
+              }
+            }
+            return true;
+          });
 
-      if (golpe) {
-        setVidas(v => {
-          const nv = v - 1;
-          if (nv <= 0) {
-            setEstado('gameover');
-          }
-          return nv;
-        });
+        if (golpe && !modoDios) {
+          setVidas(v => {
+            const nv = v - 1;
+            if (nv <= 0) {
+              setEstado('gameover');
+            }
+            return nv;
+          });
+        }
       }
 
       setRerender(r => r + 1);
@@ -1114,7 +1162,7 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [estado, tamPantalla.w, tamPantalla.h, puntos]);
+  }, [estado, tamPantalla.w, tamPantalla.h, puntos, pausadoDebug, modoDios]);
 
   // Guardar récord al hacer gameover: local + servidor
   useEffect(() => {
@@ -1166,6 +1214,14 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
       zIndex: 1,
       userSelect: 'none',
     }}>
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px' }}
+      />
       {/* Header */}
       <div style={{
         padding: '16px 20px',

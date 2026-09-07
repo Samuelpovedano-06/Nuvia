@@ -6,6 +6,7 @@ import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getWalkSheet } from '../utils/walkSheet';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 
 const RECORD_KEY = 'nuvia_cliffjump_record';
 const JUEGO_ID = 'cliff_jump';
@@ -80,7 +81,8 @@ function makeTerrain() {
   return { segs, obs, coins };
 }
 
-export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColisiones }) {
+export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const [phase, setPhase] = useState('menu');
   const [showRanking, setShowRanking] = useState(false);
   const [score, setScore] = useState(0);
@@ -106,6 +108,8 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
   const compImgRef = useRef(null);
   const logoImgRef = useRef(null);
   const showHitboxRef = useRef(mostrarColisiones);
+  const pausadoDebugRef = useRef(pausadoDebug);
+  const modoDiosRef = useRef(modoDios);
   const areaRef = useRef(null);
   const canvasRef = useRef(null);
   const playerRef = useRef(null);
@@ -130,6 +134,8 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
   useEffect(() => () => cancelAnimationFrame(animRef.current), []);
 
   useEffect(() => { showHitboxRef.current = mostrarColisiones; }, [mostrarColisiones]);
+  useEffect(() => { pausadoDebugRef.current = pausadoDebug; }, [pausadoDebug]);
+  useEffect(() => { modoDiosRef.current = modoDios; }, [modoDios]);
 
   useEffect(() => {
     const img = new Image();
@@ -285,8 +291,10 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     const W = area.clientWidth;
     const H = area.clientHeight;
 
-    // Scroll world
-    cameraXRef.current += speedRef.current * dt;
+    // Scroll world — congelado en pausa debug, para que solo se mueva la mascota
+    if (!pausadoDebugRef.current) {
+      cameraXRef.current += speedRef.current * dt;
+    }
 
     // Check coin collection
     const pwx = cameraXRef.current + PLAYER_X;
@@ -295,8 +303,10 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
       for (const coin of coinsRef.current) {
         if (!coin.collected && Math.abs(pwx - coin.x) < 28 && Math.abs(playerY - (coin.yOffset - 10)) < 35) {
           coin.collected = true;
-          sumarMoneda(1);
-          setMonedasPartida(m => m + 1);
+          if (!modoDiosRef.current) {
+            sumarMoneda(1);
+            setMonedasPartida(m => m + 1);
+          }
         }
       }
     }
@@ -329,7 +339,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
         vyRef.current = 0;
         groundedRef.current = true;
         jumpsLeftRef.current = 2;
-        if (inJumpRef.current && wasGapRef.current) {
+        if (inJumpRef.current && wasGapRef.current && !modoDiosRef.current) {
           const ns = scoreRef.current + 1;
           syncScore(ns);
           speedRef.current = Math.min(BASE_SPEED + ns * SPEED_STEP, MAX_SPEED);
@@ -338,8 +348,11 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
         wasGapRef.current = false;
       } else if (jumpHRef.current <= -50) {
         // Fallen 50 px below ground surface → game over (matches death line)
-        endGame();
-        return;
+        if (!modoDiosRef.current) { endGame(); return; }
+        jumpHRef.current = 0;
+        vyRef.current = 0;
+        groundedRef.current = true;
+        jumpsLeftRef.current = 2;
       }
     }
 
@@ -348,7 +361,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     const playerRight = PLAYER_X + PLAYER_W / 2 - 6;
     for (const ob of obsRef.current) {
       const ox = ob.x - cameraXRef.current;
-      if (playerRight > ox + 4 && playerLeft < ox + OBS_W - 4 && jumpHRef.current < OBS_H - 8) {
+      if (playerRight > ox + 4 && playerLeft < ox + OBS_W - 4 && jumpHRef.current < OBS_H - 8 && !modoDiosRef.current) {
         endGame();
         return;
       }
@@ -452,6 +465,14 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
       onPointerLeave={stopHold}
       onPointerCancel={stopHold}
     >
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px', zIndex: 260 }}
+      />
       {/* Background */}
       <img src={SP.bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
 

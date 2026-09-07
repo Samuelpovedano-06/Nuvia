@@ -6,6 +6,7 @@ import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getWalkSheet } from '../utils/walkSheet';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 
 const RECORD_KEY = 'nuvia_cliffdash_record';
 const JUEGO_ID = 'cliff_dash';
@@ -172,7 +173,8 @@ function drawWavyFill(ctx, camX, yTop, xLeft, xRight, extraH, amp, wavelength, c
   ctx.fill();
 }
 
-export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColisiones }) {
+export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const [phase, setPhase] = useState('menu');
   const [showRanking, setShowRanking] = useState(false);
   const [score, setScore] = useState(0);
@@ -198,6 +200,8 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
   const cloudImgRef = useRef(null);
   const logoImgRef = useRef(null);
   const showHitboxRef = useRef(mostrarColisiones);
+  const pausadoDebugRef = useRef(pausadoDebug);
+  const modoDiosRef = useRef(modoDios);
   const areaRef = useRef(null);
   const swipeStartRef = useRef(null); // { y, id } — para detectar deslizar arriba/abajo
   const canvasRef = useRef(null);
@@ -248,6 +252,8 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
   }, []);
 
   useEffect(() => { showHitboxRef.current = mostrarColisiones; }, [mostrarColisiones]);
+  useEffect(() => { pausadoDebugRef.current = pausadoDebug; }, [pausadoDebug]);
+  useEffect(() => { modoDiosRef.current = modoDios; }, [modoDios]);
 
   useEffect(() => {
     const img = new Image();
@@ -462,11 +468,15 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     const W = area.clientWidth;
     const H = area.clientHeight;
 
-    cameraXRef.current += speedRef.current * dt;
+    // En pausa debug el mundo se congela (nada avanza), pero la mascota
+    // sigue pudiendo cambiar de carril con normalidad.
+    if (!pausadoDebugRef.current) {
+      cameraXRef.current += speedRef.current * dt;
+    }
     laneAnimRef.current += (laneRef.current - laneAnimRef.current) * Math.min(1, dt * LANE_LERP);
 
     const distScore = Math.floor(cameraXRef.current / DIST_PER_POINT);
-    if (distScore !== scoreRef.current) {
+    if (distScore !== scoreRef.current && !modoDiosRef.current) {
       syncScore(distScore);
       speedRef.current = Math.min(BASE_SPEED + distScore * SPEED_STEP, MAX_SPEED);
     }
@@ -480,8 +490,10 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       for (const coin of coinsRef.current) {
         if (!coin.collected && coin.lane === laneRef.current && Math.abs(coin.x - pwx) < 32) {
           coin.collected = true;
-          sumarMoneda(1);
-          setMonedasPartida(m => m + 1);
+          if (!modoDiosRef.current) {
+            sumarMoneda(1);
+            setMonedasPartida(m => m + 1);
+          }
         }
       }
     }
@@ -489,7 +501,7 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     for (const ob of obstaclesRef.current) {
       if (ob.lane !== laneRef.current) continue;
       if (Math.abs(ob.x - pwx) > OBS_W) continue;
-      if (playerRight > ob.x - OBS_W / 2 + 4 && playerLeft < ob.x + OBS_W / 2 - 4) {
+      if (playerRight > ob.x - OBS_W / 2 + 4 && playerLeft < ob.x + OBS_W / 2 - 4 && !modoDiosRef.current) {
         endGame();
         return;
       }
@@ -504,10 +516,10 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       b.resolved = true;
       if (laneRef.current !== b.safeLane) {
         if (laneRef.current >= LANES - 1) {
-          endGame();
-          return;
+          if (!modoDiosRef.current) { endGame(); return; }
+        } else {
+          laneRef.current += 1;
         }
-        laneRef.current += 1;
       }
     }
 
@@ -533,13 +545,15 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       }
       nextCloudSpawnXRef.current = cameraXRef.current + CLOUD_SPAWN_GAP_MIN + Math.random() * (CLOUD_SPAWN_GAP_MAX - CLOUD_SPAWN_GAP_MIN);
     }
-    for (const cl of cloudsRef.current) cl.x -= CLOUD_SPEED * dt;
-    cloudsRef.current = cloudsRef.current.filter(cl => cl.x > cameraXRef.current - 200);
+    if (!pausadoDebugRef.current) {
+      for (const cl of cloudsRef.current) cl.x -= CLOUD_SPEED * dt;
+      cloudsRef.current = cloudsRef.current.filter(cl => cl.x > cameraXRef.current - 200);
+    }
 
     for (const cl of cloudsRef.current) {
       if (cl.lane !== laneRef.current) continue;
       if (Math.abs(cl.x - pwx) > CLOUD_W) continue;
-      if (playerRight > cl.x - CLOUD_W / 2 + 6 && playerLeft < cl.x + CLOUD_W / 2 - 6) {
+      if (playerRight > cl.x - CLOUD_W / 2 + 6 && playerLeft < cl.x + CLOUD_W / 2 - 6 && !modoDiosRef.current) {
         endGame();
         return;
       }
@@ -721,6 +735,14 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       }}
       onPointerCancel={() => { swipeStartRef.current = null; }}
     >
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px', zIndex: 260 }}
+      />
       {/* Carriles y compresas */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 

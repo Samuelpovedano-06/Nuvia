@@ -5,6 +5,7 @@ import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 
 function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS }) {
   return (
@@ -70,7 +71,8 @@ function spawnCount(score) {
   return Math.min(7, 2 + Math.floor((score - 15) / 10));
 }
 
-export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisiones = false, globalSensPct, onGlobalSensChange }) {
+export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisiones = false, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig, globalSensPct, onGlobalSensChange }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const [phase, setPhase] = useState('menu');
   const [score, setScore] = useState(0);
   const [misses, setMisses] = useState(0);
@@ -96,6 +98,10 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
   const animRef = useRef(null);
   const spawnTRef = useRef(null);
   const tipTRef = useRef(null);
+  const pausadoDebugRef = useRef(pausadoDebug);
+  const modoDiosRef = useRef(modoDios);
+  useEffect(() => { pausadoDebugRef.current = pausadoDebug; }, [pausadoDebug]);
+  useEffect(() => { modoDiosRef.current = modoDios; }, [modoDios]);
 
   const syncPhase = v => { phaseRef.current = v; setPhase(v); };
   const syncScore = v => { scoreRef.current = v; setScore(v); };
@@ -158,6 +164,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
 
   const scheduleSpawn = useCallback(() => {
     if (phaseRef.current !== 'playing') return;
+    if (pausadoDebugRef.current) { spawnTRef.current = setTimeout(scheduleSpawn, 200); return; }
     const area = areaRef.current;
     if (!area) return;
     const w = area.clientWidth;
@@ -198,60 +205,68 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
       if (playerRef.current) playerRef.current.style.left = (newX - PLAYER_W / 2) + 'px';
     }
 
-    const h = area.clientHeight;
-    const speed = dropSpeed(scoreRef.current);
-    const px = playerXRef.current;
-    const pTop = h - PLAYER_BOT - PLAYER_H;
-
-    let scored = false;
-    let missed = 0;
     let over = false;
-    let tipText = null;
 
-    const next = objectsRef.current
-      .map(o => ({ ...o, y: o.y + speed }))
-      .filter(o => {
-        const oL = o.x - OBJ_W / 2, oR = o.x + OBJ_W / 2;
-        const oT = o.y, oB = o.y + OBJ_H;
-        const pL = px - PLAYER_W / 2, pR = px + PLAYER_W / 2;
+    // En pausa debug, los objetos que caen se congelan y solo se mueve la
+    // mascota (el lerp de arriba sigue corriendo siempre).
+    if (!pausadoDebugRef.current) {
+      const h = area.clientHeight;
+      const speed = dropSpeed(scoreRef.current);
+      const px = playerXRef.current;
+      const pTop = h - PLAYER_BOT - PLAYER_H;
 
-        if (oR > pL && oL < pR && oB > pTop && oT < pTop + PLAYER_H) {
-          if (o.type === 'coin') {
-            sumarMoneda(1);
-            setMonedasPartida(m => m + 1);
-            tipText = o.tip;
-          } else if (o.type === 'bad') {
-            over = true;
-            tipText = o.tip;
-          } else {
-            scored = true;
-            tipText = o.tip;
+      let scored = false;
+      let missed = 0;
+      let tipText = null;
+
+      const next = objectsRef.current
+        .map(o => ({ ...o, y: o.y + speed }))
+        .filter(o => {
+          const oL = o.x - OBJ_W / 2, oR = o.x + OBJ_W / 2;
+          const oT = o.y, oB = o.y + OBJ_H;
+          const pL = px - PLAYER_W / 2, pR = px + PLAYER_W / 2;
+
+          if (oR > pL && oL < pR && oB > pTop && oT < pTop + PLAYER_H) {
+            if (o.type === 'coin') {
+              if (!modoDiosRef.current) {
+                sumarMoneda(1);
+                setMonedasPartida(m => m + 1);
+              }
+              tipText = o.tip;
+            } else if (o.type === 'bad') {
+              over = true;
+              tipText = o.tip;
+            } else {
+              scored = true;
+              tipText = o.tip;
+            }
+            return false;
           }
-          return false;
-        }
-        if (o.y > h) {
-          if (o.type === 'food') missed++;
-          return false;
-        }
-        return true;
-      });
+          if (o.y > h) {
+            if (o.type === 'food') missed++;
+            return false;
+          }
+          return true;
+        });
 
-    objectsRef.current = next;
-    setObjects([...next]);
+      objectsRef.current = next;
+      setObjects([...next]);
 
-    if (scored) {
-      syncScore(scoreRef.current + 1);
-      if (imgRef.current) {
-        imgRef.current.src = getOutfitSprite('caida', SP.catch);
-        setTimeout(() => { if (imgRef.current) imgRef.current.src = getOutfitSprite('idle', SP.idle); }, 280);
+      if (scored && !modoDiosRef.current) {
+        syncScore(scoreRef.current + 1);
+        if (imgRef.current) {
+          imgRef.current.src = getOutfitSprite('caida', SP.catch);
+          setTimeout(() => { if (imgRef.current) imgRef.current.src = getOutfitSprite('idle', SP.idle); }, 280);
+        }
       }
+      if (missed > 0) {
+        const nm = missesRef.current + missed;
+        syncMisses(nm);
+        if (nm >= MAX_MISSES) over = true;
+      }
+      if (tipText) showTip(tipText);
     }
-    if (missed > 0) {
-      const nm = missesRef.current + missed;
-      syncMisses(nm);
-      if (nm >= MAX_MISSES) over = true;
-    }
-    if (tipText) showTip(tipText);
+    if (over && modoDiosRef.current) over = false;
     if (over) { endGame(); return; }
 
     animRef.current = requestAnimationFrame(gameLoop);
@@ -334,6 +349,15 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, overflow: 'hidden', userSelect: 'none', touchAction: 'none' }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${SP.bg})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundColor: '#FCE7F3', zIndex: 0 }} />
+
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px', zIndex: 260 }}
+      />
 
       {/* Game area */}
       <div ref={areaRef} style={{ position: 'absolute', inset: 0, zIndex: 10 }}>

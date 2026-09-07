@@ -5,6 +5,7 @@ import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 
 const JUEGO_ID = 'sky_jump';
 const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
@@ -96,7 +97,8 @@ function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS, label }) {
   );
 }
 
-export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisiones, globalSensPct, onGlobalSensChange }) {
+export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug, modoDios, esAdmin, debugConfig, setDebugConfig, globalSensPct, onGlobalSensChange }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const areaRef = useRef(null);
   const [tam, setTam] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -366,8 +368,9 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
       }
       p.y += p.vy * dt;
 
-      // Mover plataformas (móvil rebota, avión cruza la pantalla)
-      for (const pl of platsRef.current) {
+      // Mover plataformas (móvil rebota, avión cruza la pantalla) — congelado
+      // en pausa debug, para que solo se mueva la mascota
+      if (!pausadoDebug) for (const pl of platsRef.current) {
         if (!pl.vx) continue;
         pl.x += pl.vx * dt;
         if (pl.tipo === 'movil') {
@@ -378,7 +381,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
 
       // Spawn aviones-plataforma (a partir de 100m): cruzan horizontalmente
       // y se pueden usar como suelo igual que el resto.
-      if (maxYRef.current >= ALTURA_AVIONES) {
+      if (!pausadoDebug && maxYRef.current >= ALTURA_AVIONES) {
         if (ts - ultSpawnAvionRef.current > rand(2400, 4200)) {
           ultSpawnAvionRef.current = ts;
           const yA = camYRef.current + rand(h * 0.35, h * 0.85);
@@ -428,7 +431,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
             if (enemigoRef.current) {
               if (ultimaPlatRef.current === pl.id) {
                 vecesMismaRef.current += 1;
-                if (vecesMismaRef.current >= 1) {
+                if (vecesMismaRef.current >= 1 && !modoDios) {
                   // segunda vez consecutiva en la misma = caught
                   setEstado('gameover');
                   return;
@@ -448,8 +451,10 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
             if (pl.objeto && !pl.objeto.usado) {
               pl.objeto.usado = true;
               if (pl.objeto.tipo === 'moneda') {
-                sumarMoneda(1);
-                setMonedasPartida(m => m + 1);
+                if (!modoDios) {
+                  sumarMoneda(1);
+                  setMonedasPartida(m => m + 1);
+                }
               } else if (pl.objeto.tipo === 'estrella') {
                 p.vy = V_SALTO_ESTRELLA;
               } else if (pl.objeto.tipo === 'flor') {
@@ -467,10 +472,10 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
       const camObj = p.y - h * 0.42;
       if (camObj > camYRef.current) camYRef.current = camObj;
 
-      // Actualizar máximo
+      // Actualizar máximo (en Modo Dios no sube la puntuación)
       if (p.y > maxYRef.current) {
         maxYRef.current = p.y;
-        setScore(Math.floor((p.y - 50) / PX_POR_METRO));
+        if (!modoDios) setScore(Math.floor((p.y - 50) / PX_POR_METRO));
       }
 
       // Enemigo: si pasó el PRIMER portal sin cogerlo y superó los 205 metros, spawn justo debajo del
@@ -484,15 +489,15 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
           enemigoSpawnAtRef.current = ts;
         }
       }
-      if (enemigoRef.current) {
+      if (enemigoRef.current && !pausadoDebug) {
         enemigoRef.current.y += enemigoRef.current.vy * dt;
-        if (enemigoRef.current.y + ENEMIGO_H * 0.7 >= p.y) {
+        if (enemigoRef.current.y + ENEMIGO_H * 0.7 >= p.y && !modoDios) {
           setEstado('gameover');
         }
       }
 
       // Game over: caer fuera de pantalla
-      if (p.y + PLAYER_H < camYRef.current - 80) {
+      if (p.y + PLAYER_H < camYRef.current - 80 && !modoDios) {
         setEstado('gameover');
       }
 
@@ -521,7 +526,7 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [estado, tam.w, tam.h]);
+  }, [estado, tam.w, tam.h, pausadoDebug, modoDios]);
 
   // Guardar récord
   useEffect(() => {
@@ -597,6 +602,14 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
       position: 'fixed', inset: 0, zIndex: 1, userSelect: 'none',
       background: '#A7E1F4',
     }}>
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px' }}
+      />
       {/* Header */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0,

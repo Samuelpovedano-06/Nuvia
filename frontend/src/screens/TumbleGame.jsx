@@ -5,6 +5,7 @@ import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
+import DebugPanel from '../components/DebugPanel';
 
 const RECORD_KEY = 'nuvia_tumble_record';
 const JUEGO_ID = 'tumble';
@@ -18,6 +19,10 @@ const SP = {
 // ─────────────────────── Jugador ───────────────────────
 const PLAYER_W = 52;
 const PLAYER_H = 52;
+// Ancho real del hitbox (para huecos y obstáculos) como fracción de PLAYER_W —
+// más pequeño que el sprite visible, y el recuadro de depuración usa este
+// mismo valor para que lo que se ve coincida con lo que de verdad se comprueba.
+const HITBOX_FACTOR = 0.5;
 const MOVE_SPEED = 360;          // px/s lateral
 const ROLL_DEG_PER_PX = 0.9;    // giro del sprite por píxel desplazado
 
@@ -168,7 +173,8 @@ function drawTurf(ctx, left, right, y) {
   ctx.fillRect(left + 2, y - 5, Math.max(0, right - left - 4), 2.5);
 }
 
-export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColisiones, globalSensPct }) {
+export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig, globalSensPct }) {
+  const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const [phase, setPhase] = useState('menu');
   const [showRanking, setShowRanking] = useState(false);
   const [score, setScore] = useState(0);
@@ -200,6 +206,8 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
   const lastTRef = useRef(null);
   const animRef = useRef(null);
   const showHitboxRef = useRef(mostrarColisiones);
+  const pausadoDebugRef = useRef(pausadoDebug);
+  const modoDiosRef = useRef(modoDios);
   const bgRatioRef = useRef(1);
 
   const areaRef = useRef(null);
@@ -224,6 +232,8 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
 
   useEffect(() => () => cancelAnimationFrame(animRef.current), []);
   useEffect(() => { showHitboxRef.current = mostrarColisiones; }, [mostrarColisiones]);
+  useEffect(() => { pausadoDebugRef.current = pausadoDebug; }, [pausadoDebug]);
+  useEffect(() => { modoDiosRef.current = modoDios; }, [modoDios]);
   useEffect(() => {
     sensFactorRef.current = Math.max(0.1, Math.min(2.0, (globalSensPct ?? 50) / 50));
   }, [globalSensPct]);
@@ -321,10 +331,13 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     const W = area.clientWidth;
     const H = area.clientHeight;
 
-    // ── Auto-scroll: la pantalla sube continuamente ─────────
-    const meters = scrollRef.current / PX_PER_METER;
-    const scrollSpeed = Math.min(MAX_FALL_SPEED, BASE_FALL_SPEED + meters * SPEED_RAMP);
-    scrollRef.current += scrollSpeed * dt;
+    // ── Auto-scroll: la pantalla sube continuamente — congelada en pausa
+    // debug, para que solo se mueva la mascota ──────────────────────────
+    if (!pausadoDebugRef.current) {
+      const meters = scrollRef.current / PX_PER_METER;
+      const scrollSpeed = Math.min(MAX_FALL_SPEED, BASE_FALL_SPEED + meters * SPEED_RAMP);
+      scrollRef.current += scrollSpeed * dt;
+    }
 
     // ── Movimiento lateral con WRAP-AROUND ───────────────────
     let lateralSpeed = moveDirRef.current * MOVE_SPEED;
@@ -343,8 +356,12 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     lateralOffsetRef.current += dx;
     rollAngleRef.current = (lateralOffsetRef.current * ROLL_DEG_PER_PX) % 360;
 
-    const playerLeft = playerXRef.current - PLAYER_W / 2 * 0.75;
-    const playerRight = playerXRef.current + PLAYER_W / 2 * 0.75;
+    const playerLeft = playerXRef.current - PLAYER_W / 2 * HITBOX_FACTOR;
+    const playerRight = playerXRef.current + PLAYER_W / 2 * HITBOX_FACTOR;
+    // Para caer por un hueco basta con que el 90% del ancho de la mascota
+    // quede dentro (antes hacía falta el 100%, así que colaba mucho menos)
+    const gapTol = (playerRight - playerLeft) * 0.05; // 5% a cada lado = 10% de margen total
+    const isOverGap = (gapLeft, gapRight) => (playerLeft + gapTol) >= gapLeft && (playerRight - gapTol) <= gapRight;
 
     // Recoger Monedas: detección instantánea con la posición real del jugador en el mundo
     const pWorldX = playerXRef.current;
@@ -354,8 +371,10 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
         const coinWorldY = row.worldY - 14;
         if (Math.abs(pWorldX - row.coin.x) < 44 && Math.abs(pWorldY - coinWorldY) < 48) {
           row.coin.collected = true;
-          sumarMoneda(1);
-          setMonedasPartida(m => m + 1);
+          if (!modoDiosRef.current) {
+            sumarMoneda(1);
+            setMonedasPartida(m => m + 1);
+          }
         }
       }
     }
@@ -364,14 +383,25 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     if (onGroundRef.current) {
       // El jugador está parado sobre una plataforma.
       // La plataforma es fija en mundo; la pantalla sube → el jugador SUBE en pantalla.
-      const plat = currentPlatformRef.current;
-      if (plat) {
+      // No nos fiamos solo de la referencia guardada (podría quedar
+      // desincronizada): se busca también la fila cuyo worldY coincide con
+      // donde está el jugador ahora mismo, y se usa la que exista.
+      const filaActual = rowsRef.current.find(r => Math.abs(r.worldY - (playerWorldYRef.current + PLAYER_H / 2)) < 4);
+      const plat = filaActual || currentPlatformRef.current;
+      if (!plat) {
+        // Referencia perdida del todo: mejor forzar la caída que quedarse
+        // flotando sin comprobar nada nunca más.
+        onGroundRef.current = false;
+        playerVYRef.current = 0;
+      } else {
         // ¿El jugador está sobre el hueco? → cae
-        const overGap = playerLeft >= plat.gapLeft && playerRight <= plat.gapRight;
+        const overGap = isOverGap(plat.gapLeft, plat.gapRight);
         if (overGap) {
           onGroundRef.current = false;
           playerVYRef.current = 0;
           currentPlatformRef.current = null;
+        } else if (filaActual) {
+          currentPlatformRef.current = filaActual;
         }
       }
     } else {
@@ -389,13 +419,13 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
         if (prevBottom > row.worldY + PLATFORM_THICKNESS) continue;   // ya estaba debajo
         if (currBottom < row.worldY) continue;                        // aún no llega
 
-        const overGap = playerLeft >= row.gapLeft && playerRight <= row.gapRight;
+        const overGap = isOverGap(row.gapLeft, row.gapRight);
         if (overGap) {
           // Pasa por el hueco: comprueba obstáculo
           if (row.hazard) {
             const h = row.hazard;
             const xPad = PLAYER_W / 2 * 0.55;
-            if (playerRight > h.x - h.size / 2 - xPad && playerLeft < h.x + h.size / 2 + xPad) {
+            if (playerRight > h.x - h.size / 2 - xPad && playerLeft < h.x + h.size / 2 + xPad && !modoDiosRef.current) {
               endGame('critical'); return;
             }
           }
@@ -423,7 +453,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     }
 
     // Muerte: el scroll automático alcanza al jugador por arriba
-    if (playerScreenY < -CRUSH_MARGIN) {
+    if (playerScreenY < -CRUSH_MARGIN && !modoDiosRef.current) {
       endGame('crushed'); return;
     }
 
@@ -437,7 +467,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
 
     // ── Puntuación: metros ───────────────────────────────────
     const newScore = Math.floor(scrollRef.current / PX_PER_METER);
-    if (newScore !== scoreRef.current) syncScore(newScore);
+    if (newScore !== scoreRef.current && !modoDiosRef.current) syncScore(newScore);
 
     // ── Dibuja ───────────────────────────────────────────────
     drawScene(W, H, cameraY);
@@ -533,6 +563,14 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       onPointerLeave={() => { moveDirRef.current = 0; }}
       onPointerCancel={() => { moveDirRef.current = 0; }}
     >
+      <DebugPanel
+        esAdmin={esAdmin}
+        debugConfig={debugConfig}
+        setDebugConfig={setDebugConfig}
+        show={showDebugJuegos}
+        setShow={setShowDebugJuegos}
+        style={{ position: 'fixed', top: '12px', left: '12px', zIndex: 260 }}
+      />
       {/* Fondo de nubes con scroll */}
       <div ref={bgRef} style={{ position: 'absolute', inset: 0, backgroundImage: `url('${SP.bg}')`, backgroundRepeat: 'repeat-y', backgroundSize: '100% auto', pointerEvents: 'none' }} />
 
@@ -558,7 +596,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       </div>
 
       {mostrarColisiones && (
-        <div ref={hitboxRef} style={{ position: 'absolute', left: playerXRef.current, top: playerWorldYRef.current - scrollRef.current, width: PLAYER_W, height: PLAYER_H, transform: 'translate(-50%, -50%)', border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />
+        <div ref={hitboxRef} style={{ position: 'absolute', left: playerXRef.current, top: playerWorldYRef.current - scrollRef.current, width: PLAYER_W * HITBOX_FACTOR, height: PLAYER_H, transform: 'translate(-50%, -50%)', border: '2px dashed #facc15', background: 'rgba(250,204,21,0.15)', pointerEvents: 'none', zIndex: 50 }} />
       )}
 
       {/* Puntuación */}
