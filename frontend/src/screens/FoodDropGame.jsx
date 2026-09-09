@@ -66,13 +66,11 @@ const SP = {
 let _objId = 0;
 
 function dropSpeed(score) { return Math.min(6.5 + Math.floor(score / 5) * 0.5, 14); }
-function spawnMs(score) { return Math.max(2600 - Math.floor(score / 5) * 100, 950); }
-// A partir de 15 puntos empiezan a caer varios objetos a la vez (no solo más
-// seguido), hasta un máximo de 7 — con uno solo cayendo es demasiado fácil.
-function spawnCount(score) {
-  if (score < 15) return 1;
-  return Math.min(7, 2 + Math.floor((score - 15) / 10));
-}
+// A partir de cierta puntuación caen más seguidos (intervalo más corto entre
+// caídas), NUNCA varios a la vez en el mismo instante — hasta un máximo de
+// MAX_EN_PANTALLA objetos visibles a la vez (ver scheduleSpawn).
+function spawnMs(score) { return Math.max(2600 - Math.floor(score / 5) * 100, 400); }
+const MAX_EN_PANTALLA = 5;
 
 export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisiones = false, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig, globalSensPct, onGlobalSensChange }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
@@ -185,16 +183,15 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
       return { type: 'food', item: FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)] };
     };
 
-    // Un carril por objeto de la tanda para que no se solapen entre sí.
-    const count = spawnCount(scoreRef.current);
-    const laneW = w / count;
-    const nuevos = Array.from({ length: count }, (_, i) => {
+    // Un solo objeto por disparo — la sensación de "más objetos" viene de
+    // acortar el intervalo entre disparos (spawnMs), no de soltar varios a
+    // la vez. Si ya hay MAX_EN_PANTALLA cayendo, este tick no suelta nada
+    // pero se sigue revisando al ritmo normal para soltar en cuanto haya hueco.
+    if (objectsRef.current.length < MAX_EN_PANTALLA) {
       const { type, item } = elegirItem();
-      const x = laneW * i + OBJ_W / 2 + Math.random() * Math.max(0, laneW - OBJ_W);
-      return { id: ++_objId, x, y: -OBJ_H, type, sprite: item.sprite, tip: item.tip };
-    });
-
-    objectsRef.current = [...objectsRef.current, ...nuevos];
+      const x = OBJ_W / 2 + Math.random() * Math.max(0, w - OBJ_W);
+      objectsRef.current = [...objectsRef.current, { id: ++_objId, x, y: -OBJ_H, type, sprite: item.sprite, tip: item.tip }];
+    }
     spawnTRef.current = setTimeout(scheduleSpawn, spawnMs(scoreRef.current));
   }, []);
 

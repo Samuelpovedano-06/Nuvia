@@ -305,26 +305,10 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
 
       platsRef.current.push(plat);
 
-      // Si la plataforma tiene un objeto, generamos otra vacía paralela para dar opción a esquivarlo
-      if (plat.objeto) {
-        const sz2 = platSize('normal');
-        let x2;
-        if (x + szFinal.w / 2 < w / 2) {
-          x2 = w - MARGEN_LATERAL - sz2.w - rand(0, 10);
-        } else {
-          x2 = MARGEN_LATERAL + rand(0, 10);
-        }
-        const y2 = y + rand(-15, 15);
-        platsRef.current.push({
-          id: `p${y2.toFixed(0)}_${Math.random().toString(36).slice(2, 6)}_evadir`,
-          x: x2, y: y2, vx: 0,
-          tipo: 'normal',
-          usada: false,
-          esPortal: false,
-          w: sz2.w, h: sz2.h,
-          objeto: null,
-        });
-      }
+      // Nada de plataformas dobles: si la plataforma lleva un objeto, el objeto
+      // va en esa misma plataforma normal y punto — antes se generaba una
+      // segunda plataforma paralela a la misma altura para poder esquivarlo, y
+      // eso es lo que salía como dos plataformas pegadas en el mismo nivel.
 
       if (esPortal) {
         ultPortalSpawnYRef.current = y;
@@ -593,7 +577,13 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
         for (let i = i0; i <= i1; i++) {
           const yT = L.y0 + i * L.tile;
           if (yT >= L.y1) break;
-          tiles.push({ key: `${L.src}_${i}`, src: L.src, y: yT, h: L.tile });
+          // La última tile antes de L.y1 no puede pintarse a altura L.tile
+          // completa si eso se sale del rango de la capa — si no, ese trozo
+          // sobrante queda tapado (cortado) por la siguiente capa, que se
+          // pinta encima justo en ese borde (p.ej. fondo_nubes → fondo_nubes_1
+          // a los 100m).
+          const h = Math.min(L.tile, L.y1 - yT);
+          tiles.push({ key: `${L.src}_${i}`, src: L.src, y: yT, h });
         }
       }
     }

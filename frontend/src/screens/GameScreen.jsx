@@ -137,6 +137,14 @@ export default function GameScreen({ onGameActiveChange }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
   const [debugConfig, setDebugConfig] = useState({ colisiones: false, pausado: false, modoDios: false });
   const mostrarColisiones = debugConfig.colisiones;
+  // Interruptor global (Panel Admin → Debug en juegos): si está apagado, el
+  // botón de debug no aparece en los minijuegos aunque el usuario sea admin.
+  const [debugJuegosActivo, setDebugJuegosActivo] = useState(false);
+  useEffect(() => {
+    ApiService.getPublicStatus().then(status => {
+      setDebugJuegosActivo(!!status?.mostrar_colisiones);
+    }).catch(() => {});
+  }, []);
 
   const { user } = useContext(AuthContext);
 
@@ -181,7 +189,7 @@ export default function GameScreen({ onGameActiveChange }) {
     return () => window.removeEventListener('popstate', onPop);
   }, [inAnyGame]);
 
-  const esAdmin = user?.rol === 'admin';
+  const esAdmin = user?.rol === 'admin' && debugJuegosActivo;
 
   const consumirEnergia = (cantidad = 15) => {
     const cur = Number(localStorage.getItem('nuvia_mascot_energy') || 75);
@@ -1143,8 +1151,8 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
                 }
                 return false; // recolectada
               } else {
-                golpe = true;
-                return !modoDios; // en modo dios la compresa desaparece pero no cuenta como golpe
+                if (!modoDios) golpe = true;
+                return false; // la compresa desaparece siempre al chocar, cuente o no como golpe
               }
             }
             return true;

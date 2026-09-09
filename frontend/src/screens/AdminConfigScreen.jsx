@@ -180,21 +180,21 @@ export default function AdminConfigScreen() {
         {errors.periodo && <p style={{ color: '#F6416C', fontSize: '11px', marginTop: '5px' }}>{errors.periodo}</p>}
       </div>
 
-      {/* Colisión en Juegos */}
+      {/* Debug en Juegos */}
       <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
           <div style={{ background: '#ECEFF1', padding: '10px', borderRadius: '12px', color: '#607D8B' }}>
             <Gamepad2 size={20} />
           </div>
           <div>
-            <h4 style={{ margin: 0 }}>Colisión en juegos</h4>
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)' }}>Visualización de hitboxes para depuración</p>
+            <h4 style={{ margin: 0 }}>Debug en juegos</h4>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-light)' }}>Muestra el botón de debug (colisiones, pausa, modo dios) a las admin dentro de los minijuegos</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px' }}>Mostrar líneas de colisión</span>
+            <span style={{ fontSize: '14px' }}>Activar debug en juegos</span>
           </div>
           <div 
             onClick={() => setConfig({...config, mostrar_colisiones: !config.mostrar_colisiones})}
