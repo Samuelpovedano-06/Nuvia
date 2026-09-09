@@ -6,6 +6,9 @@ import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 
 const RECORD_KEY = 'nuvia_tumble_record';
 const JUEGO_ID = 'tumble';
@@ -175,6 +178,7 @@ function drawTurf(ctx, left, right, y) {
 
 export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig, globalSensPct }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const logros = useLogros(JUEGO_ID);
   const [phase, setPhase] = useState('menu');
   const [showRanking, setShowRanking] = useState(false);
   const [score, setScore] = useState(0);
@@ -184,6 +188,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
 
   const phaseRef = useRef('menu');
   const scoreRef = useRef(0);
+  const monedasPartidaRef = useRef(0); // espejo de monedasPartida, para leer el valor final en endGame
 
   // ── Auto-scroll: worldY del borde superior de la pantalla ──
   // screenY de cualquier objeto = objeto.worldY - scrollRef
@@ -268,7 +273,8 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
       }
       return prev;
     });
-  }, []);
+    logros.registrarStats({ metros: s, monedas: monedasPartidaRef.current });
+  }, [logros.registrarStats]);
 
   // ── Dibuja la escena usando el scroll actual como "cámara" ──
   const drawScene = useCallback((W, H, scroll) => {
@@ -373,6 +379,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
           row.coin.collected = true;
           if (!modoDiosRef.current) {
             sumarMoneda(1);
+            monedasPartidaRef.current += 1;
             setMonedasPartida(m => m + 1);
           }
         }
@@ -524,6 +531,7 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
     lastTRef.current = null;
     syncScore(0);
     setMonedasPartida(0);
+    monedasPartidaRef.current = 0;
     syncPhase('playing');
     animRef.current = requestAnimationFrame(gameLoop);
   }, [gameLoop]);
@@ -656,10 +664,15 @@ export default function TumbleGame({ onSalir, onVolverAlListado, mostrarColision
             <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
               <Trophy size={14} /> Ver ranking
             </button>
+            <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '8px', width: '100%', maxWidth: '200px' }}>
+              🏅 Logros
+            </button>
           </div>
           {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Tumble" onClose={() => setShowRanking(false)} />}
+          {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Tumble" onClose={() => logros.setShowLogros(false)} />}
         </div>
       )}
+      <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
 
       {/* Pausa */}
       {phase === 'paused' && (

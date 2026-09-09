@@ -7,6 +7,9 @@ import { getWalkSheet } from '../utils/walkSheet';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 
 const RECORD_KEY = 'nuvia_cliffdash_record';
 const JUEGO_ID = 'cliff_dash';
@@ -175,6 +178,7 @@ function drawWavyFill(ctx, camX, yTop, xLeft, xRight, extraH, amp, wavelength, c
 
 export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const logros = useLogros(JUEGO_ID);
   const [phase, setPhase] = useState('menu');
   const [showRanking, setShowRanking] = useState(false);
   const [score, setScore] = useState(0);
@@ -191,6 +195,8 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
   const laneAnimRef = useRef(1);   // valor animado para la posición en pantalla
   const obstaclesRef = useRef([]);
   const cloudsRef = useRef([]);
+  const nubesEsquivadasRef = useRef(0); // nubes malas que pasan sin colisionar (para logros)
+  const monedasPartidaRef = useRef(0); // espejo de monedasPartida, para leer el valor final en endGame
   const bridgesRef = useRef([]);
   const coinsRef = useRef([]);
   const nextCloudSpawnXRef = useRef(0);
@@ -284,7 +290,8 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
       }
       return prev;
     });
-  }, []);
+    logros.registrarStats({ distancia: s, monedas: monedasPartidaRef.current, nubesEsquivadas: nubesEsquivadasRef.current });
+  }, [logros.registrarStats]);
 
   const drawWorld = useCallback((W, H) => {
     const canvas = canvasRef.current;
@@ -492,6 +499,7 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
           coin.collected = true;
           if (!modoDiosRef.current) {
             sumarMoneda(1);
+            monedasPartidaRef.current += 1;
             setMonedasPartida(m => m + 1);
           }
         }
@@ -547,7 +555,9 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     }
     if (!pausadoDebugRef.current) {
       for (const cl of cloudsRef.current) cl.x -= CLOUD_SPEED * dt;
+      const antesCloud = cloudsRef.current.length;
       cloudsRef.current = cloudsRef.current.filter(cl => cl.x > cameraXRef.current - 200);
+      nubesEsquivadasRef.current += antesCloud - cloudsRef.current.length;
     }
 
     for (const cl of cloudsRef.current) {
@@ -641,6 +651,7 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     bridgesRef.current = bridges;
     coinsRef.current = coins;
     cloudsRef.current = [];
+    nubesEsquivadasRef.current = 0;
     nextCloudSpawnXRef.current = CLOUD_MIN_SCORE * DIST_PER_POINT;
     cameraXRef.current = 0;
     laneRef.current = 1;
@@ -650,6 +661,7 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
     walkFrameRef.current = 0;
     syncScore(0);
     setMonedasPartida(0);
+    monedasPartidaRef.current = 0;
     if (playerRef.current) {
       playerRef.current.style.backgroundSize = `${WALK_COLS * PLAYER_W}px ${2 * PLAYER_H}px`;
     }
@@ -819,10 +831,15 @@ export default function CliffDashGame({ onSalir, onVolverAlListado, mostrarColis
             <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
               <Trophy size={14} /> Ver ranking
             </button>
+            <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '8px', width: '100%', maxWidth: '200px' }}>
+              🏅 Logros
+            </button>
           </div>
           {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Cliff Dash" onClose={() => setShowRanking(false)} />}
+          {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Cliff Dash" onClose={() => logros.setShowLogros(false)} />}
         </div>
       )}
+      <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
 
       {/* Pausa */}
       {phase === 'paused' && (

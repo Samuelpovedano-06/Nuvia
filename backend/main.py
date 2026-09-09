@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.connection import engine
 from app.models import models
-from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos, juegos, tienda
+from app.routers import auth, sintomas, diario, ciclos, configuracion, historial, predicciones, admin, parejas, chat, foro, consejos, juegos, tienda, logros
 
 # Sincronizar Base de Datos
 models.Base.metadata.create_all(bind=engine)
@@ -175,6 +175,13 @@ def run_migrations():
             record      INTEGER NOT NULL DEFAULT 0,
             updated_at  TIMESTAMP DEFAULT NOW(),
             PRIMARY KEY (id_usuaria, juego)
+        )""",
+        # Logros de minijuegos desbloqueados (uno por usuaria, para siempre)
+        """CREATE TABLE IF NOT EXISTS logros_desbloqueados (
+            id_usuaria      UUID NOT NULL REFERENCES usuarias(id_usuaria) ON DELETE CASCADE,
+            logro_id        VARCHAR(60) NOT NULL,
+            desbloqueado_at TIMESTAMP DEFAULT NOW(),
+            PRIMARY KEY (id_usuaria, logro_id)
         )""",
         # Monedas, energía y ropa de la mascota (Nuvia), por usuaria
         "ALTER TABLE usuarias ADD COLUMN IF NOT EXISTS monedas INTEGER NOT NULL DEFAULT 50",
@@ -443,6 +450,7 @@ app.include_router(foro.router)
 app.include_router(consejos.router)
 app.include_router(juegos.router)
 app.include_router(tienda.router)
+app.include_router(logros.router)
 
 
 @app.get("/")

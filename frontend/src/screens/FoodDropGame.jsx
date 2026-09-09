@@ -6,6 +6,9 @@ import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 
 function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS }) {
   return (
@@ -73,6 +76,7 @@ function spawnCount(score) {
 
 export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisiones = false, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig, globalSensPct, onGlobalSensChange }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const logros = useLogros(JUEGO_ID);
   const [phase, setPhase] = useState('menu');
   const [score, setScore] = useState(0);
   const [misses, setMisses] = useState(0);
@@ -88,6 +92,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
   const phaseRef = useRef('menu');
   const scoreRef = useRef(0);
   const missesRef = useRef(0);
+  const monedasPartidaRef = useRef(0); // espejo de monedasPartida, para leer el valor final en endGame
   const playerXRef = useRef(0);
   const targetXRef = useRef(0);
   const sensPctRef = useRef(50); // kept in sync via useEffect below
@@ -160,7 +165,8 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
       }
       return prev;
     });
-  }, []);
+    logros.registrarStats({ atrapados: s, fallos: missesRef.current, monedas: monedasPartidaRef.current });
+  }, [logros.registrarStats]);
 
   const scheduleSpawn = useCallback(() => {
     if (phaseRef.current !== 'playing') return;
@@ -230,6 +236,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
             if (o.type === 'coin') {
               if (!modoDiosRef.current) {
                 sumarMoneda(1);
+                monedasPartidaRef.current += 1;
                 setMonedasPartida(m => m + 1);
               }
               tipText = o.tip;
@@ -280,6 +287,7 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
     syncScore(0);
     syncMisses(0);
     setMonedasPartida(0);
+    monedasPartidaRef.current = 0;
     setTip(null);
     const area = areaRef.current;
     if (area) {
@@ -516,11 +524,16 @@ export default function FoodDropGame({ onSalir, onVolverAlListado, mostrarColisi
               <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <Trophy size={14} /> Ver ranking
               </button>
+              <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                🏅 Logros
+              </button>
             </div>
           </div>
         </div>
       )}
       {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Food Drop" onClose={() => setShowRanking(false)} />}
+      {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Food Drop" onClose={() => logros.setShowLogros(false)} />}
+      <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
 
       {/* Pause overlay */}
       {phase === 'paused' && (

@@ -7,6 +7,9 @@ import { getWalkSheet } from '../utils/walkSheet';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 
 const RECORD_KEY = 'nuvia_cliffjump_record';
 const JUEGO_ID = 'cliff_jump';
@@ -83,6 +86,7 @@ function makeTerrain() {
 
 export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const logros = useLogros(JUEGO_ID);
   const [phase, setPhase] = useState('menu');
   const [showRanking, setShowRanking] = useState(false);
   const [score, setScore] = useState(0);
@@ -91,6 +95,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
 
   const phaseRef = useRef('menu');
   const scoreRef = useRef(0);
+  const monedasPartidaRef = useRef(0);
   const cameraXRef = useRef(0);
   const jumpHRef = useRef(0);   // height above ground (px)
   const vyRef = useRef(0);   // vertical velocity (+up)
@@ -159,7 +164,8 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
       }
       return prev;
     });
-  }, []);
+    logros.registrarStats({ saltos: s, monedas: monedasPartidaRef.current });
+  }, [logros.registrarStats]);
 
   const drawTerrain = useCallback((W, H) => {
     const canvas = canvasRef.current;
@@ -305,6 +311,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
           coin.collected = true;
           if (!modoDiosRef.current) {
             sumarMoneda(1);
+            monedasPartidaRef.current += 1;
             setMonedasPartida(m => m + 1);
           }
         }
@@ -432,6 +439,7 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
     lastTRef.current = null;
     syncScore(0);
     setMonedasPartida(0);
+    monedasPartidaRef.current = 0;
     syncPhase('playing');
     animRef.current = requestAnimationFrame(gameLoop);
   }, [gameLoop]);
@@ -554,10 +562,15 @@ export default function CliffJumpGame({ onSalir, onVolverAlListado, mostrarColis
             <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
               <Trophy size={14} /> Ver ranking
             </button>
+            <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '8px', width: '100%', maxWidth: '200px' }}>
+              🏅 Logros
+            </button>
           </div>
         </div>
       )}
       {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Cliff Jump" onClose={() => setShowRanking(false)} />}
+      {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Cliff Jump" onClose={() => logros.setShowLogros(false)} />}
+      <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
 
       {/* Paused */}
       {phase === 'paused' && (

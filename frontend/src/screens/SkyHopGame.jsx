@@ -6,6 +6,9 @@ import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 
 const RECORD_KEY = 'nuvia_skyhop_record';
 const JUEGO_ID   = 'sky_hop';
@@ -174,6 +177,7 @@ function easeInOut(t) {
 
 export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColisiones = false, pausadoDebug = false, modoDios = false, esAdmin, debugConfig, setDebugConfig }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const logros = useLogros(JUEGO_ID);
   const pathGenRef = useRef(null);
   if (!pathGenRef.current) pathGenRef.current = createRowGenerator();
 
@@ -210,6 +214,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
   const curColRef = useRef(1);
   const timerRef  = useRef(TIMER_MAX);
   const scoreRef  = useRef(0);
+  const estrellasRef = useRef(0); // estrellas de bonus tiempo cogidas en la partida (para logros)
   const pausadoDebugRef = useRef(pausadoDebug);
   const modoDiosRef = useRef(modoDios);
   useEffect(() => { pausadoDebugRef.current = pausadoDebug; }, [pausadoDebug]);
@@ -343,6 +348,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       localStorage.setItem(RECORD_KEY, String(s));
       ApiService.guardarRecordJuego(JUEGO_ID, s);
     }
+    logros.registrarStats({ saltos: s, estrellas: estrellasRef.current, monedas: monedasPartida });
   }, [phase]);
 
   const placePlayer = useCallback((col, row, cont) => {
@@ -399,7 +405,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
     const fresh = genInitialRows(pathGenRef.current);
     syncRows(fresh);
     syncCurRow(0); syncCurCol(1);
-    syncScore(0);  setMonedasPartida(0); syncTimer(TIMER_MAX);
+    syncScore(0);  setMonedasPartida(0); syncTimer(TIMER_MAX); estrellasRef.current = 0;
     setSprite('idle');
     busyRef.current = false;
     syncPhase('playing');
@@ -510,6 +516,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
       }
 
       if (landedType === 'star') {
+        estrellasRef.current += 1;
         syncTimer(Math.min(timerRef.current + STAR_BONUS, TIMER_MAX));
         setStarFlash(true);
         setTimeout(() => setStarFlash(false), 900);
@@ -608,8 +615,12 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
           <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
             <Trophy size={14} /> Ver ranking
           </button>
+          <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '8px', width: '100%', maxWidth: '200px' }}>
+            🏅 Logros
+          </button>
         </div>
         {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Sky Hop" onClose={() => setShowRanking(false)} />}
+        {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Sky Hop" onClose={() => logros.setShowLogros(false)} />}
       </div>
     );
   }
@@ -665,6 +676,7 @@ export default function SkyHopGame({ onSalir, onVolverAlListado, mostrarColision
         setShow={setShowDebugJuegos}
         style={{ position: 'fixed', top: '12px', left: '12px', zIndex: 260 }}
       />
+      <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
 
       {/* Timer bar */}
       {(phase === 'playing' || phase === 'paused') && (

@@ -575,6 +575,27 @@ export const ApiService = {
     } catch (_) { return null; }
   },
 
+  // Logros de minijuegos
+  getLogros: async () => {
+    try {
+      const res = await fetch(`${baseUrl}/logros`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (_) { return []; }
+  },
+
+  desbloquearLogro: async (logroId) => {
+    try {
+      const res = await fetch(`${baseUrl}/logros/desbloquear`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ logro_id: logroId })
+      });
+      if (!res.ok) return { nuevo: false };
+      return await res.json();
+    } catch (_) { return { nuevo: false }; }
+  },
+
   getRanking: async (juego) => {
     try {
       const res = await fetch(`${baseUrl}/juegos/ranking/${encodeURIComponent(juego)}`, { headers: getHeaders() });

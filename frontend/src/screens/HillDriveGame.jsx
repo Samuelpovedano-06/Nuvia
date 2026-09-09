@@ -5,6 +5,9 @@ import { sumarMoneda, CoinIcon } from '../utils/coinHelper';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
 import { getOutfitSprite } from '../utils/outfitSprites';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 
 // ─────────────────────── Constantes ───────────────────────
 const RECORD_KEY = 'nuvia_hilldrive_record';
@@ -100,6 +103,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado, pausadoDebug
     logoImgRef.current = logoImg;
   }, []);
 
+  const logros = useLogros(JUEGO_ID);
   const [fase, setFase] = useState('inicio');
   const [showRanking, setShowRanking] = useState(false);
   const [puntuacion, setPuntuacion] = useState(0);
@@ -683,6 +687,7 @@ export default function HillDriveGame({ onSalir, onVolverAlListado, pausadoDebug
       localStorage.setItem(RECORD_KEY, String(best));
       setRecord(best);
       try { ApiService.guardarRecordJuego(JUEGO_ID, best); } catch (_) { }
+      logros.registrarStats({ metros });
       return;
     }
     rafRef.current = requestAnimationFrame(gameLoop);
@@ -810,10 +815,15 @@ export default function HillDriveGame({ onSalir, onVolverAlListado, pausadoDebug
             <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '10px', width: '100%', maxWidth: '200px' }}>
               <Trophy size={14} /> Ver ranking
             </button>
+            <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '8px', width: '100%', maxWidth: '200px' }}>
+              🏅 Logros
+            </button>
           </div>
           {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Hill Drive" onClose={() => setShowRanking(false)} />}
+          {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Hill Drive" onClose={() => logros.setShowLogros(false)} />}
         </div>
       )}
+      <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
 
       {/* Canvas del juego */}
       <canvas

@@ -6,6 +6,9 @@ import AccesorioOverlay from '../components/AccesorioOverlay';
 import { getOutfitSprite } from '../utils/outfitSprites';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 
 const JUEGO_ID = 'sky_jump';
 const RECORD_LOCAL_KEY = 'nuvia_skyjump_record';
@@ -99,6 +102,7 @@ function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS, label }) {
 
 export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisiones, pausadoDebug, modoDios, esAdmin, debugConfig, setDebugConfig, globalSensPct, onGlobalSensChange }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const logros = useLogros(JUEGO_ID);
   const areaRef = useRef(null);
   const [tam, setTam] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio'); // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -536,6 +540,13 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
       ApiService.guardarRecordJuego(JUEGO_ID, score);
     }
   }, [estado, score, recordLocal]);
+
+  // Revisar logros
+  useEffect(() => {
+    if (estado === 'gameover') {
+      logros.registrarStats({ metros: score, monedas: monedasPartida, portal: enModoPortalRef.current });
+    }
+  }, [estado]);
 
   // ─── Render ───
   const camY = camYRef.current;
@@ -993,11 +1004,16 @@ export default function SkyJumpGame({ onSalir, onVolverAlListado, mostrarColisio
                 <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <Trophy size={14} /> Ver ranking
                 </button>
+                <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  🏅 Logros
+                </button>
               </div>
             </div>
           </div>
         )}
         {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Sky Jump" onClose={() => setShowRanking(false)} />}
+        {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Sky Jump" onClose={() => logros.setShowLogros(false)} />}
+        <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
 
         {estado === 'gameover' && <Overlay>
           <h2 style={{ color: 'var(--primary)', margin: 0 }}>¡Te caíste! 🌪</h2>

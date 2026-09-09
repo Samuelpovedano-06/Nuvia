@@ -4,6 +4,9 @@ import { ChevronLeft, Bed, Bath, Gamepad2, Play, RefreshCw, Heart, Pause, X, Set
 import { ApiService } from '../api';
 import RankingModal from '../components/RankingModal';
 import DebugPanel from '../components/DebugPanel';
+import LogroToast from '../components/LogroToast';
+import LogrosModal from '../components/LogrosModal';
+import { useLogros } from '../hooks/useLogros';
 import { AuthContext } from '../context/AuthContext';
 import SkyJumpGame   from './SkyJumpGame';
 import SkyHopGame    from './SkyHopGame';
@@ -997,6 +1000,7 @@ function PanelSens({ gPct, onG, sPct, onS, useS, onToggleS, label }) {
 // ─────────────────────── Mini-juego: Esquivar compresas ───────────────────────
 function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa, mostrarColisiones, pausadoDebug, modoDios, esAdmin, debugConfig, setDebugConfig, globalSensPct, onGlobalSensChange }) {
   const [showDebugJuegos, setShowDebugJuegos] = useState(false);
+  const logros = useLogros(JUEGO_ID);
   const areaRef = useRef(null);
   const [tamPantalla, setTamPantalla] = useState({ w: 360, h: 600 });
   const [estado, setEstado] = useState('inicio');  // 'inicio' | 'jugando' | 'pausa' | 'gameover'
@@ -1172,6 +1176,13 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
       ApiService.guardarRecordJuego(JUEGO_ID, puntos);
     }
   }, [estado, puntos, recordLocal]);
+
+  // Revisar logros al hacer gameover
+  useEffect(() => {
+    if (estado === 'gameover') {
+      logros.registrarStats({ puntos, vidas, monedas: monedasPartida });
+    }
+  }, [estado]);
 
   const empezar = () => {
     obstaculosRef.current = [];
@@ -1426,10 +1437,15 @@ function EsquivarJuego({ onSalir, onVolverAlListado, spriteCaida, spriteCompresa
                 <button onClick={() => setShowRanking(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <Trophy size={14} /> Ver ranking
                 </button>
+                <button onClick={() => logros.setShowLogros(true)} style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  🏅 Logros
+                </button>
               </div>
             </div>
           </div>
         )}
+        {logros.showLogros && <LogrosModal juego={JUEGO_ID} nombreJuego="Esquiva-compresas" onClose={() => logros.setShowLogros(false)} />}
+        <LogroToast cola={logros.cola} onSiguiente={logros.avanzarCola} />
         {showRanking && <RankingModal juego={JUEGO_ID} nombreJuego="Esquiva-compresas" onClose={() => setShowRanking(false)} />}
 
         {/* Pantalla de pausa */}
